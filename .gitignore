@@ -1,0 +1,11 @@
+*-debug.log
+*-error.log
+/.nyc_output
+/dist
+/lib
+/tmp
+/yarn.lock
+# dependancies
+node_modules
+# mac specific
+.DS_Store
