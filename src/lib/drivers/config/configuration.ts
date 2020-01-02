@@ -7,10 +7,13 @@ export abstract class Configuration
 {
   private raw_object: object
 
-  setRawObject(value: object)
+  setRawObject(value: object, config_path: string)
   {
     const result = this.validate(value)
-    if(result.success) this.raw_object = value
+    if(result.success){
+        this.raw_object = value
+        this.replaceRelativePaths(config_path)
+    }
     return result
   }
 
@@ -26,5 +29,6 @@ export abstract class Configuration
   abstract runObject() : object;
   abstract buildObject() : object;
   abstract validate(value: object): ValidatedOutput;
+  abstract private replaceRelativePaths(config_path: string): void;    // replaces relative paths with absolute paths
 
 }

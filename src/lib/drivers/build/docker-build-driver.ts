@@ -110,7 +110,7 @@ export class DockerBuildDriver extends BuildDriver
           {
             const contents = yaml.safeLoad(fs.readFileSync(build_file_path, 'utf8')) || {} // allow blank files
             const configuration = new this.configuration_constructor()
-            const result = configuration.setRawObject(contents)
+            const result = configuration.setRawObject(contents, stack_path)
             return (result.success) ? new ValidatedOutput(true, configuration) : new ValidatedOutput(false, null, result.error)
           }
           catch (error)

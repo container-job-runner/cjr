@@ -1,5 +1,6 @@
 
 import * as fs from 'fs'
+import * as path from 'path'
 import {ValidatedOutput} from '../../validated-output'
 import {Configuration} from './configuration'
 import {dc_ajv_validator} from './docker-configuration-schema'
@@ -67,6 +68,27 @@ export class DockerConfiguration extends Configuration
   buildObject()
   {
       return this.raw_object?.build || {}
+  }
+
+  private replaceRelativePaths(config_path: string)
+  {
+    console.log(this.raw_object)
+    if(config_path)
+    {
+      // -- replace all relative bind mounts -----------------------------------
+      this.raw_object?.mounts?.map(
+        (mount) => {
+          if(mount.type === "bind" && !path.isAbsolute(mount.hostPath)) {
+            mount.hostPath = path.join(config_path, mount.hostPath)
+        }}
+      )
+      // -- replace hostRoot relative bind mounts ------------------------------
+      const hostRoot = this.raw_object?.files?.hostRoot;
+      if(hostRoot && !path.isAbsolute(hostRoot)) {
+        this.raw_object.files.hostRoot = path.join(config_path, hostRoot)
+      }
+    }
+    console.log(this.raw_object)
   }
 
 }
