@@ -72,7 +72,6 @@ export class DockerConfiguration extends Configuration
 
   private replaceRelativePaths(config_path: string)
   {
-    console.log(this.raw_object)
     if(config_path)
     {
       // -- replace all relative bind mounts -----------------------------------
@@ -88,7 +87,6 @@ export class DockerConfiguration extends Configuration
         this.raw_object.files.hostRoot = path.join(config_path, hostRoot)
       }
     }
-    console.log(this.raw_object)
   }
 
 }
