@@ -4,7 +4,8 @@ import {ValidatedOutput} from "../validated-output"
 
 export class TextFile
 {
-  private parent_dir: string // files will be created relative to the parent_dir
+  parent_dir: string // files will be created relative to the parent_dir
+  create_base_dir: boolean = false
   private extension: string = "txt"
   private validator = (x) => x
 
@@ -16,12 +17,29 @@ export class TextFile
 
   write(name:string, data_str:string)
   {
-    fs.writeFileSync(this.filePath(name), data_str)
+    const file_path = this.filePath(name)
+    const dir_name  = path.dirname(file_path)
+    try
+    {
+      // create parent directory if create_base_dir = true and directory does not exist
+      if(this.create_base_dir && dir_name && !fs.existsSync(parent_dir)) {
+        fs.mkdirSync(parent_dir, {recursive: true})
+      }
+      // write to file
+      return new ValidatedOutput(
+        true,
+        fs.writeFileSync(this.filePath(name), data_str)
+      )
+    }
+    catch(e)
+    {
+      return ValidatedOutput(false, e)
+    }
   }
 
   read(name:string)
   {
-
+    console.log(this.filePath(name))
     try {
       return new ValidatedOutput(
         true,
@@ -29,7 +47,7 @@ export class TextFile
       )
     }
     catch(e) {
-      return ValidatedOutput(false, e)
+      return new ValidatedOutput(false, e)
     }
   }
 
@@ -51,8 +69,8 @@ export class TextFile
   private filePath(name: string)
   {
     const re = RegExp(`.${this.extension}$`)
-    const path = (re.test(name)) ? name : `${name}.${this.extension}`
-    return (this.parent_dir) ? path.join(this.parent_dir, path) : path
+    const file_path = (re.test(name)) ? name : `${name}.${this.extension}`
+    return (this.parent_dir) ? path.join(this.parent_dir, file_path) : file_path
   }
 
 }

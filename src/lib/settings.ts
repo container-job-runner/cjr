@@ -5,83 +5,49 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import * as os from 'os'
-import {JSONFileWriter} from './json-file-writer'
+import {JSONFile} from './fileio/json-file'
 import {ValidatedOutput} from './validated-output'
+import {cli_settings_yml_name, defaultCLISettings} from './constants'
 
-export class Settings extends JSONFileWriter
+export class Settings
 {
 
-  private config_name: string = "settings";
+  private config_name: string = cli_settings_yml_name;
   private cli_name: string
   private static settings: object = undefined
+  private JSON_file: JSONFile
+  private defaults: object = {}
+
   private ERRORSTRS = {
-    "Invalid" : "Invalid Settings Property"
+    "InvalidField" : "Invalid Settings Property"
   }
 
-  constructor(config_dir: string, cli_name:string = "cli")
+  constructor(settings_dir: string, cli_name:string = "cli")
   {
-    super(config_dir)
+    this.defaults = defaultCLISettings(settings_dir)
+    this.JSON_file = new JSONFile(settings_dir)
     this.cli_name = cli_name;
-
-    // load existing config file or create one
-    if(!fs.existsSync(this.filePath(this.config_name)))
-    {
-      this.settings = this.defaultSettings()
-      this.write()
-      console.log("write")
-    }
-
-  }
-
-  defaultSettings(auto:boolean = true)
-  {
-    let cmd = "podman"
-    if(auto)
-    {
-      switch(os.platform())
-      {
-        case "darwin":
-        case "win32":
-          cmd = "docker"
-          break
-        default:
-          cmd = "podman"
-      }
-    }
-
-    return {
-        stacks_path: path.join(this.parent_dir, "stacks"),
-        build_cmd: cmd,
-        run_cmd: cmd,
-        image_tag: this.cli_name
-    }
   }
 
   set(field: string, value: any)
   {
-    if(this.settings === undefined) this.read();
-    if(Object.keys(this.defaultSettings(false)).includes(field) == false)
-      return new ValidatedOutput(false, [], [this.ERRORSTRS["Invalid"]]);
+    if(this.settings === undefined) this.load();
+    if(Object.keys(this.defaults).includes(field) == false)
+      return new ValidatedOutput(false, [], [this.ERRORSTRS["InvalidField"]]);
     this.settings[field] = value
-    this.write()
-    return new ValidatedOutput(true);
+    return this.JSON_file.write(this.config_name, this.settings)
   }
 
   get(field: string)
   {
-    if(this.settings === undefined) this.read();
+    if(this.settings === undefined) this.load();
     return this.settings[field]
   }
 
-  read()
+  private load()
   {
-    this.settings = super.read(this.config_name)
-  }
-
-  write()
-  {
-    super.write(this.config_name, this.settings)
+    var result = this.JSON_file.read(this.config_name)
+    this.settings = (result.success) ? result.data : this.defaults
   }
 
 }

@@ -13,7 +13,7 @@ import {DockerRunDriver} from './drivers/run/docker-run-driver'
 import {PodmanRunDriver} from './drivers/run/podman-run-driver'
 import {ShellCMD} from './shellcmd'
 import {ps_vo_validator} from './schema/project-settings-schema'
-import {project_settings_yml_path} from './constants'
+import {projectSettingsYMLPath} from './constants'
 import {FileTools} from './fileio/file-tools'
 import {YMLFile} from './fileio/yml-file'
 
@@ -44,7 +44,7 @@ export abstract class StackCommand extends Command
     {
       var stack = false
       var configFiles = []
-      const yml_path = project_settings_yml_path(hostRoot)
+      const yml_path = projectSettingsYMLPath(hostRoot)
       if(FileTools.existsFile(yml_path))
       {
           var stack_file = new YMLFile(false, ps_vo_validator)
