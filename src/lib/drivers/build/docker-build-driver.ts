@@ -4,7 +4,7 @@ import * as yaml from 'js-yaml'
 import {BuildDriver} from './build-driver'
 import {ValidatedOutput} from '../../validated-output'
 import {DockerConfiguration} from '../config/docker-configuration'
-import {FileTools} from './file-tools'
+import {FileTools} from '../../fileio/file-tools'
 
 export class DockerBuildDriver extends BuildDriver
 {

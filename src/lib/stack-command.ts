@@ -12,14 +12,46 @@ import {BuildahBuildDriver} from './drivers/build/buildah-build-driver'
 import {DockerRunDriver} from './drivers/run/docker-run-driver'
 import {PodmanRunDriver} from './drivers/run/podman-run-driver'
 import {ShellCMD} from './shellcmd'
+import {ps_vo_validator} from './schema/project-settings-schema'
+import {project_settings_yml_path} from './constants'
+import {FileTools} from './fileio/file-tools'
+import {YMLFile} from './fileio/yml-file'
 
 export abstract class StackCommand extends Command
 {
   private settings = new Settings(this.config.configDir, this.config.name)
+  private project_settings = {}
 
   fullStackPath(user_path: string) // leaves existant full path intact or generates full stack path from shortcut
   {
     return (fs.existsSync(user_path)) ? user_path : path.join(this.settings.get("stacks_path"), user_path)
+  }
+
+  parse(...args)// overload parse command to allow for auto setting of stack flag
+  {
+    const parse_object = super.parse(...args)
+    this.loadProjectSettingsYML(parse_object?.flags?.hostRoot)
+    if(parse_object?.flags?.stack === false) {
+        parse_object.flags.stack = this.project_settings?.stack || false
+    }
+    return parse_object
+  }
+
+  // helper function for loading optional .cjr/stack.yml in hostRoot
+  loadProjectSettingsYML(hostRoot)
+  {
+    if(hostRoot)
+    {
+      var stack = false
+      var configFiles = []
+      const yml_path = project_settings_yml_path(hostRoot)
+      if(FileTools.existsFile(yml_path))
+      {
+          var stack_file = new YMLFile(false, ps_vo_validator)
+          var result = stack_file.validatedRead(yml_path)
+          if(result.success) this.project_settings = result.data
+      }
+    }
   }
 
   newBuilder(explicit: boolean = false, silent: boolean = false)
