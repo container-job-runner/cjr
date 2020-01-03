@@ -9,14 +9,14 @@ export default class Stop extends StackCommand {
   static description = 'stop jupiter server for stack'
   static args = []
   static flags = {
-    stack: flags.string({env: 'STACK', required: true}),
+    stack: flags.string({env: 'STACK', default: false}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parse(Stop)
+    const {argv, flags} = this.parse(Stop, true)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 

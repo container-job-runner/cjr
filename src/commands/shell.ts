@@ -8,7 +8,7 @@ export default class Shell extends StackCommand {
   static args = []
   static flags = {
     explicit: flags.boolean({default: false}),
-    stack: flags.string({env: 'STACK', required: true}),
+    stack: flags.string({env: 'STACK', default: false}),
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     containerRoot: flags.string({default: false})
   }
@@ -16,7 +16,7 @@ export default class Shell extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Shell)
+    const {argv, flags} = this.parse(Shell, true)
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)

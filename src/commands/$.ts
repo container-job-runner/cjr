@@ -7,7 +7,7 @@ export default class Run extends JobCommand {
   static args = [{name: 'command', required: true}]
   static flags = {
     explicit: flags.boolean({default: false}),
-    stack: flags.string({env: 'STACK', required: true}),
+    stack: flags.string({env: 'STACK', default: false}),
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     containerRoot: flags.string({default: false}),
     async: flags.boolean({default: false})
@@ -16,7 +16,7 @@ export default class Run extends JobCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Run)
+    const {argv, flags} = this.parse(Run, true)
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)

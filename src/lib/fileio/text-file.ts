@@ -39,7 +39,6 @@ export class TextFile
 
   read(name:string)
   {
-    console.log(this.filePath(name))
     try {
       return new ValidatedOutput(
         true,

@@ -9,14 +9,14 @@ export default class List extends StackCommand {
   static description = 'list address of running jupiter servers for stack'
   static args = []
   static flags = {
-    stack: flags.string({env: 'STACK', required: true}),
+    stack: flags.string({env: 'STACK', default: false}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parse(List)
+    const {argv, flags} = this.parse(List, true)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 

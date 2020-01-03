@@ -1,5 +1,6 @@
 import {ValidatedOutput} from "../validated-output"
 import {TextFile} from "./text-file"
+import * as yaml from 'js-yaml'
 
 export class YMLFile extends TextFile
 {

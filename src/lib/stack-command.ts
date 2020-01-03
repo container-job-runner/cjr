@@ -16,6 +16,8 @@ import {ps_vo_validator} from './schema/project-settings-schema'
 import {projectSettingsYMLPath} from './constants'
 import {FileTools} from './fileio/file-tools'
 import {YMLFile} from './fileio/yml-file'
+import {invalid_stack_flag_error} from './constants'
+
 
 export abstract class StackCommand extends Command
 {
@@ -27,13 +29,14 @@ export abstract class StackCommand extends Command
     return (fs.existsSync(user_path)) ? user_path : path.join(this.settings.get("stacks_path"), user_path)
   }
 
-  parse(...args)// overload parse command to allow for auto setting of stack flag
+  parse(C, stack_required:boolean = false)// overload parse command to allow for auto setting of stack flag
   {
-    const parse_object = super.parse(...args)
+    const parse_object = super.parse(C)
     this.loadProjectSettingsYML(parse_object?.flags?.hostRoot)
     if(parse_object?.flags?.stack === false) {
         parse_object.flags.stack = this.project_settings?.stack || false
     }
+    if(stack_required && !parse_object?.flags?.stack) this.error(invalid_stack_flag_error)
     return parse_object
   }
 
