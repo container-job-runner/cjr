@@ -4,6 +4,7 @@ import * as yaml from 'js-yaml'
 import {BuildDriver} from './build-driver'
 import {ValidatedOutput} from '../../validated-output'
 import {DockerConfiguration} from '../config/docker-configuration'
+import {FileTools} from './file-tools'
 
 export class DockerBuildDriver extends BuildDriver
 {
@@ -25,8 +26,7 @@ export class DockerBuildDriver extends BuildDriver
     {
       var result = new ValidatedOutput();
       // check stack_path is a directory
-      const existsDir = path_str => fs.existsSync(path_str) && fs.lstatSync(path_str).isDirectory()
-      const dir_exists = existsDir(stack_path)
+      const dir_exists = FileTools.existsDir(stack_path)
       if(!dir_exists) result.pushError(this.ERRORSTR["MISSING_STACKDIR"](stack_path))
       // check that required files are present
       const required_files = ['Dockerfile'];
@@ -99,27 +99,43 @@ export class DockerBuildDriver extends BuildDriver
       return new ValidatedOutput(true)
     }
 
-    // Helper functions
+    // Load stack_path/config.yml and any additional config files. The settings in the last file in the array has highest priorty
+    // silently ignores files if they are not present
 
-    loadConfiguration(stack_path) // Determines if config file is valid
+    loadConfiguration(stack_path: string, config_paths: array<string> = [])
     {
-        const build_file_path = path.join(stack_path, "config.yml")
-        if(fs.existsSync(build_file_path))
+      config_paths.unshift(path.join(stack_path, "config.yml")) // always add stack config file first
+      var configuration = new this.configuration_constructor()
+      var result = config_paths.reduce(
+        (result, path) => {
+          if(result) result = this.loadConfigurationFile(path)
+          if(result) configuration.merge(result.data)
+          return result
+        },
+        new ValidatedOutput(true)
+      )
+
+      return (result.success) ? new ValidatedOutput(true, configuration) : result
+    }
+
+    private loadConfigurationFile(file_path: string) // Determines if config file is valid
+    {
+        if(FileTools.existsFile(file_path))
         {
           try
           {
-            const contents = yaml.safeLoad(fs.readFileSync(build_file_path, 'utf8')) || {} // allow blank files
+            const contents = yaml.safeLoad(fs.readFileSync(file_path, 'utf8')) || {} // allow blank files to pass validation
             const configuration = new this.configuration_constructor()
-            const result = configuration.setRawObject(contents, stack_path)
-            return (result.success) ? new ValidatedOutput(true, configuration) : new ValidatedOutput(false, null, result.error)
+            const result = configuration.setRawObject(contents, path.dirname(file_path))
+            return (result.success) ? new ValidatedOutput(true, configuration) : result
           }
           catch (error)
           {
-            return new ValidatedOutput(false, null, [`Unable to parse config.yml. ${error}`])
+            return new ValidatedOutput(false, null, [`Unable to parse yml in ${file_path}.\n${error}`])
           }
         }
 
-        return new ValidatedOutput(true, {}); // allow for no config files
+        return new ValidatedOutput(true, {}); // exit silently if config files is not present
     }
 
     // Special function for reducing code repetition in Podman Driver Class

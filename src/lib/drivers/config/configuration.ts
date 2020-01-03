@@ -3,18 +3,23 @@
 // It encapsulates the most general features required by all configurations
 // ===========================================================================
 
+import {JSTools} from '../../js-tools'
+
 export abstract class Configuration
 {
-  private raw_object: object
+  private raw_object: object = {}
 
-  setRawObject(value: object, config_path: string)
-  {
+  setRawObject(value: object, parent_path: string) {
     const result = this.validate(value)
-    if(result.success){
+    if(result.success) {
         this.raw_object = value
-        this.replaceRelativePaths(config_path)
+        if(parent_path) this.replaceRelativePaths(parent_path)
     }
     return result
+  }
+
+  merge (other: Configuration) {
+      JSTools.rMerge(this.raw_object, other.raw_object)
   }
 
   // minimum abstractions required by build, ssh and run for all configurations

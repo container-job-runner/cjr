@@ -70,21 +70,21 @@ export class DockerConfiguration extends Configuration
       return this.raw_object?.build || {}
   }
 
-  private replaceRelativePaths(config_path: string)
+  private replaceRelativePaths(parent_path: string)
   {
-    if(config_path)
+    if(parent_path)
     {
       // -- replace all relative bind mounts -----------------------------------
       this.raw_object?.mounts?.map(
         (mount) => {
           if(mount.type === "bind" && !path.isAbsolute(mount.hostPath)) {
-            mount.hostPath = path.join(config_path, mount.hostPath)
+            mount.hostPath = path.join(parent_path, mount.hostPath)
         }}
       )
       // -- replace hostRoot relative bind mounts ------------------------------
       const hostRoot = this.raw_object?.files?.hostRoot;
       if(hostRoot && !path.isAbsolute(hostRoot)) {
-        this.raw_object.files.hostRoot = path.join(config_path, hostRoot)
+        this.raw_object.files.hostRoot = path.join(parent_path, hostRoot)
       }
     }
   }
