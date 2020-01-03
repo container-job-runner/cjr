@@ -9,10 +9,11 @@ export class TextFile
   private extension: string = "txt"
   private validator = (x) => x
 
-  constructor(parent_dir: string = "", validator = undefined)
+  constructor(parent_dir: string = "", create_base_dir: boolean = false, validator = (x) => x)
   {
     this.parent_dir = parent_dir
     this.validator = validator
+    this.create_base_dir = create_base_dir
   }
 
   write(name:string, data_str:string)
@@ -22,8 +23,8 @@ export class TextFile
     try
     {
       // create parent directory if create_base_dir = true and directory does not exist
-      if(this.create_base_dir && dir_name && !fs.existsSync(parent_dir)) {
-        fs.mkdirSync(parent_dir, {recursive: true})
+      if(this.create_base_dir && dir_name && !fs.existsSync(dir_name)) {
+        fs.mkdirSync(dir_name, {recursive: true})
       }
       // write to file
       return new ValidatedOutput(
@@ -33,7 +34,7 @@ export class TextFile
     }
     catch(e)
     {
-      return ValidatedOutput(false, e)
+      return new ValidatedOutput(false, e)
     }
   }
 

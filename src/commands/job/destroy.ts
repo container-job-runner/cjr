@@ -5,7 +5,7 @@ import {matchingJobIds} from '../../lib/drivers/run/functions'
 
 export default class Destroy extends JobCommand {
   static description = 'stop a job and destroy associated result.'
-  static args = [{name: 'id', required: true}]
+  static args = [{name: 'id'}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),
     explicit: flags.boolean({default: false}),

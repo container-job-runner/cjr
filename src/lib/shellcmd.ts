@@ -19,6 +19,7 @@ export class ShellCMD
 {
     _explicit: boolean; // if true then
     _silent: boolean; // if true then no output will be shown and std_out will not be attached
+    _DEBUG: boolean = false
 
     constructor(explicit: boolean, silent: boolean)
     {
@@ -108,23 +109,30 @@ export class ShellCMD
     {
       if(this._explicit && !this._silent)
       {
-        var header = (sync) ?
-        "=".repeat(38) + " SYNC " + "=".repeat(38) :
-        "=".repeat(37) + " A-SYNC " + "=".repeat(37);
+        if(this._DEBUG)
+        {
+          var header = (sync) ?
+          "=".repeat(38) + " SYNC " + "=".repeat(38) :
+          "=".repeat(37) + " A-SYNC " + "=".repeat(37);
 
-        console.log(header)
-        console.log("command:\n\t" + command)
-        console.log("flags:")
-        for (let key in flags) {
-          var value = ('value' in flags[key]) ? "=" + flags[key].value : "";
-          console.log("\t" + key + value)
+          console.log(header)
+          console.log("command:\n\t" + command)
+          console.log("flags:")
+          for (let key in flags) {
+            var value = ('value' in flags[key]) ? "=" + flags[key].value : "";
+            console.log("\t" + key + value)
+          }
+          console.log("args:")
+          args.forEach(a => console.log("\t" + a))
+          console.log("command string:")
+          console.log("\t" + this.cmdString(command, flags, args))
+          console.log("options:", options)
+          console.log("=".repeat(36) + " Output " + "=".repeat(36))
+          }
+        else
+        {
+          console.log("\t" + this.cmdString(command, flags, args))
         }
-        console.log("args:")
-        args.forEach(a => console.log("\t" + a))
-        console.log("command string:")
-        console.log("\t" + this.cmdString(command, flags, args))
-        console.log("options:", options)
-        console.log("=".repeat(36) + " Output " + "=".repeat(36))
       }
     }
 }

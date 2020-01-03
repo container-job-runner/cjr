@@ -11,5 +11,5 @@ import {cli_jobs_dir_name} from './constants'
 export abstract class JobCommand extends StackCommand
 {
   private const job_json = new JSONFile(
-    path.join(this.config.dataDir, cli_jobs_dir_name))
+    path.join(this.config.dataDir, cli_jobs_dir_name), true)
 }

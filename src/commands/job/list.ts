@@ -6,7 +6,8 @@ export default class List extends StackCommand {
   static description = 'list currently running jobs for a stack.'
   static args = []
   static flags = {
-    stack: flags.string({env: 'STACK', required: true}),
+    stack: flags.string({env: 'STACK', default: false}),
+    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     explicit: flags.boolean({default: false}),
     json: flags.boolean({default: false})
   }
@@ -14,7 +15,7 @@ export default class List extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(List)
+    const {argv, flags} = this.parse(List, true)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
     const results = runner.jobList(stack_path, flags['json'])

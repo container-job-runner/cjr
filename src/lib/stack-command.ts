@@ -50,7 +50,7 @@ export abstract class StackCommand extends Command
       const yml_path = projectSettingsYMLPath(hostRoot)
       if(FileTools.existsFile(yml_path))
       {
-          var stack_file = new YMLFile(false, ps_vo_validator)
+          var stack_file = new YMLFile(false, false, ps_vo_validator)
           var result = stack_file.validatedRead(yml_path)
           if(result.success) this.project_settings = result.data
       }

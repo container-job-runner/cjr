@@ -2,7 +2,7 @@ import * as path from 'path'
 import * as os from 'os'
 
 // flag message
-export const invalid_stack_flag_error = "specify stack flag --stack=stack"
+export const invalid_stack_flag_error = "specify stack flag --stack=stack or set environment variable STACK"
 
 // name of files and directories in cli settings directory
 export const cli_settings_yml_name = "settings"
