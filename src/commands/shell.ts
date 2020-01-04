@@ -21,12 +21,8 @@ export default class Shell extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
-    console.log(this.project_settings.configFiles)
-
     var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
-
-        console.log(configuration)
 
         if(hostRoot)
         {
