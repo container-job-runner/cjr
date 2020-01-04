@@ -1,7 +1,7 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/job-command'
 import {ShellCMD} from '../../lib/shellcmd'
-import {matchingResultIds} from '../../lib/drivers/run/functions'
+import {matchingResultIds} from '../../lib/functions/run-functions'
 
 export default class Copy extends JobCommand {
   static description = 'copy job results back into host directories'

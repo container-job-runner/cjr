@@ -1,10 +1,10 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/stack-command'
 import {ShellCMD} from '../../lib/shellcmd'
-import {matchingJobIds} from '../../lib/drivers/run/functions'
+import {matchingJobIds} from '../../lib/functions/run-functions'
 
 export default class Log extends StackCommand {
-  static description = 'print all output from a job.'
+  static description = 'print current output from a job.'
   static args = [{name: 'id', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

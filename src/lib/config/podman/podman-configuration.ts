@@ -1,5 +1,5 @@
 
-import {DockerConfiguration} from './docker-configuration'
+import {DockerConfiguration} from '../docker/docker-configuration'
 
 // Class for docker configuration
 export class PodmanConfiguration extends DockerConfiguration

@@ -1,8 +1,8 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/stack-command'
 import {ValidatedOutput} from '../../lib/validated-output'
-import {jobNametoID, IfBuiltAndLoaded} from '../../lib/drivers/run/functions'
-import {JUPYTER_JOB_NAME} from '../../lib/drivers/run/constants'
+import {jobNametoID, IfBuiltAndLoaded} from '../../lib/functions/run-functions'
+import {JUPYTER_JOB_NAME} from '../../lib/constants'
 import * as path from 'path'
 
 export default class Start extends StackCommand {

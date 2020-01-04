@@ -1,5 +1,5 @@
-import {DockerBuildDriver} from './docker-build-driver'
-import {PodmanConfiguration} from '../config/podman-configuration'
+import {DockerBuildDriver} from '../docker/docker-build-driver'
+import {PodmanConfiguration} from '../../config/podman/podman-configuration'
 
 export class PodmanBuildDriver extends DockerBuildDriver
 {

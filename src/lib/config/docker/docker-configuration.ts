@@ -2,9 +2,9 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import {ValidatedOutput} from '../../validated-output'
-import {Configuration} from './configuration'
-import {dc_ajv_validator} from './docker-configuration-schema'
-import {ajvValidatorToValidatedOutput} from '../../functions'
+import {Configuration} from '../abstract/configuration'
+import {dc_ajv_validator} from './schema/docker-configuration-schema'
+import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
 
 // Class for docker configuration
 export class DockerConfiguration extends Configuration

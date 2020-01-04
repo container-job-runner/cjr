@@ -1,7 +1,8 @@
 // Special Schema for podman RUN command that adds specific options for podman
 
 import * as Ajv from 'ajv'
-import {docker_configuration_schema} from '../../config/docker-configuration-schema'
+import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
+import {docker_configuration_schema} from '../../../config/docker/schema/docker-configuration-schema'
 
 export const podman_run_schema = {
   "$id": "docker-run.json",
@@ -34,3 +35,4 @@ export const podman_run_schema = {
 // create new Ajv validator for docker_run_schema
 var ajv = new Ajv({schemas: [podman_run_schema, docker_configuration_schema]})
 export const pr_ajv_validator = ajv.getSchema(podman_run_schema["$id"])
+export const pr_vo_validator  = (raw_object) => ajvValidatorToValidatedOutput(pr_ajv_validator, raw_object)

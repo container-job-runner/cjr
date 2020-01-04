@@ -1,7 +1,7 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/job-command'
 import {ShellCMD} from '../../lib/shellcmd'
-import {matchingResultIds} from '../../lib/drivers/run/functions'
+import {matchingResultIds} from '../../lib/functions/run-functions'
 
 export default class Remove extends JobCommand {
   static description = 'perminantly delete a result and all its associated data.'

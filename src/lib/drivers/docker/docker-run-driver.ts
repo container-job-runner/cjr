@@ -2,15 +2,15 @@
 // Settings: A class for getting and setting
 // ===========================================================================
 
-import {RunDriver} from './rundriver'
+import * as path from 'path'
 import {quote} from 'shell-quote'
+import {ValidatedOutput} from '../../validated-output'
+import {PathTools} from '../../fileio/path-tools'
+import {RunDriver} from '../abstract/rundriver'
 import {dr_ajv_validator} from './schema/docker-run-schema'
 import {de_ajv_validator} from './schema/docker-exec-schema'
 import {dj_ajv_validator} from './schema/docker-job-schema'
-import {ajvValidatorToValidatedOutput} from '../../functions'
-import {ValidatedOutput} from '../../validated-output'
-import {PathTools} from './path-tools'
-import * as path from 'path'
+import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
 
 export class DockerRunDriver extends RunDriver
 {

@@ -1,7 +1,7 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/job-command'
 import {ShellCMD} from '../../lib/shellcmd'
-import {matchingJobIds} from '../../lib/drivers/run/functions'
+import {matchingJobIds} from '../../lib/functions/run-functions'
 
 export default class Destroy extends JobCommand {
   static description = 'stop a job and destroy associated result.'

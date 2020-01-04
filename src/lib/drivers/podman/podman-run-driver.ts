@@ -1,10 +1,6 @@
-// ===========================================================================
-// Settings: A class for getting and setting
-// ===========================================================================
-
-import {DockerRunDriver} from './docker-run-driver'
-import {pr_ajv_validator} from './schema/podman-run-schema'
 import {quote} from 'shell-quote'
+import {DockerRunDriver} from '../docker/docker-run-driver'
+import {pr_ajv_validator} from './schema/podman-run-schema'
 
 export class PodmanRunDriver extends DockerRunDriver
 {

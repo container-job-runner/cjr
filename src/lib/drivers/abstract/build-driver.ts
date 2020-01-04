@@ -1,4 +1,4 @@
-import {ContainerDriver} from "../container-driver"
+import {ContainerDriver} from "./container-driver"
 
 export abstract class BuildDriver extends ContainerDriver
 {

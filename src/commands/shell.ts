@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/stack-command'
-import {containerWorkingDir, IfBuiltAndLoaded} from '../lib/drivers/run/functions'
+import {containerWorkingDir, IfBuiltAndLoaded} from '../lib/functions/run-functions'
 import * as path from 'path'
 
 export default class Shell extends StackCommand {

@@ -1,4 +1,4 @@
-import {DockerBuildDriver} from './docker-build-driver'
+import {DockerBuildDriver} from '../docker/docker-build-driver'
 
 export class BuildahBuildDriver extends DockerBuildDriver
 {

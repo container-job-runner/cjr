@@ -1,8 +1,8 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/stack-command'
 import {ValidatedOutput} from '../../lib/validated-output'
-import {jobNametoID} from '../../lib/drivers/run/functions'
-import {JUPYTER_JOB_NAME} from '../../lib/drivers/run/constants'
+import {jobNametoID} from '../../lib/functions/run-functions'
+import {JUPYTER_JOB_NAME} from '../../lib/constants'
 import * as path from 'path'
 
 export default class List extends StackCommand {

@@ -1,5 +1,5 @@
-import {BuildDriver} from './build-driver'
-import {ValidatedOutput} from '../../validated-output'
+import {BuildDriver} from '../drivers/abstract/build-driver'
+import {ValidatedOutput} from '../validated-output'
 
 export function buildIfNonExistant(builder: BuildDriver, stack_path: string, overloaded_config_paths: array<string>=[])
 {

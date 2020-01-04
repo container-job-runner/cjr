@@ -1,5 +1,6 @@
 import * as Ajv from 'ajv'
-import {docker_configuration_schema} from '../../config/docker-configuration-schema'
+import {docker_configuration_schema} from '../../../config/docker/schema/docker-configuration-schema'
+import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
 
 export const docker_run_schema = {
   "$id": "docker-run.json",

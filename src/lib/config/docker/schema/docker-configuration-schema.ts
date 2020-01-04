@@ -1,4 +1,5 @@
 import * as Ajv from 'ajv'
+import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
 
 export const docker_configuration_schema = {
   "$id": "docker-configuration-schema.json",
@@ -151,3 +152,4 @@ export const docker_configuration_schema = {
 // Ajv validator for validating schema
 const ajv = new Ajv({schemas: [docker_configuration_schema]})
 export const dc_ajv_validator = ajv.getSchema(docker_configuration_schema["$id"])
+export const dc_vo_validator  = (raw_object) => ajvValidatorToValidatedOutput(dc_ajv_validator, raw_object)

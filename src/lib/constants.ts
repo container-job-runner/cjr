@@ -32,3 +32,9 @@ export const defaultCLISettings = (settings_dir, cli_name) =>
       image_tag: cli_name
   }
 }
+
+// stack run options
+export const DefaultContainerRoot = "/"                                         // Note: though this choice may lead to collisions, it always works docker cp which does not create subfolders.
+
+// Jupyter options
+export const JUPYTER_JOB_NAME = (image_name) => `${image_name}_jupyter`.replace(/[^a-zA-Z0-9_.-]/g,"")
