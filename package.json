@@ -46,7 +46,7 @@
     ],
     "topics": {
       "config": {"description": "manage and view cli configuration"},
-      "stacks": {"description": "build images for a stack"},
+      "stack": {"description": "build images for a stack"},
       "job":   {"description": "start new jobs and manage existing ones"},
       "result": {"description": "manage results from completed jobs"},
       "jupyter": {"description": "start and stop jupyter lab and jupyter notebook"}
