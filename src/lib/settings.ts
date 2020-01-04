@@ -13,7 +13,6 @@ export class Settings
 {
 
   private config_name: string = cli_settings_yml_name;
-  private cli_name: string
   private static settings: object = undefined
   private JSON_file: JSONFile
   private defaults: object = {}
@@ -24,9 +23,8 @@ export class Settings
 
   constructor(settings_dir: string, cli_name:string = "cli")
   {
-    this.defaults = defaultCLISettings(settings_dir)
+    this.defaults = defaultCLISettings(settings_dir, cli_name)
     this.JSON_file = new JSONFile(settings_dir, true)
-    this.cli_name = cli_name;
   }
 
   set(field: string, value: any)
@@ -47,7 +45,7 @@ export class Settings
   private load()
   {
     var result = this.JSON_file.read(this.config_name)
-    this.settings = (result.success) ? result.data : this.defaults
+    this.settings = (result.success) ? {...this.defaults, ...result.data} : this.defaults
   }
 
 }

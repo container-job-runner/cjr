@@ -12,7 +12,7 @@ export const cli_jobs_dir_name = "jobs"
 export const projectSettingsYMLPath = (hostRoot: string) => path.join(hostRoot, ".cjr", "settings.yml")
 
 // default cli options that are stored in json file
-export const defaultCLISettings = (settings_dir) =>
+export const defaultCLISettings = (settings_dir, cli_name) =>
 {
   let cmd
   switch(os.platform())
@@ -29,6 +29,6 @@ export const defaultCLISettings = (settings_dir) =>
       stacks_path: path.join(settings_dir, "stacks"),
       build_cmd: cmd,
       run_cmd: cmd,
-      image_tag: this.cli_name
+      image_tag: cli_name
   }
 }

@@ -25,7 +25,7 @@ export default class Start extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
-    var result = IfBuiltAndLoaded(builder, flags, stack_path,
+    var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
 
         if(hostRoot) // similar to ssh add bind
