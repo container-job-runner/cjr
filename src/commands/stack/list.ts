@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/stack-command'
+import {StackCommand} from '../../lib/commands/stack-command'
 import * as fs from 'fs'
 
 export default class List extends StackCommand {

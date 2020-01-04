@@ -4,9 +4,9 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import {JSONFile} from './fileio/json-file'
+import {JSONFile} from '../fileio/json-file'
 import {StackCommand} from './stack-command'
-import {cli_jobs_dir_name} from './constants'
+import {cli_jobs_dir_name} from '../constants'
 
 export abstract class JobCommand extends StackCommand
 {

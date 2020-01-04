@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/stack-command'
+import {StackCommand} from '../../lib/commands/stack-command'
 import {ValidatedOutput} from '../../lib/validated-output'
 import {jobNametoID, IfBuiltAndLoaded} from '../../lib/functions/run-functions'
 import {JUPYTER_JOB_NAME} from '../../lib/constants'

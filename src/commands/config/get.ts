@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/stack-command'
+import {StackCommand} from '../../lib/commands/stack-command'
 
 export default class Get extends StackCommand {
   static description = 'get parameters'

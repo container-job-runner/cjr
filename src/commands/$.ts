@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {JobCommand} from '../lib/job-command'
+import {JobCommand} from '../lib/commands/job-command'
 import {containerWorkingDir, IfBuiltAndLoaded} from '../lib/functions/run-functions'
 
 export default class Run extends JobCommand {

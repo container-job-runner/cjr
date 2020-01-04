@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/stack-command'
+import {StackCommand} from '../../lib/commands/stack-command'
 import {cli_settings_yml_name} from '../../lib/constants'
 
 export default class List extends StackCommand {
