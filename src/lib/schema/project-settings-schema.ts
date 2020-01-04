@@ -1,5 +1,5 @@
 import * as Ajv from 'ajv'
-import {ajvValidatorToValidatedOutput} from '../functions'
+import {ajvValidatorToValidatedOutput} from '../functions/misc-functions'
 
 export const project_settings_schema = {
   "$id": "project-schema.json",
