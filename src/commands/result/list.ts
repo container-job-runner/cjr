@@ -7,6 +7,7 @@ export default class List extends StackCommand {
   static args = []
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),
+    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     explicit: flags.boolean({default: false}),
     json: flags.boolean({default: false})
   }
