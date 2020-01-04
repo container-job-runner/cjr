@@ -17,7 +17,7 @@ export default class Build extends StackCommand {
     const {argv, flags} = this.parse(Build, true)
     const builder = this.newBuilder(flags.explicit, flags.silent)
     const stack_path = this.fullStackPath(flags.stack)
-    const result = builder.build(stack_path, flags['nocache'])
+    const result = builder.build(stack_path, this.project_settings.configFiles, flags['nocache'])
     if(!result.success) this.handleErrors(result.error)
   }
 

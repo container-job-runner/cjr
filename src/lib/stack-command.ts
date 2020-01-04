@@ -52,7 +52,13 @@ export abstract class StackCommand extends Command
       {
           var stack_file = new YMLFile(false, false, ps_vo_validator)
           var result = stack_file.validatedRead(yml_path)
-          if(result.success) this.project_settings = result.data
+          if(result.success) this.project_settings = { ...{stack: false, configFiles: []}, ...result.data} // Move me to constants
+          // adjust any relative paths in settings file
+          if(this.project_settings?.configFiles) {
+               this.project_settings.configFiles = this.project_settings.configFiles.map(
+                 (path_str) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
+               )
+          }
       }
     }
   }

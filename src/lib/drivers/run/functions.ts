@@ -48,12 +48,12 @@ export function containerWorkingDir(cli_cwd:string, hroot: string, croot: string
 }
 
 // Used by dev:ssh and job:start. Calls onSucces with stack configration if stack is build and successuffly loaded
-export function IfBuiltAndLoaded(builder: BuildDriver, flags: object, stack_path: string, onSuccess: (configuration: Configuration, containerRoot: string, hostRoot: string) => void)
+export function IfBuiltAndLoaded(builder: BuildDriver, flags: object, stack_path: string, overloaded_config_paths: array<string>, onSuccess: (configuration: Configuration, containerRoot: string, hostRoot: string) => void)
 {
-  var result = buildIfNonExistant(builder, stack_path)
+  var result = buildIfNonExistant(builder, stack_path, overloaded_config_paths)
   if(result.success) // -- check that image was built
   {
-    result = builder.loadConfiguration(stack_path)
+    result = builder.loadConfiguration(stack_path, overloaded_config_paths)
     if(result.success) // -- check that configuration passed builder requirments
     {
       var configuration = result.data

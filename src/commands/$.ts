@@ -22,7 +22,7 @@ export default class Run extends JobCommand {
     const stack_path = this.fullStackPath(flags.stack)
     const command    = argv.join(" ");
 
-    var result = IfBuiltAndLoaded(builder, flags, stack_path,
+    var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
         if(hostRoot)
         {

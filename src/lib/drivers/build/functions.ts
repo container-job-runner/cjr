@@ -1,7 +1,7 @@
 import {BuildDriver} from './build-driver'
 import {ValidatedOutput} from '../../validated-output'
 
-export function buildIfNonExistant(builder: BuildDriver, stack_path: string)
+export function buildIfNonExistant(builder: BuildDriver, stack_path: string, overloaded_config_paths: array<string>=[])
 {
   if(builder.isBuilt(stack_path))
   {
@@ -9,7 +9,7 @@ export function buildIfNonExistant(builder: BuildDriver, stack_path: string)
   }
   else
   {
-    const result = builder.build(stack_path)
+    const result = builder.build(stack_path, overloaded_config_paths)
     if(result.success == true)
     {
         result.success = builder.isBuilt(stack_path)

@@ -22,7 +22,7 @@ export class DockerBuildDriver extends BuildDriver
       "FAILED_BUILD": "Stack directory does not exist or is not a directory."
     }
 
-    validate(stack_path: string)
+    validate(stack_path: string, overloaded_config_paths: array<string> = [])
     {
       var result = new ValidatedOutput();
       // check stack_path is a directory
@@ -38,7 +38,7 @@ export class DockerBuildDriver extends BuildDriver
       result.success = dir_exists && files_exist.every(x => x);
       if(result.success)
       {
-          result = this.loadConfiguration(stack_path);
+          result = this.loadConfiguration(stack_path, overloaded_config_paths);
       }
       return result
     }
@@ -58,9 +58,9 @@ export class DockerBuildDriver extends BuildDriver
       return (result.success && !isEmpty(result.data)) ? true : false
     }
 
-    build(stack_path: string, nocache:boolean = false)
+    build(stack_path: string, overloaded_config_paths: array<string> = [], nocache:boolean = false)
     {
-      var result = this.validate(stack_path)
+      var result = this.validate(stack_path, overloaded_config_paths)
       if(result.success)
       {
           const build_object = result.data.buildObject()
@@ -102,11 +102,11 @@ export class DockerBuildDriver extends BuildDriver
     // Load stack_path/config.yml and any additional config files. The settings in the last file in the array has highest priorty
     // silently ignores files if they are not present
 
-    loadConfiguration(stack_path: string, config_paths: array<string> = [])
+    loadConfiguration(stack_path: string, overloaded_config_paths: array<string> = [])
     {
-      config_paths.unshift(path.join(stack_path, "config.yml")) // always add stack config file first
+      overloaded_config_paths.unshift(path.join(stack_path, "config.yml")) // always add stack config file first
       var configuration = new this.configuration_constructor()
-      var result = config_paths.reduce(
+      var result = overloaded_config_paths.reduce(
         (result, path) => {
           if(result) result = this.loadConfigurationFile(path)
           if(result) configuration.merge(result.data)
