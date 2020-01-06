@@ -45,11 +45,11 @@
       "@oclif/plugin-help"
     ],
     "topics": {
-      "config": {"description": "manage and view cli configuration"},
-      "stack": {"description": "build images for a stack"},
-      "job":   {"description": "start new jobs and manage existing ones"},
-      "result": {"description": "manage results from completed jobs"},
-      "jupyter": {"description": "start and stop jupyter lab and jupyter notebook"}
+      "config": {"description": "Manage and view cli configuration."},
+      "stack": {"description": "Build list and and delete images for a stack."},
+      "job":   {"description": "Start new jobs and manage existing ones."},
+      "result": {"description": "Manage results from completed jobs."},
+      "jupyter": {"description": "Start and stop jupyter lab and jupyter notebook."}
     }
   },
   "repository": "/",

@@ -4,7 +4,7 @@ import {containerWorkingDir, IfBuiltAndLoaded} from '../lib/functions/run-functi
 import * as path from 'path'
 
 export default class Shell extends StackCommand {
-  static description = 'start an interactive shell for developing in stack container'
+  static description = 'Start an interactive shell for developing in stack container.'
   static args = []
   static flags = {
     explicit: flags.boolean({default: false}),

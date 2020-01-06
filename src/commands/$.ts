@@ -3,7 +3,7 @@ import {JobCommand} from '../lib/commands/job-command'
 import {containerWorkingDir, IfBuiltAndLoaded} from '../lib/functions/run-functions'
 
 export default class Run extends JobCommand {
-  static description = 'run a shell command as a new job'
+  static description = 'Run a shell command as a new job.'
   static args = [{name: 'command', required: true}]
   static flags = {
     explicit: flags.boolean({default: false}),
