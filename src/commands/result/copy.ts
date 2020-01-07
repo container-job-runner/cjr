@@ -28,13 +28,10 @@ export default class Copy extends JobCommand {
     if(result.success)
     {
       const id = result.data[0] // only process single result
-      const job_object = this.job_json.read(id)
-      if(job_object === {})
+      result = this.job_json.read(id)
+      if(result.success)
       {
-        result = new ValidatedObject(false, undefined, ["Job data could not be parsed"])
-      }
-      else
-      {
+        const job_object = result.data
         result = runner.resultCopy(id, job_object, flags["all"])
       }
     }

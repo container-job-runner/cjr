@@ -223,7 +223,7 @@ export class DockerRunDriver extends RunDriver
 
   resultCopy(id: string, job_object: object, copy_all: boolean = false)
   {
-    if(ajv_validate_job_object(job_object))
+    if(dj_ajv_validator(job_object))
     {
       // Move Me Outiuse - all implementations may need this
       const hostRoot = job_object?.hostRoot
@@ -257,7 +257,7 @@ export class DockerRunDriver extends RunDriver
       return new ValidatedOutput(true)
 
     }
-    return ValidatedOutput(false, undefined, ["job_options object did not pass validation."])
+    return new ValidatedOutput(false, undefined, ["job_options object did not pass validation."])
   }
 
   imageName(stack_path: string)
