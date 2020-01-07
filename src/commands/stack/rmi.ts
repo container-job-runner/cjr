@@ -2,7 +2,7 @@ import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 
 export default class Build extends StackCommand {
-  static description = 'delete an image'
+  static description = 'Delete an image associated with a stack.'
   static args = []
   static flags = {
     stack:    flags.string({env: 'STACK', default: false}),

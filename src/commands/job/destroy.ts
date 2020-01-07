@@ -4,7 +4,7 @@ import {ShellCMD} from '../../lib/shellcmd'
 import {matchingJobIds} from '../../lib/functions/run-functions'
 
 export default class Destroy extends JobCommand {
-  static description = 'stop a job and destroy associated result.'
+  static description = 'Stop a job and destroy the associated result.'
   static args = [{name: 'id'}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

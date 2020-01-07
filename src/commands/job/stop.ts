@@ -4,7 +4,7 @@ import {ShellCMD} from '../../lib/shellcmd'
 import {matchingJobIds} from '../../lib/functions/run-functions'
 
 export default class Stop extends StackCommand {
-  static description = 'stop a running job and turn it into a result.'
+  static description = 'Stop a running job and turn it into a result.'
   static args = [{name: 'id'}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

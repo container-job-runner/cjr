@@ -3,7 +3,7 @@ import {StackCommand} from '../../lib/commands/stack-command'
 import {ShellCMD} from '../../lib/shellcmd'
 
 export default class List extends StackCommand {
-  static description = 'list currently running jobs for a stack.'
+  static description = 'List all running jobs for a stack.'
   static args = []
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

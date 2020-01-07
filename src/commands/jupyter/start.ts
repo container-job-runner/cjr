@@ -6,7 +6,7 @@ import {JUPYTER_JOB_NAME} from '../../lib/constants'
 import * as path from 'path'
 
 export default class Start extends StackCommand {
-  static description = 'start jupiter server for stack'
+  static description = 'Start Jupyter server for a stack.'
   static args = []
   static flags = {
     explicit: flags.boolean({default: false}),

@@ -4,7 +4,7 @@ import {ShellCMD} from '../../lib/shellcmd'
 import {matchingResultIds} from '../../lib/functions/run-functions'
 
 export default class Copy extends JobCommand {
-  static description = 'copy job results back into host directories'
+  static description = 'Copy job results back into the host directories.'
   static args = [{name: 'id', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

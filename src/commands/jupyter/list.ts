@@ -6,7 +6,7 @@ import {JUPYTER_JOB_NAME} from '../../lib/constants'
 import * as path from 'path'
 
 export default class List extends StackCommand {
-  static description = 'list address of running jupiter servers for stack'
+  static description = 'List the url of any running jupiter servers for stack.'
   static args = []
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

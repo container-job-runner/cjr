@@ -4,7 +4,7 @@ import {ShellCMD} from '../../lib/shellcmd'
 import {matchingResultIds} from '../../lib/functions/run-functions'
 
 export default class Remove extends JobCommand {
-  static description = 'perminantly delete a result and all its associated data.'
+  static description = 'Permanently delete a result and all its associated data.'
   static args = [{name: 'id'}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

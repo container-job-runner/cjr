@@ -4,7 +4,7 @@ import {ShellCMD} from '../../lib/shellcmd'
 import {matchingJobIds} from '../../lib/functions/run-functions'
 
 export default class Exec extends StackCommand {
-  static description = 'attach back to the shell that is running a job.'
+  static description = 'Execute a command inside the container that is running a job.'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

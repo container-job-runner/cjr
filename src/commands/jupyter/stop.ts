@@ -6,7 +6,7 @@ import {JUPYTER_JOB_NAME} from '../../lib/constants'
 import * as path from 'path'
 
 export default class Stop extends StackCommand {
-  static description = 'stop jupiter server for stack'
+  static description = 'Stop the Jupyter server for stack.'
   static args = []
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),

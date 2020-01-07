@@ -2,7 +2,7 @@ import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 
 export default class Set extends StackCommand {
-  static description = 'set parameters'
+  static description = 'Set a CLI parameter.'
   static args = [{name: 'key'}, {name: 'value'}]
   static strict = true;
 

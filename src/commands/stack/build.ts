@@ -2,7 +2,7 @@ import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 
 export default class Build extends StackCommand {
-  static description = 'build an image'
+  static description = 'Build an image cooresponding to a stack.'
   static args = []
   static flags = {
     stack:    flags.string({env: 'STACK', default: false}),

@@ -3,7 +3,7 @@ import {StackCommand} from '../../lib/commands/stack-command'
 import * as fs from 'fs'
 
 export default class List extends StackCommand {
-  static description = 'list stacks in stack path.'
+  static description = 'List all stacks present in the stacks path.'
   static args = []
   static flags = {
     stacks_path: flags.boolean({default: false})
