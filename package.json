@@ -45,11 +45,12 @@
       "@oclif/plugin-help"
     ],
     "topics": {
-      "config": {"description": "Manage and view cli configuration."},
+      "config": {"description": "View and change the cli configuration."},
       "stack": {"description": "Build, list, and delete images cooresponding to a stack."},
       "job":   {"description": "View and manage running jobs."},
       "result": {"description": "View and manage results from completed jobs."},
-      "jupyter": {"description": "Start and stop jupyter lab and jupyter notebook."}
+      "jupyter": {"description": "Start and stop Jupyter lab and Jupyter notebook."},
+      "help": {"description": "Display help for cjr."}
     }
   },
   "repository": "/",

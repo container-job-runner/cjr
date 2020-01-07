@@ -3,7 +3,7 @@ import {StackCommand} from '../../lib/commands/stack-command'
 import {cli_settings_yml_name} from '../../lib/constants'
 
 export default class List extends StackCommand {
-  static description = 'List all CLI parameters.'
+  static description = 'List all CLI parameters and data directories.'
   static strict = true;
 
   async run() {
