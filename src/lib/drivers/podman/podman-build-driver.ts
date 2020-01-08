@@ -4,6 +4,7 @@ import {PodmanConfiguration} from '../../config/podman/podman-configuration'
 export class PodmanBuildDriver extends DockerBuildDriver
 {
     private base_command = 'podman'
+    private json_output_format = "json"
     private configuration_constructor = PodmanConfiguration // pointer to configuration class constructor
 
     private addJSONFormatFlag(flags)

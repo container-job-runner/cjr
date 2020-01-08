@@ -15,6 +15,7 @@ export class DockerBuildDriver extends BuildDriver
       remove: "rmi"
     }
     private configuration_constructor = DockerConfiguration // pointer to configuration class constructor
+    private json_output_format = "line_json"
 
     private ERRORSTR = {
       "MISSING_DOCKERFILE": (dir) => `No Dockerfile found in stack directory:\n\t${dir}`,
@@ -51,7 +52,7 @@ export class DockerBuildDriver extends BuildDriver
         filter: {shorthand: false, value: `reference=${this.imageName(stack_path)}`}
       }
       flags = this.addJSONFormatFlag(flags);
-      var result = this.shell.output(command, flags, args, {}, "json")
+      var result = this.shell.output(command, flags, args, {}, this.json_output_format)
       var isEmpty = obj => ((typeof obj === 'string') && (obj === "")) ||
         ((obj instanceof Array) && (obj.length == 0)) ||
         ((obj instanceof Object) && (Object.entries(obj).length === 0))
