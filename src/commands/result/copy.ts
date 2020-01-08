@@ -16,15 +16,12 @@ export default class Copy extends JobCommand {
   async run()
   {
     const {argv, flags} = this.parse(Copy)
-    const runner  = this.newRunner(
-      this.settings.get("run_cmd"),
-      new ShellCMD(flags['explicit'], false),
-      this.settings.get("image_tag"))
+    const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
     var id = argv[0]
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
     // match with existing container ids
-    var result = matchingResultIds(runner, stack_path, id, flags['all'])
+    var result = matchingResultIds(runner, stack_path, id)
     if(result.success)
     {
       const id = result.data[0] // only process single result

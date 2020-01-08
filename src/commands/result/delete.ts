@@ -16,10 +16,7 @@ export default class Remove extends JobCommand {
   async run()
   {
     const {argv, flags} = this.parse(Remove)
-    const runner  = this.newRunner(
-      this.settings.get("run_cmd"),
-      new ShellCMD(flags['explicit'], false),
-      this.settings.get("image_tag"))
+    const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
     var id = argv[0] || "" // allow for empty if all is selected
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
