@@ -32,7 +32,7 @@ export default class Copy extends JobCommand {
         result = runner.resultCopy(id, job_object, flags["all"])
       }
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

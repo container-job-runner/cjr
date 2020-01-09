@@ -92,7 +92,7 @@ export default class Shell extends JobCommand {
         if(new_job_id) runner.jobAttach(new_job_id)
       }
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

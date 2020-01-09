@@ -43,7 +43,7 @@ export default class Shell extends StackCommand {
 
         return runner.jobStart(stack_path, job_object, configuration.runObject())
       })
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result);
   }
 
 }

@@ -57,7 +57,7 @@ export default class Start extends StackCommand {
         }
 
       })
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

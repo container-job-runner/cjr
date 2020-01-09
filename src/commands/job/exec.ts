@@ -31,7 +31,7 @@ export default class Exec extends StackCommand {
         }
         runner.jobExec(result.data[0], command, exec_object)
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

@@ -27,7 +27,7 @@ export default class Stop extends StackCommand {
         result.data.map(x => console.log(` Stopping ${x}`))
         runner.jobStop(result.data)
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

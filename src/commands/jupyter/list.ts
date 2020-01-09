@@ -36,7 +36,7 @@ export default class List extends StackCommand {
       runner.jobExec([jupiter_id], 'jupyter notebook list', {})
     }
 
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

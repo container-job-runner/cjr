@@ -36,7 +36,7 @@ export default class Stop extends StackCommand {
       runner.jobStop([jupiter_id])
     }
 
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

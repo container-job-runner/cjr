@@ -28,7 +28,7 @@ export default class Remove extends JobCommand {
         result.data.map(x => this.job_json.delete(x))
         result.data.map(x => console.log(` Deleting ${x}`))
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

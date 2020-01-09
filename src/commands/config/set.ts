@@ -13,6 +13,6 @@ export default class Set extends StackCommand {
     const value  = args['value']
     var result = this.settings.set(key, value)
     if(result.success) this.log(chalk`{italic ${key}} -> ${value}`)
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 }

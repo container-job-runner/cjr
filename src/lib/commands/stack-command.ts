@@ -112,9 +112,4 @@ export abstract class StackCommand extends Command
     result.error.forEach( e => this.log(chalk`{bold.red ERROR}: ${e}`))
   }
 
-  handleErrors(errors: array<string>)
-  {
-    errors.forEach( e => this.log(`ERROR: ${e}`))
-  }
-
 }

@@ -28,7 +28,7 @@ export default class Destroy extends JobCommand {
         result.data.map(x => this.job_json.delete(x))
         result.data.map(x => console.log(` Stopping ${x} and destroying results.`))
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

@@ -14,10 +14,10 @@ export default class Build extends StackCommand {
   async run()
   {
     const {argv, flags} = this.parse(Build, true)
-    const builder  = this.newBuilder(flags.explicit, flags.silent)
+    const builder = this.newBuilder(flags.explicit, flags.silent)
     const stack_path = this.fullStackPath(flags.stack)
     const result = builder.removeImage(stack_path)
-    if(!result.success) this.handleErrors(result.error)
+    this.handleFinalOutput(result)
   }
 
 }

@@ -25,7 +25,7 @@ export default class Attach extends StackCommand {
     {
         runner.jobAttach(result.data[0])
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }

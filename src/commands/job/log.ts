@@ -25,7 +25,7 @@ export default class Log extends StackCommand {
     {
         runner.jobLog(result.data[0])
     }
-    this.handleErrors(result.error);
+    this.handleFinalOutput(result)
   }
 
 }
