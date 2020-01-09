@@ -258,6 +258,34 @@ export class DockerRunDriver extends RunDriver
     return new ValidatedOutput(false, undefined, ["job_options object did not pass validation."])
   }
 
+  // Depricated: result shell was implemented by
+  // > commiting the job (an exited container) to an image
+  // > start a new container with bash using the same name using commited image
+  // resultShell(id: string)
+  // {
+  //   const image_name = this.imageName(`result-${id}`)
+  //   this.commit(id, image_name, {jobid: id})
+  //   //this.delete(id)
+  //   const command = `${this.base_command} ${this.sub_commands["run"]}`
+  //   const args = `${image_name} bash`
+  //   const flags = {
+  //     'name:': {shorthand: false, id}
+  //   }
+  //   this.shell.sync(command, args, flags, {stdio: "inherit"})
+  // }
+  //
+  // private commit(id: string, image_name: string, labels: object={}) // image name including optional tag
+  // {
+  //   const command = `${this.base_command} commit`
+  //   const args  = [id, image_name]
+  //   const flags = (labels === {}) ? {} : {
+  //     "change": {
+  //       shorthand: false,
+  //       value: Object.keys(labels).map(k => `LABEL ${k}=${labels[k]}`)}
+  //   }
+  //   return this.shell.sync(command, flags, args, {stdio: "pipe"})
+  // }
+
   imageName(stack_path: string)
   {
     return super.imageName(stack_path).toLowerCase() // Docker only accepts lowercase image names
