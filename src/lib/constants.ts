@@ -7,6 +7,8 @@ export const invalid_stack_flag_error = "specify stack flag --stack=stack or set
 // name of files and directories in cli settings directory
 export const cli_settings_yml_name = "settings"
 export const cli_jobs_dir_name = "jobs"
+// name of folders in data directory
+export const cli_storage_dir_name = "storage" // temporaries stores data between container transfer 
 
 // name of optional project settings file that is loaded relative to project hostRoot
 export const projectSettingsYMLPath = (hostRoot: string) => path.join(hostRoot, ".cjr", "settings.yml")
