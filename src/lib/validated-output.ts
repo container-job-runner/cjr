@@ -1,18 +1,25 @@
 export class ValidatedOutput
 {
     success: boolean
-    data:  object
+    data: object
     error: array<string>
+    warning: array<string>
 
-    constructor(success: boolean, data: object = null, error: array<string> = [])
+    constructor(success: boolean, data: object = null, error: array<string> = [], warning: array<string> = [])
     {
       this.success = success;
       this.data = data;
       this.error = error;
+      this.warning = warning;
     }
 
     pushError(message: string)
     {
       this.error.push(message)
+    }
+
+    pushWarning(message: string)
+    {
+      this.warning.push(message)
     }
 }

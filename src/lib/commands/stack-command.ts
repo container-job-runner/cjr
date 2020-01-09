@@ -5,6 +5,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import Command from '@oclif/command'
+import * as chalk from 'chalk'
 import {Settings} from '../settings'
 import {DockerBuildDriver} from '../drivers/docker/docker-build-driver'
 import {PodmanBuildDriver} from '../drivers/podman/podman-build-driver'
@@ -103,6 +104,12 @@ export abstract class StackCommand extends Command
           return new PodmanRunDriver(shell, tag);
         }
     }
+  }
+
+  handleFinalOutput(result: ValidatedOutput)
+  {
+    result.warning.forEach( e => this.log(chalk`{bold.yellow WARNING}: ${e}`))
+    result.error.forEach( e => this.log(chalk`{bold.red ERROR}: ${e}`))
   }
 
   handleErrors(errors: array<string>)
