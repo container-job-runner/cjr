@@ -12,6 +12,7 @@
     "@oclif/config": "^1.13.3",
     "@oclif/plugin-help": "^2.2.3",
     "ajv": "^6.10.2",
+    "fs-extra": "^8.1.0",
     "js-yaml": "^3.13.1",
     "shell-quote": "^1.7.2",
     "tslib": "^1.10.0"
@@ -45,12 +46,24 @@
       "@oclif/plugin-help"
     ],
     "topics": {
-      "config": {"description": "View and change the cli configuration."},
-      "stack": {"description": "Build, list, and delete images cooresponding to a stack."},
-      "job":   {"description": "View and manage running jobs."},
-      "result": {"description": "View and manage results from completed jobs."},
-      "jupyter": {"description": "Start and stop Jupyter lab and Jupyter notebook."},
-      "help": {"description": "Display help for cjr."}
+      "config": {
+        "description": "View and change the cli configuration."
+      },
+      "stack": {
+        "description": "Build, list, and delete images cooresponding to a stack."
+      },
+      "job": {
+        "description": "View and manage running jobs."
+      },
+      "result": {
+        "description": "View and manage results from completed jobs."
+      },
+      "jupyter": {
+        "description": "Start and stop Jupyter lab and Jupyter notebook."
+      },
+      "help": {
+        "description": "Display help for cjr."
+      }
     }
   },
   "repository": "/",
