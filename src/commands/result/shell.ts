@@ -85,7 +85,6 @@ export default class Shell extends JobCommand {
             })
         }
         // 5. remove temp dir --------------------------------------------------
-        console.log(tmp_storage_path)
         if(old_job_object.hostRoot && tmp_storage_path != "/") {
             fs.removeSync(tmp_storage_path)
         }
