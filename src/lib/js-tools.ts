@@ -25,6 +25,11 @@ export class JSTools
     }
   }
 
+  static rCopy(a)
+  {
+    return JSTools.rMerge({}, a)
+  }
+
   static isObject(val) {
       return val instanceof Object;
   }
