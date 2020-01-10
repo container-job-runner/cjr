@@ -84,6 +84,10 @@ export abstract class StackCommand extends Command
         {
             return new BuildahBuildDriver(shell, tag);
         }
+        default:
+        {
+          this.error("invalid build command")
+        }
     }
   }
 
@@ -102,6 +106,10 @@ export abstract class StackCommand extends Command
         case "podman":
         {
           return new PodmanRunDriver(shell, tag);
+        }
+        default:
+        {
+          this.error("invalid run command")
         }
     }
   }
