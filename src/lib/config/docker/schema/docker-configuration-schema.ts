@@ -92,9 +92,8 @@ export const docker_configuration_schema = {
           "type": "string",
           "pattern": "^(volume)$"
         },
-        "consistency": {
-          "type": "string",
-          "pattern": "^(consistent)|(delegated)|(cached)$"
+        "readonly": {
+          "type": "boolean"
         }
       },
       "required": [

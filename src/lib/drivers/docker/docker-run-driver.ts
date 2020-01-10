@@ -398,9 +398,9 @@ export class DockerRunDriver extends RunDriver
     switch(mo.type)
     {
       case "bind":
-        return `type=${mo.type},destination=${quote([mo.containerPath])},source=${mo.hostPath}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
-      case "molume":
-        return `type=${mo.type},destination=${quote([mo.molumeName])},source=${mo.hostPath}${(mo.readonly) ? ",readonly" : ""}`
+        return `type=${mo.type},source=${mo.hostPath},destination=${quote([mo.containerPath])}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
+      case "volume":
+        return `type=${mo.type},source=${mo.volumeName},destination=${quote([mo.containerPath])}${(mo.readonly) ? ",readonly" : ""}`
       case "tmpfs":
         return `type=${mo.type},destination=${quote([mo.containerPath])}`
     }
