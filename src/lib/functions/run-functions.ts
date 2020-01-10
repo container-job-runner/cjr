@@ -29,13 +29,22 @@ export function matchingResultIds(runner: RunDriver, stack_path: string, id: str
   return matchingIds(runner.resultInfo(image_name).map(x => x.id), stack_path, id, all)
 }
 
-// determines if job with given name exists
+// determines if job with given name exists. Refactor with resultNameId
 export function jobNametoID(runner: RunDriver, stack_path: string, name: string)
 {
   const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
   const job_info   = runner.jobInfo(image_name)
   const index      = job_info.map(x => x.names).indexOf(name)
   return (index == -1) ? false : job_info[index].id
+}
+
+// determines if result with given name exists
+export function resultNametoID(runner: RunDriver, stack_path: string, name: string)
+{
+  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
+  const result_info   = runner.resultInfo(image_name)
+  const index      = result_info.map(x => x.names).indexOf(name)
+  return (index == -1) ? false : result_info[index].id
 }
 
 // Get Working for container given CLI Path, hostRoot and Container ROot
