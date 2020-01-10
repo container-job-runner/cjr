@@ -17,17 +17,17 @@ export class DockerConfiguration extends Configuration
     return ajvValidatorToValidatedOutput(dc_ajv_validator, raw_object);
   }
 
-  getHostRoot(value: string)
+  getHostRoot()
   {
       return this.raw_object?.files?.hostRoot
   }
 
-  getContainerRoot(value: string)
+  getContainerRoot()
   {
       return this.raw_object?.files?.containerRoot
   }
 
-  getResultPaths(value: string)
+  getResultPaths()
   {
       return this.raw_object?.files?.resultPaths
   }
