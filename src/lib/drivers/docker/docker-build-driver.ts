@@ -69,11 +69,11 @@ export class DockerBuildDriver extends BuildDriver
           const args = [build_object?.context || '.']
           var   flags = {
             "t": {value: this.imageName(stack_path), shorthand: true},
-            "f": {value: path.join(stack_path, build_object.dockerfile || 'Dockerfile'), shorthand: true}
+            "f": {value: path.join(build_object.dockerfile || 'Dockerfile'), shorthand: true}
           }
           if(build_object["no_cache"] || nocache) flags["no-cache"] = {shorthand: false}
           this.argFlags(flags, build_object)
-          result.output = this.shell.sync(command, flags, args, {cwd: stack_path})
+          result.data = this.shell.sync(command, flags, args, {cwd: stack_path})
       }
       return result;
     }
