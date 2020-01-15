@@ -47,8 +47,15 @@ export class ShellCMD
       this.printCMD(command, flags, args, true, options);
       var child_process = spawnSync(this.cmdString(command, flags, args), [], options)
       var result = new ValidatedOutput();
-      result.success = child_process.status == 0;
-      result.data = child_process?.stdout?.toString('ascii')
+
+      if(child_process.status == 0) {
+        result.success = true;
+        result.data = child_process?.stdout?.toString('ascii')
+      }
+      else if(child_process.status != 0) {
+        result.pushError(child_process?.stderr?.toString('ascii'))
+      }
+
       if(result.success && format === "json")
       {
         try
