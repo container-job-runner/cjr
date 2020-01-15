@@ -11,10 +11,7 @@ export abstract class Configuration
 
   setRawObject(value: object, parent_path: string) {
     const result = this.validate(value)
-    if(result.success) {
-        this.raw_object = value
-        if(parent_path) this.replaceRelativePaths(parent_path)
-    }
+    if(result.success) this.raw_object = value
     return result
   }
 
