@@ -5,10 +5,21 @@ import {ValidatedOutput} from '../../validated-output'
 import {Configuration} from '../abstract/configuration'
 import {dc_ajv_validator} from './schema/docker-configuration-schema'
 import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
+import {FileTools} from '../../fileio/file-tools'
+import {ErrorStrings} from '../../error-strings'
 
 // Class for docker configuration
 export class DockerConfiguration extends Configuration
 {
+
+  setRawObject(value: object, parent_path: string) {
+    var result = super.setRawObject(value)
+    if(result.success) {
+        if(parent_path) this.replaceRelativePaths(parent_path)
+        this.validateBindMounts(result)
+    }
+    return result
+  }
 
   private working_directory
 
@@ -35,8 +46,7 @@ export class DockerConfiguration extends Configuration
   addBind(hostPath: string, containerPath: string, verify_host_path: boolean=true)
   {
       // verify host path Exists before adding
-      const existsDir = path_str => fs.existsSync(path_str) && fs.lstatSync(path_str).isDirectory()
-      if(verify_host_path && !existsDir(hostPath)) return false
+      if(verify_host_path && !FileTools.existsDir(hostPath)) return false
       if(!(this.raw_object?.mounts)) this.raw_object.mounts = [];
       this.raw_object.mounts.push({type: "bind", hostPath: hostPath, containerPath: containerPath})
       return true;
@@ -87,6 +97,14 @@ export class DockerConfiguration extends Configuration
         this.raw_object.files.hostRoot = path.join(parent_path, hostRoot)
       }
     }
+  }
+
+  private validateBindMounts(result: ValidatedOutput)
+  {
+    this.raw_object?.mounts?.map(b => {
+      if(b.type === "bind" && !FileTools.existsDir(b.hostPath))
+        result.pushError(ErrorStrings.CONFIG.NON_EXISTANT_BIND_HOSTPATH(b.hostPath))
+    })
   }
 
 }
