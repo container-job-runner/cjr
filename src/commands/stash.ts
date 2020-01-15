@@ -4,7 +4,7 @@ import {containerWorkingDir, IfBuiltAndLoaded} from '../lib/functions/run-functi
 import * as chalk from 'chalk'
 
 export default class Run extends JobCommand {
-  static description = 'Save current files as a result.'
+  static description = 'Save current project state as a result.'
   static flags = {
     explicit: flags.boolean({default: false}),
     stack: flags.string({env: 'STACK', default: false}),
