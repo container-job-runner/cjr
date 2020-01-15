@@ -109,8 +109,8 @@ export class DockerBuildDriver extends BuildDriver
       var configuration = new this.configuration_constructor()
       var result = overloaded_config_paths.reduce(
         (result, path) => {
-          if(result) result = this.loadConfigurationFile(path)
-          if(result) configuration.merge(result.data)
+          if(result.success) result = this.loadConfigurationFile(path)
+          if(result.success) configuration.merge(result.data)
           return result
         },
         new ValidatedOutput(true)
