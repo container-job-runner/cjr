@@ -16,6 +16,7 @@ export class ValidatedOutput
     pushError(message: string)
     {
       this.error.push(message)
+      this.success = false;
     }
 
     pushWarning(message: string)
