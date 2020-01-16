@@ -61,7 +61,7 @@ export class DockerRunDriver extends RunDriver
         const args = [container_id]
         if(job_options.synchronous) // run attached if specified
         {
-          var flags = {attach: {shorthand: false}}
+          var flags = {attach: {shorthand: false}, interactive: {shorthand: false}}
           var shell_options = {stdio: "inherit"}
         }
         else // by default run detached
@@ -197,7 +197,7 @@ export class DockerRunDriver extends RunDriver
     var   flags = {
       "a" : {shorthand: true},
       "filter": {
-        value: [`ancestor=${this.imageName(stack_path)}`, 'status=stopped'],
+        value: [`ancestor=${this.imageName(stack_path)}`, 'status=exited'],
         shorthand: false}
     }
     if(json_format) this.addFormatFlags(flags, {format: "json"})

@@ -15,6 +15,20 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
+  resultList(stack_path: string, json_format:boolean = false)
+  {
+    const command = `${this.base_command} ${this.sub_commands["list"]}`;
+    const args = []
+    var   flags = {
+      "a" : {shorthand: true},
+      "filter": {
+        value: [`ancestor=${this.imageName(stack_path)}`, 'status=exited' 'status=stopped'],
+        shorthand: false}
+    }
+    if(json_format) this.addFormatFlags(flags, {format: "json"})
+    return this.shell.sync(command, flags, args)
+  }
+
   private mountObjectToFlagStr(mo)
   {
     switch(mo.type)
