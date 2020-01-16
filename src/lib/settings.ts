@@ -8,6 +8,7 @@ import * as path from 'path'
 import {JSONFile} from './fileio/json-file'
 import {ValidatedOutput} from './validated-output'
 import {cli_settings_yml_name, defaultCLISettings} from './constants'
+import {ErrorStrings} from './error-strings'
 
 export class Settings
 {
@@ -16,10 +17,6 @@ export class Settings
   private static settings: object = undefined
   private JSON_file: JSONFile
   private defaults: object = {}
-
-  private ERRORSTRS = {
-    "InvalidField" : "Invalid Settings Property"
-  }
 
   constructor(settings_dir: string, cli_name:string = "cli")
   {
@@ -31,7 +28,7 @@ export class Settings
   {
     if(this.settings === undefined) this.load();
     if(Object.keys(this.defaults).includes(field) == false)
-      return new ValidatedOutput(false, [], [this.ERRORSTRS["InvalidField"]]);
+      return new ValidatedOutput(false, [], [ErrorStrings.CLI_SETTINGS.INVALID_FIELD(field)]);
     this.settings[field] = value
     return this.JSON_file.write(this.config_name, this.settings)
   }

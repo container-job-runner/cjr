@@ -1,6 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
+import * as chalk from 'chalk'
 import {BuildDriver} from '../abstract/build-driver'
 import {ValidatedOutput} from '../../validated-output'
 import {DockerConfiguration} from '../../config/docker/docker-configuration'
@@ -17,10 +18,10 @@ export class DockerBuildDriver extends BuildDriver
     private configuration_constructor = DockerConfiguration // pointer to configuration class constructor
     private json_output_format = "line_json"
 
-    private ERRORSTR = {
-      "MISSING_DOCKERFILE": (dir) => `No Dockerfile found in stack directory:\n\t${dir}`,
-      "MISSING_STACKDIR": (dir) => `Stack directory does not exist:\n\t${dir}`,
-      "FAILED_BUILD": "Stack directory does not exist or is not a directory."
+    private ERRORSTRINGS = {
+      "MISSING_DOCKERFILE": (dir) => chalk`{bold Stack is Missing Dockerfile.}\n  {italic path:} ${dir}`,
+      "MISSING_STACKDIR": (dir) => chalk`{bold Nonexistant Stack.}\n  {italic path:} ${dir}`,
+      "YML_ERROR": (path, error) => chalk`{bold Unable to Parse YML.}\n  {italic  path:} ${path}\n  {italic error:} ${error}`
     }
 
     validate(stack_path: string, overloaded_config_paths: array<string> = [])
@@ -28,13 +29,13 @@ export class DockerBuildDriver extends BuildDriver
       var result = new ValidatedOutput();
       // check stack_path is a directory
       const dir_exists = FileTools.existsDir(stack_path)
-      if(!dir_exists) result.pushError(this.ERRORSTR["MISSING_STACKDIR"](stack_path))
+      if(!dir_exists) result.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path))
       // check that required files are present
       const required_files = ['Dockerfile'];
       const files_exist = required_files.map(
         file => fs.existsSync(path.join(stack_path, file))
       )
-      if(!files_exist[0]) result.pushError(this.ERRORSTR["MISSING_DOCKERFILE"](stack_path))
+      if(!files_exist[0]) result.pushError(this.ERRORSTRINGS["MISSING_DOCKERFILE"](stack_path))
       // set results valid flag
       result.success = dir_exists && files_exist.every(x => x);
       if(result.success)
@@ -132,7 +133,7 @@ export class DockerBuildDriver extends BuildDriver
           }
           catch (error)
           {
-            return new ValidatedOutput(false, null, [`Unable to parse yml in ${file_path}.\n${error}`])
+            return new ValidatedOutput(false, null, [this.ERRORSTRINGS.YML_ERROR(file_path, error)])
           }
         }
 

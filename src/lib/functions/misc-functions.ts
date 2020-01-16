@@ -1,10 +1,11 @@
 import {ValidatedOutput} from '../validated-output'
+import {ErrorStrings} from '../error-strings'
 
 export function ajvValidatorToValidatedOutput(ajv_validator, raw_object)
 {
   return (ajv_validator(raw_object)) ? new ValidatedOutput(true, raw_object) :
     new ValidatedOutput(false, undefined,
-      [`Invalid Yml.\n\t${ajv_validator.errors.map(x => x.message).join("\n\t")}`]
+      [ErrorStrings.YML.INVALID(ajv_validator.errors.map(x => x.message).join("\n"))]
     )
 }
 

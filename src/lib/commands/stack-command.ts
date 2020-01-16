@@ -58,7 +58,7 @@ export abstract class StackCommand extends Command
           if(read_result.success) {
             this.project_settings = { ...default_settings_object, ...read_result.data}
           } else {
-            result.pushWarning(WarningStrings.SETTINGS.IGNORED_YML(yml_path))
+            result.pushWarning(WarningStrings.PROJECTSETTINGS.INVALID_YML(yml_path))
           }
 
           if(this.project_settings?.configFiles) {
@@ -69,7 +69,7 @@ export abstract class StackCommand extends Command
                // remove nonexistant configuration files
                this.project_settings.configFiles = this.project_settings.configFiles.filter(path => {
                  let config_exists = FileTools.existsFile(path)
-                 if(!config_exists) result.pushWarning(WarningStrings.SETTINGS.MISSING_CONFIG_FILE(yml_path, path))
+                 if(!config_exists) result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(yml_path, path))
                  return config_exists
                })
           }

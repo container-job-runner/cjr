@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import * as path from 'path'
+import * as chalk from 'chalk'
 import {quote} from 'shell-quote'
 import {ValidatedOutput} from '../../validated-output'
 import {PathTools} from '../../fileio/path-tools'
@@ -31,6 +32,10 @@ export class DockerRunDriver extends RunDriver
   private job_schema_validator  = dj_ajv_validator
   private exec_schema_validator = de_ajv_validator
   private run_schema_validator  = dr_ajv_validator
+
+  private ERRORSTRINGS = {
+    INVALID_JOB : chalk`{bold job_options object did not pass validation.}`
+  }
 
   // job functions
 
@@ -70,7 +75,7 @@ export class DockerRunDriver extends RunDriver
     }
     else
     {
-        result.pushError(["job_options object did not pass validation."])
+        result.pushError([this.ERRORSTRINGS.INVALID_JOB])
     }
     return result
   }
@@ -255,7 +260,7 @@ export class DockerRunDriver extends RunDriver
       return new ValidatedOutput(true)
 
     }
-    return new ValidatedOutput(false, undefined, ["job_options object did not pass validation."])
+    return new ValidatedOutput(false, undefined, [this.ERRORSTRINGS.INVALID_JOB])
   }
 
   // Depricated: result shell was implemented by

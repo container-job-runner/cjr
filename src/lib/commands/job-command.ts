@@ -2,7 +2,6 @@
 // Base Command: Abstract Class
 // ===========================================================================
 
-import * as fs from 'fs'
 import * as path from 'path'
 import {JSONFile} from '../fileio/json-file'
 import {StackCommand} from './stack-command'

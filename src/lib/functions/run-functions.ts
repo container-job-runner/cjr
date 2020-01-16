@@ -4,17 +4,18 @@ import {PathTools} from '../fileio/path-tools'
 import {ValidatedOutput} from '../validated-output'
 import {DefaultContainerRoot} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
+import {ErrorStrings} from '../error-strings'
 
 
 function matchingIds(job_ids: array<string>, stack_path: string, id: string, all:boolean = false)
 {
-  if(!all && id.length < 1) return new ValidatedOutput(false, [], ["ID string must be at least 1 character long."])
+  if(!all && id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
   // find current jobs matching at least part of ID
   const re = new RegExp(`^${id}`)
   const matching_ids = (all) ? job_ids : job_ids.filter(id => re.test(id))
   return (matching_ids.length > 0) ?
     new ValidatedOutput(true, matching_ids) :
-    new ValidatedOutput(false, [], ["No Matching Job IDs."])
+    new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
 }
 
 export function matchingJobIds(runner: RunDriver, stack_path: string, id: string, all:boolean = false)
