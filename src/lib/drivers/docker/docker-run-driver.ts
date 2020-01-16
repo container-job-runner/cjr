@@ -5,6 +5,7 @@
 import * as path from 'path'
 import * as chalk from 'chalk'
 import {quote} from 'shell-quote'
+import {cli_name} from '../../constants'
 import {ValidatedOutput} from '../../validated-output'
 import {PathTools} from '../../fileio/path-tools'
 import {RunDriver} from '../abstract/rundriver'
@@ -52,6 +53,10 @@ export class DockerRunDriver extends RunDriver
       run_options["interactive"] = true;
       run_options["remove"] = job_options["removeOnExit"]
       if(job_options?.name) run_options["name"] = job_options["name"]
+      // add labels
+      const job_labels = {runner: cli_name, stack: this.stackName(stack_path)}
+      run_options["labels"] = { ...(run_options["labels"] || {}), ...job_labels}
+
       result = this.create(stack_path, command_str, run_options)
       if(result.success)
       {
@@ -116,9 +121,10 @@ export class DockerRunDriver extends RunDriver
     const args = []
     var   flags = {
       "filter": {
-        value: [`ancestor=${this.imageName(stack_path)}`, 'status=running'],
+        value: ['status=running', `label=runner=${cli_name}`], //using labels now instead of `ancestor=${this.imageName(stack_path)}`
         shorthand: false}
     }
+    if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
     if(json_format) this.addFormatFlags(flags, {format: "json"})
     return this.shell.sync(command, flags, args)
   }
@@ -179,9 +185,12 @@ export class DockerRunDriver extends RunDriver
   {
     const command = `${this.base_command} ${this.sub_commands["list"]}`;
     const args = []
-    var   flags = {"no-trunc" : {shorthand: false}};
-    if(image_name.length > 0) {
-      flags["filter"] = {shorthand: false, value: `ancestor=${image_name}`}
+    var   flags = {
+      "no-trunc": {shorthand: false},
+      "filter": {shorthand: false, value: [`label=runner=${cli_name}`]}
+    };
+    if(image_name?.length > 0) {
+      flags["filter"].value.push(`ancestor=${image_name}`)
     }
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
@@ -197,9 +206,10 @@ export class DockerRunDriver extends RunDriver
     var   flags = {
       "a" : {shorthand: true},
       "filter": {
-        value: [`ancestor=${this.imageName(stack_path)}`, 'status=exited'],
+        value: ['status=exited', `label=runner=${cli_name}`], //using labels now instead of `ancestor=${this.imageName(stack_path)}`
         shorthand: false}
     }
+    if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
     if(json_format) this.addFormatFlags(flags, {format: "json"})
     return this.shell.sync(command, flags, args)
   }
@@ -216,7 +226,7 @@ export class DockerRunDriver extends RunDriver
     var   flags = {
       "a" : {shorthand: true},
       "no-trunc" : {shorthand: false},
-      "filter" : {shorthand: false, value: ['status=stopped']}
+      "filter" : {shorthand: false, value: ['status=exited',`label=runner=${cli_name}`]}
     };
     if(image_name.length > 0) {
       flags["filter"].value.push(`ancestor=${image_name}`)
@@ -309,6 +319,7 @@ export class DockerRunDriver extends RunDriver
       this.addNameFlags(flags, run_flags_object)
       this.addPortFlags(flags, run_flags_object)
       this.addMountFlags(flags, run_flags_object)
+      this.addLabelFlags(flags, run_flags_object)
     }
     return flags
   }
@@ -408,6 +419,14 @@ export class DockerRunDriver extends RunDriver
         return `type=${mo.type},source=${mo.volumeName},destination=${quote([mo.containerPath])}${(mo.readonly) ? ",readonly" : ""}`
       case "tmpfs":
         return `type=${mo.type},destination=${quote([mo.containerPath])}`
+    }
+  }
+
+  private addLabelFlags(flags, run_flags: object)
+  {
+    if(run_flags?.labels) {
+      const keys = Object.keys(run_flags.labels)
+      flags["label"] = {shorthand: false, value: keys.map(k => `${k}=${run_flags.labels[k]}`)}
     }
   }
 

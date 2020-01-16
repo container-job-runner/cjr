@@ -22,7 +22,7 @@ export class PodmanRunDriver extends DockerRunDriver
     var   flags = {
       "a" : {shorthand: true},
       "filter": {
-        value: [`ancestor=${this.imageName(stack_path)}`, 'status=exited' 'status=stopped'],
+        value: [`ancestor=${this.imageName(stack_path)}`, 'status=exited', 'status=stopped'],
         shorthand: false}
     }
     if(json_format) this.addFormatFlags(flags, {format: "json"})

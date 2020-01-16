@@ -18,9 +18,9 @@ export class Settings
   private JSON_file: JSONFile
   private defaults: object = {}
 
-  constructor(settings_dir: string, cli_name:string = "cli")
+  constructor(settings_dir: string)
   {
-    this.defaults = defaultCLISettings(settings_dir, cli_name)
+    this.defaults = defaultCLISettings(settings_dir)
     this.JSON_file = new JSONFile(settings_dir, true)
   }
 

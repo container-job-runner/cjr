@@ -23,7 +23,7 @@ import {WarningStrings} from '../error-strings'
 
 export abstract class StackCommand extends Command
 {
-  private settings = new Settings(this.config.configDir, this.config.name)
+  private settings = new Settings(this.config.configDir)
   private project_settings = {}
 
   fullStackPath(user_path: string) // leaves existant full path intact or generates full stack path from shortcut

@@ -14,7 +14,13 @@ export const docker_run_schema = {
     "detached": {"type": "boolean"},
     "interactive": {"type": "boolean"},
     "remove": {"type": "boolean"},
-    "name": {"type": "string"}
+    "name": {"type": "string"},
+    "labels": {
+      "type": "object",
+      "additionalProperties" : {
+        "type": "string"
+      }
+    }
   }
 }
 
