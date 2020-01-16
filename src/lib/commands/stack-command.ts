@@ -17,8 +17,9 @@ import {ps_vo_validator} from './schema/project-settings-schema'
 import {projectSettingsYMLPath} from '../constants'
 import {FileTools} from '../fileio/file-tools'
 import {YMLFile} from '../fileio/yml-file'
-import {invalid_stack_flag_error} from '../constants'
-
+import {invalid_stack_flag_error, default_settings_object} from '../constants'
+import {ValidatedOutput} from '../validated-output'
+import {WarningStrings} from '../error-strings'
 
 export abstract class StackCommand extends Command
 {
@@ -44,6 +45,7 @@ export abstract class StackCommand extends Command
   // helper function for loading optional .cjr/stack.yml in hostRoot
   loadProjectSettingsYML(hostRoot)
   {
+    var result = new ValidatedOutput(true);
     if(hostRoot)
     {
       var stack = false
@@ -52,16 +54,28 @@ export abstract class StackCommand extends Command
       if(FileTools.existsFile(yml_path))
       {
           var stack_file = new YMLFile(false, false, ps_vo_validator)
-          var result = stack_file.validatedRead(yml_path)
-          if(result.success) this.project_settings = { ...{stack: false, configFiles: []}, ...result.data} // Move me to constants
-          // adjust any relative paths in settings file
+          var read_result = stack_file.validatedRead(yml_path)
+          if(read_result.success) {
+            this.project_settings = { ...default_settings_object, ...read_result.data}
+          } else {
+            result.pushWarning(WarningStrings.SETTINGS.IGNORED_YML(yml_path))
+          }
+
           if(this.project_settings?.configFiles) {
+               // adjust relative paths
                this.project_settings.configFiles = this.project_settings.configFiles.map(
                  (path_str) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
                )
+               // remove nonexistant configuration files
+               this.project_settings.configFiles = this.project_settings.configFiles.filter(path => {
+                 let config_exists = FileTools.existsFile(path)
+                 if(!config_exists) result.pushWarning(WarningStrings.SETTINGS.MISSING_CONFIG_FILE(yml_path, path))
+                 return config_exists
+               })
           }
       }
     }
+    this.handleFinalOutput(result)
   }
 
   newBuilder(explicit: boolean = false, silent: boolean = false)

@@ -16,7 +16,7 @@ export class DockerConfiguration extends Configuration
     var result = super.setRawObject(value)
     if(result.success) {
         if(parent_path) this.replaceRelativePaths(parent_path)
-        this.validateBindMounts(result)
+        this.validateBindMounts(result, parent_path)
     }
     return result
   }
@@ -99,11 +99,11 @@ export class DockerConfiguration extends Configuration
     }
   }
 
-  private validateBindMounts(result: ValidatedOutput)
+  private validateBindMounts(result: ValidatedOutput, parent_path)
   {
     this.raw_object?.mounts?.map(b => {
       if(b.type === "bind" && !FileTools.existsDir(b.hostPath))
-        result.pushError(ErrorStrings.CONFIG.NON_EXISTANT_BIND_HOSTPATH(b.hostPath))
+        result.pushError(ErrorStrings.CONFIG.NON_EXISTANT_BIND_HOSTPATH(parent_path, b.hostPath))
     })
   }
 
