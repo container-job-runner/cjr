@@ -12,7 +12,8 @@ export default class Run extends JobCommand {
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     containerRoot: flags.string({default: false}),
     async: flags.boolean({default: false}),
-    silent: flags.boolean({default: false}) // if selected will not print out job id
+    silent: flags.boolean({default: false}), // if selected will not print out job id
+    port: flags.string({default: false, multiple: true})
   }
   static strict = false;
 
@@ -31,6 +32,12 @@ export default class Run extends JobCommand {
         {
            const ced = containerWorkingDir(process.cwd(), hostRoot, containerRoot)
            if(ced) configuration.setWorkingDir(ced)
+        }
+
+        // add any optional ports to configuration
+        if(flags?.port) {
+          const valid_ports = flags.port.map(e => parseInt(e))?.filter(e => !isNaN(e) && e >= 0)
+          valid_ports.map(p => configuration.addPort(p, p))
         }
 
         var run_flags_object = configuration.runObject();

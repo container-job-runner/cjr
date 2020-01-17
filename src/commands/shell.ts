@@ -11,7 +11,8 @@ export default class Shell extends StackCommand {
     stack: flags.string({env: 'STACK', default: false}),
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     containerRoot: flags.string({default: false}),
-    save: flags.string({default: false, description: "saves new image that contains modifications"})
+    save: flags.string({default: false, description: "saves new image that contains modifications"}),
+    port: flags.string({default: false, multiple: true})
   }
   static strict = true;
 
@@ -31,6 +32,12 @@ export default class Shell extends StackCommand {
            configuration.addBind(hostRoot, path.posix.join(containerRoot, hostRoot_basename))
            const ced = containerWorkingDir(process.cwd(), hostRoot, containerRoot)
            if(ced) configuration.setWorkingDir(ced)
+        }
+
+        // add any optional ports to configuration
+        if(flags?.port) {
+          const valid_ports = flags.port.map(e => parseInt(e))?.filter(e => !isNaN(e) && e >= 0)
+          valid_ports.map(p => configuration.addPort(p, p))
         }
 
         const job_object =
