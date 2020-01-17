@@ -27,7 +27,8 @@ export class DockerRunDriver extends RunDriver
     create: "create",
     copy: "cp",
     start: "start",
-    exec: "exec"
+    exec: "exec",
+    commit: "commit"
   }
   private json_output_format = "line_json"
   private job_schema_validator  = dj_ajv_validator
@@ -271,6 +272,16 @@ export class DockerRunDriver extends RunDriver
 
     }
     return new ValidatedOutput(false, undefined, [this.ERRORSTRINGS.INVALID_JOB])
+  }
+
+  resultToImage(id: string, image_name: string, stack_path: string = false)
+  {
+    // if no name is provided, but stack_path is set, then overwrite image
+    if(!image_name && stack_path) image_name = this.imageName(stack_path)
+    const command = `${this.base_command} ${this.sub_commands["commit"]}`
+    const args  = [id, image_name]
+    const flags = {}
+    return this.shell.sync(command, flags, args, {stdio: "pipe"})
   }
 
   // Depricated: result shell was implemented by

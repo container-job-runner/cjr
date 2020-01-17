@@ -10,7 +10,8 @@ export default class Shell extends StackCommand {
     explicit: flags.boolean({default: false}),
     stack: flags.string({env: 'STACK', default: false}),
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
-    containerRoot: flags.string({default: false})
+    containerRoot: flags.string({default: false}),
+    save: flags.string({default: false, description: "saves new image that contains modifications"})
   }
   static strict = true;
 
@@ -21,7 +22,7 @@ export default class Shell extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
-    var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
+    let result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
 
         if(hostRoot)
@@ -38,10 +39,15 @@ export default class Shell extends StackCommand {
           hostRoot: false, // set false so that no data copy is performed
           containerRoot: containerRoot,
           synchronous: true,
-          removeOnExit: true
+          removeOnExit: (flags.save !== false) ? false : true
         }
 
-        return runner.jobStart(stack_path, job_object, configuration.runObject())
+        let result = runner.jobStart(stack_path, job_object, configuration.runObject())
+        if(flags.save !== false && result.success) {
+          runner.resultToImage(result.data, flags['save'], stack_path)
+          runner.resultDelete([result.data])
+        }
+        return result
       })
     this.handleFinalOutput(result);
   }
