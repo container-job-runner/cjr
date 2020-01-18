@@ -1,7 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
-import {containerWorkingDir, IfBuiltAndLoaded} from '../lib/functions/run-functions'
-import * as path from 'path'
+import {IfBuiltAndLoaded, bindHostRoot, setRelativeWorkDir, addPorts, jobToImage} from '../lib/functions/run-functions'
 
 export default class Shell extends StackCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
@@ -12,7 +11,7 @@ export default class Shell extends StackCommand {
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     containerRoot: flags.string({default: false}),
     save: flags.string({default: false, description: "saves new image that contains modifications"}),
-    port: flags.string({default: false, multiple: true})
+    port: flags.string({default: [], multiple: true})
   }
   static strict = true;
 
@@ -22,26 +21,16 @@ export default class Shell extends StackCommand {
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
+    // if save is empty overwrite stack image
+    if(flags.save === "") flags.save = builder.imageName(stack_path)
 
     let result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
+        bindHostRoot(configuration, containerRoot, hostRoot);
+        setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
+        addPorts(configuration, flags.port)
 
-        if(hostRoot)
-        {
-           const hostRoot_basename = path.basename(hostRoot)
-           configuration.addBind(hostRoot, path.posix.join(containerRoot, hostRoot_basename))
-           const ced = containerWorkingDir(process.cwd(), hostRoot, containerRoot)
-           if(ced) configuration.setWorkingDir(ced)
-        }
-
-        // add any optional ports to configuration
-        if(flags?.port) {
-          const valid_ports = flags.port.map(e => parseInt(e))?.filter(e => !isNaN(e) && e >= 0)
-          valid_ports.map(p => configuration.addPort(p, p))
-        }
-
-        const job_object =
-        {
+        const job_object = {
           command: `bash`,
           hostRoot: false, // set false so that no data copy is performed
           containerRoot: containerRoot,
@@ -50,10 +39,7 @@ export default class Shell extends StackCommand {
         }
 
         let result = runner.jobStart(stack_path, job_object, configuration.runObject())
-        if(flags.save !== false && result.success) {
-          runner.resultToImage(result.data, flags['save'], stack_path)
-          runner.resultDelete([result.data])
-        }
+        if(flags.save !== false) jobToImage(runner, result, flags.save, true)
         return result
       })
     this.handleFinalOutput(result);

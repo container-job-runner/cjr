@@ -1,9 +1,8 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 import {ValidatedOutput} from '../../lib/validated-output'
-import {jobNametoID, resultNametoID, IfBuiltAndLoaded} from '../../lib/functions/run-functions'
+import {jobNametoID, resultNametoID, IfBuiltAndLoaded, bindHostRoot, addPorts} from '../../lib/functions/run-functions'
 import {JUPYTER_JOB_NAME} from '../../lib/constants'
-import * as path from 'path'
 
 export default class Start extends StackCommand {
   static description = 'Start Jupyter server for a stack.'
@@ -13,7 +12,7 @@ export default class Start extends StackCommand {
     stack: flags.string({env: 'STACK', default: false}),
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     containerRoot: flags.string({default: false}),
-    port: flags.integer({default: 8888}),
+    port: flags.integer({default: [8888], multiple: true}),
     sync: flags.boolean({default: false})
   }
   static strict = false;
@@ -25,25 +24,23 @@ export default class Start extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
+    // get name of jupyter job - not this could be done with a label
+    const image_name = runner.imageName(stack_path)
+    const job_name   = JUPYTER_JOB_NAME(image_name)
+
+    // remove any results (stopped containers) with jupyter name.
+    const jupiter_stopped_id = resultNametoID(runner, stack_path, job_name)
+    if(jupiter_stopped_id != false) runner.resultDelete([jupiter_stopped_id])
+
     var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
 
-        if(hostRoot) // similar to ssh add bind
-        {
-           const hostRoot_basename = path.basename(hostRoot)
-           configuration.addBind(hostRoot, path.posix.join(containerRoot, hostRoot_basename))
-        }
-
-        const image_name = runner.imageName(stack_path)
-        const job_name   = JUPYTER_JOB_NAME(image_name)
         const jupiter_id = jobNametoID(runner, stack_path, job_name);
         if(jupiter_id == false) // check if container is already running
         {
-          // remove any results (stopped containers) with jupyter name.
-          const jupiter_stopped_id = resultNametoID(runner, stack_path, job_name)
-          if(jupiter_stopped_id != false) runner.resultDelete([jupiter_stopped_id])
+          bindHostRoot(configuration, containerRoot, hostRoot);
+          addPorts(configuration, flags.port)
 
-          configuration.addPort(flags.port, flags.port)
           const job_object =
           {
             command: `jupyter notebook --port=${flags.port}${(argv.length > 0) ? " " : ""}${argv.join(" ")}`,

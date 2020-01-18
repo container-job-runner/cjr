@@ -20,5 +20,5 @@ export abstract class RunDriver extends ContainerDriver
   abstract resultInfo(stack_path: string) : array<string>; // return at least id and name and remove resultIDs. Repeat with results.
   abstract resultDelete(id: string) : string;
   abstract resultCopy(id: string, job_object: object)
-  abstract resultToImage(id: string)
+  abstract toImage(id: string)
 }

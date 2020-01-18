@@ -274,10 +274,9 @@ export class DockerRunDriver extends RunDriver
     return new ValidatedOutput(false, undefined, [this.ERRORSTRINGS.INVALID_JOB])
   }
 
-  resultToImage(id: string, image_name: string, stack_path: string = false)
+  toImage(id: string, image_name: string)
   {
     // if no name is provided, but stack_path is set, then overwrite image
-    if(!image_name && stack_path) image_name = this.imageName(stack_path)
     const command = `${this.base_command} ${this.sub_commands["commit"]}`
     const args  = [id, image_name]
     const flags = {}

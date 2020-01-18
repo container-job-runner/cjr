@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as path from 'path'
 import {RunDriver} from '../drivers/abstract/run-driver'
 import {PathTools} from '../fileio/path-tools'
 import {ValidatedOutput} from '../validated-output'
@@ -58,7 +59,20 @@ export function containerWorkingDir(cli_cwd:string, hroot: string, croot: string
   return (rel_path === false) ? false : [croot.replace(/\/$/, "")].concat(hroot_arr.pop(), rel_path).join("/")
 }
 
-// Used by dev:ssh and job:start. Calls onSucces with stack configration if stack is build and successuffly loaded
+// -----------------------------------------------------------------------------
+// IFBUILDANDLOADED Calls function onSuccess if stack is build and successuffly
+//  loaded. The following arguments are passed to onSuccess
+//    1. configuration (Configuration) - the stack Configuration
+//    2. containerRoot - the container project root folder
+//    3. hostRoot (String | false) - the project hostRoot or false if non existsSync
+// -- Parameters ---------------------------------------------------------------
+// builder  - (BuildDriver) Object that inherits from abstract class Configuration
+// flags    - (Object) command flags. The only optional propertes will affect this function are:
+//              1. containerRoot
+//              2. hostRoot
+// stack_path - absolute path to stack folder
+// overloaded_config_paths - absolute paths to any overloading configuration files
+// -----------------------------------------------------------------------------
 export function IfBuiltAndLoaded(builder: BuildDriver, flags: object, stack_path: string, overloaded_config_paths: array<string>, onSuccess: (configuration: Configuration, containerRoot: string, hostRoot: string) => void)
 {
   var result = buildIfNonExistant(builder, stack_path, overloaded_config_paths)
@@ -79,4 +93,97 @@ export function IfBuiltAndLoaded(builder: BuildDriver, flags: object, stack_path
     }
   }
   return result
+}
+
+// -----------------------------------------------------------------------------
+// ADDPORTS adds ports to a configuration as specified by a cli flag.
+// This function is used by the shell and $ commands.
+// -- Parameters ---------------------------------------------------------------
+// configuration  - Object that inherits from abstract class Configuration
+// ports          - cli flag value whith specification:
+//                  flags.string({default: [], multiple: true})
+// -----------------------------------------------------------------------------
+export function addPorts(configuration: Configuration, ports: array<string>)
+{
+  var regex_a = RegExp(/^\d+:\d+$/) // flag format: --port=hostPort:containerPort
+  var regex_b = RegExp(/^\d+$/)     // flag format: --port=port
+  ports?.map(port_string => {
+    if(regex_a.test(port_string)) {
+      let p = port_string.split(':').map(e => parseInt(e))
+      configuration.addPort(p[0], p[1])
+    }
+    else if(regex_b.test(port_string)) {
+      let p = parseInt(port_string)
+      configuration.addPort(p, p)
+    }
+  })
+}
+
+// -----------------------------------------------------------------------------
+// SETRELATIVEWORKDIR alters the working dir of a configuration iff hostDir is a
+// child of hostRoot. Let hostPath be a child of hostRoot, and let X be the
+// relative path from hostRoot to hostDir. This functions sets these working dir
+// of the container to path.join(containerRoot, X)
+// -- Parameters ---------------------------------------------------------------
+// configuration - Object that inherits from abstract class Configuration
+// hostRoot      - Project root folder
+// containerRoot - Container root folder
+// hostDir       - user directory (defaults to process.cwd())
+// -----------------------------------------------------------------------------
+export function setRelativeWorkDir(configuration: Configuration, containerRoot: string, hostRoot: string, hostDir: string = process.cwd())
+{
+  if(hostRoot) {
+    const ced = containerWorkingDir(process.cwd(), hostRoot, containerRoot)
+    if(ced) configuration.setWorkingDir(ced)
+  }
+}
+
+// -----------------------------------------------------------------------------
+// BINDHOSTROOT adds a mount with type bind to a configuration that maps
+// hostRoot (on host) to containerRoot (on container)
+// -- Parameters ---------------------------------------------------------------
+// configuration - Object that inherits from abstract class Configuration
+// hostRoot      - Project root folder
+// containerRoot - Container root folder
+// -----------------------------------------------------------------------------
+export function bindHostRoot(configuration: Configuration, containerRoot: string, hostRoot: string)
+{
+  if(hostRoot) {
+    const hostRoot_basename = path.basename(hostRoot)
+    configuration.addBind(hostRoot, path.posix.join(containerRoot, hostRoot_basename))
+  }
+}
+
+// -----------------------------------------------------------------------------
+// WRITEJSONJobFIle write a JSON file that contains job information (job_object)
+// -- Parameters ---------------------------------------------------------------
+// writer       (JSONFile) - JSONFILE object for writing to disk
+// result       (ValidatedOutput) - result from runner.createJob that contains ID
+// job_object   (Object) - job data
+// -----------------------------------------------------------------------------
+export function writeJSONJobFile(file_writer: JSONFile, result: ValidatedOutput, job_object: object)
+{
+  if(result.success) {
+    const job_id = result.data
+    file_writer.write(job_id, job_object)
+  }
+}
+
+// -----------------------------------------------------------------------------
+// JOBTOIMAGE creates an image from a running or completed job. If image_name is
+// blank it will overwrite stack image
+// -- Parameters ---------------------------------------------------------------
+// runner       (RunDriver) - JSONFILE object for writing to disk
+// result       (ValidatedOutput) - result from runner.createJob that contains ID
+// image_name   (string) - name of new imageName
+// stack_path   (string) - name of container stack
+// remove_job   (boolean) - if true job is removed on exit
+// -----------------------------------------------------------------------------
+export function jobToImage(runner: RunDriver, result: ValidatedOutput, image_name: string, stack_path: string, remove_job: boolean = false)
+{
+  if(result.success) {
+    const job_id = result.data
+    runner.toImage(job_id, image_name, stack_path)
+    if(remove_job) runner.resultDelete([job_id])
+  }
 }
