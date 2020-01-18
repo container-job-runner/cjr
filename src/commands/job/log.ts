@@ -8,7 +8,8 @@ export default class Log extends StackCommand {
   static args = [{name: 'id', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),
-    explicit: flags.boolean({default: false})
+    explicit: flags.boolean({default: false}),
+    lines: flags.string({default: "100"})
   }
   static strict = true;
 
@@ -21,10 +22,7 @@ export default class Log extends StackCommand {
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
     // match with existing container ids
     var result = matchingJobIds(runner, stack_path, id, false)
-    if(result.success)
-    {
-        runner.jobLog(result.data[0])
-    }
+    if(result.success)runner.jobLog(result.data[0], flags.lines)
     this.handleFinalOutput(result)
   }
 

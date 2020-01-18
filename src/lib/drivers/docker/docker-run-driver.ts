@@ -130,11 +130,12 @@ export class DockerRunDriver extends RunDriver
     return this.shell.sync(command, flags, args)
   }
 
-  jobLog(id: string)
+  jobLog(id: string, lines: string="all")
   {
     var command = `${this.base_command} ${this.sub_commands["log"]}`;
     var args = [id]
-    var flags = {}
+    const lines_int = parseInt(lines)
+    const flags = (isNaN(lines_int)) ? {} : {tail: {shorthand: false, value: `${lines_int}`}}
     return this.shell.sync(command, flags, args)
   }
 
