@@ -196,7 +196,7 @@ export class DockerRunDriver extends RunDriver
     }
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-    return (result.success) ? result.data?.map(x => {return {id: x.ID, names: x.Names}}) : [];
+    return (result.success) ? result.data?.map(x => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) : [];
   }
 
   // result functions
@@ -235,7 +235,7 @@ export class DockerRunDriver extends RunDriver
     }
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-    return (result.success) ? result.data?.map(x => {return {id: x.ID, names: x.Names}}) :[];
+    return (result.success) ? result.data?.map(x => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) :[];
   }
 
   resultCopy(id: string, job_object: object, copy_all: boolean = false)

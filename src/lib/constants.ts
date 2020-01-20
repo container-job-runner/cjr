@@ -38,7 +38,8 @@ export const defaultCLISettings = (settings_dir) =>
       stacks_path: path.join(settings_dir, "stacks"),
       build_cmd: cmd,
       run_cmd: cmd,
-      image_tag: cli_name
+      image_tag: cli_name,
+      interactive: true
   }
 }
 

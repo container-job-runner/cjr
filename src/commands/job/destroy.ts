@@ -1,7 +1,6 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
-import {ShellCMD} from '../../lib/shellcmd'
-import {matchingJobIds} from '../../lib/functions/run-functions'
+import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
 
 export default class Destroy extends JobCommand {
   static description = 'Stop a job and destroy the associated result.'
@@ -18,8 +17,9 @@ export default class Destroy extends JobCommand {
     const {argv, flags} = this.parse(Destroy)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
-    var id = argv[0] || "" // allow for empty if all is selected
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    var id = argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || ""
+
     // match with existing container ids
     var result = matchingJobIds(runner, stack_path, id, flags['all'])
     if(result.success)

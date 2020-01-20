@@ -1,7 +1,6 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
-import {ShellCMD} from '../../lib/shellcmd'
-import {matchingResultIds} from '../../lib/functions/run-functions'
+import {matchingResultIds, promptUserForResultId} from '../../lib/functions/run-functions'
 
 export default class Copy extends JobCommand {
   static description = 'Copy job results back into the host directories.'
@@ -18,8 +17,8 @@ export default class Copy extends JobCommand {
     const {argv, flags} = this.parse(Copy)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
-    var id = argv[0]
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    var id = argv[0] || await promptUserForResultId(runner, stack_path, !this.settings.get('interactive')) || ""
     // match with existing container ids
     var result = matchingResultIds(runner, stack_path, id)
     if(result.success)

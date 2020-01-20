@@ -1,12 +1,11 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
-import {ShellCMD} from '../../lib/shellcmd'
 import {matchingResultIds} from '../../lib/functions/run-functions'
 import {cli_storage_dir_name} from '../../lib/constants'
 import * as path from 'path'
 import * as fs from 'fs-extra'
 import {JSTools} from '../../lib/js-tools'
-import {IfBuiltAndLoaded} from '../../lib/functions/run-functions'
+import {IfBuiltAndLoaded, promptUserForResultId} from '../../lib/functions/run-functions'
 
 export default class Shell extends JobCommand {
   static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
@@ -27,7 +26,7 @@ export default class Shell extends JobCommand {
   //     command: bash
   //     synchronous: false
   //     remove: flags.discard
-  // 5. start the bash job detached. Then empy the temporary tmp_directory
+  // 5. start the bash job detached. Then empty the temporary tmp_directory
   // 6. attach to new job.
   // REMARK: an alternative approach is to add a resultShell command to abstract
   // runDriver. For Docker/Podman one can commit the container to an image, then
@@ -45,8 +44,8 @@ export default class Shell extends JobCommand {
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
-    const id = argv[0]
     const stack_path = this.fullStackPath(flags.stack)
+    const id = argv[0] || await promptUserForResultId(runner, stack_path, !this.settings.get('interactive')) || ""
     // match with existing container ids
     var result = matchingResultIds(runner, stack_path, id)
     if(result.success)

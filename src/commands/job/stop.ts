@@ -1,7 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
-import {ShellCMD} from '../../lib/shellcmd'
-import {matchingJobIds} from '../../lib/functions/run-functions'
+import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
 
 export default class Stop extends StackCommand {
   static description = 'Stop a running job and turn it into a result.'
@@ -18,8 +17,8 @@ export default class Stop extends StackCommand {
     const {argv, flags} = this.parse(Stop)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
-    var id = argv[0] || "" // allow for empty if all is selected
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    var id = argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || ""
     // match with existing container ids
     var result = matchingJobIds(runner, stack_path, id, flags['all'])
     if(result.success)

@@ -6,6 +6,8 @@ import {ValidatedOutput} from '../validated-output'
 import {DefaultContainerRoot} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
 import {ErrorStrings} from '../error-strings'
+import * as inquirer from 'inquirer'
+import * as chalk from 'chalk'
 
 
 function matchingIds(job_ids: array<string>, stack_path: string, id: string, all:boolean = false)
@@ -186,4 +188,42 @@ export function jobToImage(runner: RunDriver, result: ValidatedOutput, image_nam
     runner.toImage(job_id, image_name, stack_path)
     if(remove_job) runner.resultDelete([job_id])
   }
+}
+
+// -- Interactive Functions ----------------------------------------------------
+
+export async function promptUserForJobId(runner: RunDriver, stack_path: string, silent: boolean = false)
+{
+  if(silent) return false;
+  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
+  const job_info = runner.jobInfo(image_name)
+  return await promptUserId(job_info);
+}
+
+export async function promptUserForResultId(runner: RunDriver, stack_path: string, silent: boolean = false)
+{
+  if(silent) return false;
+  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
+  const result_info = runner.resultInfo(image_name)
+  return await promptUserId(result_info);
+}
+
+// helper function for promptUserForJobId & promptUserForResultId
+async function promptUserId(id_info: array<object>)
+{
+  const short_cmd_str = (cmd_str) => (cmd_str.length > 10) ? `${cmd_str.substring(0,10)}...` : cmd_str
+  const response = await inquirer.prompt([{
+  name: 'id',
+  message: 'Select an id:',
+  prefix: "\b",
+  suffix: "",
+  type: 'rawlist',
+  choices: id_info.map(j => {
+    return {
+      name: chalk`{italic ID}: ${j.id.substring(0, 12)} {italic COMMAND}: ${short_cmd_str(j.command)} {italic STATUS}: ${j.status}`,
+      value: j.id
+    }
+  }).concat({name: "Exit", value: ""}),
+}])
+return response.id;
 }
