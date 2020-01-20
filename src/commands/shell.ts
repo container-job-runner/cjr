@@ -39,9 +39,10 @@ export default class Shell extends StackCommand {
         }
 
         let result = runner.jobStart(stack_path, job_object, configuration.runObject())
-        if(flags.save !== false) jobToImage(runner, result, flags.save, true)
         return result
       })
+
+    if(flags.save !== false) await jobToImage(runner, result, flags.save, true, this.settings.get('interactive'))
     this.handleFinalOutput(result);
   }
 

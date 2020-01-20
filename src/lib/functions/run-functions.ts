@@ -181,13 +181,32 @@ export function writeJSONJobFile(file_writer: JSONFile, result: ValidatedOutput,
 // stack_path   (string) - name of container stack
 // remove_job   (boolean) - if true job is removed on exit
 // -----------------------------------------------------------------------------
-export function jobToImage(runner: RunDriver, result: ValidatedOutput, image_name: string, stack_path: string, remove_job: boolean = false)
+export async function jobToImage(runner: RunDriver, result: ValidatedOutput, image_name: string, remove_job: boolean = false, interactive: boolean = false)
 {
   if(result.success) {
     const job_id = result.data
-    runner.toImage(job_id, image_name, stack_path)
+    if(interactive) {
+      var response = await inquirer.prompt([
+        {
+            name: "flag",
+            message: `Save container to image "${image_name}"?`,
+            type: "confirm",
+        }
+      ])
+    }
+    if(!interactive || response?.flag == true) runner.toImage(job_id, image_name)
     if(remove_job) runner.resultDelete([job_id])
   }
+}
+
+// -----------------------------------------------------------------------------
+// ENABLEX11: bind X11 directoru and sets environment variable DISPLAY in container.
+// -- Parameters ---------------------------------------------------------------
+// configuration  - Object that inherits from abstract class Configuration
+// -----------------------------------------------------------------------------
+export function enableX11(configuration: Configuration)
+{
+  configuration.addRunENV("DISPLAY", ":0")
 }
 
 // -- Interactive Functions ----------------------------------------------------
