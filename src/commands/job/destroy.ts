@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
 import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Destroy extends JobCommand {
   static description = 'Stop a job and destroy the associated result.'
@@ -28,7 +29,7 @@ export default class Destroy extends JobCommand {
         result.data.map(x => this.job_json.delete(x))
         result.data.map(x => console.log(` Stopping ${x} and destroying results.`))
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

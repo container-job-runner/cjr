@@ -1,7 +1,8 @@
+import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
 import {JobCommand} from '../lib/commands/job-command'
 import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, writeJSONJobFile} from '../lib/functions/run-functions'
-import * as chalk from 'chalk'
+import {printResultState} from '../lib/functions/misc-functions'
 
 export default class Run extends JobCommand {
   static description = 'Save current project state as a result.'
@@ -38,11 +39,11 @@ export default class Run extends JobCommand {
         var result = runner.jobStart(stack_path, job_object, configuration.runObject())
         if(result.success) job_id = result.data
         writeJSONJobFile(this.job_json, result, job_object)
-        
+
         return result;
       })
     if(job_id !== false && !flags.silent) console.log(chalk`{italic id}: ${job_id}`)
-    this.handleFinalOutput(result);
+    printResultState(result);
 
   }
 

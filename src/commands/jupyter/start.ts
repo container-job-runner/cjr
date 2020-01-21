@@ -1,5 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
+import {printResultState} from '../../lib/functions/misc-functions'
 import {ValidatedOutput} from '../../lib/validated-output'
 import {jobNametoID, resultNametoID, IfBuiltAndLoaded, bindHostRoot, addPorts} from '../../lib/functions/run-functions'
 import {JUPYTER_JOB_NAME} from '../../lib/constants'
@@ -58,7 +59,7 @@ export default class Start extends StackCommand {
         }
 
       })
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

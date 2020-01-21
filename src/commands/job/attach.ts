@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Attach extends StackCommand {
   static description = 'Attach back to the shell that is running a job.'
@@ -24,7 +25,7 @@ export default class Attach extends StackCommand {
     {
         runner.jobAttach(result.data[0])
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

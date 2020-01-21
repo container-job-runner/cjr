@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../lib/commands/job-command'
 import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, writeJSONJobFile} from '../lib/functions/run-functions'
+import {printResultState} from '../lib/functions/misc-functions'
 import * as chalk from 'chalk'
 
 export default class Run extends JobCommand {
@@ -48,7 +49,7 @@ export default class Run extends JobCommand {
         return result;
       })
     if(job_id !== false && flags.async && !flags.silent) console.log(chalk`{italic id}: ${job_id}`)
-    this.handleFinalOutput(result);
+    printResultState(result);
 
   }
 

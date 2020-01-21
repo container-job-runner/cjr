@@ -1,11 +1,12 @@
+import * as path from 'path'
+import * as fs from 'fs-extra'
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
 import {matchingResultIds} from '../../lib/functions/run-functions'
 import {cli_storage_dir_name} from '../../lib/constants'
-import * as path from 'path'
-import * as fs from 'fs-extra'
 import {JSTools} from '../../lib/js-tools'
 import {IfBuiltAndLoaded, promptUserForResultId} from '../../lib/functions/run-functions'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Shell extends JobCommand {
   static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
@@ -91,7 +92,7 @@ export default class Shell extends JobCommand {
         if(new_job_id) runner.jobAttach(new_job_id)
       }
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

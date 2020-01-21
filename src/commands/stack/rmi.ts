@@ -1,5 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Build extends StackCommand {
   static description = 'Delete an image associated with a stack.'
@@ -17,7 +18,7 @@ export default class Build extends StackCommand {
     const builder = this.newBuilder(flags.explicit, flags.silent)
     const stack_path = this.fullStackPath(flags.stack)
     const result = builder.removeImage(stack_path)
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

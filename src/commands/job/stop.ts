@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Stop extends StackCommand {
   static description = 'Stop a running job and turn it into a result.'
@@ -26,7 +27,7 @@ export default class Stop extends StackCommand {
         result.data.map(x => console.log(` Stopping ${x}`))
         runner.jobStop(result.data)
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

@@ -20,6 +20,7 @@ import {YMLFile} from '../fileio/yml-file'
 import {invalid_stack_flag_error, default_settings_object} from '../constants'
 import {ValidatedOutput} from '../validated-output'
 import {WarningStrings} from '../error-strings'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export abstract class StackCommand extends Command
 {
@@ -75,7 +76,7 @@ export abstract class StackCommand extends Command
           }
       }
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
   newBuilder(explicit: boolean = false, silent: boolean = false)
@@ -126,12 +127,6 @@ export abstract class StackCommand extends Command
           this.error("invalid run command")
         }
     }
-  }
-
-  handleFinalOutput(result: ValidatedOutput)
-  {
-    result.warning.forEach( e => this.log(chalk`{bold.yellow WARNING}: ${e}`))
-    result.error.forEach( e => this.log(chalk`{bold.red ERROR}: ${e}`))
   }
 
 }

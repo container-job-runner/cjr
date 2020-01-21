@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
 import {matchingResultIds, promptUserForResultId} from '../../lib/functions/run-functions'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Remove extends JobCommand {
   static description = 'Permanently delete a result and all its associated data.'
@@ -27,7 +28,7 @@ export default class Remove extends JobCommand {
         result.data.map(x => this.job_json.delete(x))
         result.data.map(x => console.log(` Deleting ${x}`))
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

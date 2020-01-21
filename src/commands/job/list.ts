@@ -1,6 +1,5 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
-import {ShellCMD} from '../../lib/shellcmd'
 
 export default class List extends StackCommand {
   static description = 'List all running jobs for a stack.'

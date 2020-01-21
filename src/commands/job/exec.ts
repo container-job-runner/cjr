@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 import {matchingJobIds} from '../../lib/functions/run-functions'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Exec extends StackCommand {
   static description = 'Execute a command inside the container that is running a job.'
@@ -30,7 +31,7 @@ export default class Exec extends StackCommand {
         }
         runner.jobExec(result.data[0], command, exec_object)
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

@@ -1,5 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Build extends StackCommand {
   static description = 'Build an image cooresponding to a stack.'
@@ -19,7 +20,7 @@ export default class Build extends StackCommand {
     const builder = this.newBuilder(flags.explicit, flags.silent)
     const stack_path = this.fullStackPath(flags.stack)
     const result = builder.build(stack_path, this.project_settings.configFiles, flags['nocache'])
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

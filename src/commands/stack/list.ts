@@ -1,6 +1,6 @@
+import * as fs from 'fs'
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
-import * as fs from 'fs'
 
 export default class List extends StackCommand {
   static description = 'List all stacks present in the stacks path.'

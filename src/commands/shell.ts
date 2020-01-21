@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
 import {IfBuiltAndLoaded, bindHostRoot, setRelativeWorkDir, addPorts, jobToImage, enableX11} from '../lib/functions/run-functions'
+import {printResultState} from '../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
@@ -45,7 +46,7 @@ export default class Shell extends StackCommand {
       })
 
     if(flags.save !== false) await jobToImage(runner, result, flags.save, true, this.settings.get('interactive'))
-    this.handleFinalOutput(result);
+    printResultState(result);
 
   }
 

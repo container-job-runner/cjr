@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
 import {matchingResultIds, promptUserForResultId} from '../../lib/functions/run-functions'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Copy extends JobCommand {
   static description = 'Copy job results back into the host directories.'
@@ -31,7 +32,7 @@ export default class Copy extends JobCommand {
         result = runner.resultCopy(id, job_object, flags["all"])
       }
     }
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 
 }

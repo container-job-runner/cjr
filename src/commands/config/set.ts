@@ -1,5 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
+import {printResultState} from '../../lib/functions/misc-functions'
 import * as chalk from 'chalk'
 
 export default class Set extends StackCommand {
@@ -13,6 +14,6 @@ export default class Set extends StackCommand {
     const value  = args['value']
     var result = this.settings.set(key, value)
     if(result.success) this.log(chalk`{italic ${key}} -> ${value}`)
-    this.handleFinalOutput(result)
+    printResultState(result)
   }
 }
