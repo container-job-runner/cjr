@@ -217,16 +217,47 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
       if(FileTools.existsDir(X11_POSIX_BIND))
       {
         configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
-        configuration.addRunEnvironmentVariable("DISPLAY", ":0")
-        const shell = new ShellCMD(explicit)
-        shell.sync("xhost", {}, ["+ $(hostname)"], {stdio: "pipe"})
+        const x11_sockets = fs.readdirSync(X11_POSIX_BIND).filter(file_name => new RegExp(/^X\d+$/).test(file_name)).sort();
+        if(x11_sockets.length > 0)
+        {
+          const socket_number = x11_sockets.pop().replace("X", "") // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
+          configuration.addRunEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
+          //const socket_number = x11_sockets.pop().replace("X", "") // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
+          // configuration.addRunEnvironmentVariable("DISPLAY", `$(hostname):${socket_number}`)
+          // const shell = new ShellCMD(explicit)
+          // shell.sync("xhost", {}, ["+ $(hostname)"], {stdio: "pipe"})
+        }
+        else
+        {
+            result.pushWarning(WarningStrings.X11.X11MACMISSINGSOCKET(X11_POSIX_BIND))
+        }
       }
       else
       {
         result.pushWarning(WarningStrings.X11.X11MACMISSINGDIR(X11_POSIX_BIND))
       }
       break;
-    default: // -- unsupported OS (XQuartz) ------------------------------------
+    case "linux": // -- linux setup (X11) --------------------------------------
+    if(FileTools.existsDir(X11_POSIX_BIND))
+    {
+      configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
+      const x11_sockets = fs.readdirSync(X11_POSIX_BIND).filter(file_name => new RegExp(/^X\d+$/).test(file_name)).sort();
+      if(x11_sockets.length > 0)
+      {
+        const socket_number = x11_sockets.pop().replace("X", "")
+        configuration.addRunEnvironmentVariable("DISPLAY", `:${socket_number}`)
+      }
+      else
+      {
+          result.pushWarning(WarningStrings.X11.X11MACMISSINGSOCKET(X11_POSIX_BIND))
+      }
+    }
+    else
+    {
+      result.pushWarning(WarningStrings.X11.X11MACMISSINGDIR(X11_POSIX_BIND))
+    }
+
+    default: // -- unsupported OS ----------------------------------------------
       result.pushWarning(WarningStrings.X11.X11FLAGUNAVALIABLE)
   }
   printResultState(result)

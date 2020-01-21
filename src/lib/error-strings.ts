@@ -26,6 +26,7 @@ export const WarningStrings = {
   },
   X11:{
       X11FLAGUNAVALIABLE: chalk`{bold X11 flag ignored} - the X11 flag is not supported on your operating system.`,
-      X11MACMISSINGDIR: (dir_path) => chalk`{bold missing X11 directory} - the directory "${dir_path}" is not present; is XQuartz running?`
+      X11MACMISSINGDIR: (dir_path) => chalk`{bold missing X11 directory} - the directory "${dir_path}" is not present. Is XQuartz running?`,
+      X11MACMISSINGSOCKET: (dir_path) => chalk`{bold missing X11 socket} - no socket found in directory "${dir_path}". Is XQuartz running?`,
   }
 }
