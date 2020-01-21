@@ -23,5 +23,9 @@ export const WarningStrings = {
   PROJECTSETTINGS:{
     INVALID_YML : (yml_path) => chalk`{bold Invalid YML} - the configuration file listed below was ignored.\n  {italic filePath}: ${yml_path}`,
     MISSING_CONFIG_FILE: (yml_path, config_path) => chalk`{bold Missing Configuration File} - a configuration file referenced in project settings yml does not exist.\n {italic yml:       } ${yml_path}\n {italic configFile}: ${config_path}`
+  },
+  X11:{
+      X11FLAGUNAVALIABLE: chalk`{bold X11 flag ignored} - the X11 flag is not supported on your operating system.`,
+      X11MACMISSINGDIR: (dir_path) => chalk`{bold missing X11 directory} - the directory "${dir_path}" is not present; is XQuartz running?`
   }
 }

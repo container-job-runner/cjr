@@ -1,11 +1,15 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import * as os from 'os'
 import {RunDriver} from '../drivers/abstract/run-driver'
 import {PathTools} from '../fileio/path-tools'
+import {FileTools} from '../fileio/file-tools'
 import {ValidatedOutput} from '../validated-output'
-import {DefaultContainerRoot} from '../constants'
+import {printResultState} from './misc-functions'
+import {ShellCMD} from '../shellcmd'
+import {DefaultContainerRoot, X11_POSIX_BIND} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
-import {ErrorStrings} from '../error-strings'
+import {ErrorStrings, WarningStrings} from '../error-strings'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
 
@@ -204,9 +208,28 @@ export async function jobToImage(runner: RunDriver, result: ValidatedOutput, ima
 // -- Parameters ---------------------------------------------------------------
 // configuration  - Object that inherits from abstract class Configuration
 // -----------------------------------------------------------------------------
-export function enableX11(configuration: Configuration)
+export function enableX11(configuration: Configuration, explicit:boolean = false)
 {
-  configuration.addRunENV("DISPLAY", ":0")
+  var result = new ValidatedOutput(true);
+  switch(os.platform())
+  {
+    case "darwin": // -- mac setup (XQuartz) -----------------------------------
+      if(FileTools.existsDir(X11_POSIX_BIND))
+      {
+        configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
+        configuration.addRunEnvironmentVariable("DISPLAY", ":0")
+        const shell = new ShellCMD(explicit)
+        shell.sync("xhost", {}, ["+ $(hostname)"], {stdio: "pipe"})
+      }
+      else
+      {
+        result.pushWarning(WarningStrings.X11.X11MACMISSINGDIR(X11_POSIX_BIND))
+      }
+      break;
+    default: // -- unsupported OS (XQuartz) ------------------------------------
+      result.pushWarning(WarningStrings.X11.X11FLAGUNAVALIABLE)
+  }
+  printResultState(result)
 }
 
 // -- Interactive Functions ----------------------------------------------------

@@ -48,3 +48,6 @@ export const DefaultContainerRoot = "/"                                         
 
 // Jupyter options
 export const JUPYTER_JOB_NAME = (image_name) => `${image_name}_jupyter`.replace(/[^a-zA-Z0-9_.-]/g,"")
+
+// X11 options
+export const X11_POSIX_BIND = "/tmp/.X11-unix"

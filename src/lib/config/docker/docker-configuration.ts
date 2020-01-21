@@ -61,6 +61,13 @@ export class DockerConfiguration extends Configuration
       return true;
   }
 
+  addRunEnvironmentVariable(name: string, value: string)
+  {
+    if(!(this.raw_object?.environment)) this.raw_object.environment = {}
+    this.raw_object.environment[name] = value
+    return true;
+  }
+
   setWorkingDir(value: string)
   {
     this.working_directory = value

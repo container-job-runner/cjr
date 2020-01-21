@@ -10,6 +10,7 @@ export const docker_configuration_schema = {
     "build": {"$ref": "#/definitions/build"},
     "mounts": {"$ref": "#/definitions/mounts"},
     "ports": {"$ref": "#/definitions/ports"},
+    "environment": {"$ref": "#/definitions/args"},
     "files": {"$ref": "#/definitions/files"}
   },
   "definitions": {

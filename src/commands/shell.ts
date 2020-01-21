@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
-import {IfBuiltAndLoaded, bindHostRoot, setRelativeWorkDir, addPorts, jobToImage} from '../lib/functions/run-functions'
+import {IfBuiltAndLoaded, bindHostRoot, setRelativeWorkDir, addPorts, jobToImage, enableX11} from '../lib/functions/run-functions'
 
 export default class Shell extends StackCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
@@ -11,7 +11,8 @@ export default class Shell extends StackCommand {
     hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     containerRoot: flags.string({default: false}),
     save: flags.string({default: false, description: "saves new image that contains modifications"}),
-    port: flags.string({default: [], multiple: true})
+    port: flags.string({default: [], multiple: true}),
+    x11: flags.boolean({default: false})
   }
   static strict = true;
 
@@ -29,6 +30,7 @@ export default class Shell extends StackCommand {
         bindHostRoot(configuration, containerRoot, hostRoot);
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
         addPorts(configuration, flags.port)
+        if(flags.x11) enableX11(configuration, flags.explicit)
 
         const job_object = {
           command: `bash`,
@@ -44,6 +46,7 @@ export default class Shell extends StackCommand {
 
     if(flags.save !== false) await jobToImage(runner, result, flags.save, true, this.settings.get('interactive'))
     this.handleFinalOutput(result);
+
   }
 
 }

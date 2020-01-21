@@ -28,6 +28,7 @@ export abstract class Configuration
   abstract getResultPaths() : array<string> | undefined;
   abstract addBind(hostRoot: string, containerRoot: string): boolean;
   abstract addPort(hostRoot: string, containerRoot: string): boolean;
+  abstract addRunEnvironmentVariable(name: string, value: string): boolean;
   abstract runObject() : object;
   abstract buildObject() : object;
   abstract validate(value: object): ValidatedOutput;
