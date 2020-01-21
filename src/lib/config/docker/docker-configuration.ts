@@ -78,6 +78,7 @@ export class DockerConfiguration extends Configuration
       var run_object = {}
       if(this.raw_object?.mounts) run_object.mounts = this.raw_object.mounts
       if(this.raw_object?.ports) run_object.ports = this.raw_object.ports
+      if(this.raw_object?.environment) run_object.environment = this.raw_object.environment
       if(this.working_directory) run_object.wd = this.working_directory
       return run_object
   }

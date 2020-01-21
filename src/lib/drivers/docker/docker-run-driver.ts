@@ -329,6 +329,7 @@ export class DockerRunDriver extends RunDriver
       this.addDetachedFlags(flags, run_flags_object)
       this.addNameFlags(flags, run_flags_object)
       this.addPortFlags(flags, run_flags_object)
+      this.addENVFlags(flags, run_flags_object)
       this.addMountFlags(flags, run_flags_object)
       this.addLabelFlags(flags, run_flags_object)
     }
@@ -402,8 +403,21 @@ export class DockerRunDriver extends RunDriver
     {
       flags["p"] = {
         shorthand: true,
-        escape: false,
+        sanitize: false,
         value: run_flags.ports.map(po => `${po.hostPort}:${po.containerPort}`)
+      }
+    }
+  }
+
+  private addENVFlags(flags, run_flags)
+  {
+    if(run_flags?.environment)
+    {
+      const keys = Object.keys(run_flags.environment)
+      flags["env"] = {
+        shorthand: false,
+        sanitize: false,
+        value: keys.map(key => `${key}=${run_flags.environment[key]}`)
       }
     }
   }
