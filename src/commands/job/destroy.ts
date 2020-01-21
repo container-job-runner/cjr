@@ -18,9 +18,8 @@ export default class Destroy extends JobCommand {
     const {argv, flags} = this.parse(Destroy)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
-    var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
-    var id = argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || ""
-
+    const stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    const id = (flags.all) ? "" : (argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || "")
     // match with existing container ids
     var result = matchingJobIds(runner, stack_path, id, flags['all'])
     if(result.success)

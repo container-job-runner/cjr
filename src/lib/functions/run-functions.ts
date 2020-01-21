@@ -20,7 +20,7 @@ function matchingIds(job_ids: array<string>, stack_path: string, id: string, all
   // find current jobs matching at least part of ID
   const re = new RegExp(`^${id}`)
   const matching_ids = (all) ? job_ids : job_ids.filter(id => re.test(id))
-  return (matching_ids.length > 0) ?
+  return (matching_ids.length > 0 || id.length == 0) ?
     new ValidatedOutput(true, matching_ids) :
     new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
 }

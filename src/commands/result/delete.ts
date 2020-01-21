@@ -18,8 +18,8 @@ export default class Remove extends JobCommand {
     const {argv, flags} = this.parse(Remove)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
-    var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
-    var id = argv[0] || await promptUserForResultId(runner, stack_path, !this.settings.get('interactive')) || "" // allow for empty if all is selected
+    const stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    const id = (flags.all) ? "" : (argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || "")
     // match with existing container ids
     var result = matchingResultIds(runner, stack_path, id, flags['all'])
     if(result.success)
