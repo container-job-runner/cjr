@@ -5,14 +5,15 @@ import {JobCommand} from '../../lib/commands/job-command'
 import {matchingResultIds} from '../../lib/functions/run-functions'
 import {cli_storage_dir_name} from '../../lib/constants'
 import {JSTools} from '../../lib/js-tools'
-import {IfBuiltAndLoaded, promptUserForResultId} from '../../lib/functions/run-functions'
+import {IfBuiltAndLoaded, promptUserForResultId, writeJSONJobFile} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Shell extends JobCommand {
   static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
-  static args = [{name: 'id', required: true}]
+  static args = [{name: 'id', required: false}]
   static flags = {
     stack: flags.string({env: 'STACK', default: false}),
+    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     explicit: flags.boolean({default: false}),
     discard: flags.boolean({default: false})
   }
@@ -53,6 +54,7 @@ export default class Shell extends JobCommand {
     {
       const id = result.data[0] // only process single result
       result = this.job_json.read(id)
+
       if(result.success)
       {
         // 1. load original job parameters -------------------------------------
@@ -64,6 +66,7 @@ export default class Shell extends JobCommand {
           const temp_job_object = JSTools.rMerge(JSTools.rCopy(old_job_object), {
             hostRoot: path.join(tmp_storage_path, path.basename(old_job_object.hostRoot))
           })
+          fs.ensureDirSync(temp_job_object.hostRoot)
           result = runner.resultCopy(id, temp_job_object, true)
         }
         // 4. start new job ----------------------------------------------------
@@ -78,10 +81,8 @@ export default class Shell extends JobCommand {
           var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
             (configuration) => {
               var result = runner.jobStart(stack_path, new_job_object, configuration.runObject())
-              if(result.success) {
-                new_job_id = result.data
-                this.job_json.write(new_job_id, new_job_object)
-              }
+              if(result.success) new_job_id = result.data
+              writeJSONJobFile(this.job_json, new_job_id, new_job_object)
             })
         }
         // 5. remove temp dir --------------------------------------------------
