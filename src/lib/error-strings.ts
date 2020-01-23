@@ -25,8 +25,12 @@ export const WarningStrings = {
     MISSING_CONFIG_FILE: (yml_path, config_path) => chalk`{bold Missing Configuration File} - a configuration file referenced in project settings yml does not exist.\n {italic yml:       } ${yml_path}\n {italic configFile}: ${config_path}`
   },
   X11:{
-      X11FLAGUNAVALIABLE: chalk`{bold X11 flag ignored} - the X11 flag is not supported on your operating system.`,
-      X11MACMISSINGDIR: (dir_path) => chalk`{bold missing X11 directory} - the directory "${dir_path}" is not present. Is XQuartz running?`,
-      X11MACMISSINGSOCKET: (dir_path) => chalk`{bold missing X11 socket} - no socket found in directory "${dir_path}". Is XQuartz running?`,
+    FLAGUNAVALIABLE: chalk`{bold X11 flag ignored} - the X11 flag is not supported on your operating system.`,
+    MISSINGDIR: (dir_path) => chalk`{bold missing X11 directory} - the directory "${dir_path}" is not present. Is X running?`,
+    MACMISSINGSOCKET: (dir_path) => chalk`{bold missing X11 socket} - no socket found in directory "${dir_path}". Is XQuartz running?`,
+  },
+  BUNDLE:{
+    INVALIDBINDPATH: (dir_path) => chalk`{bold A bind mount was removed from bundle} - to ensure the stack is repoducible on other systems, bundle only keeps bind paths that point to locations inside the stack folder.\n  {italic bind path: } ${dir_path}`,
+    VOLUMEDATA: (vol_name) => chalk`{bold Volume present in configuration} - note that volume data is not preserved in bundle.\n  {italic volume}: ${vol_name}`
   }
 }

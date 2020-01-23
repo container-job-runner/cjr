@@ -13,9 +13,12 @@ export const cli_jobs_dir_name = "jobs"
 
 // name of folders in data directory
 export const cli_storage_dir_name = "storage" // temporaries stores data between container transfer
+export const cli_bundle_dir_name = "bundle" // temporaries stores data between container transfer
 
 // name of optional project settings file that is loaded relative to project hostRoot
-export const projectSettingsYMLPath = (hostRoot: string) => path.join(hostRoot, `.${cli_name}`, "settings.yml")
+export const project_settings_folder = `.${cli_name}`
+export const project_settings_file   = "settings.yml"
+export const projectSettingsYMLPath = (hostRoot: string) => path.join(hostRoot, project_settings_folder, project_settings_file)
 
 // default properties for settings.yml
 export const default_settings_object = {stack: false, configFiles: []}

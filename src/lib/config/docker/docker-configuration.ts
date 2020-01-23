@@ -6,7 +6,9 @@ import {Configuration} from '../abstract/configuration'
 import {dc_ajv_validator} from './schema/docker-configuration-schema'
 import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
 import {FileTools} from '../../fileio/file-tools'
-import {ErrorStrings} from '../../error-strings'
+import {PathTools} from '../../fileio/path-tools'
+import {JSTools} from '../../js-tools'
+import {ErrorStrings, WarningStrings} from '../../error-strings'
 
 // Class for docker configuration
 export class DockerConfiguration extends Configuration
@@ -87,6 +89,42 @@ export class DockerConfiguration extends Configuration
   {
       return this.raw_object?.build || {}
   }
+
+  bundle(stack_path: string)
+  {
+      // copy existing configuration
+      const result = new ValidatedOutput(true);
+      const raw_object = JSTools.rCopy(this.raw_object)
+      result.data = raw_object;
+      // remove any non local binds & warn about volumes
+      if(raw_object?.mounts)
+      {
+          raw_object.mounts = raw_object.mounts.filter(
+            m => {
+              if(m.type === "tmpfs") return true
+              if(m.type === "volume") {
+                result.pushWarning(WarningStrings.BUNDLE.VOLUMEDATA(m.volumeName))
+                return true;
+              }
+              if(m.type === "bind") {
+                const rel_path = PathTools.relativePathFromParent(
+                  PathTools.split(stack_path),
+                  PathTools.split(m.hostPath))
+                if(rel_path) {
+                  m.hostPath = PathTools.join(rel_path) // make relative path
+                }
+                else {
+                  result.pushWarning(WarningStrings.BUNDLE.INVALIDBINDPATH(m.hostPath));
+                  return false
+                }
+              }
+              return true;
+            }
+          )
+      }
+      return result
+  }
+
 
   private replaceRelativePaths(parent_path: string)
   {

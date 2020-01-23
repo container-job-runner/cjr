@@ -1,4 +1,4 @@
-import * as fs from 'fs'
+import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as yaml from 'js-yaml'
 import * as chalk from 'chalk'
@@ -6,6 +6,7 @@ import {BuildDriver} from '../abstract/build-driver'
 import {ValidatedOutput} from '../../validated-output'
 import {DockerConfiguration} from '../../config/docker/docker-configuration'
 import {FileTools} from '../../fileio/file-tools'
+import {YMLFile} from '../../fileio/yml-file'
 
 export class DockerBuildDriver extends BuildDriver
 {
@@ -17,6 +18,7 @@ export class DockerBuildDriver extends BuildDriver
     }
     private configuration_constructor = DockerConfiguration // pointer to configuration class constructor
     private json_output_format = "line_json"
+    private default_config_name = "config.yml"
 
     private ERRORSTRINGS = {
       "MISSING_DOCKERFILE": (dir) => chalk`{bold Stack is Missing Dockerfile.}\n  {italic path:} ${dir}`,
@@ -106,7 +108,7 @@ export class DockerBuildDriver extends BuildDriver
 
     loadConfiguration(stack_path: string, overloaded_config_paths: array<string> = [])
     {
-      overloaded_config_paths.unshift(path.join(stack_path, "config.yml")) // always add stack config file first
+      overloaded_config_paths.unshift(path.join(stack_path, this.default_config_name)) // always add stack config file first
       var configuration = new this.configuration_constructor()
       var result = overloaded_config_paths.reduce(
         (result, path) => {
@@ -122,12 +124,12 @@ export class DockerBuildDriver extends BuildDriver
 
     private loadConfigurationFile(file_path: string) // Determines if config file is valid
     {
+        const configuration = new this.configuration_constructor()
         if(FileTools.existsFile(file_path))
         {
           try
           {
             const contents = yaml.safeLoad(fs.readFileSync(file_path, 'utf8')) || {} // allow blank files to pass validation
-            const configuration = new this.configuration_constructor()
             const result = configuration.setRawObject(contents, path.dirname(file_path))
             return (result.success) ? new ValidatedOutput(true, configuration) : result
           }
@@ -136,8 +138,28 @@ export class DockerBuildDriver extends BuildDriver
             return new ValidatedOutput(false, null, [this.ERRORSTRINGS.YML_ERROR(file_path, error)])
           }
         }
+        else
+        {
+          configuration.setRawObject({})
+        }
 
-        return new ValidatedOutput(true, {}); // exit silently if config files is not present
+        return new ValidatedOutput(true, configuration); // exit silently if config files is not present
+    }
+
+    copy(stack_path: string, new_stack_path: string, configuration: object|boolean = false)
+    {
+      try
+      {
+        fs.copySync(stack_path, new_stack_path)
+        if(configuration !== false) {
+           const writer = new YMLFile(new_stack_path, true);
+           return writer.write(this.default_config_name, configuration)
+        }
+      }
+      catch(e)
+      {
+        return new ValidatedOutput(false, e)
+      }
     }
 
     // Special function for reducing code repetition in Podman Driver Class

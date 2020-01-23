@@ -11,7 +11,7 @@ export class PathTools
 
   static join(path_arr: array<string>)
   {
-    return path.join(...arguments)
+    return path.join(...path_arr)
   }
 
   static relativePathFromParent(parent: array<string>, child: array<string>)

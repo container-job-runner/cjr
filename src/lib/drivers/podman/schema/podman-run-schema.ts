@@ -5,8 +5,8 @@ import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
 import {docker_configuration_schema} from '../../../config/docker/schema/docker-configuration-schema'
 
 export const podman_run_schema = {
-  "$id": "docker-run.json",
-  "title": "Docker Run Configuration",
+  "$id": "podman-run.json",
+  "title": "Podman Run Configuration",
   "description": "Used internally by DockerRunDriver in run command",
   "type": "object",
   "properties": {
@@ -26,7 +26,15 @@ export const podman_run_schema = {
           "userns" : {
             "type": "string",
             "pattern": "^(host)|(keep-id)$"
-          }
+          },
+          "security-opt" : {
+            "type": "string",
+            "pattern": "^(label=disable)$"
+          },
+          "network" : {
+            "type": "string",
+            "pattern": "^(host)|(slirp4netns)$"
+          },
         }
       }
   }

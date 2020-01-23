@@ -12,6 +12,12 @@ export class PodmanConfiguration extends DockerConfiguration
     return run_object
   }
 
+  // specific flags for podman
+  setFlag(field, value) {
+    if(!this.raw_object?.podman) this.raw_object.podman = {}
+    this.raw_object.podman[field] = value
+  }
+
 }
 
 // NOTE: this class currently validates its object using the docker-configuration-schemas

@@ -10,6 +10,7 @@ import {ShellCMD} from '../shellcmd'
 import {DefaultContainerRoot, X11_POSIX_BIND} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
 import {ErrorStrings, WarningStrings} from '../error-strings'
+import {PodmanConfiguration} from '../config/podman/podman-configuration'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
 
@@ -210,57 +211,67 @@ export async function jobToImage(runner: RunDriver, result: ValidatedOutput, ima
 // -----------------------------------------------------------------------------
 export function enableX11(configuration: Configuration, explicit:boolean = false)
 {
-  var result = new ValidatedOutput(true);
-  switch(os.platform())
-  {
-    case "darwin": // -- mac setup (XQuartz) -----------------------------------
-      if(FileTools.existsDir(X11_POSIX_BIND))
-      {
-        configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
-        const x11_sockets = fs.readdirSync(X11_POSIX_BIND).filter(file_name => new RegExp(/^X\d+$/).test(file_name)).sort();
-        if(x11_sockets.length > 0)
-        {
-          const socket_number = x11_sockets.pop().replace("X", "") // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
-          configuration.addRunEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
-          //const socket_number = x11_sockets.pop().replace("X", "") // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
-          // configuration.addRunEnvironmentVariable("DISPLAY", `$(hostname):${socket_number}`)
-          // const shell = new ShellCMD(explicit)
-          // shell.sync("xhost", {}, ["+ $(hostname)"], {stdio: "pipe"})
-        }
-        else
-        {
-            result.pushWarning(WarningStrings.X11.X11MACMISSINGSOCKET(X11_POSIX_BIND))
-        }
-      }
-      else
-      {
-        result.pushWarning(WarningStrings.X11.X11MACMISSINGDIR(X11_POSIX_BIND))
-      }
-      break;
-    case "linux": // -- linux setup (X11) --------------------------------------
-    if(FileTools.existsDir(X11_POSIX_BIND))
-    {
-      configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
-      const x11_sockets = fs.readdirSync(X11_POSIX_BIND).filter(file_name => new RegExp(/^X\d+$/).test(file_name)).sort();
-      if(x11_sockets.length > 0)
-      {
-        const socket_number = x11_sockets.pop().replace("X", "")
-        configuration.addRunEnvironmentVariable("DISPLAY", `:${socket_number}`)
-      }
-      else
-      {
-          result.pushWarning(WarningStrings.X11.X11MACMISSINGSOCKET(X11_POSIX_BIND))
-      }
-    }
-    else
-    {
-      result.pushWarning(WarningStrings.X11.X11MACMISSINGDIR(X11_POSIX_BIND))
-    }
+  const platform = os.platform()
 
-    default: // -- unsupported OS ----------------------------------------------
-      result.pushWarning(WarningStrings.X11.X11FLAGUNAVALIABLE)
+  if(["linux", "darwin"].includes(platform) == false) { // -- unsupported OS ---
+    return printResultState(
+      new ValidatedOutput(true, [], [], [WarningStrings.X11.FLAGUNAVALIABLE])
+    )
   }
-  printResultState(result)
+
+  if(!FileTools.existsDir(X11_POSIX_BIND)) { // -- nonexistant X11 folder ------
+    return printResultState(
+      new ValidatedOutput(true, [], [], [WarningStrings.X11.MISSINGDIR(X11_POSIX_BIND)])
+    )
+  }
+
+  switch(platform)
+  {
+    case "darwin": // == MAC ===================================================
+      const sockets = fs.readdirSync(X11_POSIX_BIND)?.filter(file_name => new RegExp(/^X\d+$/)?.test(file_name))?.sort();
+      if(sockets.length < 1) { // -- no sockets --------------------------------
+        return printResultState(
+          new ValidatedOutput(true, [], [], [WarningStrings.X11.MACMISSINGSOCKET(X11_POSIX_BIND)])
+        )
+      }
+      const socket_number = sockets.pop().replace("X", "") // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
+      configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
+      configuration.addRunEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
+      const shell = new ShellCMD(explicit)
+      shell.output("xhost +localhost", {}, []);
+      break;
+    case "linux": // == LINUX ==================================================
+      configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
+      configuration.addRunEnvironmentVariable("DISPLAY", `$(DISPLAY)`)
+  }
+
+  // -- add special flags for podman -------------------------------------------
+  if(configuration instanceof PodmanConfiguration) {
+    configuration.setFlag("network", "host") // allows reuse of DISPLAY variable from host
+    configuration.setFlag("security-opt", "label=disable") // allows /tmp/X11 directory to be accesible in container
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ADDXAUTHSECRET: execs commands in container which add xAuth secret from host
+// -- Parameters ---------------------------------------------------------------
+// runner  - RunDriver
+// result: ValidatedOutput - result from jobStart
+// explicit: boolean - determine if shell commands are printed
+// -----------------------------------------------------------------------------
+export function addXAuthSecret(runner: RunDriver, result: ValidatedOutput, explicit: boolean = false)
+{
+  if(result.success == false) return
+  if(os.platform() != "linux") return
+  const id = result.data
+  const shell = new ShellCMD(explicit)
+  const shell_result = shell.output("xauth list $DISPLAY", {}, [])
+  if(shell_result.success) {
+    const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
+    const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`].join("\n")
+    const command = `bash -c "${script}"`
+    runner.jobExec(id, command, {})
+  }
 }
 
 // -- Interactive Functions ----------------------------------------------------

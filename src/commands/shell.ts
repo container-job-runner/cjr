@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
-import {IfBuiltAndLoaded, bindHostRoot, setRelativeWorkDir, addPorts, jobToImage, enableX11} from '../lib/functions/run-functions'
+import {IfBuiltAndLoaded, bindHostRoot, setRelativeWorkDir, addPorts, jobToImage, enableX11, addXAuthSecret} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
@@ -37,11 +37,15 @@ export default class Shell extends StackCommand {
           command: `bash`,
           hostRoot: false, // set false so that no data copy is performed
           containerRoot: containerRoot,
-          synchronous: true,
+          synchronous: (flags.x11) ? false : true, // if x11 is select run async so that we can add xauth
           removeOnExit: (flags.save !== false) ? false : true
         }
 
         let result = runner.jobStart(stack_path, job_object, configuration.runObject())
+        if(flags.x11) {
+          addXAuthSecret(runner, result, flags.explicit)
+          runner.jobAttach(result.data)
+        }
         return result
       })
 

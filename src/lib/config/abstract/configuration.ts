@@ -19,19 +19,19 @@ export abstract class Configuration
       JSTools.rMerge(this.raw_object, other.raw_object)
   }
 
-  // minimum abstractions required by build, ssh and run for all configurations
-
+  // interactive components that may be called by CLI to modify existing configuration
   abstract setWorkingDir(value: string): void;
   abstract setName(value: string): void;
   abstract getHostRoot(): string | undefined;
   abstract getContainerRoot() : string | undefined;
   abstract getResultPaths() : array<string> | undefined;
-  abstract addBind(hostRoot: string, containerRoot: string): boolean;
-  abstract addPort(hostRoot: string, containerRoot: string): boolean;
+  abstract addBind(hostPath: string, containerPath: string): boolean;
+  abstract addPort(hostPort: integer, containerPort: integer): boolean;
   abstract addRunEnvironmentVariable(name: string, value: string): boolean;
+  abstract bundle(): Configuration
+  // output objects for run-drivers or build-drivers
   abstract runObject() : object;
   abstract buildObject() : object;
+  // local Functions
   abstract validate(value: object): ValidatedOutput;
-  abstract private replaceRelativePaths(config_path: string): void;    // replaces relative paths with absolute paths
-
 }

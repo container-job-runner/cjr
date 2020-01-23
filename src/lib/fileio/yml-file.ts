@@ -7,7 +7,7 @@ export class YMLFile extends TextFile
   private extension: string = "yml"
 
   write(name:string, data:object) {
-    return super.write(name, yml.safeDump(data))
+    return super.write(name, yaml.safeDump(data))
   }
 
   read(name:string)

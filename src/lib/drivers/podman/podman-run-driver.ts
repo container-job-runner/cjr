@@ -32,9 +32,14 @@ export class PodmanRunDriver extends DockerRunDriver
   {
     var flags = super.runFlags(run_flags_object)
     // append special podman run_flags
-    if(run_flags_object?.podman?.userns)
-    {
+    if(run_flags_object?.podman?.userns) { // used for consistant file permissions
       flags["userns"] = {shorthand: false, value: run_flags_object.podman.userns}
+    }
+    if(run_flags_object?.podman?.["security-opt"]) { // used for binding X11 directory
+      flags["security-opt"] = {shorthand: false, value: run_flags_object.podman["security-opt"]}
+    }
+    if(run_flags_object?.podman?.network) { // used for sharing DISPLAY variable
+      flags["network"] = {shorthand: false, value: run_flags_object.podman.network}
     }
     return flags
   }

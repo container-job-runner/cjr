@@ -7,4 +7,5 @@ export abstract class BuildDriver extends ContainerDriver
   abstract isBuilt(stack_path: string): boolean;
   abstract loadConfiguration(stack_path: string, overloaded_config_paths: array<string>): ValidatedOutput;
   abstract removeImage(stack_path: string): ValidatedOutput;
+  abstract copy(stack_path: string, copy_path: string, configuration: object|boolean = false): ValidatedOutput;
 }

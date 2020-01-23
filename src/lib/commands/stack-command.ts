@@ -46,36 +46,48 @@ export abstract class StackCommand extends Command
   // helper function for loading optional .cjr/stack.yml in hostRoot
   loadProjectSettingsYML(hostRoot)
   {
-    var result = new ValidatedOutput(true);
-    if(hostRoot)
-    {
-      var stack = false
-      var configFiles = []
-      const yml_path = projectSettingsYMLPath(hostRoot)
-      if(FileTools.existsFile(yml_path))
-      {
-          var stack_file = new YMLFile(false, false, ps_vo_validator)
-          var read_result = stack_file.validatedRead(yml_path)
-          if(read_result.success) {
-            this.project_settings = { ...default_settings_object, ...read_result.data}
-          } else {
-            result.pushWarning(WarningStrings.PROJECTSETTINGS.INVALID_YML(yml_path))
-          }
+    // -- exit if no hostRoot is specified -------------------------------------
+    if(!hostRoot) return;
 
-          if(this.project_settings?.configFiles) {
-               // adjust relative paths
-               this.project_settings.configFiles = this.project_settings.configFiles.map(
-                 (path_str) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
-               )
-               // remove nonexistant configuration files
-               this.project_settings.configFiles = this.project_settings.configFiles.filter(path => {
-                 let config_exists = FileTools.existsFile(path)
-                 if(!config_exists) result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(yml_path, path))
-                 return config_exists
-               })
-          }
-      }
+    // -- exit if no settings file exists --------------------------------------
+    const yml_path = projectSettingsYMLPath(hostRoot)
+    if(!FileTools.existsFile(yml_path)) return
+
+    // -- exit if settings file is invalid -------------------------------------
+    const stack_file = new YMLFile(false, false, ps_vo_validator)
+    const read_result = stack_file.validatedRead(yml_path)
+    if(read_result.success == false) {
+      printResultState(
+        new ValidatedOutput(true, [], [], [WarningStrings.PROJECTSETTINGS.INVALID_YML(yml_path)])
+      )
+      return;
     }
+
+    //  -- set project settings variable ---------------------------------------
+    this.project_settings = { ...default_settings_object, ...read_result.data}
+    var result = new ValidatedOutput(true)
+
+    if(this.project_settings?.stack) // -- adjust stack paths ------------------
+    {
+      // see if local stack folder exists. If so set path to absolute
+      const abs_path = path.join(path.dirname(yml_path), this.project_settings.stack)
+      if(FileTools.existsDir(abs_path)) this.project_settings.stack = abs_path
+    }
+
+    if(this.project_settings?.configFiles) // -- adjust config files -----------
+    {
+      // adjust relative paths
+      this.project_settings.configFiles = this.project_settings.configFiles.map(
+       (path_str) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
+      )
+      // remove nonexistant configuration files
+      this.project_settings.configFiles = this.project_settings.configFiles.filter(path => {
+       let config_exists = FileTools.existsFile(path)
+       if(!config_exists) result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(yml_path, path))
+       return config_exists
+      })
+    }
+
     printResultState(result)
   }
 
