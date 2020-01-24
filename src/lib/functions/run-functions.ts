@@ -242,7 +242,7 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
       break;
     case "linux": // == LINUX ==================================================
       configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
-      configuration.addRunEnvironmentVariable("DISPLAY", `$(DISPLAY)`)
+      configuration.addRunEnvironmentVariable("DISPLAY", `$DISPLAY`)
   }
 
   // -- add special flags for podman -------------------------------------------
@@ -253,26 +253,46 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
 }
 
 // -----------------------------------------------------------------------------
+// PREPENDXAUTH: prepend commands to add xAuth from host into container, onto
+// any existing command.
+// -- Parameters ---------------------------------------------------------------
+// command  - existing command string
+// explicit: boolean - determines if commands run on host are to be printed
+// -----------------------------------------------------------------------------
+export function prependXAuth(command: string, explicit: boolean = false)
+{
+  if(os.platform() != "linux") return ""
+  const shell = new ShellCMD(explicit)
+  const shell_result = shell.output("xauth list $DISPLAY", {}, [])
+  if(shell_result.success) {
+    const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
+    const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command.replace(/"/g, '\\"')].join("\n")
+    return `bash -c "${script}"`
+  }
+  return ""
+}
+
+// -----------------------------------------------------------------------------
 // ADDXAUTHSECRET: execs commands in container which add xAuth secret from host
 // -- Parameters ---------------------------------------------------------------
 // runner  - RunDriver
 // result: ValidatedOutput - result from jobStart
 // explicit: boolean - determine if shell commands are printed
 // -----------------------------------------------------------------------------
-export function addXAuthSecret(runner: RunDriver, result: ValidatedOutput, explicit: boolean = false)
-{
-  if(result.success == false) return
-  if(os.platform() != "linux") return
-  const id = result.data
-  const shell = new ShellCMD(explicit)
-  const shell_result = shell.output("xauth list $DISPLAY", {}, [])
-  if(shell_result.success) {
-    const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
-    const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`].join("\n")
-    const command = `bash -c "${script}"`
-    runner.jobExec(id, command, {})
-  }
-}
+// export function addXAuthSecret(runner: RunDriver, result: ValidatedOutput, explicit: boolean = false)
+// {
+//   if(result.success == false) return
+//   if(os.platform() != "linux") return
+//   const id = result.data
+//   const shell = new ShellCMD(explicit)
+//   const shell_result = shell.output("xauth list $DISPLAY", {}, [])
+//   if(shell_result.success) {
+//     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
+//     const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`].join("\n")
+//     const command = `bash -c "${script}"`
+//     runner.jobExec(id, command, {})
+//   }
+// }
 
 // -- Interactive Functions ----------------------------------------------------
 

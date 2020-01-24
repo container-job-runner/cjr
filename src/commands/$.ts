@@ -14,7 +14,8 @@ export default class Run extends JobCommand {
     containerRoot: flags.string({default: false}),
     async: flags.boolean({default: false}),
     silent: flags.boolean({default: false}), // if selected will not print out job id
-    port: flags.string({default: [], multiple: true})
+    port: flags.string({default: [], multiple: true}),
+    x11: flags.boolean({default: false})
   }
   static strict = false;
 
@@ -31,9 +32,10 @@ export default class Run extends JobCommand {
       (configuration, containerRoot, hostRoot) => {
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
         addPorts(configuration, flags.port)
+        if(flags.x11) enableX11(configuration, flags.explicit)
 
         var job_object = {
-          command: command,
+          command: (flags.x11) ? prependXAuth(command, flags.explicit) : command,
           hostRoot: hostRoot,
           containerRoot: containerRoot,
           synchronous: !flags.async,
