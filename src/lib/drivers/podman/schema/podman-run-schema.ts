@@ -41,6 +41,7 @@ export const podman_run_schema = {
 }
 
 // create new Ajv validator for docker_run_schema
+type Dictionary = {[key:string] : any}
 var ajv = new Ajv({schemas: [podman_run_schema, docker_configuration_schema]})
 export const pr_ajv_validator = ajv.getSchema(podman_run_schema["$id"])
-export const pr_vo_validator  = (raw_object) => ajvValidatorToValidatedOutput(pr_ajv_validator, raw_object)
+export const pr_vo_validator  = (raw_object: Dictionary) => ajvValidatorToValidatedOutput(pr_ajv_validator, raw_object)

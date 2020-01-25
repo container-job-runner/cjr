@@ -5,18 +5,18 @@ import {ValidatedOutput} from "../validated-output"
 export class TextFile
 {
   parent_dir: string // files will be created relative to the parent_dir
-  create_base_dir: boolean = false
-  private extension: string = "txt"
-  private validator = (x) => x
+  create_base_dir: boolean
+  protected extension: string = "txt"
+  protected validator: (x: any) => any
 
-  constructor(parent_dir: string = "", create_base_dir: boolean = false, validator = (x) => x)
+  constructor(parent_dir: string = "", create_base_dir: boolean = false, validator = (x:any) => x)
   {
     this.parent_dir = parent_dir
     this.validator = validator
     this.create_base_dir = create_base_dir
   }
 
-  write(name:string, data_str:string)
+  write(name: string, data_str: any)
   {
     const file_path = this.filePath(name)
     const dir_name  = path.dirname(file_path)

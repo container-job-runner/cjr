@@ -5,8 +5,8 @@ export default class List extends StackCommand {
   static description = 'List all results (i.e. completed jobs) for a stack.'
   static args = []
   static flags = {
-    stack: flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
     json: flags.boolean({default: false}),
     all: flags.boolean({default: false}) //if true shows result from all cjr stacks, regardless of whether stack is set
@@ -15,7 +15,7 @@ export default class List extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(List, false)
+    const {argv, flags} = this.parseWithLoad(List, false)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = (!flags.all && flags.stack) ? this.fullStackPath(flags.stack) : ""
     const results = runner.resultList(stack_path, flags['json'])

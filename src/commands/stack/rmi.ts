@@ -6,7 +6,8 @@ export default class Build extends StackCommand {
   static description = 'Delete an image associated with a stack.'
   static args = []
   static flags = {
-    stack:    flags.string({env: 'STACK', default: false}),
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
     silent:   flags.boolean({default: false})
   }
@@ -14,7 +15,7 @@ export default class Build extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Build, true)
+    const {argv, flags} = this.parseWithLoad(Build, true)
     const builder = this.newBuilder(flags.explicit, flags.silent)
     const stack_path = this.fullStackPath(flags.stack)
     const result = builder.removeImage(stack_path)

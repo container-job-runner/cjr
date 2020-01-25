@@ -6,7 +6,7 @@ export default class List extends StackCommand {
   static description = 'List all stacks present in the stacks path.'
   static args = []
   static flags = {
-    stacks_path: flags.boolean({default: false})
+    stacks_path: flags.string()
   }
   static strict = true;
 

@@ -7,11 +7,11 @@ export default class Shell extends StackCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
   static args = []
   static flags = {
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
+    containerRoot: flags.string(),
     explicit: flags.boolean({default: false}),
-    stack: flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
-    containerRoot: flags.string({default: false}),
-    save: flags.string({default: false, description: "saves new image that contains modifications"}),
+    save: flags.string({description: "saves new image that contains modifications"}),
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false})
   }
@@ -19,7 +19,7 @@ export default class Shell extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Shell, true)
+    const {argv, flags} = this.parseWithLoad(Shell, true)
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
@@ -38,7 +38,7 @@ export default class Shell extends StackCommand {
           hostRoot: false, // set false so that no data copy is performed
           containerRoot: containerRoot,
           synchronous: true,
-          removeOnExit: (flags.save !== false) ? false : true
+          removeOnExit: (flags.save !== undefined) ? false : true
         }
 
         let result = runner.jobStart(stack_path, job_object, configuration.runObject())

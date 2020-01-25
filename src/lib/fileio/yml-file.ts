@@ -4,9 +4,9 @@ import * as yaml from 'js-yaml'
 
 export class YMLFile extends TextFile
 {
-  private extension: string = "yml"
+  protected extension: string = "yml"
 
-  write(name:string, data:object) {
+  write(name:string, data:any) {
     return super.write(name, yaml.safeDump(data))
   }
 

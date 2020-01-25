@@ -1,5 +1,5 @@
 // ===========================================================================
-// Settings: A class for getting and setting
+// Docker-Run-Driver: Controls Docker For Running containers
 // ===========================================================================
 
 import * as path from 'path'
@@ -8,7 +8,7 @@ import {quote} from 'shell-quote'
 import {cli_name} from '../../constants'
 import {ValidatedOutput} from '../../validated-output'
 import {PathTools} from '../../fileio/path-tools'
-import {RunDriver} from '../abstract/rundriver'
+import {RunDriver, Dictionary} from '../abstract/run-driver'
 import {dr_ajv_validator} from './schema/docker-run-schema'
 import {de_ajv_validator} from './schema/docker-exec-schema'
 import {dj_ajv_validator} from './schema/docker-job-schema'
@@ -16,8 +16,8 @@ import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
 
 export class DockerRunDriver extends RunDriver
 {
-  private base_command = 'docker'
-  private sub_commands = {
+  protected base_command = 'docker'
+  protected sub_commands = {
     run: "run",
     list: "ps",
     stop: "stop",
@@ -30,18 +30,18 @@ export class DockerRunDriver extends RunDriver
     exec: "exec",
     commit: "commit"
   }
-  private json_output_format = "line_json"
-  private job_schema_validator  = dj_ajv_validator
-  private exec_schema_validator = de_ajv_validator
-  private run_schema_validator  = dr_ajv_validator
+  protected json_output_format = "line_json"
+  protected job_schema_validator  = dj_ajv_validator
+  protected exec_schema_validator = de_ajv_validator
+  protected run_schema_validator  = dr_ajv_validator
 
-  private ERRORSTRINGS = {
+  protected ERRORSTRINGS = {
     INVALID_JOB : chalk`{bold job_options object did not pass validation.}`
   }
 
   // job functions
 
-  jobStart(stack_path: string, job_options: object, run_options: object={}){
+  jobStart(stack_path: string, job_options: Dictionary, run_options: Dictionary={}){
 
     var result = ajvValidatorToValidatedOutput(this.job_schema_validator, job_options)
     if(result.success)
@@ -64,16 +64,18 @@ export class DockerRunDriver extends RunDriver
         const container_id = result.data;
         if(hostRoot) this.copyToContainer(container_id, hostRoot, containerRoot)
         const command = `${this.base_command} ${this.sub_commands["start"]}`;
-        const args = [container_id]
+        const args: Array<string> = [container_id]
+        var flags: Dictionary
+        var shell_options: Dictionary
         if(job_options.synchronous) // run attached if specified
         {
-          var flags = {attach: {shorthand: false}, interactive: {shorthand: false}}
-          var shell_options = {stdio: "inherit"}
+          flags = {attach: {shorthand: false}, interactive: {shorthand: false}}
+          shell_options = {stdio: "inherit"}
         }
         else // by default run detached
         {
-          var flags = {}
-          var shell_options = {stdio: "pipe"} // hide any output (id of process)
+          flags = {}
+          shell_options = {stdio: "pipe"} // hide any output (id of process)
         }
         this.shell.sync(command, flags, args, shell_options)
       }
@@ -81,14 +83,14 @@ export class DockerRunDriver extends RunDriver
     }
     else
     {
-        result.pushError([this.ERRORSTRINGS.INVALID_JOB])
+      result.pushError(this.ERRORSTRINGS.INVALID_JOB)
     }
     return result
   }
 
   // === START Job Helper Functions ============================================
 
-  private create(stack_path: string, command_string: string, run_options={})
+  protected create(stack_path: string, command_string: string, run_options={})
   {
     const command = `${this.base_command} ${this.sub_commands["create"]}`;
     const args  = [this.imageName(stack_path), command_string]
@@ -98,7 +100,7 @@ export class DockerRunDriver extends RunDriver
     return result
   }
 
-  private copyToContainer(id: string, hostPath: string, containerPath: string)
+  protected copyToContainer(id: string, hostPath: string, containerPath: string)
   {
     const command = `${this.base_command} ${this.sub_commands["copy"]}`;
     const args = [hostPath, `${id}:${containerPath}`]
@@ -106,7 +108,7 @@ export class DockerRunDriver extends RunDriver
     return this.shell.sync(command, flags, args)
   }
 
-  private copyFromContainer(id: string, hostPath: string, containerPath: string)
+  protected copyFromContainer(id: string, hostPath: string, containerPath: string)
   {
     const command = `${this.base_command} ${this.sub_commands["copy"]}`;
     const args = [`${id}:${containerPath}`, hostPath]
@@ -119,7 +121,7 @@ export class DockerRunDriver extends RunDriver
   jobList(stack_path: string, json_format:boolean = false)
   {
     const command = `${this.base_command} ${this.sub_commands["list"]}`;
-    const args = []
+    const args:Array<string> = []
     var   flags = {
       "filter": {
         value: ['status=running', `label=runner=${cli_name}`], //using labels now instead of `ancestor=${this.imageName(stack_path)}`
@@ -127,7 +129,7 @@ export class DockerRunDriver extends RunDriver
     }
     if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
     if(json_format) this.addFormatFlags(flags, {format: "json"})
-    return this.shell.sync(command, flags, args)
+    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
   }
 
   jobLog(id: string, lines: string="all")
@@ -136,7 +138,7 @@ export class DockerRunDriver extends RunDriver
     var args = [id]
     const lines_int = parseInt(lines)
     const flags = (isNaN(lines_int)) ? {} : {tail: {shorthand: false, value: `${lines_int}`}}
-    return this.shell.sync(command, flags, args)
+    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
   }
 
   jobAttach(id: string)
@@ -144,30 +146,30 @@ export class DockerRunDriver extends RunDriver
     var command = `${this.base_command} ${this.sub_commands["attach"]}`;
     var args = [id]
     var flags = {}
-    return this.shell.sync(command, flags, args)
+    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
   }
 
-  jobExec(id: string, exec_command: string, exec_options={})
+  jobExec(id: string, exec_command: string, exec_options:Dictionary={})
   {
     var command = `${this.base_command} ${this.sub_commands["exec"]}`;
     var args = [id, exec_command]
     const flags = this.execFlags(exec_options)
-    return this.shell.sync(command, flags, args)
+    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
   }
 
-  jobDestroy(ids: array<string>)
+  jobDestroy(ids: Array<string>)
   {
-    return [this.stop(ids), this.remove(ids)]
+    return new ValidatedOutput(true, [this.stop(ids), this.remove(ids)])
   }
 
-  jobStop(ids: array<string>)
+  jobStop(ids: Array<string>)
   {
-    return [this.stop(ids)]
+    return new ValidatedOutput(true, this.stop(ids))
   }
 
-  // private helpers
+  // protected helpers
 
-  private stop(ids: array<string>)
+  protected stop(ids: Array<string>)
   {
     const command = `${this.base_command} ${this.sub_commands["stop"]}`;
     const args = ids
@@ -175,7 +177,7 @@ export class DockerRunDriver extends RunDriver
     return this.shell.sync(command, flags, args, {stdio: "pipe"})
   }
 
-  private remove(ids: array<string>)
+  protected remove(ids: Array<string>)
   {
     const command = `${this.base_command} ${this.sub_commands["remove"]}`;
     const args = ids
@@ -186,8 +188,8 @@ export class DockerRunDriver extends RunDriver
   jobInfo(image_name: string) // Note: this allows for empty image_name. In which case it returns all running containers on host
   {
     const command = `${this.base_command} ${this.sub_commands["list"]}`;
-    const args = []
-    var   flags = {
+    const args: Array<string> = []
+    var   flags: Dictionary = {
       "no-trunc": {shorthand: false},
       "filter": {shorthand: false, value: [`label=runner=${cli_name}`]}
     };
@@ -196,7 +198,7 @@ export class DockerRunDriver extends RunDriver
     }
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-    return (result.success) ? result.data?.map(x => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) : [];
+    return (result.success) ? result.data?.map((x:Dictionary) => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) : {};
   }
 
   // result functions
@@ -204,8 +206,8 @@ export class DockerRunDriver extends RunDriver
   resultList(stack_path: string, json_format:boolean = false)
   {
     const command = `${this.base_command} ${this.sub_commands["list"]}`;
-    const args = []
-    var   flags = {
+    const args: Array<string> = []
+    var   flags: Dictionary = {
       "a" : {shorthand: true},
       "filter": {
         value: ['status=exited', `label=runner=${cli_name}`], //using labels now instead of `ancestor=${this.imageName(stack_path)}`
@@ -213,19 +215,19 @@ export class DockerRunDriver extends RunDriver
     }
     if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
     if(json_format) this.addFormatFlags(flags, {format: "json"})
-    return this.shell.sync(command, flags, args)
+    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
   }
 
-  resultDelete(ids: array<string>)
+  resultDelete(ids: Array<string>)
   {
-    return this.remove(ids)
+    return new ValidatedOutput(true, this.remove(ids))
   }
 
   resultInfo(image_name: string) // Note: this allows for empty image_name. In which case it returns all running containers on host
   {
     const command = `${this.base_command} ${this.sub_commands["list"]}`;
-    const args = []
-    var   flags = {
+    const args: Array<string> = []
+    var   flags: Dictionary = {
       "a" : {shorthand: true},
       "no-trunc" : {shorthand: false},
       "filter" : {shorthand: false, value: ['status=exited',`label=runner=${cli_name}`]}
@@ -235,10 +237,10 @@ export class DockerRunDriver extends RunDriver
     }
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-    return (result.success) ? result.data?.map(x => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) :[];
+    return (result.success) ? result.data?.map((x:Dictionary) => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) :[];
   }
 
-  resultCopy(id: string, job_object: object, copy_all: boolean = false)
+  resultCopy(id: string, job_object: Dictionary, copy_all: boolean = false)
   {
     if(dj_ajv_validator(job_object))
     {
@@ -255,10 +257,10 @@ export class DockerRunDriver extends RunDriver
 
         const container_copyfrom_paths = (copy_all_flag) ?
           [path.posix.join(containerRoot, hostRoot_basename)] :
-          resultPaths.map(x => path.posix.join(containerRoot, hostRoot_basename, x));
+          resultPaths.map((x:string) => path.posix.join(containerRoot, hostRoot_basename, x));
         const host_copyto_paths = (copy_all_flag) ?
           [hostRoot_dirname] :
-          resultPaths.map(x => path.posix.dirname(path.posix.join(hostRoot, x)));
+          resultPaths.map((x:string) => path.posix.dirname(path.posix.join(hostRoot, x)));
 
         console.log("copy from:\t", container_copyfrom_paths)
         console.log("copy to:\t", host_copyto_paths)
@@ -268,20 +270,17 @@ export class DockerRunDriver extends RunDriver
           this.copyFromContainer(id, host_copyto_paths[i], container_copyfrom_paths[i])
         }
       }
-
       return new ValidatedOutput(true)
-
     }
     return new ValidatedOutput(false, undefined, [this.ERRORSTRINGS.INVALID_JOB])
   }
 
   toImage(id: string, image_name: string)
   {
-    // if no name is provided, but stack_path is set, then overwrite image
     const command = `${this.base_command} ${this.sub_commands["commit"]}`
     const args  = [id, image_name]
     const flags = {}
-    return this.shell.sync(command, flags, args, {stdio: "pipe"})
+    return this.shell.output(command, flags, args)
   }
 
   // Depricated: result shell was implemented by
@@ -317,26 +316,26 @@ export class DockerRunDriver extends RunDriver
     return super.imageName(stack_path).toLowerCase() // Docker only accepts lowercase image names
   }
 
-  private runFlags(run_flags_object)
+  protected runFlags(run_object: Dictionary)
   {
     var flags = {};
-    if(this.run_schema_validator(run_flags_object)) //verify docker-run schema
+    if(this.run_schema_validator(run_object)) //verify docker-run schema
     {
-      this.addFormatFlags(flags, run_flags_object)
-      this.addRemovalFlags(flags, run_flags_object)
-      this.addInteractiveFlags(flags, run_flags_object)
-      this.addWorkingDirFlags(flags, run_flags_object)
-      this.addDetachedFlags(flags, run_flags_object)
-      this.addNameFlags(flags, run_flags_object)
-      this.addPortFlags(flags, run_flags_object)
-      this.addENVFlags(flags, run_flags_object)
-      this.addMountFlags(flags, run_flags_object)
-      this.addLabelFlags(flags, run_flags_object)
+      this.addFormatFlags(flags, run_object)
+      this.addRemovalFlags(flags, run_object)
+      this.addInteractiveFlags(flags, run_object)
+      this.addWorkingDirFlags(flags, run_object)
+      this.addDetachedFlags(flags, run_object)
+      this.addNameFlags(flags, run_object)
+      this.addPortFlags(flags, run_object)
+      this.addENVFlags(flags, run_object)
+      this.addMountFlags(flags, run_object)
+      this.addLabelFlags(flags, run_object)
     }
     return flags
   }
 
-  private execFlags(exec_object)
+  protected execFlags(exec_object: Dictionary)
   {
     var flags = {};
     if(this.exec_schema_validator(exec_object)) //verify docker-run schema
@@ -348,93 +347,93 @@ export class DockerRunDriver extends RunDriver
     return flags
   }
 
-  // === START Private Helper Functions for flag generation ====================
+  // === START protected Helper Functions for flag generation ====================
 
-  private addFormatFlags(flags, run_flags: object)
+  protected addFormatFlags(flags: Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.format === "json") {
+    if(run_object?.format === "json") {
       flags["format"] = {shorthand: false, value: '{{json .}}'}
     }
   }
 
-  private addRemovalFlags(flags, run_flags: object)
+  protected addRemovalFlags(flags: Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.remove) {
+    if(run_object?.remove) {
       flags["rm"] = {shorthand: false}
     }
   }
 
-  private addInteractiveFlags(flags, run_flags: object)
+  protected addInteractiveFlags(flags: Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.interactive == true)
+    if(run_object?.interactive == true)
     {
         flags["i"] = {shorthand: true}
         flags["t"] = {shorthand: true}
     }
   }
 
-  private addWorkingDirFlags(flags:object, run_flags: object)
+  protected addWorkingDirFlags(flags:Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.wd)
+    if(run_object?.wd)
     {
-      flags["w"] = {shorthand: true, value: run_flags.wd}
+      flags["w"] = {shorthand: true, value: run_object.wd}
     }
   }
 
-  private addNameFlags(flags:object, run_flags: object)
+  protected addNameFlags(flags:Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.name)
+    if(run_object?.name)
     {
-      flags["name"] = {shorthand: false, value: run_flags.name}
+      flags["name"] = {shorthand: false, value: run_object.name}
     }
   }
 
-  private addDetachedFlags(flags:object, run_flags: object)
+  protected addDetachedFlags(flags:Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.detached)
+    if(run_object?.detached)
     {
       flags["d"] = {shorthand: true}
     }
   }
 
-  private addPortFlags(flags, run_flags)
+  protected addPortFlags(flags: Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.ports?.length > 0)
+    if(run_object?.ports?.length > 0)
     {
       flags["p"] = {
         shorthand: true,
         sanitize: false,
-        value: run_flags.ports.map(po => `${po.hostPort}:${po.containerPort}`)
+        value: run_object.ports.map((po:Dictionary) => `${po.hostPort}:${po.containerPort}`)
       }
     }
   }
 
-  private addENVFlags(flags, run_flags)
+  protected addENVFlags(flags: Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.environment)
+    if(run_object?.environment)
     {
-      const keys = Object.keys(run_flags.environment)
+      const keys = Object.keys(run_object.environment)
       flags["env"] = {
         shorthand: false,
         sanitize: false,
-        value: keys.map(key => `${key}=${run_flags.environment[key]}`)
+        value: keys.map(key => `${key}=${run_object.environment[key]}`)
       }
     }
   }
 
-  private addMountFlags(flags, run_flags)
+  protected addMountFlags(flags: Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.mounts?.length > 0)
+    if(run_object?.mounts?.length > 0)
     {
       flags["mount"] = {
         shorthand: false,
         sanitize: false,
-        value: run_flags.mounts.map(this.mountObjectToFlagStr)
+        value: run_object.mounts.map(this.mountObjectToFlagStr)
       }
     }
   }
 
-  private mountObjectToFlagStr(mo)
+  protected mountObjectToFlagStr(mo: Dictionary)
   {
     switch(mo.type)
     {
@@ -447,11 +446,11 @@ export class DockerRunDriver extends RunDriver
     }
   }
 
-  private addLabelFlags(flags, run_flags: object)
+  protected addLabelFlags(flags: Dictionary, run_object: Dictionary)
   {
-    if(run_flags?.labels) {
-      const keys = Object.keys(run_flags.labels)
-      flags["label"] = {shorthand: false, value: keys.map(k => `${k}=${run_flags.labels[k]}`)}
+    if(run_object?.labels) {
+      const keys = Object.keys(run_object.labels)
+      flags["label"] = {shorthand: false, value: keys.map(k => `${k}=${run_object.labels[k]}`)}
     }
   }
 

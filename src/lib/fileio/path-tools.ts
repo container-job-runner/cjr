@@ -9,12 +9,12 @@ export class PathTools
     return path_str.replace(re, "").split(path.sep)
   }
 
-  static join(path_arr: array<string>)
+  static join(path_arr: Array<string>)
   {
     return path.join(...path_arr)
   }
 
-  static relativePathFromParent(parent: array<string>, child: array<string>)
+  static relativePathFromParent(parent: Array<string>, child: Array<string>)
   {
     if(PathTools.ischild(parent, child)) {
       return child.splice(parent.length, child.length - parent.length)
@@ -22,7 +22,7 @@ export class PathTools
     return false
   }
 
-  static ischild(parent: array<string>, child: array<string>) // returns true of
+  static ischild(parent: Array<string>, child: Array<string>) // returns true of
   {
     if(child.length < parent.length) return false;
     for(var i = 0; i < parent.length; i ++)

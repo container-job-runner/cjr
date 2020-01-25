@@ -3,7 +3,7 @@ import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as inquirer from 'inquirer'
 import {flags} from '@oclif/command'
-import {JobCommand} from '../lib/commands/job-command'
+import {JobCommand, Dictionary} from '../lib/commands/job-command'
 import {IfBuiltAndLoaded} from '../lib/functions/run-functions'
 import {cli_bundle_dir_name, project_settings_folder, project_settings_file, projectSettingsYMLPath} from '../lib/constants'
 import {printResultState} from '../lib/functions/misc-functions'
@@ -11,13 +11,13 @@ import {ShellCMD} from '../lib/shellcmd'
 import {FileTools} from '../lib/fileio/file-tools'
 import {YMLFile} from '../lib/fileio/yml-file'
 
-export default class Run extends JobCommand {
+export default class Bundle extends JobCommand {
   static description = 'bundle current configuration and files.'
   static args = [{name: 'save_dir', required: true}]
   static flags = {
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
-    stack: flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
     all: flags.boolean({default: false, description: 'include project files in bundle'}),
     zip: flags.boolean({default: false, exclusive: ['tar'], description: 'produces one .zip file (requires gzip)'}),
     tar:  flags.boolean({default: false, exclusive: ['zip'], description: 'produces one .tar.gz file (requires zip)'}),
@@ -26,7 +26,7 @@ export default class Run extends JobCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Run, true)
+    const {argv, flags} = this.parseWithLoad(Bundle, true)
     const builder    = this.newBuilder(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
@@ -43,7 +43,7 @@ export default class Run extends JobCommand {
     const copy_files    = flags.all && flags.hostRoot // if true, then project files are included in bundle
     // -- select and create temporary directory --------------------------------
     const stack_name        = builder.stackName(stack_path)
-    const temp_dir_path     = path.join(this.config.dataDir, cli_bundle_dir_name, stack_name) // tmp directory that stores bundle
+    const temp_dir_path     = path.join(this.config.dataDir, cli_bundle_dir_name, stack_name) // tmp directory that stores bundle - extra protection to prevent entry from ever being blank.
     fs.ensureDirSync(temp_dir_path)
     // -- get filenames and paths ----------------------------------------------
     const settings_dir      = path.join(temp_dir_path, project_settings_folder)  // directory that stores project settings yml & stack
@@ -72,9 +72,9 @@ export default class Run extends JobCommand {
     // -- save bundle files ----------------------------------------------------
     const overwrite = await this.allowOverwrite(bundle_dest_path, this.settings.get('interactive'))
     if(overwrite && flags.tar) {
-      this.tar(bundle_src_path, bundle_dest_path)
+      this.tar(bundle_src_path, bundle_dest_path, flags.explicit)
     } else if(overwrite && flags.zip) {
-      this.zip(bundle_src_path, bundle_dest_path)
+      this.zip(bundle_src_path, bundle_dest_path, flags.explicit)
     } else if(overwrite) {
       fs.copySync(bundle_src_path, bundle_dest_path)
     }
@@ -96,7 +96,7 @@ export default class Run extends JobCommand {
       return response.overwrite
   }
 
-  bundleDestPath(flags, argv, copy_files)
+  bundleDestPath(flags:Dictionary, argv:Array<string>, copy_files:boolean)
   {
     var bundle_name = (copy_files) ? path.basename(flags.hostRoot) : project_settings_folder
     if((flags.zip || flags.tar)) bundle_name = bundle_name.replace(/^\./, "")   // name of settings folder (remove . if creating zip file)
@@ -105,17 +105,17 @@ export default class Run extends JobCommand {
     return path.join(process.cwd(), argv[0], bundle_name)
   }
 
-  zip(source_dir, destination)
+  zip(source_dir: string, destination: string, explicit:boolean)
   {
-    const shell = new ShellCMD(flags.explicit)
+    const shell = new ShellCMD(explicit, false)
     const cmd_flags = {'r': {shorthand: true}, 'q': {shorthand: true}}
     const cmd_args  = [destination, path.basename(source_dir)]
     shell.sync('zip', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})
   }
 
-  tar(source_dir, destination)
+  tar(source_dir: string, destination: string, explicit:boolean)
   {
-    const shell = new ShellCMD(flags.explicit)
+    const shell = new ShellCMD(explicit, false)
     const cmd_flags = {'czf': {shorthand: true}}
     const cmd_args  = [destination, path.basename(source_dir)]
     shell.sync('tar', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})

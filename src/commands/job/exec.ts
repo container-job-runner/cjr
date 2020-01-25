@@ -7,7 +7,7 @@ export default class Exec extends StackCommand {
   static description = 'Execute a command inside the container that is running a job.'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
-    stack: flags.string({env: 'STACK', default: false}),
+    stack: flags.string({env: 'STACK'}),
     explicit: flags.boolean({default: false}),
     async: flags.boolean({default: false})
   }
@@ -19,7 +19,7 @@ export default class Exec extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
     var id = argv[0]
-    var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    var stack_path = (flags?.stack) ? this.fullStackPath(flags.stack) : ""
     // match with existing container ids
     var result = matchingJobIds(runner, stack_path, id, false)
     if(result.success)

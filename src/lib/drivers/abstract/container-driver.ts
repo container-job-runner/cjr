@@ -4,8 +4,8 @@ import {ShellCMD} from "../../shellcmd"
 export class ContainerDriver
 {
 
-  private shell: ShellCMD
-  private tag: string
+  protected shell: ShellCMD
+  protected tag: string
 
   constructor(scmd: ShellCMD, tag: string)
   {
@@ -15,8 +15,7 @@ export class ContainerDriver
 
   stackName(stack_path: string)
   {
-      const re  = new RegExp(`${path.sep}$`) // remove any trailing separators that lead to empty name
-      return stack_path.replace(re, "").split(path.sep).pop()
+    return path.basename(stack_path)
   }
 
   imageName(stack_path: string)

@@ -2,7 +2,7 @@ import {BuildDriver} from '../drivers/abstract/build-driver'
 import {ValidatedOutput} from '../validated-output'
 import {ErrorStrings} from '../error-strings'
 
-export function buildIfNonExistant(builder: BuildDriver, stack_path: string, overloaded_config_paths: array<string>=[])
+export function buildIfNonExistant(builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>=[])
 {
   if(builder.isBuilt(stack_path))
   {

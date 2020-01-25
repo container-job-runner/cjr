@@ -35,6 +35,7 @@ export const docker_job_schema = {
 }
 
 // Ajv validator for validating schema
+type Dictionary = {[key:string] : any}
 var ajv = new Ajv({schemas: [docker_job_schema]})
 export const dj_ajv_validator = ajv.getSchema(docker_job_schema["$id"])
-export const dj_vo_validator  = (raw_object) => ajvValidatorToValidatedOutput(dj_ajv_validator, raw_object)
+export const dj_vo_validator  = (raw_object: Dictionary) => ajvValidatorToValidatedOutput(dj_ajv_validator, raw_object)

@@ -9,12 +9,13 @@ import {JSONFile} from './fileio/json-file'
 import {ValidatedOutput} from './validated-output'
 import {cli_settings_yml_name, defaultCLISettings} from './constants'
 import {ErrorStrings} from './error-strings'
+import {JSTools} from './js-tools'
 
 export class Settings
 {
 
   private config_name: string = cli_settings_yml_name;
-  private static settings: object = undefined
+  private static raw_data: {[key: string]: any}|undefined = undefined
   private JSON_file: JSONFile
   private defaults: object = {}
 
@@ -26,23 +27,29 @@ export class Settings
 
   set(field: string, value: any)
   {
-    if(this.settings === undefined) this.load();
+    if(Settings.raw_data === undefined) this.load();
     if(Object.keys(this.defaults).includes(field) == false)
       return new ValidatedOutput(false, [], [ErrorStrings.CLI_SETTINGS.INVALID_FIELD(field)]);
-    this.settings[field] = value
-    return this.JSON_file.write(this.config_name, this.settings)
+    if(Settings?.raw_data) Settings.raw_data[field] = value
+    return this.JSON_file.write(this.config_name, Settings.raw_data)
   }
 
   get(field: string)
   {
-    if(this.settings === undefined) this.load();
-    return this.settings[field]
+    if(Settings.raw_data === undefined) this.load();
+    return Settings?.raw_data?.[field]
+  }
+
+  getRawData()
+  {
+    if(Settings.raw_data === undefined) this.load();
+    return JSTools.rCopy(Settings?.raw_data || {})
   }
 
   private load()
   {
-    var result = this.JSON_file.read(this.config_name)
-    this.settings = (result.success) ? {...this.defaults, ...result.data} : this.defaults
+    const result = this.JSON_file.read(this.config_name)
+    Settings.raw_data = (result.success) ? {...this.defaults, ...result.data} : this.defaults
   }
 
 }

@@ -6,8 +6,8 @@ export default class Build extends StackCommand {
   static description = 'Build an image cooresponding to a stack.'
   static args = []
   static flags = {
-    stack:    flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
     silent:   flags.boolean({default: false}),
     nocache:  flags.boolean({default: false})
@@ -16,7 +16,7 @@ export default class Build extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Build, true)
+    const {argv, flags} = this.parseWithLoad(Build, true)
     const builder = this.newBuilder(flags.explicit, flags.silent)
     const stack_path = this.fullStackPath(flags.stack)
     const result = builder.build(stack_path, this.project_settings.configFiles, flags['nocache'])

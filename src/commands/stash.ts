@@ -1,23 +1,23 @@
 import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
-import {JobCommand} from '../lib/commands/job-command'
+import {JobCommand, Dictionary} from '../lib/commands/job-command'
 import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, writeJSONJobFile} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 
 export default class Run extends JobCommand {
   static description = 'Save current project state as a result.'
   static flags = {
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
+    containerRoot: flags.string(),
     explicit: flags.boolean({default: false}),
-    stack: flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
-    containerRoot: flags.string({default: false}),
     silent: flags.boolean({default: false}) // if selected will not print out job id
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parse(Run, true)
+    const {argv, flags} = this.parseWithLoad(Run, true)
     const builder    = this.newBuilder(flags.explicit)
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
@@ -26,7 +26,7 @@ export default class Run extends JobCommand {
     var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
 
-        var job_object = {
+        var job_object:Dictionary = {
           command: "exit",
           hostRoot: hostRoot,
           containerRoot: containerRoot,

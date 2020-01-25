@@ -12,8 +12,8 @@ export default class Shell extends JobCommand {
   static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
   static args = [{name: 'id', required: false}]
   static flags = {
-    stack: flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
     discard: flags.boolean({default: false})
   }
@@ -42,7 +42,7 @@ export default class Shell extends JobCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Shell, true)
+    const {argv, flags} = this.parseWithLoad(Shell, true)
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
@@ -70,9 +70,9 @@ export default class Shell extends JobCommand {
           result = runner.resultCopy(id, temp_job_object, true)
         }
         // 4. start new job ----------------------------------------------------
+        var new_job_id = false
         if(result.success)
         {
-          var new_job_id = false
           const new_job_object = JSTools.rMerge(JSTools.rCopy(old_job_object), {
             command: "bash",
             synchronous: false,
@@ -81,8 +81,8 @@ export default class Shell extends JobCommand {
           var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
             (configuration) => {
               var result = runner.jobStart(stack_path, new_job_object, configuration.runObject())
+              writeJSONJobFile(this.job_json, result, new_job_object)
               if(result.success) new_job_id = result.data
-              writeJSONJobFile(this.job_json, new_job_id, new_job_object)
             })
         }
         // 5. remove temp dir --------------------------------------------------

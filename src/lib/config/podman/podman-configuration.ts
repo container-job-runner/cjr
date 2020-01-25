@@ -13,7 +13,7 @@ export class PodmanConfiguration extends DockerConfiguration
   }
 
   // specific flags for podman
-  setFlag(field, value) {
+  setFlag(field: string, value: string) {
     if(!this.raw_object?.podman) this.raw_object.podman = {}
     this.raw_object.podman[field] = value
   }

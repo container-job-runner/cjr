@@ -10,15 +10,15 @@ export default class Stop extends StackCommand {
   static description = 'Stop the Jupyter server for stack.'
   static args = []
   static flags = {
-    stack: flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parse(Stop, true)
+    const {argv, flags} = this.parseWithLoad(Stop, true)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
@@ -26,10 +26,9 @@ export default class Stop extends StackCommand {
     const job_name   = JUPYTER_JOB_NAME(image_name)
     const jupiter_id = jobNametoID(runner, stack_path, job_name);
 
-    const result = new ValidatedOutput();
+    const result = new ValidatedOutput(true);
     if(jupiter_id == false)
     {
-      result.success = false;
       result.pushError(`Jupiter is not running.`)
     }
     else

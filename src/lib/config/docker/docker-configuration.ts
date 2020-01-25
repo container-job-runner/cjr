@@ -1,4 +1,3 @@
-
 import * as fs from 'fs'
 import * as path from 'path'
 import {ValidatedOutput} from '../../validated-output'
@@ -10,22 +9,24 @@ import {PathTools} from '../../fileio/path-tools'
 import {JSTools} from '../../js-tools'
 import {ErrorStrings, WarningStrings} from '../../error-strings'
 
-// Class for docker configuration
+// Types
+type Dictionary = {[key: string]: any}
+
 export class DockerConfiguration extends Configuration
 {
 
-  setRawObject(value: object, parent_path: string) {
-    var result = super.setRawObject(value)
+  setRawObject(value: Dictionary, parent_path: string) {
+    var result = super.setRawObject(value, parent_path)
     if(result.success) {
-        if(parent_path) this.replaceRelativePaths(parent_path)
-        this.validateBindMounts(result, parent_path)
+      if(parent_path) this.replaceRelativePaths(parent_path)
+      this.validateBindMounts(result, parent_path)
     }
     return result
   }
 
-  private working_directory
+  protected working_directory: string = ""
 
-  validate(raw_object: object)
+  validate(raw_object: Dictionary)
   {
     return ajvValidatorToValidatedOutput(dc_ajv_validator, raw_object);
   }
@@ -54,9 +55,9 @@ export class DockerConfiguration extends Configuration
       return true;
   }
 
-  addPort(hostPort: integer, containerPort: integer)
+  addPort(hostPort: number, containerPort: number)
   {
-      const validPort = (x) => (Number.isInteger(x) && x > 0)
+      const validPort = (x:number) => (Number.isInteger(x) && x > 0)
       if(!validPort(hostPort) || !validPort(containerPort)) return false
       if(!(this.raw_object?.ports)) this.raw_object.ports = [];
       this.raw_object.ports.push({hostPort: hostPort, containerPort: containerPort})
@@ -77,7 +78,7 @@ export class DockerConfiguration extends Configuration
 
   runObject()
   {
-      var run_object = {}
+      var run_object:Dictionary = {}
       if(this.raw_object?.mounts) run_object.mounts = this.raw_object.mounts
       if(this.raw_object?.ports) run_object.ports = this.raw_object.ports
       if(this.raw_object?.environment) run_object.environment = this.raw_object.environment
@@ -100,7 +101,7 @@ export class DockerConfiguration extends Configuration
       if(raw_object?.mounts)
       {
           raw_object.mounts = raw_object.mounts.filter(
-            m => {
+            (m:Dictionary) => {
               if(m.type === "tmpfs") return true
               if(m.type === "volume") {
                 result.pushWarning(WarningStrings.BUNDLE.VOLUMEDATA(m.volumeName))
@@ -132,7 +133,7 @@ export class DockerConfiguration extends Configuration
     {
       // -- replace all relative bind mounts -----------------------------------
       this.raw_object?.mounts?.map(
-        (mount) => {
+        (mount:Dictionary) => {
           if(mount.type === "bind" && !path.isAbsolute(mount.hostPath)) {
             mount.hostPath = path.join(parent_path, mount.hostPath)
         }}
@@ -145,9 +146,9 @@ export class DockerConfiguration extends Configuration
     }
   }
 
-  private validateBindMounts(result: ValidatedOutput, parent_path)
+  private validateBindMounts(result: ValidatedOutput, parent_path: string)
   {
-    this.raw_object?.mounts?.map(b => {
+    this.raw_object?.mounts?.map((b:Dictionary) => {
       if(b.type === "bind" && !FileTools.existsDir(b.hostPath))
         result.pushError(ErrorStrings.CONFIG.NON_EXISTANT_BIND_HOSTPATH(parent_path, b.hostPath))
     })

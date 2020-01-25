@@ -7,9 +7,9 @@ export default class Stop extends StackCommand {
   static description = 'Stop a running job and turn it into a result.'
   static args = [{name: 'id'}]
   static flags = {
-    stack: flags.string({env: 'STACK', default: false}),
+    stack: flags.string({env: 'STACK'}),
     explicit: flags.boolean({default: false}),
-    all: flags.boolean({default: false}),
+    all: flags.boolean({default: false})
   }
   static strict = true;
 
@@ -24,7 +24,7 @@ export default class Stop extends StackCommand {
     var result = matchingJobIds(runner, stack_path, id, flags['all'])
     if(result.success)
     {
-        result.data.map(x => console.log(` Stopping ${x}`))
+        result.data.map((x:string) => console.log(` Stopping ${x}`))
         runner.jobStop(result.data)
     }
     printResultState(result)

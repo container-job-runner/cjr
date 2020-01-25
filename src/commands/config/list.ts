@@ -8,11 +8,10 @@ export default class List extends StackCommand {
   static strict = true;
 
   async run() {
-
-    this.settings.load()
     this.log(chalk`\n-- {bold CLI Settings} -----------------------------\n`)
-    for(var key in this.settings.settings) {
-      console.log(chalk`  {italic ${key}}:\t${this.settings.settings[key]}`)
+    const raw_data = this.settings.getRawData()
+    for(var key in raw_data) {
+      console.log(chalk`  {italic ${key}}:\t${raw_data[key]}`)
     }
     this.log(chalk`\n-- {bold CLI Data Path:} stores job information ----\n  ${this.config.dataDir}`)
     this.log(chalk`\n-- {bold CLI Config Path:} stores ${cli_settings_yml_name}.yml -----\n  ${this.config.configDir}`, '\n')

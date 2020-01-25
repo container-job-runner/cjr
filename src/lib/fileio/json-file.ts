@@ -3,15 +3,15 @@ import {TextFile} from "./text-file"
 
 export class JSONFile extends TextFile
 {
-  private extension: string = "json"
+  protected extension: string = "json"
 
-  write(name:string, data:object) {
+  write(name:string, data:any) {
     return super.write(name, JSON.stringify(data))
   }
 
   read(name:string)
   {
-    var result = super.read(name)
+    const result = super.read(name)
     if(result.success)
     {
       try

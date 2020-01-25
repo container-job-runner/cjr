@@ -7,9 +7,11 @@
 // isArray - deteremines if data is of Array type
 // =============================================================================
 
+type Dictionary = {[key: string]: any}
+
 export class JSTools
 {
-  static rMerge(a, b)
+  static rMerge(a: Dictionary, b: Dictionary)
   {
     if(JSTools.isObject(a) && JSTools.isObject(b))
     {
@@ -25,16 +27,16 @@ export class JSTools
     }
   }
 
-  static rCopy(a)
+  static rCopy(a: Dictionary)
   {
     return JSTools.rMerge({}, a)
   }
 
-  static isObject(val) {
+  static isObject(val: any) {
       return val instanceof Object;
   }
 
-  static isArray(val) {
+  static isArray(val: any) {
       return val instanceof Array;
   }
 

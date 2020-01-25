@@ -1,11 +1,11 @@
 export class ValidatedOutput
 {
     success: boolean
-    data: object
-    error: array<string>
-    warning: array<string>
+    data: any
+    error: Array<string>
+    warning: Array<string>
 
-    constructor(success: boolean, data: object = null, error: array<string> = [], warning: array<string> = [])
+    constructor(success: boolean, data: any = [], error: Array<string> = [], warning: Array<string> = [])
     {
       this.success = success;
       this.data = data;

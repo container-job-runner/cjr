@@ -4,12 +4,14 @@
 // ===========================================================================
 
 import {JSTools} from '../../js-tools'
+import {ValidatedOutput} from '../../validated-output'
+type Dictionary = {[key: string]: any}
 
 export abstract class Configuration
 {
-  private raw_object: object = {}
+  protected raw_object: Dictionary = {}
 
-  setRawObject(value: object, parent_path: string) {
+  setRawObject(value: Dictionary, parent_path: string) {
     const result = this.validate(value)
     if(result.success) this.raw_object = value
     return result
@@ -21,17 +23,16 @@ export abstract class Configuration
 
   // interactive components that may be called by CLI to modify existing configuration
   abstract setWorkingDir(value: string): void;
-  abstract setName(value: string): void;
   abstract getHostRoot(): string | undefined;
   abstract getContainerRoot() : string | undefined;
-  abstract getResultPaths() : array<string> | undefined;
+  abstract getResultPaths() : Array<string> | undefined;
   abstract addBind(hostPath: string, containerPath: string): boolean;
-  abstract addPort(hostPort: integer, containerPort: integer): boolean;
+  abstract addPort(hostPort: number, containerPort: number): boolean;
   abstract addRunEnvironmentVariable(name: string, value: string): boolean;
-  abstract bundle(): Configuration
+  abstract bundle(stack_path: string): ValidatedOutput
   // output objects for run-drivers or build-drivers
-  abstract runObject() : object;
-  abstract buildObject() : object;
+  abstract runObject() : Dictionary;
+  abstract buildObject() : Dictionary;
   // local Functions
-  abstract validate(value: object): ValidatedOutput;
+  abstract validate(value: Dictionary): ValidatedOutput;
 }

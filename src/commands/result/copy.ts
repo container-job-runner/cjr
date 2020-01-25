@@ -7,7 +7,7 @@ export default class Copy extends JobCommand {
   static description = 'Copy job results back into the host directories.'
   static args = [{name: 'id', required: true}]
   static flags = {
-    stack: flags.string({env: 'STACK', default: false}),
+    stack: flags.string({env: 'STACK'}),
     explicit: flags.boolean({default: false}),
     all: flags.boolean({default: false}),
   }

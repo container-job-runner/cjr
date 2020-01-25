@@ -1,21 +1,28 @@
+// ===========================================================================
+// Podman-Run-Driver: Controls Podman For Running containers
+// ===========================================================================
+
 import {quote} from 'shell-quote'
 import {DockerRunDriver} from '../docker/docker-run-driver'
 import {pr_ajv_validator} from './schema/podman-run-schema'
 
+// -- types --------------------------------------------------------------------
+type Dictionary = {[key: string]: any}
+
 export class PodmanRunDriver extends DockerRunDriver
 {
-  private base_command = 'podman'
-  private json_output_format = "json"
-  private run_schema_validator  = pr_ajv_validator
+  protected base_command = 'podman'
+  protected json_output_format = "json"
+  protected run_schema_validator  = pr_ajv_validator
 
-  private addFormatFlags(flags, run_flags: object)
+  protected addFormatFlags(flags: Dictionary, run_flags: Dictionary)
   {
     if(run_flags?.format === "json") {
       flags["format"] = {shorthand: false, value: 'json'}
     }
   }
 
-  private mountObjectToFlagStr(mo)
+  protected mountObjectToFlagStr(mo: Dictionary)
   {
     switch(mo.type)
     {
@@ -28,18 +35,18 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
-  private runFlags(run_flags_object)
+  protected runFlags(run_object: Dictionary)
   {
-    var flags = super.runFlags(run_flags_object)
+    var flags:Dictionary = super.runFlags(run_object)
     // append special podman run_flags
-    if(run_flags_object?.podman?.userns) { // used for consistant file permissions
-      flags["userns"] = {shorthand: false, value: run_flags_object.podman.userns}
+    if(run_object?.podman?.userns) { // used for consistant file permissions
+      flags["userns"] = {shorthand: false, value: run_object.podman.userns}
     }
-    if(run_flags_object?.podman?.["security-opt"]) { // used for binding X11 directory
-      flags["security-opt"] = {shorthand: false, value: run_flags_object.podman["security-opt"]}
+    if(run_object?.podman?.["security-opt"]) { // used for binding X11 directory
+      flags["security-opt"] = {shorthand: false, value: run_object.podman["security-opt"]}
     }
-    if(run_flags_object?.podman?.network) { // used for sharing DISPLAY variable
-      flags["network"] = {shorthand: false, value: run_flags_object.podman.network}
+    if(run_object?.podman?.network) { // used for sharing DISPLAY variable
+      flags["network"] = {shorthand: false, value: run_object.podman.network}
     }
     return flags
   }

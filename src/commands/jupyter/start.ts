@@ -9,10 +9,10 @@ export default class Start extends StackCommand {
   static description = 'Start Jupyter server for a stack.'
   static args = []
   static flags = {
+    stack: flags.string({env: 'STACK'}),
+    hostRoot: flags.string({env: 'HOSTROOT'}),
+    containerRoot: flags.string(),
     explicit: flags.boolean({default: false}),
-    stack: flags.string({env: 'STACK', default: false}),
-    hostRoot: flags.string({env: 'HOSTROOT', default: false}),
-    containerRoot: flags.string({default: false}),
     port: flags.integer({default: [8888], multiple: true}),
     sync: flags.boolean({default: false})
   }
@@ -20,7 +20,7 @@ export default class Start extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Start, true)
+    const {argv, flags} = this.parseWithLoad(Start, true)
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)

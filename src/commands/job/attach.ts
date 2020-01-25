@@ -7,7 +7,7 @@ export default class Attach extends StackCommand {
   static description = 'Attach back to the shell that is running a job.'
   static args = [{name: 'id', required: false}]
   static flags = {
-    stack: flags.string({env: 'STACK', default: false}),
+    stack: flags.string({env: 'STACK'}),
     explicit: flags.boolean({default: false})
   }
   static strict = true;
@@ -16,7 +16,7 @@ export default class Attach extends StackCommand {
   {
     const {argv, flags} = this.parse(Attach)
     const runner  = this.newRunner(flags.explicit)
-    var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    var stack_path = (flags?.stack) ? this.fullStackPath(flags.stack) : ""
     var id = argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || ""
 
     // match with existing container ids

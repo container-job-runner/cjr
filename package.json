@@ -11,6 +11,10 @@
     "@oclif/command": "^1.5.19",
     "@oclif/config": "^1.13.3",
     "@oclif/plugin-help": "^2.2.3",
+    "@types/fs-extra": "^8.0.1",
+    "@types/inquirer": "^6.5.0",
+    "@types/js-yaml": "^3.12.1",
+    "@types/shell-quote": "^1.6.1",
     "ajv": "^6.10.2",
     "chalk": "^3.0.0",
     "fs-extra": "^8.1.0",
@@ -68,7 +72,7 @@
       }
     }
   },
-  "repository": "/",
+  "repository": "https://github.com//",
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev manifest && oclif-dev readme",

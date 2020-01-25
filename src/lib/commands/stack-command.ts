@@ -22,29 +22,32 @@ import {ValidatedOutput} from '../validated-output'
 import {WarningStrings} from '../error-strings'
 import {printResultState} from '../../lib/functions/misc-functions'
 
+// -- types --------------------------------------------------------------------
+export type Dictionary = {[key: string]: any}
+
 export abstract class StackCommand extends Command
 {
-  private settings = new Settings(this.config.configDir)
-  private project_settings = {}
+  protected settings = new Settings(this.config.configDir)
+  protected project_settings:Dictionary = {}
 
-  fullStackPath(user_path: string) // leaves existant full path intact or generates full stack path from shortcut
+  fullStackPath(user_path: string) // leaves existent full path intact or generates full stack path from shortcut
   {
     return (fs.existsSync(user_path)) ? user_path : path.join(this.settings.get("stacks_path"), user_path)
   }
 
-  parse(C, stack_required:boolean = false)// overload parse command to allow for auto setting of stack flag
+  parseWithLoad(C:any, stack_flag_required:boolean = false)// overload parse command to allow for auto setting of stack flag
   {
-    const parse_object = super.parse(C)
+    const parse_object:Dictionary = this.parse(C)
     this.loadProjectSettingsYML(parse_object?.flags?.hostRoot)
-    if(parse_object?.flags?.stack === false) {
-        parse_object.flags.stack = this.project_settings?.stack || false
+    if(!parse_object?.flags?.stack && this.project_settings?.stack) {
+         parse_object.flags.stack = this.project_settings.stack
     }
-    if(stack_required && !parse_object?.flags?.stack) this.error(invalid_stack_flag_error)
+    if(stack_flag_required && !parse_object?.flags?.stack) this.error(invalid_stack_flag_error)
     return parse_object
   }
 
   // helper function for loading optional .cjr/stack.yml in hostRoot
-  loadProjectSettingsYML(hostRoot)
+  loadProjectSettingsYML(hostRoot: string)
   {
     // -- exit if no hostRoot is specified -------------------------------------
     if(!hostRoot) return;
@@ -54,7 +57,7 @@ export abstract class StackCommand extends Command
     if(!FileTools.existsFile(yml_path)) return
 
     // -- exit if settings file is invalid -------------------------------------
-    const stack_file = new YMLFile(false, false, ps_vo_validator)
+    const stack_file = new YMLFile("", false, ps_vo_validator)
     const read_result = stack_file.validatedRead(yml_path)
     if(read_result.success == false) {
       printResultState(
@@ -78,12 +81,12 @@ export abstract class StackCommand extends Command
     {
       // adjust relative paths
       this.project_settings.configFiles = this.project_settings.configFiles.map(
-       (path_str) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
+       (path_str:string) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
       )
       // remove nonexistant configuration files
-      this.project_settings.configFiles = this.project_settings.configFiles.filter(path => {
-       let config_exists = FileTools.existsFile(path)
-       if(!config_exists) result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(yml_path, path))
+      this.project_settings.configFiles = this.project_settings.configFiles.filter((path_str:string) => {
+       let config_exists = FileTools.existsFile(path_str)
+       if(!config_exists) result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(yml_path, path_str))
        return config_exists
       })
     }

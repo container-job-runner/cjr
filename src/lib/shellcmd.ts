@@ -14,6 +14,7 @@
 import {spawn, spawnSync} from 'child_process'
 import {quote} from 'shell-quote'
 import {ValidatedOutput} from './validated-output'
+type Dictionary = {[key: string]: any}
 
 export class ShellCMD
 {
@@ -29,7 +30,7 @@ export class ShellCMD
 
     // Launches a syncronous command. Defaults to in a shell, which either stdio inherit or ignore
 
-    sync(command: string, flags: object, args: array<string>, options:object = {})
+    sync(command: string, flags: object, args: Array<string>, options: Dictionary = {})
     {
       var default_options = {stdio : 'inherit', shell: true}
       options = {... default_options, ...options};
@@ -40,16 +41,15 @@ export class ShellCMD
 
     // Launches a syncronous command in a shell and returns output string
 
-    output(command: string, flags: object, args: array<string>, options:object = {}, format="")
+    output(command: string, flags: object, args: Array<string>, options:Dictionary = {}, format="")
     {
       var default_options = {stdio : 'pipe', shell: true, encoding: 'buffer'}
       options = {... default_options, ...options};
       this.printCMD(command, flags, args, true, options);
       var child_process = spawnSync(this.cmdString(command, flags, args), [], options)
-      var result = new ValidatedOutput();
+      var result = new ValidatedOutput(true);
 
       if(child_process.status == 0) {
-        result.success = true;
         result.data = child_process?.stdout?.toString('ascii')
       }
       else if(child_process.status != 0) {
@@ -72,7 +72,7 @@ export class ShellCMD
       {
         try
         {
-          result.data = result.data.split("\n").filter(e => e !== "").map(e => JSON.parse(e));
+          result.data = result.data.split("\n").filter((e:string) => e !== "").map((e:string) => JSON.parse(e));
         }
         catch(e)
         {
@@ -85,7 +85,7 @@ export class ShellCMD
       return result;
     }
 
-    async(command: string, flags: object, args: array<string>, options:object = {})
+    async(command: string, flags: Dictionary, args: Array<string>, options: Dictionary = {})
     {
       var default_options = {stdio : 'ignore'}
       options = {... default_options, ...options};
@@ -93,10 +93,10 @@ export class ShellCMD
       this.printCMD(command, flags, args, false, options);
     }
 
-    private cmdString(command: string, flags: object, args: array<string>)
+    private cmdString(command: string, flags: Dictionary, args: Array<string>)
     {
-      const arrayWrap = (x) => (x instanceof Array) ? x : [x]
-      const flagString = function(value, flag, shorthand, sanitize_flag) // produces string for command flag with value
+      const arrayWrap = (x:any) => (x instanceof Array) ? x : [x]
+      const flagString = function(value:string, flag:string, shorthand:boolean, sanitize_flag:boolean) // produces string for command flag with value
       {
         const v_str = (value !== undefined) ? `=${(sanitize_flag) ? quote([value]) : value}` : ""
         return (shorthand) ? ` -${flag}${v_str}` : ` --${flag}${v_str}`;
@@ -112,7 +112,7 @@ export class ShellCMD
       return cmdstr + " " + args.join(" ");
     }
 
-    private printCMD(command: string, flags: object, args: array<string>, sync: boolean, options: object)
+    private printCMD(command: string, flags: Dictionary, args: Array<string>, sync: boolean, options: object)
     {
       if(this._explicit && !this._silent)
       {

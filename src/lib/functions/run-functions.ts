@@ -2,8 +2,11 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
 import {RunDriver} from '../drivers/abstract/run-driver'
+import {BuildDriver} from '../drivers/abstract/build-driver'
+import {Configuration} from '../config/abstract/configuration'
 import {PathTools} from '../fileio/path-tools'
 import {FileTools} from '../fileio/file-tools'
+import {JSONFile} from '../fileio/json-file'
 import {ValidatedOutput} from '../validated-output'
 import {printResultState} from './misc-functions'
 import {ShellCMD} from '../shellcmd'
@@ -14,13 +17,15 @@ import {PodmanConfiguration} from '../config/podman/podman-configuration'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
 
+// -- types --------------------------------------------------------------------
+type Dictionary = {[key: string]: any}
 
-function matchingIds(job_ids: array<string>, stack_path: string, id: string, all:boolean = false)
+function matchingIds(job_ids: Array<string>, stack_path: string, id: string, all:boolean = false)
 {
   if(!all && id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
   // find current jobs matching at least part of ID
   const re = new RegExp(`^${id}`)
-  const matching_ids = (all) ? job_ids : job_ids.filter(id => re.test(id))
+  const matching_ids = (all) ? job_ids : job_ids.filter((id:string) => re.test(id))
   return (matching_ids.length > 0 || id.length == 0) ?
     new ValidatedOutput(true, matching_ids) :
     new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
@@ -29,13 +34,13 @@ function matchingIds(job_ids: array<string>, stack_path: string, id: string, all
 export function matchingJobIds(runner: RunDriver, stack_path: string, id: string, all:boolean = false)
 {
   const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  return matchingIds(runner.jobInfo(image_name).map(x => x.id), stack_path, id, all)
+  return matchingIds(runner.jobInfo(image_name).map((x:Dictionary) => x.id), stack_path, id, all)
 }
 
 export function matchingResultIds(runner: RunDriver, stack_path: string, id: string, all:boolean = false)
 {
   const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  return matchingIds(runner.resultInfo(image_name).map(x => x.id), stack_path, id, all)
+  return matchingIds(runner.resultInfo(image_name).map((x:Dictionary) => x.id), stack_path, id, all)
 }
 
 // determines if job with given name exists. Refactor with resultNameId
@@ -43,27 +48,25 @@ export function jobNametoID(runner: RunDriver, stack_path: string, name: string)
 {
   const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
   const job_info   = runner.jobInfo(image_name)
-  const index      = job_info.map(x => x.names).indexOf(name)
+  const index      = job_info.map((x:Dictionary) => x.names).indexOf(name)
   return (index == -1) ? false : job_info[index].id
 }
 
 // determines if result with given name exists
 export function resultNametoID(runner: RunDriver, stack_path: string, name: string)
 {
-  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  const result_info   = runner.resultInfo(image_name)
-  const index      = result_info.map(x => x.names).indexOf(name)
+  const image_name  = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
+  const result_info = runner.resultInfo(image_name)
+  const index       = result_info.map((x:Dictionary) => x.names).indexOf(name)
   return (index == -1) ? false : result_info[index].id
 }
 
 // Get Working for container given CLI Path, hostRoot and Container ROot
 export function containerWorkingDir(cli_cwd:string, hroot: string, croot: string)
 {
-  const hroot_arr = PathTools.split(hroot)
-  const rel_path = PathTools.relativePathFromParent(
-    hroot_arr,
-    PathTools.split(cli_cwd))
-  return (rel_path === false) ? false : [croot.replace(/\/$/, "")].concat(hroot_arr.pop(), rel_path).join("/")
+  const hroot_arr:Array<string> = PathTools.split(hroot)
+  const rel_path = PathTools.relativePathFromParent(hroot_arr, PathTools.split(cli_cwd))
+  return (rel_path === false) ? false : [croot.replace(/\/$/, "")].concat(hroot_arr.pop() || "", rel_path).join("/")
 }
 
 // -----------------------------------------------------------------------------
@@ -80,7 +83,7 @@ export function containerWorkingDir(cli_cwd:string, hroot: string, croot: string
 // stack_path - absolute path to stack folder
 // overloaded_config_paths - absolute paths to any overloading configuration files
 // -----------------------------------------------------------------------------
-export function IfBuiltAndLoaded(builder: BuildDriver, flags: object, stack_path: string, overloaded_config_paths: array<string>, onSuccess: (configuration: Configuration, containerRoot: string, hostRoot: string) => void)
+export function IfBuiltAndLoaded(builder: BuildDriver, flags: Dictionary, stack_path: string, overloaded_config_paths: Array<string>, onSuccess: (configuration: Configuration, containerRoot: string, hostRoot: string) => void)
 {
   var result = buildIfNonExistant(builder, stack_path, overloaded_config_paths)
   if(result.success) // -- check that image was built
@@ -88,14 +91,14 @@ export function IfBuiltAndLoaded(builder: BuildDriver, flags: object, stack_path
     result = builder.loadConfiguration(stack_path, overloaded_config_paths)
     if(result.success) // -- check that configuration passed builder requirments
     {
-      var configuration = result.data
-      var containerRoot = [flags?.containerRoot, configuration.getContainerRoot()]
+      const configuration = result.data
+      const containerRoot = [flags?.containerRoot, configuration.getContainerRoot()]
         .concat(DefaultContainerRoot)
         .reduce((x,y) => x || y)
-      var hostRoot = [flags?.hostRoot, configuration.getHostRoot()]
+      const hostRoot = [flags?.hostRoot, configuration.getHostRoot()]
         .concat(false)
         .reduce((x,y) => x || y)
-      var output = onSuccess(configuration, containerRoot, hostRoot)
+      const output:any = onSuccess(configuration, containerRoot, hostRoot)
       if(output instanceof ValidatedOutput) result = output
     }
   }
@@ -110,13 +113,13 @@ export function IfBuiltAndLoaded(builder: BuildDriver, flags: object, stack_path
 // ports          - cli flag value whith specification:
 //                  flags.string({default: [], multiple: true})
 // -----------------------------------------------------------------------------
-export function addPorts(configuration: Configuration, ports: array<string>)
+export function addPorts(configuration: Configuration, ports: Array<string>)
 {
   var regex_a = RegExp(/^\d+:\d+$/) // flag format: --port=hostPort:containerPort
   var regex_b = RegExp(/^\d+$/)     // flag format: --port=port
   ports?.map(port_string => {
     if(regex_a.test(port_string)) {
-      let p = port_string.split(':').map(e => parseInt(e))
+      let p = port_string.split(':').map((e:string) => parseInt(e))
       configuration.addPort(p[0], p[1])
     }
     else if(regex_b.test(port_string)) {
@@ -188,20 +191,20 @@ export function writeJSONJobFile(file_writer: JSONFile, result: ValidatedOutput,
 // -----------------------------------------------------------------------------
 export async function jobToImage(runner: RunDriver, result: ValidatedOutput, image_name: string, remove_job: boolean = false, interactive: boolean = false)
 {
-  if(result.success) {
-    const job_id = result.data
-    if(interactive) {
-      var response = await inquirer.prompt([
-        {
-            name: "flag",
-            message: `Save container to image "${image_name}"?`,
-            type: "confirm",
-        }
-      ])
-    }
-    if(!interactive || response?.flag == true) runner.toImage(job_id, image_name)
-    if(remove_job) runner.resultDelete([job_id])
+  if(result.success === false) return;
+  const job_id = result.data
+  var response: Dictionary = {}
+  if(interactive) {
+    response = await inquirer.prompt([
+      {
+        name: "flag",
+        message: `Save container to image "${image_name}"?`,
+        type: "confirm",
+      }
+    ])
   }
+  if(!interactive || response?.flag == true) runner.toImage(job_id, image_name)
+  if(remove_job) runner.resultDelete([job_id])
 }
 
 // -----------------------------------------------------------------------------
@@ -234,10 +237,10 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
           new ValidatedOutput(true, [], [], [WarningStrings.X11.MACMISSINGSOCKET(X11_POSIX_BIND)])
         )
       }
-      const socket_number = sockets.pop().replace("X", "") // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
+      const socket_number:string = sockets.pop()?.replace("X", "") || "0" // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
       configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
       configuration.addRunEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
-      const shell = new ShellCMD(explicit)
+      const shell = new ShellCMD(explicit, false)
       shell.output("xhost +localhost", {}, []);
       break;
     case "linux": // == LINUX ==================================================
@@ -262,7 +265,7 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
 export function prependXAuth(command: string, explicit: boolean = false)
 {
   if(os.platform() != "linux") return ""
-  const shell = new ShellCMD(explicit)
+  const shell = new ShellCMD(explicit, false)
   const shell_result = shell.output("xauth list $DISPLAY", {}, [])
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
@@ -313,16 +316,16 @@ export async function promptUserForResultId(runner: RunDriver, stack_path: strin
 }
 
 // helper function for promptUserForJobId & promptUserForResultId
-async function promptUserId(id_info: array<object>)
+async function promptUserId(id_info: Array<Dictionary>)
 {
-  const short_cmd_str = (cmd_str) => (cmd_str.length > 10) ? `${cmd_str.substring(0,10)}...` : cmd_str
+  const short_cmd_str = (cmd_str:string) => (cmd_str.length > 10) ? `${cmd_str.substring(0,10)}...` : cmd_str
   const response = await inquirer.prompt([{
   name: 'id',
   message: 'Select an id:',
   prefix: "\b",
   suffix: "",
   type: 'rawlist',
-  choices: id_info.map(j => {
+  choices: id_info.map((j:Dictionary) => {
     return {
       name: chalk`{italic ID}: ${j.id.substring(0, 12)} {italic COMMAND}: ${short_cmd_str(j.command)} {italic STATUS}: ${j.status}`,
       value: j.id

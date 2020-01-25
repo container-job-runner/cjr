@@ -2,8 +2,8 @@ import {DockerBuildDriver} from '../docker/docker-build-driver'
 
 export class BuildahBuildDriver extends DockerBuildDriver
 {
-    private base_command = 'buildah'
-    private sub_commands = {
+    protected base_command = 'buildah'
+    protected sub_commands = {
       build: "bud",
       images: "images",
       remove: "rmi"

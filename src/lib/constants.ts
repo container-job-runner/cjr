@@ -24,7 +24,7 @@ export const projectSettingsYMLPath = (hostRoot: string) => path.join(hostRoot, 
 export const default_settings_object = {stack: false, configFiles: []}
 
 // default cli options that are stored in json file
-export const defaultCLISettings = (settings_dir) =>
+export const defaultCLISettings = (settings_dir:string) =>
 {
   let cmd
   switch(os.platform())
@@ -50,7 +50,7 @@ export const defaultCLISettings = (settings_dir) =>
 export const DefaultContainerRoot = "/"                                         // Note: though this choice may lead to collisions, it always works docker cp which does not create subfolders.
 
 // Jupyter options
-export const JUPYTER_JOB_NAME = (image_name) => `${image_name}_jupyter`.replace(/[^a-zA-Z0-9_.-]/g,"")
+export const JUPYTER_JOB_NAME = (image_name: string) => `${image_name}_jupyter`.replace(/[^a-zA-Z0-9_.-]/g,"")
 
 // X11 options
 export const X11_POSIX_BIND = "/tmp/.X11-unix"
