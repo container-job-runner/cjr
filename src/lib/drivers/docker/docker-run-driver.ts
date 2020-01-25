@@ -330,7 +330,9 @@ export class DockerRunDriver extends RunDriver
       this.addPortFlags(flags, run_object)
       this.addENVFlags(flags, run_object)
       this.addMountFlags(flags, run_object)
+      this.addResourceFlags(flags, run_object)
       this.addLabelFlags(flags, run_object)
+      this.addSpecialFlags(flags, run_object)
     }
     return flags
   }
@@ -419,6 +421,23 @@ export class DockerRunDriver extends RunDriver
         value: keys.map(key => `${key}=${run_object.environment[key]}`)
       }
     }
+  }
+
+  protected addResourceFlags(flags: Dictionary, run_object: Dictionary)
+  {
+    const valid_keys = ["cpus", "gpu", "memory", "swap-memory"]
+    const keys = Object.keys(run_object?.resources || {})
+    keys?.map((key:string) => {
+      if(valid_keys.includes(key)) flags[key] = {shorthand: false, value: run_object?.resources[key]}
+    })
+  }
+
+  protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)
+  {
+    if(run_object?.flags?.network) { // used for sharing DISPLAY variable
+      flags["network"] = {shorthand: false, value: run_object.flag.network}
+    }
+    return flags
   }
 
   protected addMountFlags(flags: Dictionary, run_object: Dictionary)

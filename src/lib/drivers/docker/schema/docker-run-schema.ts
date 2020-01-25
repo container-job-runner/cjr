@@ -10,6 +10,8 @@ export const docker_run_schema = {
   "properties": {
     "mounts": {"$ref": "docker-configuration-schema.json#/definitions/mounts"},
     "ports": {"$ref": "docker-configuration-schema.json#/definitions/ports"},
+    "environment": {"$ref": "docker-configuration-schema.json#/definitions/args"},
+    "resources": {"$ref": "docker-configuration-schema.json#/definitions/resources"},
     "wd": {"type": "string"},
     "detached": {"type": "boolean"},
     "interactive": {"type": "boolean"},
@@ -20,7 +22,19 @@ export const docker_run_schema = {
       "additionalProperties" : {
         "type": "string"
       }
-    }
+    },
+    "flags": {"$ref": "#/definitions/extra-docker-flags"}
+  },
+  "definitions": {
+      "extra-docker-flags" : {
+        "type": "object",
+        "properties": {
+          "network" : {
+            "type": "string",
+            "pattern": "^(host)$"
+          },
+        }
+      }
   }
 }
 

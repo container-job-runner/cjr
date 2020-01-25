@@ -3,17 +3,25 @@ import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
 
 export const docker_configuration_schema = {
   "$id": "docker-configuration-schema.json",
-  "title": "Full Configuration from a Docker-Based Stack",
-  "description": "Docker Build",
+  "title": "Docker Configuration Schema",
+  "description": "Full Configuration Specification for a Docker Stack",
   "type": "object",
   "properties": {
+    "version": {"$ref": "#/definitions/version"},
     "build": {"$ref": "#/definitions/build"},
     "mounts": {"$ref": "#/definitions/mounts"},
     "ports": {"$ref": "#/definitions/ports"},
     "environment": {"$ref": "#/definitions/args"},
-    "files": {"$ref": "#/definitions/files"}
+    "resources": {"$ref": "#/definitions/resources"},
+    "files": {"$ref": "#/definitions/files"},
+    "flags": {"$ref": "#/definitions/flags"}
   },
+  "additionalProperties": false,
   "definitions": {
+    "version": {
+        "type": "string",
+        "pattern": "1"  // for general matching use: "^[0-9]+(\.[0-9]+)?$"
+    },
     "build": {
       "type": "object",
       "properties": {
@@ -27,31 +35,6 @@ export const docker_configuration_schema = {
           "type": "boolean"
         },
         "args": {"$ref": "#/definitions/args"}
-      }
-    },
-    "args": {
-      "type": "object",
-      "additionalProperties": {
-        "type": "string"
-      }
-    },
-    "files": {
-      "type": "object",
-      "properties": {
-        "hostRoot": {
-          "type": "string"
-        },
-        "containerRoot": {
-          "type": "string"
-        },
-        "resultPaths": {
-          "type": "array",
-          "items": [
-            {
-              "type": "string"
-            }
-          ]
-        }
       }
     },
     "mounts": {
@@ -79,6 +62,51 @@ export const docker_configuration_schema = {
           ]
         }
       ]
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "cpu:": {
+          "type": "string",
+          "pattern": "^[0-9]+(\.[0-9]+)?$"
+        },
+        "gpu:": {
+          "type": "string"
+        },
+        "memory": {
+          "type" : "string",
+          "pattern": "^[0-9]+(m|g)$"
+        },
+        "memory-swap": {
+          "type" : "string",
+          "pattern": "^[0-9]+(m|g)$"
+        }
+      },
+      "dependencies": {
+        "memory-swap": ["memory"]
+      }
+    },
+    "files": {
+      "type": "object",
+      "properties": {
+        "hostRoot": {
+          "type": "string"
+        },
+        "containerRoot": {
+          "type": "string"
+        },
+        "resultPaths": {
+          "type": "array",
+          "items": [
+            {
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    "flags" : {
+      "type": "object"
     },
     "volume": {
       "type": "object",
@@ -145,6 +173,12 @@ export const docker_configuration_schema = {
         "type",
         "containerPath"
       ]
+    },
+    "args": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   }
 }

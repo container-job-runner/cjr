@@ -22,6 +22,15 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
+  protected addResourceFlags(flags: Dictionary, run_object: Dictionary)
+  {
+    const valid_keys = ["cpus", "gpu", "memory"] // podman does not support swap-memory
+    const keys = Object.keys(run_object?.resources || {})
+    keys?.map((key:string) => {
+      if(valid_keys.includes(key)) flags[key] = {shorthand: false, value: run_object?.resources[key]}
+    })
+  }
+
   protected mountObjectToFlagStr(mo: Dictionary)
   {
     switch(mo.type)
@@ -35,18 +44,14 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
-  protected runFlags(run_object: Dictionary)
+  protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)
   {
-    var flags:Dictionary = super.runFlags(run_object)
-    // append special podman run_flags
-    if(run_object?.podman?.userns) { // used for consistant file permissions
-      flags["userns"] = {shorthand: false, value: run_object.podman.userns}
+    super.addSpecialFlags(flags, run_object)
+    if(run_object?.flags?.userns) { // used for consistant file permissions
+      flags["userns"] = {shorthand: false, value: run_object.flags.userns}
     }
-    if(run_object?.podman?.["security-opt"]) { // used for binding X11 directory
-      flags["security-opt"] = {shorthand: false, value: run_object.podman["security-opt"]}
-    }
-    if(run_object?.podman?.network) { // used for sharing DISPLAY variable
-      flags["network"] = {shorthand: false, value: run_object.podman.network}
+    if(run_object?.flags?.["security-opt"]) { // used for binding X11 directory
+      flags["security-opt"] = {shorthand: false, value: run_object.flags["security-opt"]}
     }
     return flags
   }

@@ -1,8 +1,6 @@
-// Special Schema for podman RUN command that adds specific options for podman
-
 import * as Ajv from 'ajv'
-import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
 import {docker_configuration_schema} from '../../../config/docker/schema/docker-configuration-schema'
+import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
 
 export const podman_run_schema = {
   "$id": "podman-run.json",
@@ -12,17 +10,29 @@ export const podman_run_schema = {
   "properties": {
     "mounts": {"$ref": "docker-configuration-schema.json#/definitions/mounts"},
     "ports": {"$ref": "docker-configuration-schema.json#/definitions/ports"},
+    "environment": {"$ref": "docker-configuration-schema.json#/definitions/args"},
+    "resources": {"$ref": "docker-configuration-schema.json#/definitions/resources"},
     "wd": {"type": "string"},
     "detached": {"type": "boolean"},
     "interactive": {"type": "boolean"},
     "remove": {"type": "boolean"},
     "name": {"type": "string"},
-    "podman": {"$ref": "#/definitions/podman"}
+    "labels": {
+      "type": "object",
+      "additionalProperties" : {
+        "type": "string"
+      }
+    },
+    "flags": {"$ref": "#/definitions/extra-podman-flags"}
   },
   "definitions": {
-      "podman" : {
+      "extra-podman-flags" : {
         "type": "object",
         "properties": {
+          "network" : {
+            "type": "string",
+            "pattern": "^(host)|(slirp4netns)$"
+          },
           "userns" : {
             "type": "string",
             "pattern": "^(host)|(keep-id)$"
@@ -30,11 +40,7 @@ export const podman_run_schema = {
           "security-opt" : {
             "type": "string",
             "pattern": "^(label=disable)$"
-          },
-          "network" : {
-            "type": "string",
-            "pattern": "^(host)|(slirp4netns)$"
-          },
+          }
         }
       }
   }
