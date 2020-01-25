@@ -32,16 +32,14 @@ export class DockerBuildDriver extends BuildDriver
     validate(stack_path: string, overloaded_config_paths: Array<string> = [])
     {
       var result = new ValidatedOutput(true);
-      // check stack_path is a directory
+      // -- check stack_path is a directory ------------------------------------
       if(!FileTools.existsDir(stack_path))
         result.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path));
-      // check that the Dockerfile is present
-      if(!FileTools.existsDir(path.join(stack_path, 'Dockerfile')))
+      // -- check that the Dockerfile is present -------------------------------
+      if(!FileTools.existsFile(path.join(stack_path, 'Dockerfile')))
         result.pushError(this.ERRORSTRINGS["MISSING_DOCKERFILE"](stack_path));
-      // set results valid flag
       if(result.success)
         result = this.loadConfiguration(stack_path, overloaded_config_paths);
-
       return result
     }
 

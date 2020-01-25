@@ -45,7 +45,7 @@ export default class Shell extends StackCommand {
         return result
       })
 
-    if(flags.save !== false) await jobToImage(runner, result, flags.save, true, this.settings.get('interactive'))
+    if(flags.save !== undefined) await jobToImage(runner, result, flags.save, true, this.settings.get('interactive'))
     printResultState(result);
 
   }
