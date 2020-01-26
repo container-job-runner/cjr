@@ -36,7 +36,7 @@ export default class Delete extends JobCommand {
       printResultState(result)
     }
     // -- delete jobs ----------------------------------------------------------
-    if(!flags.silent) ids_to_stop.map((x:string) => console.log(` Deleting ${x}`))
+    if(!flags.silent) ids_to_delete.map((x:string) => console.log(` Deleting ${x}`))
     runner.jobDelete(ids_to_delete)
   }
 

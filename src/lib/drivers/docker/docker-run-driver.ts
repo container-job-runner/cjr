@@ -199,6 +199,7 @@ export class DockerRunDriver extends RunDriver
         command: x.Command,
         status: shortStatus(x.Status),
         stack: x?.Labels?.stack,
+        labels: x?.Labels || {},
         statusString: x.Status
       }
     }) : {};

@@ -77,8 +77,13 @@ export class DockerConfiguration extends Configuration
     this.working_directory = value
   }
 
+  addLabel(field: string, value: string) {
+    if(!this.raw_object?.labels) this.raw_object.labels = {}
+    this.raw_object.labels[field] = value
+  }
+
   // Set Any Additional Flags
-  setFlag(field: string, value: string) {
+  addFlag(field: string, value: string) {
     if(!this.valid_flag_fieldnames.includes(field)) return false
     if(!this.raw_object?.flags) this.raw_object.flags = {}
     this.raw_object.flags[field] = value
@@ -99,6 +104,7 @@ export class DockerConfiguration extends Configuration
       if(this.raw_object?.environment) run_object.environment = this.raw_object.environment
       if(this.raw_object?.resources) run_object.resources = this.raw_object.resources
       if(this.raw_object?.flags) run_object.flags = this.raw_object.flags
+      if(this.raw_object?.labels) run_object.labels = this.raw_object.labels
       if(this.working_directory) run_object.wd = this.working_directory
       return run_object
   }

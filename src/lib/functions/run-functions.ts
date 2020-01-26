@@ -52,10 +52,10 @@ export function allJobIds(runner: RunDriver, stack_path: string="", status:strin
 }
 
 // determines if job with given name exists. Refactor with resultNameId
-export function jobNametoID(runner: RunDriver, name: string, stack_path: string, status:string = "")
+export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: string, status:string = "")
 {
   const job_info = runner.jobInfo(stack_path, status)
-  const index    = job_info.map((x:Dictionary) => x.names).indexOf(name)
+  const index    = job_info.map((x:Dictionary) => x?.labels?.name).indexOf(name)
   return (index == -1) ? false : job_info[index].id
 }
 
@@ -256,8 +256,8 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
 
   // -- add special flags for podman -------------------------------------------
   if(configuration instanceof PodmanConfiguration) {
-    configuration.setFlag("network", "host") // allows reuse of DISPLAY variable from host
-    configuration.setFlag("security-opt", "label=disable") // allows /tmp/X11 directory to be accesible in container
+    configuration.addFlag("network", "host") // allows reuse of DISPLAY variable from host
+    configuration.addFlag("security-opt", "label=disable") // allows /tmp/X11 directory to be accesible in container
   }
 }
 
