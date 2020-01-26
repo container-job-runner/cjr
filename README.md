@@ -8,24 +8,7 @@ cjr
 cjr is a tool for running jobs in linux containers
 
 
-<!-- toc -->
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g cjr
-$ cjr COMMAND
-running command...
-$ cjr (-v|--version|version)
-cjr/0.0.0 darwin-x64 node-v12.14.1
-$ cjr --help [COMMAND]
-USAGE
-  $ cjr COMMAND
-...
-```
-<!-- usagestop -->
+# Introduction
 
 Explain Concept of Project
 Explain Concept of Stacks, and default stack folder
@@ -37,10 +20,192 @@ Set your project root folder with
 If you are already cd into the directory, then simply type
 `export HOSTROOT=$(pwd)`
 
-The most important commands are 
+The most important commands are
 1. shell - starts an interactive shell in a container
 2. $ command - starts a new job by running command
-3. jupyter - manages jupiter server for developing in an environment with jupiter installed
+3. jupyter - manages jupyter server for developing in an environment with jupyter installed
+
+# Stack and Project Config Format for Podman or Docker
+
+The config.yml file in a stack and any overriding configuration files should have the following format.
+All fields are options.
+
+```yaml
+version: STRING
+build:
+  dockerfile: STRING
+  context: STRING
+  args: OBJECT_OF_STRINGS
+hostRoot: STRING
+stackRoot: STRING
+environment: OBJECT_OF_STRINGS  
+mounts: ARRAY_OF_OBJECTS
+ports: ARRAY_OF_OBJECTS
+files: OBJECTS
+resources:
+  cpus: STRING
+  memory: STRING
+  memory-swap: STRING
+  gpus: STRING
+```
+
+### `version`
+
+Configuration file version. Currently only `version: "1"` is supported.
+
+### `build.dockerfile` (optional)
+
+Location of Dockerfile relative to the stack folder. Defaults to:
+```yaml
+dockerfile: Dockerfile
+````
+
+### `build.context` (optional)
+
+Context for build command relative to the stack folder. Defaults to:
+```yaml
+context: .
+````
+
+### `build.args` (optional)
+
+Any arguments use for the build stage. Example:
+```yaml
+build:
+  args:
+    ARG1:VALUE1
+    ARG2:VALUE2
+```
+
+### `hostRoot` (optional)
+
+The default host directory that is mounted to `containerRoot`. It can be absolute or relative to yml file.
+
+### `containerRoot` (optional)
+
+hostRoot will be mapped to containerRoot/basename(hostRoot). Defaults to:
+```yaml
+containerRoot: /
+````
+
+### `environment` (optional)
+
+A list of environment variables that will be passed to container on start. Example:
+```yaml
+environment:
+  ARG1:VALUE1
+  ARG2:VALUE2
+```
+
+### `mounts` (optional)
+
+There are three type of mounts: binds, volumes, and tempfs.
+
+**Binds**:  The file or directory on the host machine is mounted into a container. Any changes made in the container will be immediately visible on the host. Binds have three properties
+1. *type* - must be equal to `bind`
+2. *hostPath* - path on host that should be visible to container
+3. *containerPath* - path on container where host path will be mounted
+4. *consistency* (Optional) - [Mac Only] can be either `consistent` or `delegated` or `cached`
+5. *readonly* (Optional) - `true` or `false`
+
+Example
+```yaml
+mounts:
+- type: bind
+  hostPath: /home/user/folder
+  containerPath: /folder
+```
+
+**Volumes**: A storage folder that lies within Docker’s or Podman's own storage directory
+1. *type* - must be equal to `volumes`
+2. *volumeName* - name of volume
+3. *containerPath* - path on container where the volume path will be mounted to
+4. *readonly* (Optional) - `true` or `false`
+
+Example
+```yaml
+mounts:
+- type: volume
+  volumeName: ExampleVolume
+  containerPath: /folder
+```
+
+**Tempfs**: A temporary filesystem that resides in the host's memory
+1. *type* - must be equal to `tempfs`
+2. *containerPath* - path on container where the volume path will be mounted to
+
+Example
+```yaml
+mounts:
+- type: tempfs
+  containerPath: /folder
+```
+
+### `ports` (optional)
+
+A mapping of ports from host to container. Example:
+```yaml
+ports:
+- hostPort: 8080
+  containerPort: 8080
+- hostPort: 20
+  containerPort: 2020
+```
+**WARNING**: A stack with open ports does not allow for multiple containers to be run simultaneously.
+Therefore, only 1 job can be run at a time, and the shell command cannot be used if a job is running.
+
+### `resources` (optional)
+Allows you to limit the resources that each container can use
+
+1. *cpus* - (STRING) max number of CPU cores; can be decimal (e.g. 1.5)
+2. *memory* - (STRING) maximum amount of memory; for example `200m` for 200 MB and `4g` for 4 GB.
+3. *gpus* - (STRING) set to `all` to access all GPUs from container. See https://docs.docker.com/config/containers/resource_constraints/ for more details
+4. *memory-swap* - (STRING) maximum amount of memory including swap. Requires memory to be set.
+
+Example:
+```yaml
+resources:
+  cpus: "1"
+  memory: "200m"
+  memory-swap: "400m"
+  gpus: all
+```
+
+### `files` (optional)
+
+1. hostRoot - (STRING) default hostRoot for stack
+2. containerRoot - (STRING) default containerRoot for stacks
+3. resultPaths - (ARRAY) contains any result folders that should be copied over with result:copy command.
+
+Example:
+```yaml
+files:
+  hostRoot: "/path/"
+  containerRoot: "/"
+  resultPaths:
+  - "results/minor"
+  - "result/major"
+```
+
+
+<!-- toc -->
+* [Usage](#usage)
+* [Commands](#commands)
+<!-- tocstop -->
+# Usage
+<!-- usage -->
+```sh-session
+$ npm install -g cjr
+$ cjr COMMAND
+running command...
+$ cjr (-v|--version|version)
+cjr/0.0.0 linux-x64 node-v10.16.3
+$ cjr --help [COMMAND]
+USAGE
+  $ cjr COMMAND
+...
+```
+<!-- usagestop -->
 
 # Commands
 <!-- commands -->
