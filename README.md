@@ -25,10 +25,9 @@ The most important commands are
 2. $ command - starts a new job by running command
 3. jupyter - manages jupyter server for developing in an environment with jupyter installed
 
-# Stack and Project Config Format for Podman or Docker
+# YML Configuration Format for Podman and Docker Stacks
 
-The config.yml file in a stack and any overriding configuration files should have the following format.
-All fields are options.
+Every Docker and Podman stack may contain an optional configuration file named config.yml. Overriding configuration files can also be referenced from the .cjr/settings.yml file located in a project's root folder. The config.yml file and any overriding configuration files must adhere to the following format. Note that all fields are options.
 
 ```yaml
 version: STRING
@@ -62,14 +61,14 @@ dockerfile: Dockerfile
 
 ### `build.context` (optional)
 
-Context for build command relative to the stack folder. Defaults to:
+Context for the build command. Path is relative to the stack folder. Defaults to:
 ```yaml
 context: .
 ````
 
 ### `build.args` (optional)
 
-Any arguments use for the build stage. Example:
+Any arguments used during image build. Example:
 ```yaml
 build:
   args:
@@ -79,7 +78,7 @@ build:
 
 ### `hostRoot` (optional)
 
-The default host directory that is mounted to `containerRoot`. It can be absolute or relative to yml file.
+The default host directory that is mounted to `containerRoot`. It can be either an absolute path or a path that is relative to the configuration file.
 
 ### `containerRoot` (optional)
 
@@ -99,14 +98,14 @@ environment:
 
 ### `mounts` (optional)
 
-There are three type of mounts: binds, volumes, and tempfs.
+There are three type of supported mounts: binds, volumes, and tempfs.
 
-**Binds**:  The file or directory on the host machine is mounted into a container. Any changes made in the container will be immediately visible on the host. Binds have three properties
+**Binds**:  The file or directory on the host machine is mounted into a container. Any changes made in the container will be immediately visible on the host. Binds have three required properties and two optional properties:
 1. *type* - must be equal to `bind`
-2. *hostPath* - path on host that should be visible to container
-3. *containerPath* - path on container where host path will be mounted
-4. *consistency* (Optional) - [Mac Only] can be either `consistent` or `delegated` or `cached`
-5. *readonly* (Optional) - `true` or `false`
+2. *hostPath* - path on host that should be mounted inside container
+3. *containerPath* - path on container where host path will be mounted to
+4. *readonly* (Optional) - `true` or `false`
+5. *consistency* [Mac Only] (Optional) - can be either `consistent` or `delegated` or `cached`
 
 Example
 ```yaml
@@ -116,7 +115,7 @@ mounts:
   containerPath: /folder
 ```
 
-**Volumes**: A storage folder that lies within Docker’s or Podman's own storage directory
+**Volumes**: Equivalent to a bind, except it utilized a storage folder that is managed by Docker or Podman. Volumes have three required properties and one optional properties:
 1. *type* - must be equal to `volumes`
 2. *volumeName* - name of volume
 3. *containerPath* - path on container where the volume path will be mounted to
@@ -130,7 +129,7 @@ mounts:
   containerPath: /folder
 ```
 
-**Tempfs**: A temporary filesystem that resides in the host's memory
+**Tempfs**: A temporary filesystem that resides in the host's memory. Tempfs mounts have two required properties:
 1. *type* - must be equal to `tempfs`
 2. *containerPath* - path on container where the volume path will be mounted to
 
@@ -151,8 +150,7 @@ ports:
 - hostPort: 20
   containerPort: 2020
 ```
-**WARNING**: A stack with open ports does not allow for multiple containers to be run simultaneously.
-Therefore, only 1 job can be run at a time, and the shell command cannot be used if a job is running.
+**WARNING**: Due to port collisions, it is not possible to run multiple containers for a stack with open ports. If you configure ports then only only 1 job can be run at a time, and the shell and $ commands cannot be used simultaneously.
 
 ### `resources` (optional)
 Allows you to limit the resources that each container can use
@@ -161,6 +159,8 @@ Allows you to limit the resources that each container can use
 2. *memory* - (STRING) maximum amount of memory; for example `200m` for 200 MB and `4g` for 4 GB.
 3. *gpus* - (STRING) set to `all` to access all GPUs from container. See https://docs.docker.com/config/containers/resource_constraints/ for more details
 4. *memory-swap* - (STRING) maximum amount of memory including swap. Requires memory to be set.
+
+**WARNING**: Enabling resource management requires root privileges in Podman.
 
 Example:
 ```yaml
@@ -173,8 +173,8 @@ resources:
 
 ### `files` (optional)
 
-1. hostRoot - (STRING) default hostRoot for stack
-2. containerRoot - (STRING) default containerRoot for stacks
+1. hostRoot - (STRING) default hostRoot for stack. This parameter can be overwritten from cli call.
+2. containerRoot - (STRING) default containerRoot for stacks. This parameter can be overwritten from cli call.
 3. resultPaths - (ARRAY) contains any result folders that should be copied over with result:copy command.
 
 Example:
@@ -186,7 +186,6 @@ files:
   - "results/minor"
   - "result/major"
 ```
-
 
 <!-- toc -->
 * [Usage](#usage)
