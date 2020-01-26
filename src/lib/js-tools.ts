@@ -40,4 +40,17 @@ export class JSTools
       return val instanceof Array;
   }
 
+  static isEmpty(val: any) {
+     return ((typeof val === 'string') && (val === "")) ||
+     ((val instanceof Array) && (val.length == 0)) ||
+     ((val instanceof Object) && (Object.entries(val).length === 0)) ||
+     (!val)
+  }
+
+  static clipAndPad (s:string, clip_width: number, final_width: number, silent_clip: boolean) {
+    if(s.length > clip_width)  s = (silent_clip) ? s.substring(0, clip_width) : `${s.substring(0, clip_width - 3)}...`
+    if(s.length < final_width) s += " ".repeat(final_width - s.length)
+    return s
+  }
+
 }

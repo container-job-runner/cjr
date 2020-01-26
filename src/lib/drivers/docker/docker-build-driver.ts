@@ -4,6 +4,7 @@ import * as yaml from 'js-yaml'
 import * as chalk from 'chalk'
 import {BuildDriver} from '../abstract/build-driver'
 import {ValidatedOutput} from '../../validated-output'
+import {JSTools} from '../../js-tools'
 import {DockerConfiguration} from '../../config/docker/docker-configuration'
 import {FileTools} from '../../fileio/file-tools'
 import {YMLFile} from '../../fileio/yml-file'
@@ -52,11 +53,7 @@ export class DockerBuildDriver extends BuildDriver
       }
       flags = this.addJSONFormatFlag(flags);
       var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-      return (result.success && result.data) ? true : false
-      // var isEmpty = (obj:any) => ((typeof obj === 'string') && (obj === "")) ||
-      //   ((obj instanceof Array) && (obj.length == 0)) ||
-      //   ((obj instanceof Object) && (Object.entries(obj).length === 0))
-      // return (result.success && !isEmpty(result.data)) ? true : false
+      return (result.success && !JSTools.isEmpty(result.data)) ? true : false
     }
 
     build(stack_path: string, overloaded_config_paths: Array<string> = [], nocache?:boolean)
