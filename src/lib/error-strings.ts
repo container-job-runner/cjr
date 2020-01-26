@@ -16,6 +16,9 @@ export const ErrorStrings = {
   },
   YML:{
     INVALID: (yml_error_str: string) => chalk`{bold Yml failed validation} - validator error shown below.\n${yml_error_str}`
+  },
+  JOBSHELL: {
+    NOSTACK: ""
   }
 }
 

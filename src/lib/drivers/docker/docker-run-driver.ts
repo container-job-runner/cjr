@@ -118,20 +118,6 @@ export class DockerRunDriver extends RunDriver
 
   // === END Job Helper Functions ============================================
 
-  jobList(stack_path: string, json_format:boolean = false)
-  {
-    const command = `${this.base_command} ${this.sub_commands["list"]}`;
-    const args:Array<string> = []
-    var   flags = {
-      "filter": {
-        value: ['status=running', `label=runner=${cli_name}`], //using labels now instead of `ancestor=${this.imageName(stack_path)}`
-        shorthand: false}
-    }
-    if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
-    if(json_format) this.addFormatFlags(flags, {format: "json"})
-    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
-  }
-
   jobLog(id: string, lines: string="all")
   {
     var command = `${this.base_command} ${this.sub_commands["log"]}`;
@@ -157,7 +143,7 @@ export class DockerRunDriver extends RunDriver
     return new ValidatedOutput(true, this.shell.sync(command, flags, args))
   }
 
-  jobDestroy(ids: Array<string>)
+  jobDelete(ids: Array<string>)
   {
     return new ValidatedOutput(true, [this.stop(ids), this.remove(ids)])
   }
@@ -185,60 +171,40 @@ export class DockerRunDriver extends RunDriver
     return this.shell.sync(command, flags, args, {stdio: "pipe"})
   }
 
-  jobInfo(image_name: string) // Note: this allows for empty image_name. In which case it returns all running containers on host
+  jobInfo(stack_path: string, job_status: string = "") // Note: this allows for empty image_name. In which case it returns all running containers on host
   {
     const command = `${this.base_command} ${this.sub_commands["list"]}`;
     const args: Array<string> = []
     var   flags: Dictionary = {
+      "a" : {shorthand: true},
       "no-trunc": {shorthand: false},
       "filter": {shorthand: false, value: [`label=runner=${cli_name}`]}
     };
-    if(image_name?.length > 0) {
-      flags["filter"].value.push(`ancestor=${image_name}`)
-    }
+    if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
+    if(job_status) flags["filter"].value.push(`status=${job_status}`)
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-    return (result.success) ? result.data?.map((x:Dictionary) => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) : {};
+
+    // converts statusMessage to one of three states
+    const shortStatus = (x: String) => {
+      if(x.match(/^Exited/)) return "exited"
+      if(x.match(/^Created/)) return "created"
+      if(x.match(/^Up/)) return "running"
+    }
+
+    return (result.success) ? result.data?.map((x:Dictionary) => {
+      return {
+        id: x.ID,
+        names: x.Names,
+        command: x.Command,
+        status: shortStatus(x.Status),
+        stack: x?.Labels?.stack,
+        statusString: x.Status
+      }
+    }) : {};
   }
 
   // result functions
-
-  resultList(stack_path: string, json_format:boolean = false)
-  {
-    const command = `${this.base_command} ${this.sub_commands["list"]}`;
-    const args: Array<string> = []
-    var   flags: Dictionary = {
-      "a" : {shorthand: true},
-      "filter": {
-        value: ['status=exited', `label=runner=${cli_name}`], //using labels now instead of `ancestor=${this.imageName(stack_path)}`
-        shorthand: false}
-    }
-    if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
-    if(json_format) this.addFormatFlags(flags, {format: "json"})
-    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
-  }
-
-  resultDelete(ids: Array<string>)
-  {
-    return new ValidatedOutput(true, this.remove(ids))
-  }
-
-  resultInfo(image_name: string) // Note: this allows for empty image_name. In which case it returns all running containers on host
-  {
-    const command = `${this.base_command} ${this.sub_commands["list"]}`;
-    const args: Array<string> = []
-    var   flags: Dictionary = {
-      "a" : {shorthand: true},
-      "no-trunc" : {shorthand: false},
-      "filter" : {shorthand: false, value: ['status=exited',`label=runner=${cli_name}`]}
-    };
-    if(image_name.length > 0) {
-      flags["filter"].value.push(`ancestor=${image_name}`)
-    }
-    this.addFormatFlags(flags, {format: "json"})
-    var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-    return (result.success) ? result.data?.map((x:Dictionary) => {return {id: x.ID, names: x.Names, command: x.Command, status: x.Status}}) :[];
-  }
 
   resultCopy(id: string, job_object: Dictionary, copy_all: boolean = false)
   {
@@ -275,7 +241,7 @@ export class DockerRunDriver extends RunDriver
     return new ValidatedOutput(false, undefined, [this.ERRORSTRINGS.INVALID_JOB])
   }
 
-  toImage(id: string, image_name: string)
+  jobToImage(id: string, image_name: string)
   {
     const command = `${this.base_command} ${this.sub_commands["commit"]}`
     const args  = [id, image_name]

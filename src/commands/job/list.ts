@@ -1,4 +1,5 @@
 import {flags} from '@oclif/command'
+import {printTable} from '../../lib/functions/run-functions'
 import {StackCommand} from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
@@ -18,7 +19,27 @@ export default class List extends StackCommand {
     const {argv, flags} = this.parseWithLoad(List, false)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = (!flags.all && flags.stack) ? this.fullStackPath(flags.stack) : ""
-    const results = runner.jobList(stack_path, flags['json'])
+    const jobs = runner.jobInfo(stack_path)
+
+
+    const table_parameters = {
+        column_headers: ["ID", "STACK", "COMMAND", "STATUS"],
+        column_widths: [17, 20, 40, 35],
+        text_widths: [12, 15, 35, 30],
+        silent_clip: [true, false, false, false]
+    }
+
+    const toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.statusString]
+
+    printTable({ ...table_parameters, ...{
+        title:  "Running Jobs",
+        data:   jobs.filter(j => (j.status === "running")).map((e:Dictionary) => toArray(e))
+    }})
+
+    printTable({ ...table_parameters, ...{
+        title:  "Completed Jobs",
+        data:   jobs.filter(j => (j.status === "exited")).map((e:Dictionary) => toArray(e)),
+    }})
   }
 
 }

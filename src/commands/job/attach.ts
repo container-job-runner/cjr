@@ -4,7 +4,7 @@ import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functi
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Attach extends StackCommand {
-  static description = 'Attach back to the shell that is running a job.'
+  static description = 'Attach back to a running job.'
   static args = [{name: 'id', required: false}]
   static flags = {
     stack: flags.string({env: 'STACK'}),
@@ -16,15 +16,11 @@ export default class Attach extends StackCommand {
   {
     const {argv, flags} = this.parse(Attach)
     const runner  = this.newRunner(flags.explicit)
-    var stack_path = (flags?.stack) ? this.fullStackPath(flags.stack) : ""
-    var id = argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || ""
-
+    var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    var id = argv[0] || await promptUserForJobId(runner, stack_path, "running", !this.settings.get('interactive')) || ""
     // match with existing container ids
-    var result = matchingJobIds(runner, stack_path, id, false)
-    if(result.success)
-    {
-        runner.jobAttach(result.data[0])
-    }
+    var result = matchingJobIds(runner, id, stack_path)
+    if(result.success) runner.jobAttach(result.data[0], flags.lines)
     printResultState(result)
   }
 

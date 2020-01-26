@@ -14,54 +14,60 @@ import {DefaultContainerRoot, X11_POSIX_BIND} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
 import {ErrorStrings, WarningStrings} from '../error-strings'
 import {PodmanConfiguration} from '../config/podman/podman-configuration'
+import {JSTools} from '../js-tools'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-function matchingIds(job_ids: Array<string>, stack_path: string, id: string, all:boolean = false)
+// returns array of jobs ids for all jobs whose id begins with the letters in the passed parameter "id"
+export function matchingJobIds(runner: RunDriver, id: string, stack_path: string, status:string = "")
 {
-  if(!all && id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
-  // find current jobs matching at least part of ID
-  const re = new RegExp(`^${id}`)
-  const matching_ids = (all) ? job_ids : job_ids.filter((id:string) => re.test(id))
-  return (matching_ids.length > 0 || id.length == 0) ?
+  if(id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
+  const job_ids = allJobIds(runner, stack_path, status)
+  const regex = new RegExp(`^${id}`)
+  const matching_ids = job_ids.filter((id:string) => regex.test(id))
+  return (matching_ids.length > 0) ?
     new ValidatedOutput(true, matching_ids) :
     new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
 }
 
-export function matchingJobIds(runner: RunDriver, stack_path: string, id: string, all:boolean = false)
+// returns array of jobs info objects for all jobs whose id begins with the letters in the passed parameter "id"
+export function matchingJobInfo(runner: RunDriver, id: string, stack_path: string, status:string = "")
 {
-  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  return matchingIds(runner.jobInfo(image_name).map((x:Dictionary) => x.id), stack_path, id, all)
+  if(id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
+  const job_info = runner.jobInfo(stack_path, status)
+  const regex = new RegExp(`^${id}`)
+  const matching_jobs = job_info.filter((job:Dictonary) => regex.test(job.id))
+  return (matching_jobs.length > 0) ?
+    new ValidatedOutput(true, matching_jobs) :
+    new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
 }
 
-export function matchingResultIds(runner: RunDriver, stack_path: string, id: string, all:boolean = false)
+// returns all running job ids
+export function allJobIds(runner: RunDriver, stack_path: string="", status:string = "")
 {
-  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  return matchingIds(runner.resultInfo(image_name).map((x:Dictionary) => x.id), stack_path, id, all)
+  return runner.jobInfo(stack_path, status).map((x:Dictionary) => x.id)
 }
 
 // determines if job with given name exists. Refactor with resultNameId
-export function jobNametoID(runner: RunDriver, stack_path: string, name: string)
+export function jobNametoID(runner: RunDriver, name: string, stack_path: string, status:string = "")
 {
-  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  const job_info   = runner.jobInfo(image_name)
-  const index      = job_info.map((x:Dictionary) => x.names).indexOf(name)
+  const job_info = runner.jobInfo(stack_path, status)
+  const index    = job_info.map((x:Dictionary) => x.names).indexOf(name)
   return (index == -1) ? false : job_info[index].id
 }
 
-// determines if result with given name exists
-export function resultNametoID(runner: RunDriver, stack_path: string, name: string)
-{
-  const image_name  = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  const result_info = runner.resultInfo(image_name)
-  const index       = result_info.map((x:Dictionary) => x.names).indexOf(name)
-  return (index == -1) ? false : result_info[index].id
-}
-
-// Get Working for container given CLI Path, hostRoot and Container ROot
+// -----------------------------------------------------------------------------
+// CONTAINERWORKINGDIR determines the appropriate cwd for a container so that it
+// replicates the feel of working on the local machine if the user is currently
+// cd into the hostRoot folder.
+// -- Parameters ---------------------------------------------------------------
+// cli_cwd (string) - absolute path where cli was called from
+// hRoot   (string) - absolite path of project root folder
+// croot   (string) - absolute path where hroot is mounted on container
+// -----------------------------------------------------------------------------
 export function containerWorkingDir(cli_cwd:string, hroot: string, croot: string)
 {
   const hroot_arr:Array<string> = PathTools.split(hroot)
@@ -203,7 +209,7 @@ export async function jobToImage(runner: RunDriver, result: ValidatedOutput, ima
       }
     ])
   }
-  if(!interactive || response?.flag == true) runner.toImage(job_id, image_name)
+  if(!interactive || response?.flag == true) runner.jobToImage(job_id, image_name)
   if(remove_job) runner.resultDelete([job_id])
 }
 
@@ -299,38 +305,70 @@ export function prependXAuth(command: string, explicit: boolean = false)
 
 // -- Interactive Functions ----------------------------------------------------
 
-export async function promptUserForJobId(runner: RunDriver, stack_path: string, silent: boolean = false)
+export async function promptUserForJobId(runner: RunDriver, stack_path: string, status:string="", silent: boolean = false)
 {
   if(silent) return false;
-  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  const job_info = runner.jobInfo(image_name)
+  const job_info = runner.jobInfo(stack_path, status)
   return await promptUserId(job_info);
-}
-
-export async function promptUserForResultId(runner: RunDriver, stack_path: string, silent: boolean = false)
-{
-  if(silent) return false;
-  const image_name = (stack_path.length > 0) ? runner.imageName(stack_path) : ""
-  const result_info = runner.resultInfo(image_name)
-  return await promptUserId(result_info);
 }
 
 // helper function for promptUserForJobId & promptUserForResultId
 async function promptUserId(id_info: Array<Dictionary>)
 {
-  const short_cmd_str = (cmd_str:string) => (cmd_str.length > 10) ? `${cmd_str.substring(0,10)}...` : cmd_str
   const response = await inquirer.prompt([{
   name: 'id',
   message: 'Select an id:',
   prefix: "\b",
   suffix: "",
-  type: 'rawlist',
+  type: 'list',
   choices: id_info.map((j:Dictionary) => {
     return {
-      name: chalk`{italic ID}: ${j.id.substring(0, 12)} {italic COMMAND}: ${short_cmd_str(j.command)} {italic STATUS}: ${j.status}`,
+      name: chalk`{italic ID}: ${JSTools.clipAndPad(j.id, 12, 15, true)} {italic COMMAND}: ${JSTools.clipAndPad(j.command, 20, 25)} {italic STATUS}: ${j.statusString}`,
       value: j.id
     }
   }).concat({name: "Exit", value: ""}),
 }])
 return response.id;
+}
+
+// -----------------------------------------------------------------------------
+// PRINTTABLE: prints a formatted table_parameters with title, header.
+// -- Parameters ---------------------------------------------------------------
+// configuration (Object) with fields:
+//    column_widths    (nx1 Array<number>)   - width of each column (in spaces)
+//    text_widths      (nx1 Array<string>)   - max width of text for each column. must satisfy text_widths[i] <= column_widths[i]
+//    silent_clip      (nx1 Array<boolean>)  - if silent_clip[i] == false, then any shortened text will end with "..."
+//    title            (String)              - title of table
+//    header:          (nx1 Array<string>)   - name of each column
+// -----------------------------------------------------------------------------
+export function printTable(configuration: Dictionary)
+{
+
+  // -- read data into local variables for convenience -------------------------
+  const c_widths = configuration.column_widths
+  const t_widths = configuration.text_widths
+  const s_clip   = configuration.silent_clip
+  const title    = configuration.title
+  const c_header = configuration.column_headers
+
+  // -- helper function for printing a table row -------------------------------
+  const printRow = (row: Array<string>) => {
+    console.log(
+      row.map(
+        (s:string, index:number) => chalk.italic(
+          JSTools.clipAndPad(s, t_widths[index], c_widths[index], s_clip[index])
+        )
+      ).join("")
+    )
+  }
+
+  // -- print title ------------------------------------------------------------
+  if(title) {
+    const width = c_widths.reduce((total, current) => total + current, 0)
+    console.log(chalk`-- {bold ${title}} ${"-".repeat(width - title.length - 4)}`)
+  }
+  // -- print header -----------------------------------------------------------
+  if(c_header) printRow(c_header)
+  // -- print data -------------------------------------------------------------
+  configuration.data.map((row: Array<string>) => printRow(row))
 }

@@ -19,9 +19,9 @@ export default class Log extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
-    var id = argv[0] || await promptUserForJobId(runner, stack_path, !this.settings.get('interactive')) || ""
+    var id = argv[0] || await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || ""
     // match with existing container ids
-    var result = matchingJobIds(runner, stack_path, id, false)
+    var result = matchingJobIds(runner, id, stack_path)
     if(result.success)runner.jobLog(result.data[0], flags.lines)
     printResultState(result)
   }

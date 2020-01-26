@@ -59,10 +59,7 @@
         "description": "Build, list, and delete images cooresponding to a stack."
       },
       "job": {
-        "description": "View and manage running jobs."
-      },
-      "result": {
-        "description": "View and manage results from completed jobs."
+        "description": "View and manage jobs."
       },
       "jupyter": {
         "description": "Start and stop Jupyter lab and Jupyter notebook."
