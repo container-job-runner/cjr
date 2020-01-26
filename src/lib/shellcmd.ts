@@ -138,7 +138,7 @@ export class ShellCMD
           }
         else
         {
-          console.log("\t" + this.cmdString(command, flags, args))
+          console.log(" " + this.cmdString(command, flags, args))
         }
       }
     }
