@@ -28,6 +28,8 @@ export abstract class Configuration
   abstract getResultPaths() : Array<string> | undefined;
   abstract addBind(hostPath: string, containerPath: string): boolean;
   abstract addPort(hostPort: number, containerPort: number): boolean;
+  abstract addFlag(field: string, value: string): boolean;
+  abstract removeFlag(field: string): boolean;
   abstract addRunEnvironmentVariable(name: string, value: string): boolean;
   abstract bundle(stack_path: string): ValidatedOutput
   // output objects for run-drivers or build-drivers

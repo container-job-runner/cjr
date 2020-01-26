@@ -84,6 +84,13 @@ export class DockerConfiguration extends Configuration
     this.raw_object.flags[field] = value
   }
 
+  // Set Any Additional Flags
+  removeFlag(field: string) {
+    if(!this.valid_flag_fieldnames.includes(field)) return false
+    if(this.raw_object?.flags && (field in this.raw_object.flags)) delete this.raw_object.flags[field]
+    return true
+  }
+
   runObject()
   {
       var run_object:Dictionary = {}

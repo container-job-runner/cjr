@@ -26,6 +26,7 @@ export default class Run extends JobCommand {
     var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
 
+        configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
         var job_object:Dictionary = {
           command: "exit",
           hostRoot: hostRoot,

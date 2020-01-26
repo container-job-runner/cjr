@@ -32,6 +32,7 @@ export default class Run extends JobCommand {
       (configuration, containerRoot, hostRoot) => {
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
         addPorts(configuration, flags.port)
+        configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
         if(flags.x11) enableX11(configuration, flags.explicit)
 
         var job_object:Dictionary = {
