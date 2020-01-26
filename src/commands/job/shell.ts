@@ -59,7 +59,7 @@ export default class Shell extends JobCommand {
         detached: false,
         interactive: true
       }
-      runner.jobExec(job_id, "bash", exec_object)
+      runner.jobExec(job_id, this.settings.get("default_shell"), exec_object)
     }
     else if(job_info.status == "exited" || job_info.status == "created") // == EXITED JOB ======================
     {
@@ -96,7 +96,7 @@ export default class Shell extends JobCommand {
       if(result.success)
       {
         const new_job_object = JSTools.rMerge(JSTools.rCopy(old_job_object), {
-          command: "bash",
+          command: this.settings.get("default_shell"),
           synchronous: false,
           remove: flags.discard
         })

@@ -34,7 +34,7 @@ export default class Shell extends StackCommand {
         if(flags.x11) enableX11(configuration, flags.explicit)
 
         const job_object = {
-          command: (flags.x11) ? prependXAuth("bash", flags.explicit) : "bash",
+          command: (flags.x11) ? prependXAuth(this.settings.get("default_shell"), flags.explicit) : this.settings.get("default_shell"),
           hostRoot: false, // set false so that no data copy is performed
           containerRoot: containerRoot,
           synchronous: true,

@@ -5,7 +5,7 @@ import {printResultState} from '../lib/functions/misc-functions'
 import * as chalk from 'chalk'
 
 export default class Run extends JobCommand {
-  static description = 'Run a shell command as a new job.'
+  static description = 'Run a command as a new job.'
   static args = [{name: 'command', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK'}),

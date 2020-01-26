@@ -42,6 +42,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       build_cmd: cmd,
       run_cmd: cmd,
       image_tag: cli_name,
+      default_shell: "bash",
       interactive: true
   }
 }
