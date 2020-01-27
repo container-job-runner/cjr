@@ -188,6 +188,8 @@ files:
 ```
 
 <!-- toc -->
+* [Introduction](#introduction)
+* [YML Configuration Format for Podman and Docker Stacks](#yml-configuration-format-for-podman-and-docker-stacks)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
@@ -198,7 +200,7 @@ $ npm install -g cjr
 $ cjr COMMAND
 running command...
 $ cjr (-v|--version|version)
-cjr/0.0.0 linux-x64 node-v10.16.3
+cjr/0.0.0 darwin-x64 node-v12.14.1
 $ cjr --help [COMMAND]
 USAGE
   $ cjr COMMAND
@@ -215,27 +217,25 @@ USAGE
 * [`cjr config:set [KEY] [VALUE]`](#cjr-configset-key-value)
 * [`cjr help [COMMAND]`](#cjr-help-command)
 * [`cjr job:attach [ID]`](#cjr-jobattach-id)
-* [`cjr job:destroy [ID]`](#cjr-jobdestroy-id)
-* [`cjr job:exec ID COMMAND`](#cjr-jobexec-id-command)
+* [`cjr job:copy [ID]`](#cjr-jobcopy-id)
+* [`cjr job:delete [ID]`](#cjr-jobdelete-id)
 * [`cjr job:list`](#cjr-joblist)
 * [`cjr job:log [ID]`](#cjr-joblog-id)
+* [`cjr job:shell [ID]`](#cjr-jobshell-id)
 * [`cjr job:stop [ID]`](#cjr-jobstop-id)
 * [`cjr jupyter:list`](#cjr-jupyterlist)
 * [`cjr jupyter:start`](#cjr-jupyterstart)
 * [`cjr jupyter:stop`](#cjr-jupyterstop)
-* [`cjr result:copy ID`](#cjr-resultcopy-id)
-* [`cjr result:delete [ID]`](#cjr-resultdelete-id)
-* [`cjr result:list`](#cjr-resultlist)
-* [`cjr result:shell [ID]`](#cjr-resultshell-id)
 * [`cjr shell`](#cjr-shell)
 * [`cjr stack:build`](#cjr-stackbuild)
+* [`cjr stack:clone URL`](#cjr-stackclone-url)
 * [`cjr stack:list`](#cjr-stacklist)
 * [`cjr stack:rmi`](#cjr-stackrmi)
 * [`cjr stash`](#cjr-stash)
 
 ## `cjr $ COMMAND`
 
-Run a shell command as a new job.
+Run a command as a new job.
 
 ```
 USAGE
@@ -252,11 +252,11 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/$.ts](https://github.com///blob/v0.0.0/src/commands/$.ts)_
+_See code: [src/commands/$.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/$.ts)_
 
 ## `cjr bundle SAVE_DIR`
 
-bundle current configuration and files.
+bundle a stack and its project files for sharing.
 
 ```
 USAGE
@@ -271,7 +271,7 @@ OPTIONS
   --zip                produces one .zip file (requires gzip)
 ```
 
-_See code: [src/commands/bundle.ts](https://github.com///blob/v0.0.0/src/commands/bundle.ts)_
+_See code: [src/commands/bundle.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/bundle.ts)_
 
 ## `cjr config:get [KEY]`
 
@@ -282,7 +282,7 @@ USAGE
   $ cjr config:get [KEY]
 ```
 
-_See code: [src/commands/config/get.ts](https://github.com///blob/v0.0.0/src/commands/config/get.ts)_
+_See code: [src/commands/config/get.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/config/get.ts)_
 
 ## `cjr config:list`
 
@@ -293,7 +293,7 @@ USAGE
   $ cjr config:list
 ```
 
-_See code: [src/commands/config/list.ts](https://github.com///blob/v0.0.0/src/commands/config/list.ts)_
+_See code: [src/commands/config/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/config/list.ts)_
 
 ## `cjr config:set [KEY] [VALUE]`
 
@@ -304,7 +304,7 @@ USAGE
   $ cjr config:set [KEY] [VALUE]
 ```
 
-_See code: [src/commands/config/set.ts](https://github.com///blob/v0.0.0/src/commands/config/set.ts)_
+_See code: [src/commands/config/set.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/config/set.ts)_
 
 ## `cjr help [COMMAND]`
 
@@ -325,7 +325,7 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.2.3
 
 ## `cjr job:attach [ID]`
 
-Attach back to the shell that is running a job.
+Attach back to a running job.
 
 ```
 USAGE
@@ -336,15 +336,15 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/attach.ts](https://github.com///blob/v0.0.0/src/commands/job/attach.ts)_
+_See code: [src/commands/job/attach.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/attach.ts)_
 
-## `cjr job:destroy [ID]`
+## `cjr job:copy [ID]`
 
-Stop a job and destroy the associated result.
+Copy job data back into the host directories. Works with both running and completed jobs.
 
 ```
 USAGE
-  $ cjr job:destroy [ID]
+  $ cjr job:copy [ID]
 
 OPTIONS
   --all
@@ -352,23 +352,26 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/destroy.ts](https://github.com///blob/v0.0.0/src/commands/job/destroy.ts)_
+_See code: [src/commands/job/copy.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/copy.ts)_
 
-## `cjr job:exec ID COMMAND`
+## `cjr job:delete [ID]`
 
-Execute a command inside the container that is running a job.
+Delete a job and its associated data. This command works on both running and completed jobs
 
 ```
 USAGE
-  $ cjr job:exec ID COMMAND
+  $ cjr job:delete [ID]
 
 OPTIONS
-  --async
+  --all
+  --all-completed
+  --all-running
   --explicit
+  --silent
   --stack=stack
 ```
 
-_See code: [src/commands/job/exec.ts](https://github.com///blob/v0.0.0/src/commands/job/exec.ts)_
+_See code: [src/commands/job/delete.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/delete.ts)_
 
 ## `cjr job:list`
 
@@ -386,7 +389,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/list.ts](https://github.com///blob/v0.0.0/src/commands/job/list.ts)_
+_See code: [src/commands/job/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/list.ts)_
 
 ## `cjr job:log [ID]`
 
@@ -402,11 +405,28 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/log.ts](https://github.com///blob/v0.0.0/src/commands/job/log.ts)_
+_See code: [src/commands/job/log.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/log.ts)_
+
+## `cjr job:shell [ID]`
+
+Start a shell inside a result. After exiting the changes will be stored as a new result
+
+```
+USAGE
+  $ cjr job:shell [ID]
+
+OPTIONS
+  --discard
+  --explicit
+  --hostRoot=hostRoot
+  --stack=stack
+```
+
+_See code: [src/commands/job/shell.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/shell.ts)_
 
 ## `cjr job:stop [ID]`
 
-Stop a running job and turn it into a result.
+Stop a running job. This command has no effect on completed jobs.
 
 ```
 USAGE
@@ -414,11 +434,14 @@ USAGE
 
 OPTIONS
   --all
+  --all-completed
+  --all-running
   --explicit
+  --silent
   --stack=stack
 ```
 
-_See code: [src/commands/job/stop.ts](https://github.com///blob/v0.0.0/src/commands/job/stop.ts)_
+_See code: [src/commands/job/stop.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/stop.ts)_
 
 ## `cjr jupyter:list`
 
@@ -434,7 +457,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/jupyter/list.ts](https://github.com///blob/v0.0.0/src/commands/jupyter/list.ts)_
+_See code: [src/commands/jupyter/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/jupyter/list.ts)_
 
 ## `cjr jupyter:start`
 
@@ -453,7 +476,7 @@ OPTIONS
   --sync
 ```
 
-_See code: [src/commands/jupyter/start.ts](https://github.com///blob/v0.0.0/src/commands/jupyter/start.ts)_
+_See code: [src/commands/jupyter/start.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/jupyter/start.ts)_
 
 ## `cjr jupyter:stop`
 
@@ -469,74 +492,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/jupyter/stop.ts](https://github.com///blob/v0.0.0/src/commands/jupyter/stop.ts)_
-
-## `cjr result:copy ID`
-
-Copy job results back into the host directories.
-
-```
-USAGE
-  $ cjr result:copy ID
-
-OPTIONS
-  --all
-  --explicit
-  --stack=stack
-```
-
-_See code: [src/commands/result/copy.ts](https://github.com///blob/v0.0.0/src/commands/result/copy.ts)_
-
-## `cjr result:delete [ID]`
-
-Permanently delete a result and all its associated data.
-
-```
-USAGE
-  $ cjr result:delete [ID]
-
-OPTIONS
-  --all
-  --explicit
-  --stack=stack
-```
-
-_See code: [src/commands/result/delete.ts](https://github.com///blob/v0.0.0/src/commands/result/delete.ts)_
-
-## `cjr result:list`
-
-List all results (i.e. completed jobs) for a stack.
-
-```
-USAGE
-  $ cjr result:list
-
-OPTIONS
-  --all
-  --explicit
-  --hostRoot=hostRoot
-  --json
-  --stack=stack
-```
-
-_See code: [src/commands/result/list.ts](https://github.com///blob/v0.0.0/src/commands/result/list.ts)_
-
-## `cjr result:shell [ID]`
-
-Start a shell inside a result. After exiting the changes will be stored as a new result
-
-```
-USAGE
-  $ cjr result:shell [ID]
-
-OPTIONS
-  --discard
-  --explicit
-  --hostRoot=hostRoot
-  --stack=stack
-```
-
-_See code: [src/commands/result/shell.ts](https://github.com///blob/v0.0.0/src/commands/result/shell.ts)_
+_See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/jupyter/stop.ts)_
 
 ## `cjr shell`
 
@@ -556,7 +512,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/shell.ts](https://github.com///blob/v0.0.0/src/commands/shell.ts)_
+_See code: [src/commands/shell.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/shell.ts)_
 
 ## `cjr stack:build`
 
@@ -574,7 +530,22 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/stack/build.ts](https://github.com///blob/v0.0.0/src/commands/stack/build.ts)_
+_See code: [src/commands/stack/build.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/build.ts)_
+
+## `cjr stack:clone URL`
+
+pulls a stack using git directly into the stack folder.
+
+```
+USAGE
+  $ cjr stack:clone URL
+
+OPTIONS
+  --explicit
+  --stacks_path=stacks_path
+```
+
+_See code: [src/commands/stack/clone.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/clone.ts)_
 
 ## `cjr stack:list`
 
@@ -588,7 +559,7 @@ OPTIONS
   --stacks_path=stacks_path
 ```
 
-_See code: [src/commands/stack/list.ts](https://github.com///blob/v0.0.0/src/commands/stack/list.ts)_
+_See code: [src/commands/stack/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/list.ts)_
 
 ## `cjr stack:rmi`
 
@@ -605,7 +576,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/stack/rmi.ts](https://github.com///blob/v0.0.0/src/commands/stack/rmi.ts)_
+_See code: [src/commands/stack/rmi.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/rmi.ts)_
 
 ## `cjr stash`
 
@@ -623,5 +594,5 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/stash.ts](https://github.com///blob/v0.0.0/src/commands/stash.ts)_
+_See code: [src/commands/stash.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stash.ts)_
 <!-- commandsstop -->
