@@ -29,7 +29,7 @@ export default class Copy extends JobCommand {
       if(result.success)
       {
         const job_object = result.data
-        result = runner.resultCopy(id, job_object, flags["all"])
+        result = runner.jobCopy(id, job_object, flags["all"])
       }
     }
     printResultState(result)

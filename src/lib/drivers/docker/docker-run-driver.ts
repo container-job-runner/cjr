@@ -205,9 +205,7 @@ export class DockerRunDriver extends RunDriver
     }) : {};
   }
 
-  // result functions
-
-  resultCopy(id: string, job_object: Dictionary, copy_all: boolean = false)
+  jobCopy(id: string, job_object: Dictionary, copy_all: boolean = false)
   {
     if(dj_ajv_validator(job_object))
     {

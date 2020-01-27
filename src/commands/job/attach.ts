@@ -20,7 +20,7 @@ export default class Attach extends StackCommand {
     var id = argv[0] || await promptUserForJobId(runner, stack_path, "running", !this.settings.get('interactive')) || ""
     // match with existing container ids
     var result = matchingJobIds(runner, id, stack_path)
-    if(result.success) runner.jobAttach(result.data[0], flags.lines)
+    if(result.success) runner.jobAttach(result.data[0])
     printResultState(result)
   }
 

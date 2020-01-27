@@ -14,7 +14,7 @@ type Dictionary = {[key: string]: any}
 
 export class DockerConfiguration extends Configuration
 {
-  private valid_flag_fieldnames = ["network"] // only these fields will be read in from config.flags
+  protected valid_flag_fieldnames = ["network"] // only these fields will be read in from config.flags
 
   setRawObject(value: Dictionary, parent_path: string) {
     var result = super.setRawObject(value, parent_path)
@@ -80,16 +80,16 @@ export class DockerConfiguration extends Configuration
   addLabel(field: string, value: string) {
     if(!this.raw_object?.labels) this.raw_object.labels = {}
     this.raw_object.labels[field] = value
+    return true;
   }
 
-  // Set Any Additional Flags
   addFlag(field: string, value: string) {
     if(!this.valid_flag_fieldnames.includes(field)) return false
     if(!this.raw_object?.flags) this.raw_object.flags = {}
     this.raw_object.flags[field] = value
+    return true;
   }
 
-  // Set Any Additional Flags
   removeFlag(field: string) {
     if(!this.valid_flag_fieldnames.includes(field)) return false
     if(this.raw_object?.flags && (field in this.raw_object.flags)) delete this.raw_object.flags[field]

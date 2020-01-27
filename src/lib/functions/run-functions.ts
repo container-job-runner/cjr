@@ -39,7 +39,7 @@ export function matchingJobInfo(runner: RunDriver, id: string, stack_path: strin
   if(id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
   const job_info = runner.jobInfo(stack_path, status)
   const regex = new RegExp(`^${id}`)
-  const matching_jobs = job_info.filter((job:Dictonary) => regex.test(job.id))
+  const matching_jobs = job_info.filter((job:Dictionary) => regex.test(job.id))
   return (matching_jobs.length > 0) ?
     new ValidatedOutput(true, matching_jobs) :
     new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
@@ -210,7 +210,7 @@ export async function jobToImage(runner: RunDriver, result: ValidatedOutput, ima
     ])
   }
   if(!interactive || response?.flag == true) runner.jobToImage(job_id, image_name)
-  if(remove_job) runner.resultDelete([job_id])
+  if(remove_job) runner.jobDelete([job_id])
 }
 
 // -----------------------------------------------------------------------------
@@ -323,7 +323,7 @@ async function promptUserId(id_info: Array<Dictionary>)
   type: 'list',
   choices: id_info.map((j:Dictionary) => {
     return {
-      name: chalk`{italic ID}: ${JSTools.clipAndPad(j.id, 12, 15, true)} {italic COMMAND}: ${JSTools.clipAndPad(j.command, 20, 25)} {italic STATUS}: ${j.statusString}`,
+      name: chalk`{italic ID}: ${JSTools.clipAndPad(j.id, 12, 15, true)} {italic COMMAND}: ${JSTools.clipAndPad(j.command, 20, 25, false)} {italic STATUS}: ${j.statusString}`,
       value: j.id
     }
   }).concat({name: "Exit", value: ""}),
@@ -364,7 +364,7 @@ export function printTable(configuration: Dictionary)
 
   // -- print title ------------------------------------------------------------
   if(title) {
-    const width = c_widths.reduce((total, current) => total + current, 0)
+    const width = c_widths.reduce((total:number, current:number) => total + current, 0)
     console.log(chalk`-- {bold ${title}} ${"-".repeat(width - title.length - 4)}`)
   }
   // -- print header -----------------------------------------------------------

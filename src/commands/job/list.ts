@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {printTable} from '../../lib/functions/run-functions'
-import {StackCommand} from '../../lib/commands/stack-command'
+import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
   static description = 'List all running jobs for a stack.'
@@ -33,12 +33,12 @@ export default class List extends StackCommand {
 
     printTable({ ...table_parameters, ...{
         title:  "Running Jobs",
-        data:   jobs.filter(j => (j.status === "running")).map((e:Dictionary) => toArray(e))
+        data:   jobs.filter((j:Dictionary) => (j.status === "running")).map((e:Dictionary) => toArray(e))
     }})
 
     printTable({ ...table_parameters, ...{
         title:  "Completed Jobs",
-        data:   jobs.filter(j => (j.status === "exited")).map((e:Dictionary) => toArray(e)),
+        data:   jobs.filter((j:Dictionary) => (j.status === "exited")).map((e:Dictionary) => toArray(e)),
     }})
   }
 

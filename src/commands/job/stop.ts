@@ -25,9 +25,9 @@ export default class Stop extends StackCommand {
     if(flags.all) // -- stop all running jobs ----------------------------------
       ids_to_stop = allJobIds(runner, stack_path, "running")
     else if(flags["all-completed"]) // -- delete all jobs ----------------------
-      ids_to_delete = allJobIds(runner, stack_path, "exited")
+      ids_to_stop = allJobIds(runner, stack_path, "exited")
     else if(flags["all-running"])
-      ids_to_delete = allJobIds(runner, stack_path, "running")
+      ids_to_stop = allJobIds(runner, stack_path, "running")
     else  // -- stop only jobs specified by user -------------------------------
     {
       const id = (argv[0] || await promptUserForJobId(runner, stack_path, "running", !this.settings.get('interactive')) || "")

@@ -2,7 +2,6 @@ import * as path from 'path'
 import * as fs from 'fs-extra'
 import {flags} from '@oclif/command'
 import {JobCommand} from '../../lib/commands/job-command'
-import {matchingResultIds} from '../../lib/functions/run-functions'
 import {cli_storage_dir_name} from '../../lib/constants'
 import {JSTools} from '../../lib/js-tools'
 import {ErrorStrings} from '../../lib/error-strings'
@@ -64,14 +63,14 @@ export default class Shell extends JobCommand {
     else if(job_info.status == "exited" || job_info.status == "created") // == EXITED JOB ======================
     {
       // -- select stack (you can shell into result with new stack) ------------
-      let stack_path
+      let stack_path: string
       if(flags.stack)
-        stack_path =  this.fullStackPath(flags.stack)
+        stack_path = this.fullStackPath(flags.stack)
       else if(job_info?.stack)
-        stack_path =  this.fullStackPath(job_info.stack)
+        stack_path = this.fullStackPath(job_info.stack)
       else
       {
-        result.pushError(ErrorString.JOBSHELL.NOSTACK)
+        result.pushError(ErrorStrings.JOBSHELL.NOSTACK)
         return printResultState(result)
       }
       // 0. read job json ------------------------------------------------------
@@ -89,7 +88,7 @@ export default class Shell extends JobCommand {
           hostRoot: tmp_host_root
         })
         fs.ensureDirSync(temp_job_object.hostRoot)
-        result = runner.resultCopy(job_id, temp_job_object, true)
+        result = runner.jobCopy(job_id, temp_job_object, true)
       }
       // 4. start new job ------------------------------------------------------
       var new_job_id = false
