@@ -29,6 +29,11 @@ export default class List extends StackCommand {
         silent_clip: [true, false, false, false]
     }
 
+    if(flags.json) {
+      console.log(JSON.stringify(jobs))
+      return;
+    }
+
     const toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.statusString]
 
     printTable({ ...table_parameters, ...{

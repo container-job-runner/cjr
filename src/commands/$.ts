@@ -51,7 +51,7 @@ export default class Run extends JobCommand {
 
         return result;
       })
-    if(job_id !== false && flags.async && !flags.silent) console.log(chalk`{italic id}: ${job_id}`)
+    if(job_id !== false && flags.async && !flags.silent) console.log(job_id)
     printResultState(result);
 
   }

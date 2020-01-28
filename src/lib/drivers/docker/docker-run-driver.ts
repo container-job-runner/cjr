@@ -400,7 +400,7 @@ export class DockerRunDriver extends RunDriver
   protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)
   {
     if(run_object?.flags?.network) { // used for sharing DISPLAY variable
-      flags["network"] = {shorthand: false, value: run_object.flag.network}
+      flags["network"] = {shorthand: false, value: run_object.flags.network}
     }
     return flags
   }

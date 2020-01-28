@@ -278,7 +278,7 @@ export function prependXAuth(command: string, explicit: boolean = false)
     const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command.replace(/"/g, '\\"')].join("\n")
     return `bash -c "${script}"`
   }
-  return ""
+  return command
 }
 
 // -----------------------------------------------------------------------------
