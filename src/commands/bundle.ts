@@ -37,7 +37,7 @@ export default class Bundle extends JobCommand {
         return result
       })
 
-    if(!result.success) return; // exit if no configutaion was loaded
+    if(!result.success) return; // exit if no configuration was loaded
 
     const configuration = result.data
     const copy_files    = flags.all && flags.hostRoot // if true, then project files are included in bundle
