@@ -34,7 +34,7 @@ export class ShellCMD
     {
       var default_options = {stdio : 'inherit', shell: true}
       options = {... default_options, ...options};
-      if(this._silent) options.stdio = 'ignore';
+      if(this._silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
       this.printCMD(command, flags, args, true, options);
       return spawnSync(this.cmdString(command, flags, args), [], options)
     }
@@ -80,6 +80,10 @@ export class ShellCMD
           result.data = [];
         }
       }
+      else if(result.success && format === "trim")
+      {
+        result.data = result.data.trim()
+      }
 
 
       return result;
@@ -93,7 +97,7 @@ export class ShellCMD
       this.printCMD(command, flags, args, false, options);
     }
 
-    private cmdString(command: string, flags: Dictionary, args: Array<string>)
+    cmdString(command: string, flags: Dictionary, args: Array<string>)
     {
       const arrayWrap = (x:any) => (x instanceof Array) ? x : [x]
       const flagString = function(value:string, flag:string, shorthand:boolean, sanitize_flag:boolean) // produces string for command flag with value
