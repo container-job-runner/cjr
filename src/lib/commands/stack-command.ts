@@ -13,14 +13,13 @@ import {BuildahBuildDriver} from '../drivers/buildah/buildah-build-driver'
 import {DockerRunDriver} from '../drivers/docker/docker-run-driver'
 import {PodmanRunDriver} from '../drivers/podman/podman-run-driver'
 import {ShellCMD} from '../shellcmd'
-import {ps_vo_validator} from './schema/project-settings-schema'
-import {projectSettingsYMLPath} from '../constants'
 import {FileTools} from '../fileio/file-tools'
 import {YMLFile} from '../fileio/yml-file'
-import {invalid_stack_flag_error, default_settings_object} from '../constants'
+import {invalid_stack_flag_error} from '../constants'
 import {ValidatedOutput} from '../validated-output'
 import {WarningStrings} from '../error-strings'
 import {printResultState} from '../../lib/functions/misc-functions'
+import {loadProjectSettings} from '../../lib/functions/run-functions'
 
 // -- types --------------------------------------------------------------------
 export type Dictionary = {[key: string]: any}
@@ -38,60 +37,16 @@ export abstract class StackCommand extends Command
   parseWithLoad(C:any, stack_flag_required:boolean = false)// overload parse command to allow for auto setting of stack flag
   {
     const parse_object:Dictionary = this.parse(C)
-    this.loadProjectSettingsYML(parse_object?.flags?.hostRoot)
+    const result = loadProjectSettings(parse_object?.flags?.hostRoot)
+    printResultState(result)
+    if(result.success) this.project_settings = result.data
+    // if flags.stack is undefined set to project.settings.stack
     if(!parse_object?.flags?.stack && this.project_settings?.stack) {
          parse_object.flags.stack = this.project_settings.stack
     }
+    // exit with error if flags.stack is empty and stack is required
     if(stack_flag_required && !parse_object?.flags?.stack) this.error(invalid_stack_flag_error)
     return parse_object
-  }
-
-  // helper function for loading optional .cjr/stack.yml in hostRoot
-  loadProjectSettingsYML(hostRoot: string)
-  {
-    // -- exit if no hostRoot is specified -------------------------------------
-    if(!hostRoot) return;
-
-    // -- exit if no settings file exists --------------------------------------
-    const yml_path = projectSettingsYMLPath(hostRoot)
-    if(!FileTools.existsFile(yml_path)) return
-
-    // -- exit if settings file is invalid -------------------------------------
-    const stack_file = new YMLFile("", false, ps_vo_validator)
-    const read_result = stack_file.validatedRead(yml_path)
-    if(read_result.success == false) {
-      printResultState(
-        new ValidatedOutput(true, [], [], [WarningStrings.PROJECTSETTINGS.INVALID_YML(yml_path)])
-      )
-      return;
-    }
-
-    //  -- set project settings variable ---------------------------------------
-    this.project_settings = { ...default_settings_object, ...read_result.data}
-    var result = new ValidatedOutput(true)
-
-    if(this.project_settings?.stack) // -- adjust stack paths ------------------
-    {
-      // see if local stack folder exists. If so set path to absolute
-      const abs_path = path.join(path.dirname(yml_path), this.project_settings.stack)
-      if(FileTools.existsDir(abs_path)) this.project_settings.stack = abs_path
-    }
-
-    if(this.project_settings?.configFiles) // -- adjust config files -----------
-    {
-      // adjust relative paths
-      this.project_settings.configFiles = this.project_settings.configFiles.map(
-       (path_str:string) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
-      )
-      // remove nonexistant configuration files
-      this.project_settings.configFiles = this.project_settings.configFiles.filter((path_str:string) => {
-       let config_exists = FileTools.existsFile(path_str)
-       if(!config_exists) result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(yml_path, path_str))
-       return config_exists
-      })
-    }
-
-    printResultState(result)
   }
 
   newBuilder(explicit: boolean = false, silent: boolean = false)

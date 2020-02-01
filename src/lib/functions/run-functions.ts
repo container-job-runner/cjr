@@ -1,22 +1,24 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import * as inquirer from 'inquirer'
+import * as chalk from 'chalk'
 import {RunDriver} from '../drivers/abstract/run-driver'
 import {BuildDriver} from '../drivers/abstract/build-driver'
 import {Configuration} from '../config/abstract/configuration'
 import {PathTools} from '../fileio/path-tools'
 import {FileTools} from '../fileio/file-tools'
 import {JSONFile} from '../fileio/json-file'
+import {YMLFile} from '../fileio/yml-file'
 import {ValidatedOutput} from '../validated-output'
 import {printResultState} from './misc-functions'
 import {ShellCMD} from '../shellcmd'
-import {DefaultContainerRoot, X11_POSIX_BIND} from '../constants'
+import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, project_settings_folder, projectSettingsYMLPath, default_settings_object} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
 import {ErrorStrings, WarningStrings} from '../error-strings'
 import {PodmanConfiguration} from '../config/podman/podman-configuration'
 import {JSTools} from '../js-tools'
-import * as inquirer from 'inquirer'
-import * as chalk from 'chalk'
+import {ps_vo_validator} from '../config/project-settings/project-settings-schema'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -171,49 +173,6 @@ export function bindHostRoot(configuration: Configuration, containerRoot: string
 }
 
 // -----------------------------------------------------------------------------
-// WRITEJSONJobFIle write a JSON file that contains job information (job_object)
-// -- Parameters ---------------------------------------------------------------
-// writer       (JSONFile) - JSONFILE object for writing to disk
-// result       (ValidatedOutput) - result from runner.createJob that contains ID
-// job_object   (Object) - job data
-// -----------------------------------------------------------------------------
-export function writeJSONJobFile(file_writer: JSONFile, result: ValidatedOutput, job_object: object)
-{
-  if(result.success) {
-    const job_id = result.data
-    file_writer.write(job_id, job_object)
-  }
-}
-
-// -----------------------------------------------------------------------------
-// JOBTOIMAGE creates an image from a running or completed job. If image_name is
-// blank it will overwrite stack image
-// -- Parameters ---------------------------------------------------------------
-// runner       (RunDriver) - JSONFILE object for writing to disk
-// result       (ValidatedOutput) - result from runner.createJob that contains ID
-// image_name   (string) - name of new imageName
-// stack_path   (string) - name of container stack
-// remove_job   (boolean) - if true job is removed on exit
-// -----------------------------------------------------------------------------
-export async function jobToImage(runner: RunDriver, result: ValidatedOutput, image_name: string, remove_job: boolean = false, interactive: boolean = false)
-{
-  if(result.success === false) return;
-  const job_id = result.data
-  var response: Dictionary = {}
-  if(interactive) {
-    response = await inquirer.prompt([
-      {
-        name: "flag",
-        message: `Save container to image "${image_name}"?`,
-        type: "confirm",
-      }
-    ])
-  }
-  if(!interactive || response?.flag == true) runner.jobToImage(job_id, image_name)
-  if(remove_job) runner.jobDelete([job_id])
-}
-
-// -----------------------------------------------------------------------------
 // ENABLEX11: bind X11 directoru and sets environment variable DISPLAY in container.
 // -- Parameters ---------------------------------------------------------------
 // configuration  - Object that inherits from abstract class Configuration
@@ -262,6 +221,49 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
 }
 
 // -----------------------------------------------------------------------------
+// WRITEJSONJobFIle write a JSON file that contains job information (job_object)
+// -- Parameters ---------------------------------------------------------------
+// writer       (JSONFile) - JSONFILE object for writing to disk
+// result       (ValidatedOutput) - result from runner.createJob that contains ID
+// job_object   (Object) - job data
+// -----------------------------------------------------------------------------
+export function writeJSONJobFile(file_writer: JSONFile, result: ValidatedOutput, job_object: object)
+{
+  if(result.success) {
+    const job_id = result.data
+    file_writer.write(job_id, job_object)
+  }
+}
+
+// -----------------------------------------------------------------------------
+// JOBTOIMAGE creates an image from a running or completed job. If image_name is
+// blank it will overwrite stack image
+// -- Parameters ---------------------------------------------------------------
+// runner       (RunDriver) - JSONFILE object for writing to disk
+// result       (ValidatedOutput) - result from runner.createJob that contains ID
+// image_name   (string) - name of new imageName
+// stack_path   (string) - name of container stack
+// remove_job   (boolean) - if true job is removed on exit
+// -----------------------------------------------------------------------------
+export async function jobToImage(runner: RunDriver, result: ValidatedOutput, image_name: string, remove_job: boolean = false, interactive: boolean = false)
+{
+  if(result.success === false) return;
+  const job_id = result.data
+  var response: Dictionary = {}
+  if(interactive) {
+    response = await inquirer.prompt([
+      {
+        name: "flag",
+        message: `Save container to image "${image_name}"?`,
+        type: "confirm",
+      }
+    ])
+  }
+  if(!interactive || response?.flag == true) runner.jobToImage(job_id, image_name)
+  if(remove_job) runner.jobDelete([job_id])
+}
+
+// -----------------------------------------------------------------------------
 // PREPENDXAUTH: prepend commands to add xAuth from host into container, onto
 // any existing command.
 // -- Parameters ---------------------------------------------------------------
@@ -303,6 +305,67 @@ export function prependXAuth(command: string, explicit: boolean = false)
 //   }
 // }
 
+
+// -----------------------------------------------------------------------------
+// LOADPROJECTSETTINGS: loads any project settings from the cjr dir in hostRoot
+// -- Parameters ---------------------------------------------------------------
+// hostRoot: string - project hostRoot
+// -- Returns ------------------------------------------------------------------
+// settings: Dictinary - yml specified in project settings yml. The Object must
+//                       pass validation described in project-settings schema.
+// -----------------------------------------------------------------------------
+export function loadProjectSettings(hostRoot: string)
+{
+  // -- exit if no hostRoot is specified ---------------------------------------
+  if(!hostRoot) return new ValidatedOutput(true, {});
+
+  // -- exit if no settings file exists ----------------------------------------
+  const yml_path = projectSettingsYMLPath(hostRoot)
+  if(!FileTools.existsFile(yml_path)) return new ValidatedOutput(true, {});
+
+  // -- exit if settings file is invalid ---------------------------------------
+  const stack_file = new YMLFile("", false, ps_vo_validator)
+  const read_result = stack_file.validatedRead(yml_path)
+  if(read_result.success == false) {
+    return new ValidatedOutput(false, [], [], [WarningStrings.PROJECTSETTINGS.INVALID_YML(yml_path)])
+  }
+
+  //  -- set project settings variable -----------------------------------------
+  const project_settings = { ...default_settings_object, ...read_result.data}
+  PSStackToAbsPath(project_settings, hostRoot)
+  return PSConfigFilesToAbsPath(project_settings, hostRoot)
+}
+
+// -- HELPER: ensures project-settings stack path is absolute --------------------------
+function PSStackToAbsPath(project_settings: Dictionary, hostRoot: string)
+{
+  if(project_settings?.stack) { // if local stack folder exists. If so set path to absolute
+    const yml_path = projectSettingsYMLPath(hostRoot)
+    const abs_path = path.join(path.dirname(yml_path), project_settings.stack)
+    if(FileTools.existsDir(abs_path)) project_settings.stack = abs_path
+  }
+}
+
+// -- HELPER: ensures overwriting project-config files exist and have absolute paths ---
+function PSConfigFilesToAbsPath(project_settings: Dictionary, hostRoot: string)
+{
+  const result = new ValidatedOutput(true, project_settings)
+  if(project_settings?.configFiles) {
+    const yml_path = projectSettingsYMLPath(hostRoot)
+    // adjust relative paths
+    project_settings.configFiles = project_settings.configFiles.map(
+     (path_str:string) => (path.isAbsolute(path_str)) ? path_str : path.join(path.dirname(yml_path), path_str)
+    )
+    // remove nonexistant configuration files
+    project_settings.configFiles = project_settings.configFiles.filter((path_str:string) => {
+     let config_exists = FileTools.existsFile(path_str)
+     if(!config_exists) result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(yml_path, path_str))
+     return config_exists
+    })
+  }
+  return result
+}
+
 // -- Interactive Functions ----------------------------------------------------
 
 export async function promptUserForJobId(runner: RunDriver, stack_path: string, status:string="", silent: boolean = false)
@@ -329,6 +392,44 @@ async function promptUserId(id_info: Array<Dictionary>)
   }).concat({name: "Exit", value: ""}),
 }])
 return response.id;
+}
+
+// -- ID Functions -------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// ENSUREPROJECTID: ensures that there is a file in the project_settings_folder
+// that contains the project id.
+// -- Parameters ---------------------------------------------------------------
+// hostRoot  - project host root
+// -----------------------------------------------------------------------------
+
+export function ensureProjectId(hostRoot: string)
+{
+  var result = this.getProjectId(hostRoot)
+  if(result.success) return result
+  const proj_settings_abspath = path.join(hostRoot, project_settings_folder)
+  const file = new JSONFile(proj_settings_abspath, true)
+  const id = `${path.basename(hostRoot)}-${new Date().getTime()}`
+  file.write(project_idfile, id)
+  return this.getProjectId(hostRoot)
+}
+
+// -----------------------------------------------------------------------------
+// ENSUREPROJECTID: returns ValidatdOutput that contains projectId
+// -- Parameters ---------------------------------------------------------------
+// hostRoot  - project host root
+// -----------------------------------------------------------------------------
+
+export function getProjectId(hostRoot: string)
+{
+  const proj_settings_abspath = path.join(hostRoot, project_settings_folder)
+  const file = new JSONFile(proj_settings_abspath, false)
+  const result = file.read(project_idfile)
+  if(result.success && result.data == "") // -- check if data is empty -----
+    return new ValidatedOutput(false, [], [
+      ErrorStrings.PROJECTIDFILE.EMPTY(path.join(proj_settings_abspath, project_idfile))
+    ])
+  return result
 }
 
 // -----------------------------------------------------------------------------
