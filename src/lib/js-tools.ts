@@ -32,6 +32,27 @@ export class JSTools
     return JSTools.rMerge({}, a)
   }
 
+  static oSubset(a: Dictionary, props: Array<string>)
+  {
+    const b:Dictionary = {}
+    for(var i = 0; i <= props.length; i ++)
+    {
+      var p = props[i]
+      if(a.hasOwnProperty(p)) b[p] = a[p]
+    }
+    return b;
+  }
+
+  static randomString(n:number, alphabet:string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+  {
+    const s = new Array<String>(n)
+    const l = alphabet.length
+    for(var i = 0; i < n; i ++)  {
+        s[i] = alphabet[Math.floor(l * Math.random())]
+    }
+    return s.join("")
+  }
+
   static isObject(val: any) {
       return val instanceof Object;
   }
