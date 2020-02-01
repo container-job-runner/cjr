@@ -157,6 +157,7 @@ export class DockerRunDriver extends RunDriver
 
   protected stop(ids: Array<string>)
   {
+    if(ids.length == 0) return;
     const command = `${this.base_command} ${this.sub_commands["stop"]}`;
     const args = ids
     const flags = {}
@@ -165,6 +166,7 @@ export class DockerRunDriver extends RunDriver
 
   protected remove(ids: Array<string>)
   {
+    if(ids.length == 0) return;
     const command = `${this.base_command} ${this.sub_commands["remove"]}`;
     const args = ids
     const flags = {}
