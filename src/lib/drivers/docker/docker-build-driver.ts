@@ -27,12 +27,17 @@ export class DockerBuildDriver extends BuildDriver
     protected ERRORSTRINGS = {
       "MISSING_DOCKERFILE": (dir: string) => chalk`{bold Stack is Missing Dockerfile.}\n  {italic path:} ${dir}`,
       "MISSING_STACKDIR": (dir: string) => chalk`{bold Nonexistant Stack.}\n  {italic path:} ${dir}`,
-      "YML_ERROR": (path: string, error: string) => chalk`{bold Unable to Parse YML.}\n  {italic  path:} ${path}\n  {italic error:} ${error}`
+      "YML_ERROR": (path: string, error: string) => chalk`{bold Unable to Parse YML.}\n  {italic  path:} ${path}\n  {italic error:} ${error}`,
+      "INVALID_NAME": (path: string) => chalk`{bold Invalid Stack Name} - stack names may contain only lowercase and uppercase letters, digits, underscores, periods and dashes.\n  {italic  path:} ${path}`
     }
 
     validate(stack_path: string, overloaded_config_paths: Array<string> = [])
     {
       var result = new ValidatedOutput(true);
+      // -- check that folder name is valid ------------------------------------
+      const name_re = new RegExp(/^[a-zA-z0-9-_.]+$/)
+      if(!name_re.test(this.stackName(stack_path)))
+        result.pushError(this.ERRORSTRINGS["INVALID_NAME"](stack_path))
       // -- check stack_path is a directory ------------------------------------
       if(!FileTools.existsDir(stack_path))
         result.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path));
@@ -153,7 +158,7 @@ export class DockerBuildDriver extends BuildDriver
       }
       catch(e)
       {
-        return new ValidatedOutput(false, e)
+        return new ValidatedOutput(false, e, [e?.message])
       }
     }
 
