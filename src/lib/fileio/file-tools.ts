@@ -1,4 +1,8 @@
-import * as fs from 'fs'
+import * as fs from 'fs-extra'
+import * as os from 'os'
+import * as path from 'path'
+import {ShellCMD} from '../shellcmd'
+import {JSTools} from '../js-tools'
 
 export class FileTools
 {
@@ -11,6 +15,24 @@ export class FileTools
   static existsFile(path_str: string)
   {
     return fs.existsSync(path_str) && fs.lstatSync(path_str).isFile()
+  }
+
+  static mktempDir(parent_abs_path: string, shell:ShellCMD = new ShellCMD(false, false))
+  {
+    fs.ensureDir(parent_abs_path)
+    switch(os.platform())
+    {
+      case "darwin":
+        return shell.output('mktemp', {d: {shorthand: true}}, [path.join(parent_abs_path, "tmp.XXXXXXXXXX")], {}, "trim")
+      case "linux":
+        const flags = {
+          tmpdir: {shorthand: false, value: parent_abs_path},
+          directory: {shorthand: false}
+        }
+        return shell.output('mktemp', flags, [], {}, "trim")
+      default: // unsafe
+        return fs.ensureDir(path.join(parent_abs_path, `tmp.${JSTools.randomString(10)}`))
+    }
   }
 
 }
