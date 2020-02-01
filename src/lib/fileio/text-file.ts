@@ -61,6 +61,16 @@ export class TextFile
     }
   }
 
+  validatedWrite(name: string, data: any)
+  {
+    var result = this?.validator(data)
+    if(result.success){
+      return this.write(name, data)
+    } else {
+        return result
+    }
+  }
+
   delete(name:string)
   {
     fs.unlinkSync(this.filePath(name))
