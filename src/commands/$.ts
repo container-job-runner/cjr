@@ -15,7 +15,10 @@ export default class Run extends JobCommand {
     async: flags.boolean({default: false}),
     silent: flags.boolean({default: false}), // if selected will not print out job id
     port: flags.string({default: [], multiple: true}),
-    x11: flags.boolean({default: false})
+    x11: flags.boolean({default: false}),
+    message: flags.string({description: "optional message to describes the job"}),
+    autocopy: flags.boolean({default: false, exclusive: ["async", "autocopy-all"], description: "automatically copy files back to hostRoot on exit"}),
+    "autocopy-all": flags.boolean({default: false, exclusive: ["async", "autocopy"], description: "automatically copy all files results back to hostRoot on exit"})
   }
   static strict = false;
 
@@ -32,8 +35,10 @@ export default class Run extends JobCommand {
       (configuration, containerRoot, hostRoot) => {
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
         addPorts(configuration, flags.port)
-        configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
         if(flags.x11) enableX11(configuration, flags.explicit)
+        if(flags.message) configuration.addLabel("message", flags.message)
+        configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
+
 
         var job_object:Dictionary = {
           command: (flags.x11) ? prependXAuth(command, flags.explicit) : command,
@@ -48,6 +53,9 @@ export default class Run extends JobCommand {
         var result = runner.jobStart(stack_path, job_object, configuration.runObject())
         if(result.success) job_id = result.data
         writeJSONJobFile(this.job_json, result, job_object)
+        // -- copy results if autocopy flags are active ------------------------
+        if(result.success && (flags.autocopy || flags["autocopy-all"]))
+          result = runner.jobCopy(job_id, job_object, flags["autocopy-all"])
 
         return result;
       })
