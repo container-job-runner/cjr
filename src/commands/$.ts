@@ -29,7 +29,7 @@ export default class Run extends JobCommand {
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
     const command    = argv.join(" ")
-    var   job_id     = false
+    var   job_id     = ""
 
     var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
@@ -59,7 +59,7 @@ export default class Run extends JobCommand {
 
         return result;
       })
-    if(job_id !== false && flags.async && !flags.silent) console.log(job_id)
+    if(job_id !== "" && flags.async && !flags.silent) console.log(job_id)
     printResultState(result);
 
   }

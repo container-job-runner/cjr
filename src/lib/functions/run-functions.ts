@@ -31,7 +31,7 @@ type Dictionary = {[key: string]: any}
 // id: string - string for matching ids
 // -- Returns ------------------------------------------------------------------
 // ValidatedOutput - data contains array of Dictinary with matching job info
-export function filterJobInfoByID(job_info: Array<Dictinary>, id: string)
+export function filterJobInfoByID(job_info: Array<Dictionary>, id: string)
 {
   if(id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
   const regex = new RegExp(`^${id}`)
@@ -413,13 +413,13 @@ return response.id;
 
 export function ensureProjectId(hostRoot: string)
 {
-  var result = this.getProjectId(hostRoot)
+  var result = getProjectId(hostRoot)
   if(result.success) return result
   const proj_settings_abspath = path.join(hostRoot, project_settings_folder)
   const file = new JSONFile(proj_settings_abspath, true)
   const id = `${path.basename(hostRoot)}-${new Date().getTime()}`
   file.write(project_idfile, id)
-  return this.getProjectId(hostRoot)
+  return getProjectId(hostRoot)
 }
 
 // -----------------------------------------------------------------------------
@@ -498,8 +498,8 @@ export function printHorizontalTable(configuration: Dictionary)
         content.map((line:string, line_index:number) => {
           const header = (line_index == 0) ? r_headers[header_index] : "" // header only prints on first line
           console.log( // print header + data
-            chalk.italic(JSTools.clipAndPad(header, t_widths[0], c_widths[0])) +
-            JSTools.clipAndPad(line, t_widths[1], c_widths[1])
+            chalk.italic(JSTools.clipAndPad(header, t_widths[0], c_widths[0], true)) +
+            JSTools.clipAndPad(line, t_widths[1], c_widths[1], true)
           )
         })
       }

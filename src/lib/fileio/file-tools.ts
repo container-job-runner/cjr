@@ -1,6 +1,7 @@
 import * as fs from 'fs-extra'
 import * as os from 'os'
 import * as path from 'path'
+import {ValidatedOutput} from '../validated-output'
 import {ShellCMD} from '../shellcmd'
 import {JSTools} from '../js-tools'
 
@@ -31,7 +32,8 @@ export class FileTools
         }
         return shell.output('mktemp', flags, [], {}, "trim")
       default: // unsafe
-        return fs.ensureDir(path.join(parent_abs_path, `tmp.${JSTools.randomString(10)}`))
+        var data = fs.ensureDir(path.join(parent_abs_path, `tmp.${JSTools.randomString(10)}`))
+        return new ValidatedOutput(true, data)
     }
   }
 

@@ -28,27 +28,32 @@ export default class List extends StackCommand {
       return
     }
 
+    var table_parameters: Dictionary
+    var toArray: (e: Dictionary) => Array<any>
+    var printTable
+
+
     if(flags.verbose)  // -- Verbose Output ------------------------------------
     {
-      var table_parameters = {
+      table_parameters = {
           row_headers:    ["ID", "STACK", "COMMAND", "STATUS", "MESSAGE"],
           column_widths:  [9, 103],
           text_widths:    [8, 102],
           silent_clip:    [true, true]
       }
-      var toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.statusString, e?.labels?.message || ""]
-      var printTable = printHorizontalTable
+      toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.statusString, e?.labels?.message || ""]
+      printTable = printHorizontalTable
     }
     else // -- Standard Output -------------------------------------------------
     {
-      var table_parameters = {
+      table_parameters = {
           column_headers: ["ID", "STACK", "COMMAND", "STATUS"],
           column_widths:  [17, 20, 40, 35],
           text_widths:    [12, 15, 35, 30],
           silent_clip:    [true, false, false, false]
       }
-      var toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.statusString]
-      var printTable = printVerticalTable
+      toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.statusString]
+      printTable = printVerticalTable
     }
 
     printTable({ ...table_parameters, ...{

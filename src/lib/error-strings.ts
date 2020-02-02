@@ -17,8 +17,11 @@ export const ErrorStrings = {
   YML:{
     INVALID: (yml_error_str: string) => chalk`{bold Yml failed validation} - validator error shown below.\n${yml_error_str}`
   },
+  PROJECTIDFILE: {
+    EMPTY: (path:string ) => chalk`{bold Project ID File cannot be empty} - the file ${path} was empty.`
+  },
   JOBSHELL: {
-    NOSTACK: ""
+    NOSTACK: chalk`{bold Stack flag empty } - you must specify a stack`
   }
 }
 

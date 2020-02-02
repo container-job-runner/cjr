@@ -81,7 +81,8 @@ export class JSTools
     const regex = new RegExp(`^.{1,${line_length-1}} `)
     const lines:Array<string> = []
     while(s && s.length > line_length) {
-      var space_index = (regex.test(s)) ? s.match(regex)[0].length : line_length
+      var match = s.match(regex)
+      var space_index = (match) ? match[0].length : line_length
       lines.push(s.slice(0, space_index))
       s = s.slice(space_index)
     }
