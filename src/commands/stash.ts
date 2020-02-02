@@ -10,6 +10,7 @@ export default class Run extends JobCommand {
     stack: flags.string({env: 'STACK'}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
     containerRoot: flags.string(),
+    message: flags.string({description: "optional message to describes the job"}),
     explicit: flags.boolean({default: false}),
     silent: flags.boolean({default: false}) // if selected will not print out job id
   }
@@ -27,6 +28,8 @@ export default class Run extends JobCommand {
       (configuration, containerRoot, hostRoot) => {
 
         configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
+        configuration.addLabel("jobtype", "stash")
+        if(flags.message) configuration.addLabel("message", flags.message)
         var job_object:Dictionary = {
           command: "exit",
           hostRoot: hostRoot,

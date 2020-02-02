@@ -23,28 +23,36 @@ import {ps_vo_validator} from '../config/project-settings/project-settings-schem
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-// returns array of jobs ids for all jobs whose id begins with the letters in the passed parameter "id"
-export function matchingJobIds(runner: RunDriver, id: string, stack_path: string, status:string = "")
+// -----------------------------------------------------------------------------
+// FILTERJOBINFOBYID filters the output of RunDriver.jobInfo() and returns all
+// jobs whose ID begins with the characters in the passed parameter "id"
+// -- Parameters ---------------------------------------------------------------
+// job_info: Array<Dictionary> - absolute path where cli was called from
+// id: string - string for matching ids
+// -- Returns ------------------------------------------------------------------
+// ValidatedOutput - data contains array of Dictinary with matching job info
+export function filterJobInfoByID(job_info: Array<Dictinary>, id: string)
 {
   if(id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
-  const job_ids = allJobIds(runner, stack_path, status)
   const regex = new RegExp(`^${id}`)
-  const matching_ids = job_ids.filter((id:string) => regex.test(id))
-  return (matching_ids.length > 0) ?
-    new ValidatedOutput(true, matching_ids) :
+  const matching_jobs = job_info.filter((job:Dictionary) => regex.test(job.id))
+  return (matching_jobs.length > 0) ?
+    new ValidatedOutput(true, matching_jobs) :
     new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
 }
 
 // returns array of jobs info objects for all jobs whose id begins with the letters in the passed parameter "id"
 export function matchingJobInfo(runner: RunDriver, id: string, stack_path: string, status:string = "")
 {
-  if(id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
-  const job_info = runner.jobInfo(stack_path, status)
-  const regex = new RegExp(`^${id}`)
-  const matching_jobs = job_info.filter((job:Dictionary) => regex.test(job.id))
-  return (matching_jobs.length > 0) ?
-    new ValidatedOutput(true, matching_jobs) :
-    new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
+  return filterJobInfoByID(runner.jobInfo(stack_path, status), id)
+}
+
+// returns array of jobs ids for all jobs whose id begins with the letters in the passed parameter "id"
+export function matchingJobIds(runner: RunDriver, id: string, stack_path: string, status:string = "")
+{
+  const result = matchingJobInfo(runner, id, stack_path, status)
+  if(result.success) result.data = result.data.map((x:Dictionary) => x.id)
+  return result
 }
 
 // returns all running job ids
@@ -442,7 +450,7 @@ export function getProjectId(hostRoot: string)
 //    title            (String)              - title of table
 //    header:          (nx1 Array<string>)   - name of each column
 // -----------------------------------------------------------------------------
-export function printTable(configuration: Dictionary)
+export function printVerticalTable(configuration: Dictionary)
 {
 
   // -- read data into local variables for convenience -------------------------
@@ -472,4 +480,37 @@ export function printTable(configuration: Dictionary)
   if(c_header) printRow(c_header)
   // -- print data -------------------------------------------------------------
   configuration.data.map((row: Array<string>) => printRow(row))
+}
+
+export function printHorizontalTable(configuration: Dictionary)
+{
+
+  // -- read data into local variables for convenience -------------------------
+  const c_widths  = configuration.column_widths // should be of length 2
+  const t_widths  = configuration.text_widths   // should be of length 2
+  const title     = configuration.title
+  const r_headers = configuration.row_headers
+
+  // -- helper function for printing a table row -------------------------------
+  const printItem = (row: Array<string>, data_index: number) => {
+    for(var header_index = 0; header_index < row.length; header_index ++) {
+      const content:Array<string> = JSTools.lineSplit(row[header_index], t_widths[1]) // split data into lines
+        content.map((line:string, line_index:number) => {
+          const header = (line_index == 0) ? r_headers[header_index] : "" // header only prints on first line
+          console.log( // print header + data
+            chalk.italic(JSTools.clipAndPad(header, t_widths[0], c_widths[0])) +
+            JSTools.clipAndPad(line, t_widths[1], c_widths[1])
+          )
+        })
+      }
+      if(data_index != configuration.data.length - 1) console.log()
+  }
+
+  // -- print title ------------------------------------------------------------
+  if(title) {
+    const width = c_widths.reduce((total:number, current:number) => total + current, 0)
+    console.log(chalk`-- {bold ${title}} ${"-".repeat(width - title.length - 4)}`)
+  }
+  // -- print data -------------------------------------------------------------
+  configuration.data.map((item: Array<string>, index: number) => printItem(item, index))
 }

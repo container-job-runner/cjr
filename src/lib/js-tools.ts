@@ -68,10 +68,25 @@ export class JSTools
      (!val)
   }
 
-  static clipAndPad (s:string, clip_width: number, final_width: number, silent_clip: boolean) {
+  static clipAndPad (s:string, clip_width: number, final_width: number, silent_clip: boolean)
+  {
     if(s.length > clip_width)  s = (silent_clip) ? s.substring(0, clip_width) : `${s.substring(0, clip_width - 3)}...`
     if(s.length < final_width) s += " ".repeat(final_width - s.length)
     return s
+  }
+
+  // splits a string into lines with max length of line_length. Always splits on a blank character, unless string is longer than line
+  static lineSplit(s: string, line_length: number)
+  {
+    const regex = new RegExp(`^.{1,${line_length-1}} `)
+    const lines:Array<string> = []
+    while(s && s.length > line_length) {
+      var space_index = (regex.test(s)) ? s.match(regex)[0].length : line_length
+      lines.push(s.slice(0, space_index))
+      s = s.slice(space_index)
+    }
+    lines.push(s)
+    return lines
   }
 
 }
