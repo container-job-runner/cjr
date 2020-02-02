@@ -200,7 +200,7 @@ $ npm install -g cjr
 $ cjr COMMAND
 running command...
 $ cjr (-v|--version|version)
-cjr/0.0.0 darwin-x64 node-v12.14.1
+cjr/0.1.1 linux-x64 node-v12.13.1
 $ cjr --help [COMMAND]
 USAGE
   $ cjr COMMAND
@@ -219,6 +219,7 @@ USAGE
 * [`cjr job:attach [ID]`](#cjr-jobattach-id)
 * [`cjr job:copy [ID]`](#cjr-jobcopy-id)
 * [`cjr job:delete [ID]`](#cjr-jobdelete-id)
+* [`cjr job:internal-data [ID]`](#cjr-jobinternal-data-id)
 * [`cjr job:list`](#cjr-joblist)
 * [`cjr job:log [ID]`](#cjr-joblog-id)
 * [`cjr job:shell [ID]`](#cjr-jobshell-id)
@@ -243,16 +244,19 @@ USAGE
 
 OPTIONS
   --async
+  --autocopy                     automatically copy files back to hostRoot on exit
+  --autocopy-all                 automatically copy all files results back to hostRoot on exit
   --containerRoot=containerRoot
   --explicit
   --hostRoot=hostRoot
+  --message=message              optional message to describes the job
   --port=port                    [default: ]
   --silent
   --stack=stack
   --x11
 ```
 
-_See code: [src/commands/$.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/$.ts)_
+_See code: [src/commands/$.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/$.ts)_
 
 ## `cjr bundle SAVE_DIR`
 
@@ -271,7 +275,7 @@ OPTIONS
   --zip                produces one .zip file (requires gzip)
 ```
 
-_See code: [src/commands/bundle.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/bundle.ts)_
+_See code: [src/commands/bundle.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/bundle.ts)_
 
 ## `cjr config:get [KEY]`
 
@@ -282,7 +286,7 @@ USAGE
   $ cjr config:get [KEY]
 ```
 
-_See code: [src/commands/config/get.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/config/get.ts)_
+_See code: [src/commands/config/get.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/config/get.ts)_
 
 ## `cjr config:list`
 
@@ -293,7 +297,7 @@ USAGE
   $ cjr config:list
 ```
 
-_See code: [src/commands/config/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/config/list.ts)_
+_See code: [src/commands/config/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/config/list.ts)_
 
 ## `cjr config:set [KEY] [VALUE]`
 
@@ -304,7 +308,7 @@ USAGE
   $ cjr config:set [KEY] [VALUE]
 ```
 
-_See code: [src/commands/config/set.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/config/set.ts)_
+_See code: [src/commands/config/set.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/config/set.ts)_
 
 ## `cjr help [COMMAND]`
 
@@ -336,7 +340,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/attach.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/attach.ts)_
+_See code: [src/commands/job/attach.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/attach.ts)_
 
 ## `cjr job:copy [ID]`
 
@@ -352,7 +356,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/copy.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/copy.ts)_
+_See code: [src/commands/job/copy.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/copy.ts)_
 
 ## `cjr job:delete [ID]`
 
@@ -371,11 +375,27 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/delete.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/delete.ts)_
+_See code: [src/commands/job/delete.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/delete.ts)_
+
+## `cjr job:internal-data [ID]`
+
+Retrieve internal cli data for a job.
+
+```
+USAGE
+  $ cjr job:internal-data [ID]
+
+OPTIONS
+  --explicit
+  --json
+  --stack=stack
+```
+
+_See code: [src/commands/job/internal-data.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/internal-data.ts)_
 
 ## `cjr job:list`
 
-List all running jobs for a stack.
+List all running jobs, or all running jobs for a stack.
 
 ```
 USAGE
@@ -387,9 +407,10 @@ OPTIONS
   --hostRoot=hostRoot
   --json
   --stack=stack
+  --verbose
 ```
 
-_See code: [src/commands/job/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/list.ts)_
+_See code: [src/commands/job/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/list.ts)_
 
 ## `cjr job:log [ID]`
 
@@ -405,7 +426,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/log.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/log.ts)_
+_See code: [src/commands/job/log.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/log.ts)_
 
 ## `cjr job:shell [ID]`
 
@@ -422,7 +443,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/shell.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/shell.ts)_
+_See code: [src/commands/job/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/shell.ts)_
 
 ## `cjr job:stop [ID]`
 
@@ -441,7 +462,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/stop.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/job/stop.ts)_
+_See code: [src/commands/job/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/stop.ts)_
 
 ## `cjr jupyter:list`
 
@@ -457,7 +478,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/jupyter/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/jupyter/list.ts)_
+_See code: [src/commands/jupyter/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/jupyter/list.ts)_
 
 ## `cjr jupyter:start`
 
@@ -476,7 +497,7 @@ OPTIONS
   --sync
 ```
 
-_See code: [src/commands/jupyter/start.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/jupyter/start.ts)_
+_See code: [src/commands/jupyter/start.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/jupyter/start.ts)_
 
 ## `cjr jupyter:stop`
 
@@ -492,7 +513,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/jupyter/stop.ts)_
+_See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/jupyter/stop.ts)_
 
 ## `cjr shell`
 
@@ -512,7 +533,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/shell.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/shell.ts)_
+_See code: [src/commands/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/shell.ts)_
 
 ## `cjr stack:build`
 
@@ -530,7 +551,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/stack/build.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/build.ts)_
+_See code: [src/commands/stack/build.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/build.ts)_
 
 ## `cjr stack:clone URL`
 
@@ -545,7 +566,7 @@ OPTIONS
   --stacks_path=stacks_path
 ```
 
-_See code: [src/commands/stack/clone.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/clone.ts)_
+_See code: [src/commands/stack/clone.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/clone.ts)_
 
 ## `cjr stack:list`
 
@@ -559,7 +580,7 @@ OPTIONS
   --stacks_path=stacks_path
 ```
 
-_See code: [src/commands/stack/list.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/list.ts)_
+_See code: [src/commands/stack/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/list.ts)_
 
 ## `cjr stack:rmi`
 
@@ -576,7 +597,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/stack/rmi.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stack/rmi.ts)_
+_See code: [src/commands/stack/rmi.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/rmi.ts)_
 
 ## `cjr stash`
 
@@ -590,9 +611,10 @@ OPTIONS
   --containerRoot=containerRoot
   --explicit
   --hostRoot=hostRoot
+  --message=message              optional message to describes the job
   --silent
   --stack=stack
 ```
 
-_See code: [src/commands/stash.ts](https://github.com/buvoli/cjr/blob/v0.0.0/src/commands/stash.ts)_
+_See code: [src/commands/stash.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stash.ts)_
 <!-- commandsstop -->
