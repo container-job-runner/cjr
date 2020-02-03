@@ -23,6 +23,18 @@ import {ps_vo_validator} from '../config/project-settings/project-settings-schem
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
+// turns argv array into a properly escaped command string
+export function argvToCommandStr(argv: Array<string>)
+{
+  return `'${escapeCommandSingleQuotes(argv.join(" "))}'`
+}
+
+// escapes any single quotes for a linux command
+export function escapeCommandSingleQuotes(command: string)
+{
+    return command.replace(/'/g, "'\\''")
+}
+
 // -----------------------------------------------------------------------------
 // FILTERJOBINFOBYID filters the output of RunDriver.jobInfo() and returns all
 // jobs whose ID begins with the characters in the passed parameter "id"
@@ -384,7 +396,7 @@ export async function promptUserForJobId(runner: RunDriver, stack_path: string, 
 }
 
 // helper function for promptUserForJobId & promptUserForResultId
-async function promptUserId(id_info: Array<Dictionary>)
+export async function promptUserId(id_info: Array<Dictionary>)
 {
   const response = await inquirer.prompt([{
   name: 'id',
@@ -392,6 +404,7 @@ async function promptUserId(id_info: Array<Dictionary>)
   prefix: "\b",
   suffix: "",
   type: 'list',
+  pageSize: Math.min(id_info.length + 1, 30),
   choices: id_info.map((j:Dictionary) => {
     return {
       name: chalk`{italic ID}: ${JSTools.clipAndPad(j.id, 12, 15, true)} {italic COMMAND}: ${JSTools.clipAndPad(j.command, 20, 25, false)} {italic STATUS}: ${j.statusString}`,

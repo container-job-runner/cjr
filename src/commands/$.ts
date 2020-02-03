@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {Dictionary, JobCommand} from '../lib/commands/job-command'
-import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, writeJSONJobFile} from '../lib/functions/run-functions'
+import {argvToCommandStr, IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, writeJSONJobFile} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 import * as chalk from 'chalk'
 
@@ -28,7 +28,7 @@ export default class Run extends JobCommand {
     const builder    = this.newBuilder(flags.explicit)
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
-    const command    = argv.join(" ")
+    const command    = argvToCommandStr(argv)
     var   job_id     = ""
 
     var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
