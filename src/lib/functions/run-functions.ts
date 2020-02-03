@@ -297,8 +297,8 @@ export function prependXAuth(command: string, explicit: boolean = false)
   const shell_result = shell.output("xauth list $DISPLAY", {}, [])
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
-    const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command.replace(/"/g, '\\"')].join("\n")
-    return `bash -c "${script}"`
+    const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command].join(" && ")
+    return `'${escapeCommandSingleQuotes(`bash -c '${escapeCommandSingleQuotes(script)}'`)}'`
   }
   return command
 }
