@@ -386,6 +386,9 @@ USAGE
   $ cjr job:internal-data [ID]
 
 OPTIONS
+  --all
+  --all-completed
+  --all-running
   --explicit
   --json
   --stack=stack
