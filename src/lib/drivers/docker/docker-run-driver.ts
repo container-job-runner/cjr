@@ -36,7 +36,8 @@ export class DockerRunDriver extends RunDriver
   protected run_schema_validator  = dr_ajv_validator
 
   protected ERRORSTRINGS = {
-    INVALID_JOB : chalk`{bold job_options object did not pass validation.}`
+    INVALID_JOB : chalk`{bold job_options object did not pass validation.}`,
+    EMPTY_CREATE_ID: chalk`{bold Unable to create container.}`
   }
 
   // job functions
@@ -97,6 +98,7 @@ export class DockerRunDriver extends RunDriver
     const flags = this.runFlags(run_options)
     var result = this.shell.output(command, flags, args, {stdio: "pipe"})
     if(result.success) result.data = result.data.trim()
+    if(result.data === "") return new ValidatedOutput(false, [], [this.ERRORSTRINGS.EMPTY_CREATE_ID])
     return result
   }
 
