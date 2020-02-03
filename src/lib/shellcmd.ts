@@ -100,9 +100,9 @@ export class ShellCMD
     cmdString(command: string, flags: Dictionary, args: Array<string>)
     {
       const arrayWrap = (x:any) => (x instanceof Array) ? x : [x]
-      const flagString = function(value:string, flag:string, shorthand:boolean, sanitize_flag:boolean) // produces string for command flag with value
+      const flagString = function(value:string, flag:string, shorthand:boolean, sanitize_flag:boolean, noequals_flag:boolean) // produces string for command flag with value
       {
-        const v_str = (value !== undefined) ? `=${(sanitize_flag) ? quote([value]) : value}` : ""
+        const v_str = (value !== undefined) ? `${(noequals_flag) ? ' ' : '='}${(sanitize_flag) ? quote([value]) : value}` : ""
         return (shorthand) ? ` -${flag}${v_str}` : ` --${flag}${v_str}`;
       }
 
@@ -110,7 +110,7 @@ export class ShellCMD
       for(let key in flags) {
         let props = flags[key]
         let str_arr = arrayWrap(props.value).map(
-          v => flagString(v, key, props?.shorthand, ('sanitize' in props) ? props.sanitize : true))
+          v => flagString(v, key, props?.shorthand, ('sanitize' in props) ? props.sanitize : true, props?.noequals || false))
         cmdstr += str_arr.join(" ")
       }
       return cmdstr + " " + args.join(" ");
