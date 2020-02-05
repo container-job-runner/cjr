@@ -1,10 +1,11 @@
 import {flags} from '@oclif/command'
-import {Dictionary, JobCommand} from '../lib/commands/job-command'
-import {bashEscapeArgs, IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, writeJSONJobFile} from '../lib/functions/run-functions'
+import {Dictionary, StackCommand} from '../lib/commands/stack-command'
+import {bashEscapeArgs, IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, addJobInfoLabel} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
+import {JSTools} from '../lib/js-tools'
 import * as chalk from 'chalk'
 
-export default class Run extends JobCommand {
+export default class Run extends StackCommand {
   static description = 'Run a command as a new job.'
   static args = [{name: 'command', required: true}]
   static flags = {
@@ -43,7 +44,6 @@ export default class Run extends JobCommand {
         if(flags.message) configuration.addLabel("message", flags.message)
         configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
 
-
         var job_object:Dictionary = {
           command: (flags.x11) ? prependXAuth(command, flags.explicit) : command,
           hostRoot: hostRoot,
@@ -53,11 +53,12 @@ export default class Run extends JobCommand {
         }
         const resultPaths = configuration.getResultPaths()
         if(resultPaths) job_object["resultPaths"] = resultPaths
+        // label job with important information
+        addJobInfoLabel(configuration, job_object)
 
         this.printJobHeader(flags.verbose)
         var result = runner.jobStart(stack_path, job_object, configuration.runObject())
         if(result.success) job_id = result.data
-        writeJSONJobFile(this.job_json, result, job_object)
         // -- copy results if autocopy flags are active ------------------------
         if(result.success && (flags.autocopy || flags["autocopy-all"]))
           result = runner.jobCopy(job_id, job_object, flags["autocopy-all"])

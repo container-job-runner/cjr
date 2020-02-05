@@ -1,13 +1,14 @@
 import {flags} from '@oclif/command'
-import {JobCommand} from '../../lib/commands/job-command'
-import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
+import {StackCommand} from '../../lib/commands/stack-command'
+import {matchingJobInfo, promptUserForJobId, readJobInfoLabel} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
-export default class Copy extends JobCommand {
+export default class Copy extends StackCommand {
   static description = 'Copy job data back into the host directories. Works with both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {
     stack: flags.string({env: 'STACK'}),
+    "copy-path": flags.string({description: "overides job default copy path"}),
     explicit: flags.boolean({default: false}),
     all: flags.boolean({default: false}),
   }
@@ -21,18 +22,16 @@ export default class Copy extends JobCommand {
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
     var id = argv[0] || await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || ""
     // match with existing container ids
-    var result = matchingJobIds(runner, id, stack_path)
-    if(result.success)
-    {
-      const id = result.data[0] // only process single result
-      result = this.job_json.read(id)
-      if(result.success)
-      {
-        const job_object = result.data
-        result = runner.jobCopy(id, job_object, flags["all"])
-      }
-    }
-    printResultState(result)
+    var result = matchingJobInfo(runner, id, stack_path)
+    if(!result.success) return printResultState(result)
+    // copy results from any matching jobs
+    const job_info = result.data
+    job_info.map((job:dictionary) => {
+      const info_label = readJobInfoLabel(job)
+      if(flags["copy-path"]) info_label["copyPath"] = flags["copy-path"]
+      result = runner.jobCopy(job.id, info_label, flags["all"])
+      if(!result.success) return printResultState(result)
+    })
   }
 
 }

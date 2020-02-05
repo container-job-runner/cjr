@@ -253,18 +253,35 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
   }
 }
 
+
 // -----------------------------------------------------------------------------
-// WRITEJSONJobFIle write a JSON file that contains job information (job_object)
+// addJobInfo adds label with JSON for job data
 // -- Parameters ---------------------------------------------------------------
-// writer       (JSONFile) - JSONFILE object for writing to disk
-// result       (ValidatedOutput) - result from runner.createJob that contains ID
-// job_object   (Object) - job data
+// configuration - Object that inherits from abstract class Configuration
+// job_object: dictionary - a job object
 // -----------------------------------------------------------------------------
-export function writeJSONJobFile(file_writer: JSONFile, result: ValidatedOutput, job_object: object)
+export function addJobInfoLabel(configuration: Configuration, job_object: Dictionary)
 {
-  if(result.success) {
-    const job_id = result.data
-    file_writer.write(job_id, job_object)
+  configuration.addLabel('jobinfo',
+    JSON.stringify(
+      JSTools.oSubset(job_object, ['hostRoot', 'containerRoot', 'resultPaths'])
+    ))
+}
+
+// -----------------------------------------------------------------------------
+// readJobInfoLabel parses json for jobinfo label
+// -- Parameters ---------------------------------------------------------------
+// job_info: Array<Dictionary> - result (possibly filtered) returned by runner.jobInfo
+// -----------------------------------------------------------------------------
+export function readJobInfoLabel(job: Dictionary)
+{
+  try
+  {
+    return JSON.parse(job?.labels?.jobinfo)
+  }
+  catch (e)
+  {
+    return {}
   }
 }
 

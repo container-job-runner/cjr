@@ -1,15 +1,16 @@
 import {flags} from '@oclif/command'
 import * as chalk from 'chalk'
-import {JobCommand, Dictionary} from '../../lib/commands/job-command'
-import {matchingJobIds, promptUserForJobId, allJobIds} from '../../lib/functions/run-functions'
+import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
+import {matchingJobInfo, promptUserForJobId, allJobIds} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
-export default class InternalData extends JobCommand {
+export default class Labels extends StackCommand {
   static description = 'Retrieve internal cli data for a job.'
   static args = [{name: 'id'}]
   static flags = {
     stack: flags.string({env: 'STACK'}),
     explicit: flags.boolean({default: false}),
+    label: flags.string({default: false}),
     all: flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
@@ -19,7 +20,7 @@ export default class InternalData extends JobCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(InternalData)
+    const {argv, flags} = this.parse(Labels)
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
@@ -33,24 +34,31 @@ export default class InternalData extends JobCommand {
     else  // -- stop only jobs specified by user -------------------------------
     {
       var id = argv[0] || await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || ""
-      var result = matchingJobIds(runner, id, stack_path)
+      var result = matchingJobInfo(runner, id, stack_path)
       if(result.success) ids = result.data
       else return printResultState(result)
     }
 
+    const job_info = result.data
     var data:Dictionary = {}
-    ids.map((id:string) => {
-      var result = this.job_json.read(id)
-      data[id] = (result.success) ? result.data : {}
+    job_info.map((info:Dictionary) => {
+      if(flags.label)
+        data[info.id] = info.labels[flags.label]
+      else
+        data[info.id] = info.labels
     })
 
     if(flags.json) // -- json output -------------------------------------------
       console.log(JSON.stringify(data))
     else // -- text output -----------------------------------------------------
     {
+      const ids = Object.keys(data)
       ids.map((id:string, index:number) => {
         console.log(chalk`{italic id:} ${id}`)
-        Object.keys(data[id]).map((k:string) => console.log(chalk`{italic ${k}:} ${data[id][k]}`))
+        if(flags.label)
+          console.log(chalk`{italic ${flags.label}:} ${data[id]}`)
+        else
+          Object.keys(data[id]).map((k:string) => console.log(chalk`{italic ${k}:} ${data[id][k]}`))
         if(index < ids.length - 1) console.log("")
       })
     }
