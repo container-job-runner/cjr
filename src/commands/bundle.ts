@@ -30,7 +30,7 @@ export default class Bundle extends JobCommand {
     const builder    = this.newBuilder(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
-    var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
+    var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
         var result = configuration.bundle(stack_path);
         printResultState(result); // print any warnings from bundle

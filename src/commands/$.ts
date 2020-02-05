@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {Dictionary, JobCommand} from '../lib/commands/job-command'
-import {argvToCommandStr, IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, writeJSONJobFile} from '../lib/functions/run-functions'
+import {bashEscapeArgs, IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, writeJSONJobFile} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 import * as chalk from 'chalk'
 
@@ -13,25 +13,29 @@ export default class Run extends JobCommand {
     containerRoot: flags.string(),
     explicit: flags.boolean({default: false}),
     async: flags.boolean({default: false}),
-    silent: flags.boolean({default: false}), // if selected will not print out job id
+    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}), // if selected will not print out job id
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
-    message: flags.string({description: "optional message to describes the job"}),
+    message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
     autocopy: flags.boolean({default: false, exclusive: ["async", "autocopy-all"], description: "automatically copy files back to hostRoot on exit"}),
-    "autocopy-all": flags.boolean({default: false, exclusive: ["async", "autocopy"], description: "automatically copy all files results back to hostRoot on exit"})
+    "autocopy-all": flags.boolean({default: false, exclusive: ["async", "autocopy"], description: "automatically copy all files results back to hostRoot on exit"}),
+    "skip-rebuild": flags.boolean({default: false, description: "does not rebuild stack before running job"}),
+    "build-nocache": flags.boolean({default: false, exclusive: ["no-rebuild"], description: "rebuilds stack with no-cache flag active"})
   }
   static strict = false;
 
   async run()
   {
     const {argv, flags} = this.parseWithLoad(Run, true)
-    const builder    = this.newBuilder(flags.explicit)
+    const builder    = this.newBuilder(flags.explicit, !flags.verbose)
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
-    const command    = argvToCommandStr(argv)
+    const command    = bashEscapeArgs(argv).join(" ")
+    const build_mode = this.buildMode(flags)
     var   job_id     = ""
 
-    var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
+    this.printBuildHeader(flags.verbose)
+    var result = IfBuiltAndLoaded(builder, build_mode, flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
         addPorts(configuration, flags.port)
@@ -50,6 +54,7 @@ export default class Run extends JobCommand {
         const resultPaths = configuration.getResultPaths()
         if(resultPaths) job_object["resultPaths"] = resultPaths
 
+        this.printJobHeader(flags.verbose)
         var result = runner.jobStart(stack_path, job_object, configuration.runObject())
         if(result.success) job_id = result.data
         writeJSONJobFile(this.job_json, result, job_object)
@@ -59,9 +64,21 @@ export default class Run extends JobCommand {
 
         return result;
       })
-    if(job_id !== "" && flags.async && !flags.silent) console.log(job_id)
+    this.printIDHeader(flags.verbose)
+    if(job_id !== "" && (flags.async || flags.verbose)) console.log(job_id)
     printResultState(result);
 
   }
+
+  buildMode(flags: Dictionary)
+  {
+    if(flags["skip-rebuild"]) return "skip-rebuild"
+    if(flags["build-nocache"]) return 'build-nocache'
+    return "build"
+  }
+
+  printBuildHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Build Output} ${'-'.repeat(48)}`); }
+  printJobHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Job Output} ${'-'.repeat(50)}`); }
+  printIDHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Job ID} ${'-'.repeat(54)}`); }
 
 }

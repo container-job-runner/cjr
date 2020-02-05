@@ -100,7 +100,7 @@ export default class Shell extends JobCommand {
           remove: flags.discard
         })
         if(old_job_object.hostRoot) new_job_object.hostRoot = tmp_host_root
-        var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
+        var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
           (configuration) => {
             var result = runner.jobStart(stack_path, new_job_object, configuration.runObject())
             writeJSONJobFile(this.job_json, result, new_job_object)

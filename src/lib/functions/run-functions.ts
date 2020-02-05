@@ -24,15 +24,21 @@ import {ps_vo_validator} from '../config/project-settings/project-settings-schem
 type Dictionary = {[key: string]: any}
 
 // turns argv array into a properly escaped command string
-export function argvToCommandStr(argv: Array<string>)
+export function bashEscapeArgs(argv: Array<string>)
 {
-  return `'${escapeCommandSingleQuotes(argv.join(" "))}'`
+  return argv.map((a:string) => bashEscape(a))
 }
 
-// escapes any single quotes for a linux command
-export function escapeCommandSingleQuotes(command: string)
+// wraps a string in single quotes for bash, multiple times:
+// Based on shell-escape (https://www.npmjs.com/package/shell-escape)
+export function bashEscape(value: string, iterations: number = 1)
 {
-    return command.replace(/'/g, "'\\''")
+  for(var i = 0; i < iterations; i ++) {
+    value = `'${value.replace(/'/g, "'\\''")}'`
+      .replace(/^(?:'')+/g, '')   // unduplicate single-quote at the beginning
+      .replace(/\\'''/g, "\\'" ); // remove non-escaped single-quote if there are enclosed between 2 escaped
+  }
+  return value;
 }
 
 // -----------------------------------------------------------------------------
@@ -111,9 +117,16 @@ export function containerWorkingDir(cli_cwd:string, hroot: string, croot: string
 // stack_path - absolute path to stack folder
 // overloaded_config_paths - absolute paths to any overloading configuration files
 // -----------------------------------------------------------------------------
-export function IfBuiltAndLoaded(builder: BuildDriver, flags: Dictionary, stack_path: string, overloaded_config_paths: Array<string>, onSuccess: (configuration: Configuration, containerRoot: string, hostRoot: string) => void)
+export function IfBuiltAndLoaded(builder: BuildDriver, build_mode: string, flags: Dictionary, stack_path: string, overloaded_config_paths: Array<string>, onSuccess: (configuration: Configuration, containerRoot: string, hostRoot: string) => void)
 {
-  var result = buildIfNonExistant(builder, stack_path, overloaded_config_paths)
+  var result = new ValidatedOutput(false, [], ['Internal Error - Invalid Build Mode'])
+  if(build_mode === "no-rebuild")
+    result = buildIfNonExistant(builder, stack_path, overloaded_config_paths)
+  else if(build_mode == "build")
+    result = builder.build(stack_path, overloaded_config_paths)
+  else if(build_mode == "build-nocache")
+    result = builder.build(stack_path, overloaded_config_paths, true)
+
   if(result.success) // -- check that image was built
   {
     result = builder.loadConfiguration(stack_path, overloaded_config_paths)
@@ -298,7 +311,7 @@ export function prependXAuth(command: string, explicit: boolean = false)
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
     const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command].join(" && ")
-    return `'${escapeCommandSingleQuotes(`bash -c '${escapeCommandSingleQuotes(script)}'`)}'`
+    return bashEscape(`bash -c ${bashEscape(script)}`)
   }
   return command
 }

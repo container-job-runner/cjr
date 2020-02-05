@@ -26,7 +26,7 @@ export default class Shell extends StackCommand {
     // if save is empty overwrite stack image
     if(flags.save === "") flags.save = builder.imageName(stack_path)
 
-    let result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
+    let result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
         bindHostRoot(configuration, containerRoot, hostRoot);
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())

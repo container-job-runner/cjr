@@ -24,7 +24,7 @@ export default class Run extends JobCommand {
     const stack_path = this.fullStackPath(flags.stack)
     var   job_id     = false
 
-    var result = IfBuiltAndLoaded(builder, flags, stack_path, this.project_settings.configFiles,
+    var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
       (configuration, containerRoot, hostRoot) => {
 
         configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
