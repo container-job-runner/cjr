@@ -42,9 +42,11 @@ export default class Bundle extends JobCommand {
     const configuration = result.data
     const copy_files    = flags.all && flags.hostRoot // if true, then project files are included in bundle
     // -- select and create temporary directory --------------------------------
-    const stack_name        = builder.stackName(stack_path)
-    const temp_dir_path     = path.join(this.config.dataDir, cli_bundle_dir_name, stack_name) // tmp directory that stores bundle - extra protection to prevent entry from ever being blank.
-    fs.ensureDirSync(temp_dir_path)
+    const stack_name = builder.stackName(stack_path)
+    result = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name)) // tmp directory that stores bundle - extra protection to prevent entry from ever being blank.
+    if(!result.success) return printResultState(result)
+    const temp_dir_path = result.data
+
     // -- get filenames and paths ----------------------------------------------
     const settings_dir      = path.join(temp_dir_path, project_settings_folder)  // directory that stores project settings yml & stack
     const new_stack_path    = path.join(settings_dir, stack_name)                // location of copied stack
