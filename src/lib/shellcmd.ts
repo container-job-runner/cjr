@@ -32,7 +32,7 @@ export class ShellCMD
 
     sync(command: string, flags: object, args: Array<string>, options: Dictionary = {})
     {
-      var default_options = {stdio : 'inherit', shell: true}
+      var default_options = {stdio : 'inherit', shell: '/bin/bash'}
       options = {... default_options, ...options};
       if(this._silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
       this.printCMD(command, flags, args, true, options);
@@ -43,7 +43,7 @@ export class ShellCMD
 
     output(command: string, flags: object, args: Array<string>, options:Dictionary = {}, format="")
     {
-      var default_options = {stdio : 'pipe', shell: true, encoding: 'buffer'}
+      var default_options = {stdio : 'pipe', shell: '/bin/bash', encoding: 'buffer'}
       options = {... default_options, ...options};
       this.printCMD(command, flags, args, true, options);
       var child_process = spawnSync(this.cmdString(command, flags, args), [], options)
