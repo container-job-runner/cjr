@@ -4,16 +4,17 @@
 
 import * as path from 'path'
 import * as chalk from 'chalk'
-import {quote} from 'shell-quote'
 import {cli_name} from '../../constants'
 import {ValidatedOutput} from '../../validated-output'
 import {PathTools} from '../../fileio/path-tools'
 import {RunDriver, Dictionary} from '../abstract/run-driver'
+import {ShellCommand} from "../../shell-command"
 import {dr_ajv_validator} from './schema/docker-run-schema'
 import {de_ajv_validator} from './schema/docker-exec-schema'
 import {dj_vo_validator} from './schema/docker-job-schema'
 import {djc_vo_validator} from './schema/docker-job-copy-schema'
 import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
+
 
 export class DockerRunDriver extends RunDriver
 {
@@ -76,7 +77,7 @@ export class DockerRunDriver extends RunDriver
     var shell_options: Dictionary
     if(job_options.synchronous) // run attached if specified
     {
-      flags = {attach: {shorthand: false}, interactive: {shorthand: false}}
+      flags = {attach: {}, interactive: {}}
       shell_options = {stdio: "inherit"}
     }
     else // by default run detached
@@ -84,7 +85,7 @@ export class DockerRunDriver extends RunDriver
       flags = {}
       shell_options = {stdio: "pipe"} // hide any output (id of process)
     }
-    this.shell.sync(command, flags, args, shell_options)
+    this.shell.exec(command, flags, args, shell_options)
 
     return result
   }
@@ -107,7 +108,7 @@ export class DockerRunDriver extends RunDriver
     const command = `${this.base_command} ${this.sub_commands["copy"]}`;
     const args = [hostPath, `${id}:${containerPath}`]
     const flags = {}
-    return this.shell.sync(command, flags, args)
+    return this.shell.exec(command, flags, args)
   }
 
   protected copyFromContainer(id: string, hostPath: string, containerPath: string)
@@ -115,7 +116,7 @@ export class DockerRunDriver extends RunDriver
     const command = `${this.base_command} ${this.sub_commands["copy"]}`;
     const args = [`${id}:${containerPath}`, hostPath]
     const flags = {}
-    return this.shell.sync(command, flags, args)
+    return this.shell.exec(command, flags, args)
   }
 
   // === END Job Helper Functions ============================================
@@ -125,8 +126,8 @@ export class DockerRunDriver extends RunDriver
     var command = `${this.base_command} ${this.sub_commands["log"]}`;
     var args = [id]
     const lines_int = parseInt(lines)
-    const flags = (isNaN(lines_int)) ? {} : {tail: {shorthand: false, value: `${lines_int}`}}
-    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
+    const flags = (isNaN(lines_int)) ? {} : {tail: `${lines_int}`}
+    return new ValidatedOutput(true, this.shell.exec(command, flags, args))
   }
 
   jobAttach(id: string)
@@ -134,7 +135,7 @@ export class DockerRunDriver extends RunDriver
     var command = `${this.base_command} ${this.sub_commands["attach"]}`;
     var args = [id]
     var flags = {}
-    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
+    return new ValidatedOutput(true, this.shell.exec(command, flags, args))
   }
 
   jobExec(id: string, exec_command: string, exec_options:Dictionary={})
@@ -142,7 +143,7 @@ export class DockerRunDriver extends RunDriver
     var command = `${this.base_command} ${this.sub_commands["exec"]}`;
     var args = [id, exec_command]
     const flags = this.execFlags(exec_options)
-    return new ValidatedOutput(true, this.shell.sync(command, flags, args))
+    return new ValidatedOutput(true, this.shell.exec(command, flags, args))
   }
 
   jobDelete(ids: Array<string>)
@@ -163,7 +164,7 @@ export class DockerRunDriver extends RunDriver
     const command = `${this.base_command} ${this.sub_commands["stop"]}`;
     const args = ids
     const flags = {}
-    return this.shell.sync(command, flags, args, {stdio: "pipe"})
+    return this.shell.exec(command, flags, args, {stdio: "pipe"})
   }
 
   protected remove(ids: Array<string>)
@@ -172,7 +173,7 @@ export class DockerRunDriver extends RunDriver
     const command = `${this.base_command} ${this.sub_commands["remove"]}`;
     const args = ids
     const flags = {}
-    return this.shell.sync(command, flags, args, {stdio: "pipe"})
+    return this.shell.exec(command, flags, args, {stdio: "pipe"})
   }
 
   jobInfo(stack_path: string, job_status: string = "") // Note: this allows for empty image_name. In which case it returns all running containers on host
@@ -180,12 +181,12 @@ export class DockerRunDriver extends RunDriver
     const command = `${this.base_command} ${this.sub_commands["list"]}`;
     const args: Array<string> = []
     var   flags: Dictionary = {
-      "a" : {shorthand: true},
-      "no-trunc": {shorthand: false},
-      "filter": {shorthand: false, value: [`label=runner=${cli_name}`]}
+      "a" : {},
+      "no-trunc": {},
+      "filter": [`label=runner=${cli_name}`]
     };
-    if(stack_path) flags["filter"].value.push(`label=stack=${this.stackName(stack_path)}`)
-    if(job_status) flags["filter"].value.push(`status=${job_status}`)
+    if(stack_path) flags["filter"].push(`label=stack=${this.stackName(stack_path)}`)
+    if(job_status) flags["filter"].push(`status=${job_status}`)
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
 
@@ -266,7 +267,7 @@ export class DockerRunDriver extends RunDriver
   //   const flags = {
   //     'name:': {shorthand: false, id}
   //   }
-  //   this.shell.sync(command, args, flags, {stdio: "inherit"})
+  //   this.shell.exec(command, args, flags, {stdio: "inherit"})
   // }
   //
   // private commit(id: string, image_name: string, labels: object={}) // image name including optional tag
@@ -278,7 +279,7 @@ export class DockerRunDriver extends RunDriver
   //       shorthand: false,
   //       value: Object.keys(labels).map(k => `LABEL ${k}=${labels[k]}`)}
   //   }
-  //   return this.shell.sync(command, flags, args, {stdio: "pipe"})
+  //   return this.shell.exec(command, flags, args, {stdio: "pipe"})
   // }
 
   imageName(stack_path: string)
@@ -324,14 +325,14 @@ export class DockerRunDriver extends RunDriver
   protected addFormatFlags(flags: Dictionary, run_object: Dictionary)
   {
     if(run_object?.format === "json") {
-      flags["format"] = {shorthand: false, value: '{{json .}}'}
+      flags["format"] = '{{json .}}'
     }
   }
 
   protected addRemovalFlags(flags: Dictionary, run_object: Dictionary)
   {
     if(run_object?.remove) {
-      flags["rm"] = {shorthand: false}
+      flags["rm"] = {}
     }
   }
 
@@ -339,8 +340,8 @@ export class DockerRunDriver extends RunDriver
   {
     if(run_object?.interactive == true)
     {
-        flags["i"] = {shorthand: true}
-        flags["t"] = {shorthand: true}
+        flags["i"] = {}
+        flags["t"] = {}
     }
   }
 
@@ -348,7 +349,7 @@ export class DockerRunDriver extends RunDriver
   {
     if(run_object?.wd)
     {
-      flags["w"] = {shorthand: true, value: run_object.wd}
+      flags["w"] = run_object.wd
     }
   }
 
@@ -356,7 +357,7 @@ export class DockerRunDriver extends RunDriver
   {
     if(run_object?.name)
     {
-      flags["name"] = {shorthand: false, value: run_object.name}
+      flags["name"] = run_object.name
     }
   }
 
@@ -364,7 +365,7 @@ export class DockerRunDriver extends RunDriver
   {
     if(run_object?.detached)
     {
-      flags["d"] = {shorthand: true}
+      flags["d"] = {}
     }
   }
 
@@ -373,8 +374,7 @@ export class DockerRunDriver extends RunDriver
     if(run_object?.ports?.length > 0)
     {
       flags["p"] = {
-        shorthand: true,
-        sanitize: false,
+        escape: false,
         value: run_object.ports.map((po:Dictionary) => `${po.hostPort}:${po.containerPort}`)
       }
     }
@@ -386,8 +386,7 @@ export class DockerRunDriver extends RunDriver
     {
       const keys = Object.keys(run_object.environment)
       flags["env"] = {
-        shorthand: false,
-        sanitize: false,
+        escape: false,
         value: keys.map(key => `${key}=${run_object.environment[key]}`)
       }
     }
@@ -398,16 +397,15 @@ export class DockerRunDriver extends RunDriver
     const valid_keys = ["cpus", "gpu", "memory", "swap-memory"]
     const keys = Object.keys(run_object?.resources || {})
     keys?.map((key:string) => {
-      if(valid_keys.includes(key)) flags[key] = {shorthand: false, value: run_object?.resources[key]}
+      if(valid_keys.includes(key)) flags[key] = run_object?.resources[key]
     })
   }
 
   protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)
   {
     if(run_object?.flags?.network) { // used for sharing DISPLAY variable
-      flags["network"] = {shorthand: false, value: run_object.flags.network}
+      flags["network"] = run_object.flags.network
     }
-    return flags
   }
 
   protected addMountFlags(flags: Dictionary, run_object: Dictionary)
@@ -415,8 +413,7 @@ export class DockerRunDriver extends RunDriver
     if(run_object?.mounts?.length > 0)
     {
       flags["mount"] = {
-        shorthand: false,
-        sanitize: false,
+        escape: false,
         value: run_object.mounts.map(this.mountObjectToFlagStr)
       }
     }
@@ -427,11 +424,11 @@ export class DockerRunDriver extends RunDriver
     switch(mo.type)
     {
       case "bind":
-        return `type=${mo.type},source=${mo.hostPath},destination=${quote([mo.containerPath])}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.hostPath)},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
       case "volume":
-        return `type=${mo.type},source=${mo.volumeName},destination=${quote([mo.containerPath])}${(mo.readonly) ? ",readonly" : ""}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.volumeName)},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""}`
       case "tmpfs":
-        return `type=${mo.type},destination=${quote([mo.containerPath])}`
+        return `type=${mo.type},destination=${ShellCommand.bashEscape(mo.containerPath)}`
     }
   }
 
@@ -439,7 +436,7 @@ export class DockerRunDriver extends RunDriver
   {
     if(run_object?.labels) {
       const keys = Object.keys(run_object.labels)
-      flags["label"] = {shorthand: false, value: keys.map(k => `${k}=${run_object.labels[k]}`)}
+      flags["label"] = keys.map(k => `${k}=${run_object.labels[k]}`)
     }
   }
 

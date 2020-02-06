@@ -12,7 +12,7 @@ import {PodmanBuildDriver} from '../drivers/podman/podman-build-driver'
 import {BuildahBuildDriver} from '../drivers/buildah/buildah-build-driver'
 import {DockerRunDriver} from '../drivers/docker/docker-run-driver'
 import {PodmanRunDriver} from '../drivers/podman/podman-run-driver'
-import {ShellCMD} from '../shellcmd'
+import {ShellCommand} from '../shell-command'
 import {FileTools} from '../fileio/file-tools'
 import {YMLFile} from '../fileio/yml-file'
 import {invalid_stack_flag_error} from '../constants'
@@ -53,7 +53,7 @@ export abstract class StackCommand extends Command
   {
     const build_cmd = this.settings.get('build_cmd');
     const tag = this.settings.get('image_tag');
-    const shell = new ShellCMD(explicit, silent)
+    const shell = new ShellCommand(explicit, silent)
 
     switch(build_cmd)
     {
@@ -80,7 +80,7 @@ export abstract class StackCommand extends Command
   {
     const run_cmd = this.settings.get('run_cmd');
     const tag = this.settings.get('image_tag');
-    const shell = new ShellCMD(explicit, silent)
+    const shell = new ShellCommand(explicit, silent)
 
     switch(run_cmd)
     {

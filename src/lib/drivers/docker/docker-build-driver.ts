@@ -53,10 +53,10 @@ export class DockerBuildDriver extends BuildDriver
     {
       const command = `${this.base_command} ${this.sub_commands["images"]}`;
       const args:Array<string> = []
-      var flags:Dictionary = {
-        filter: {shorthand: false, value: `reference=${this.imageName(stack_path)}`}
+      const flags:Dictionary = {
+        filter: `reference=${this.imageName(stack_path)}`
       }
-      flags = this.addJSONFormatFlag(flags);
+      this.addJSONFormatFlag(flags);
       var result = this.shell.output(command, flags, args, {}, this.json_output_format)
       return (result.success && !JSTools.isEmpty(result.data)) ? true : false
     }
@@ -70,12 +70,12 @@ export class DockerBuildDriver extends BuildDriver
           const command = `${this.base_command} ${this.sub_commands["build"]}`;
           const args = [build_object?.context || '.']
           var   flags:Dictionary = {
-            "t": {value: this.imageName(stack_path), shorthand: true},
-            "f": {value: path.join(build_object.dockerfile || 'Dockerfile'), shorthand: true}
+            "t": this.imageName(stack_path),
+            "f": path.join(build_object.dockerfile || 'Dockerfile')
           }
-          if(build_object["no_cache"] || nocache) flags["no-cache"] = {shorthand: false}
+          if(build_object["no_cache"] || nocache) flags["no-cache"] = {}
           this.argFlags(flags, build_object)
-          result.data = this.shell.sync(command, flags, args, {cwd: stack_path})
+          result.data = this.shell.exec(command, flags, args, {cwd: stack_path})
       }
       return result;
     }
@@ -84,8 +84,7 @@ export class DockerBuildDriver extends BuildDriver
     {
       const args = build_object?.args
       if(args) flags["build-arg"] = {
-        shorthand: false,
-        sanitize: false, // allow shell commands $()
+        escape: false, // allow shell commands $()
         value: Object.keys(args).map(k => `${k}\\=${args[k]}`)
       }
     }
@@ -97,7 +96,7 @@ export class DockerBuildDriver extends BuildDriver
           const command = `${this.base_command} ${this.sub_commands["remove"]}`;
           const args = [this.imageName(stack_path)]
           const flags = {}
-          return new ValidatedOutput(true, this.shell.sync(command, flags, args, {cwd: stack_path}))
+          return new ValidatedOutput(true, this.shell.exec(command, flags, args, {cwd: stack_path}))
       }
       return new ValidatedOutput(true)
     }
@@ -166,8 +165,7 @@ export class DockerBuildDriver extends BuildDriver
 
     protected addJSONFormatFlag(flags: Dictionary)
     {
-      flags["format"] = {shorthand: false, value: '{{json .}}'}
-      return flags
+      flags["format"] = '{{json .}}'
     }
 
     // Overloaded Methods

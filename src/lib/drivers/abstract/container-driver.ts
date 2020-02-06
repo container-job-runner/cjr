@@ -1,15 +1,15 @@
 import * as path from 'path'
-import {ShellCMD} from "../../shellcmd"
+import {ShellCommand} from "../../shell-command"
 
 export class ContainerDriver
 {
 
-  protected shell: ShellCMD
+  protected shell: ShellCommand
   protected tag: string
 
-  constructor(scmd: ShellCMD, tag: string)
+  constructor(shell: ShellCommand, tag: string)
   {
-    this.shell = scmd;
+    this.shell = shell;
     this.tag = tag;
   }
 

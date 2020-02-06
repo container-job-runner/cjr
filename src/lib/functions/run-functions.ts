@@ -12,7 +12,7 @@ import {JSONFile} from '../fileio/json-file'
 import {YMLFile} from '../fileio/yml-file'
 import {ValidatedOutput} from '../validated-output'
 import {printResultState} from './misc-functions'
-import {ShellCMD} from '../shellcmd'
+import {ShellCommand} from '../shell-command'
 import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, project_settings_folder, projectSettingsYMLPath, default_settings_object} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
 import {ErrorStrings, WarningStrings} from '../error-strings'
@@ -238,7 +238,7 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
       const socket_number:string = sockets.pop()?.replace("X", "") || "0" // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
       configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
       configuration.addRunEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
-      const shell = new ShellCMD(explicit, false)
+      const shell = new ShellCommand(explicit, false)
       shell.output("xhost +localhost", {}, []);
       break;
     case "linux": // == LINUX ==================================================
@@ -340,7 +340,7 @@ export async function jobToImage(runner: RunDriver, result: ValidatedOutput, ima
 export function prependXAuth(command: string, explicit: boolean = false)
 {
   if(os.platform() != "linux") return ""
-  const shell = new ShellCMD(explicit, false)
+  const shell = new ShellCommand(explicit, false)
   const shell_result = shell.output("xauth list $DISPLAY", {}, [])
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
@@ -349,29 +349,6 @@ export function prependXAuth(command: string, explicit: boolean = false)
   }
   return command
 }
-
-// -----------------------------------------------------------------------------
-// ADDXAUTHSECRET: execs commands in container which add xAuth secret from host
-// -- Parameters ---------------------------------------------------------------
-// runner  - RunDriver
-// result: ValidatedOutput - result from jobStart
-// explicit: boolean - determine if shell commands are printed
-// -----------------------------------------------------------------------------
-// export function addXAuthSecret(runner: RunDriver, result: ValidatedOutput, explicit: boolean = false)
-// {
-//   if(result.success == false) return
-//   if(os.platform() != "linux") return
-//   const id = result.data
-//   const shell = new ShellCMD(explicit)
-//   const shell_result = shell.output("xauth list $DISPLAY", {}, [])
-//   if(shell_result.success) {
-//     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
-//     const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`].join("\n")
-//     const command = `bash -c "${script}"`
-//     runner.jobExec(id, command, {})
-//   }
-// }
-
 
 // -----------------------------------------------------------------------------
 // LOADPROJECTSETTINGS: loads any project settings from the cjr dir in hostRoot

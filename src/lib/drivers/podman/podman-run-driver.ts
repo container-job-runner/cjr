@@ -2,7 +2,7 @@
 // Podman-Run-Driver: Controls Podman For Running containers
 // ===========================================================================
 
-import {quote} from 'shell-quote'
+import {ShellCommand} from "../../shell-command"
 import {DockerRunDriver} from '../docker/docker-run-driver'
 import {pr_ajv_validator} from './schema/podman-run-schema'
 
@@ -18,7 +18,7 @@ export class PodmanRunDriver extends DockerRunDriver
   protected addFormatFlags(flags: Dictionary, run_flags: Dictionary)
   {
     if(run_flags?.format === "json") {
-      flags["format"] = {shorthand: false, value: 'json'}
+      flags["format"] = 'json'
     }
   }
 
@@ -27,7 +27,7 @@ export class PodmanRunDriver extends DockerRunDriver
     const valid_keys = ["cpus", "gpu", "memory"] // podman does not support swap-memory
     const keys = Object.keys(run_object?.resources || {})
     keys?.map((key:string) => {
-      if(valid_keys.includes(key)) flags[key] = {shorthand: false, value: run_object?.resources[key]}
+      if(valid_keys.includes(key)) flags[key] = run_object?.resources[key]
     })
   }
 
@@ -36,11 +36,11 @@ export class PodmanRunDriver extends DockerRunDriver
     switch(mo.type)
     {
       case "bind":
-        return `type=${mo.type},source=${mo.hostPath},destination=${quote([mo.containerPath])}${(mo.readonly) ? ",readonly" : ""}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.hostPath)},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""}`
       case "volume":
-        return `type=${mo.type},source=${mo.volumeName},destination=${quote([mo.containerPath])}${(mo.readonly) ? ",readonly" : ""}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.volumeName)},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""}`
       case "tmpfs":
-        return `type=${mo.type},destination=${quote([mo.containerPath])}`
+        return `type=${mo.type},destination=${ShellCommand.bashEscape(mo.containerPath)}`
     }
   }
 
@@ -48,10 +48,10 @@ export class PodmanRunDriver extends DockerRunDriver
   {
     super.addSpecialFlags(flags, run_object)
     if(run_object?.flags?.userns) { // used for consistant file permissions
-      flags["userns"] = {shorthand: false, value: run_object.flags.userns}
+      flags["userns"] = run_object.flags.userns
     }
     if(run_object?.flags?.["security-opt"]) { // used for binding X11 directory
-      flags["security-opt"] = {shorthand: false, value: run_object.flags["security-opt"]}
+      flags["security-opt"] = run_object.flags["security-opt"]
     }
     return flags
   }

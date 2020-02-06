@@ -88,12 +88,13 @@ export class ShellCommand
         return (shorthand) ? ` -${flag}${v_str}` : ` --${flag}${v_str}`;
       }
 
-      let shorthand: boolean, escape: boolean, props: Dictionary, flag_arr: Array<string>, value: string
+      let shorthand: boolean, escape: boolean, props: any, flag_arr: Array<string>, value: string
       let cmdstr = command
       for(var key in flags) {
         props = flags[key]
         shorthand = (props?.hasOwnProperty('shorthand')) ? props.shorthand : (key.length == 1) // by default intepret keys with one letter as shorthand
         escape    = (props?.hasOwnProperty('escape')) ? props.escape : this._escape_flags
+        value     = ""
         if(JSTools.isString(props) || JSTools.isArray(props)) value = props
         else if(JSTools.isObject(props)) value = props.value
         flag_arr  = arrayWrap(value).map((v:string) => flagString(v, key, shorthand, escape, props?.noequals || false))
