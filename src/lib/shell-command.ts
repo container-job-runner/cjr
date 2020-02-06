@@ -14,7 +14,6 @@
 import * as chalk from 'chalk'
 import {spawn, spawnSync} from 'child_process'
 import {ValidatedOutput} from './validated-output'
-import {bashEscape, bashEscapeArgs} from './functions/run-functions'
 import {JSTools} from './js-tools'
 type Dictionary = {[key: string]: any}
 
@@ -51,7 +50,7 @@ export class ShellCommand
 
     output(command: string, flags: object, args: Array<string>, options:Dictionary = {}, post_process="")
     {
-      var child_process = this.exec(command, flags, args, {...options, ...{encoding: 'buffer'}})
+      var child_process = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', encoding: 'buffer'}})
 
       // -- exit with failure if exit-code is non zero -------------------------
       if(child_process.status != 0) {
@@ -85,7 +84,7 @@ export class ShellCommand
       // HELPER: produces string for command flag with value
       const flagString = function(value:string, flag:string, shorthand:boolean, escape_flag:boolean, noequals_flag:boolean)
       {
-        const v_str = (value !== undefined) ? `${(noequals_flag) ? ' ' : '='}${(escape_flag) ? bashEscape(value) : value}` : ""
+        const v_str = (value !== undefined) ? `${(noequals_flag) ? ' ' : '='}${(escape_flag) ? ShellCommand.bashEscape(value) : value}` : ""
         return (shorthand) ? ` -${flag}${v_str}` : ` --${flag}${v_str}`;
       }
 
@@ -100,7 +99,7 @@ export class ShellCommand
         flag_arr  = arrayWrap(value).map((v:string) => flagString(v, key, shorthand, escape, props?.noequals || false))
         cmdstr   += flag_arr.join(" ")
       }
-      return `${cmdstr} ${(this._escape_args) ? bashEscapeArgs(args).join(" ") : args.join(" ")}`;
+      return `${cmdstr} ${(this._escape_args) ? ShellCommand.bashEscapeArgs(args).join(" ") : args.join(" ")}`;
     }
 
     // == Start Output PostProcess Functions ===================================
@@ -149,5 +148,25 @@ export class ShellCommand
     {
       if(this._explicit && !this._silent)
         console.log(` ${command}`)
+    }
+
+    // == Bash Escape Functions ================================================
+
+    // turns argv array into a properly escaped command string
+    static bashEscapeArgs(argv: Array<string>)
+    {
+      return argv.map((a:string) => this.bashEscape(a))
+    }
+
+    // wraps a string in single quotes for bash, multiple times:
+    // Based on shell-escape (https://www.npmjs.com/package/shell-escape)
+    static bashEscape(value: string, iterations: number = 1)
+    {
+      for(var i = 0; i < iterations; i ++) {
+        value = `'${value.replace(/'/g, "'\\''")}'`
+          .replace(/^(?:'')+/g, '')   // unduplicate single-quote at the beginning
+          .replace(/\\'''/g, "\\'" ); // remove non-escaped single-quote if there are enclosed between 2 escaped
+      }
+      return value;
     }
 }
