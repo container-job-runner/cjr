@@ -21,11 +21,15 @@ export const docker_job_copy_schema = {
           "type": "string"
         }
       ]
+    },
+    "hostCopyPath": {
+      "type": "string"
     }
   },
   "dependencies": {
       "hostRoot": ["containerRoot"],
-      "resultPaths": ["hostRoot"]
+      "resultPaths": ["hostRoot"],
+      "hostCopyPath": ["hostRoot"]
     }
 }
 

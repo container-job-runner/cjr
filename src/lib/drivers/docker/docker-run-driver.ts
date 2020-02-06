@@ -226,14 +226,13 @@ export class DockerRunDriver extends RunDriver
     const hostRoot_dirname = path.dirname(hostRoot)
     const hostRoot_basename = path.basename(hostRoot)
     const copy_all_flag = copy_all || resultPaths === undefined;
-    const host_copydir = job_object.copyPath || hostRoot_dirname
 
     const container_copyfrom_paths = (copy_all_flag) ?
       [path.posix.join(containerRoot, hostRoot_basename)] :
       resultPaths.map((x:string) => path.posix.join(containerRoot, hostRoot_basename, x));
     const host_copyto_paths = (copy_all_flag) ?
-      [host_copydir] :
-      resultPaths.map((x:string) => path.posix.dirname(path.posix.join(host_copydir, x)));
+      [job_object?.hostCopyPath || hostRoot_dirname] :
+      resultPaths.map((x:string) => path.posix.dirname(path.posix.join(job_object?.hostCopyPath || hostRoot, x)));
 
     console.log("copy from:\t", container_copyfrom_paths)
     console.log("copy to:\t", host_copyto_paths)

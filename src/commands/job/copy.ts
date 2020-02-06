@@ -28,7 +28,7 @@ export default class Copy extends StackCommand {
     const job_info = result.data
     job_info.map((job:Dictionary) => {
       const info_label = readJobInfoLabel(job)
-      if(flags["copy-path"]) info_label["copyPath"] = flags["copy-path"]
+      if(flags["copy-path"]) info_label["hostCopyPath"] = flags["copy-path"]
       result = runner.jobCopy(job.id, info_label, flags["all"])
       if(!result.success) return printResultState(result)
     })
