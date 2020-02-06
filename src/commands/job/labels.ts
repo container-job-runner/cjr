@@ -10,7 +10,7 @@ export default class Labels extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     explicit: flags.boolean({default: false}),
-    label: flags.string({default: false}),
+    label: flags.string({}),
     all: flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
@@ -24,25 +24,24 @@ export default class Labels extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     // get id and stack_path
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
-    var ids
+    var job_info
     if(flags.all) // -- select all jobs ----------------------------------------
-      ids = allJobIds(runner, stack_path)
+      job_info = runner.jobInfo(stack_path)
     else if(flags["all-completed"]) // -- select all completed jobs ------------
-      ids = allJobIds(runner, stack_path, "exited")
+      job_info = runner.jobInfo(stack_path, "exited")
     else if(flags["all-running"])
-      ids = allJobIds(runner, stack_path, "running")
+      job_info = runner.jobInfo(stack_path, "running")
     else  // -- stop only jobs specified by user -------------------------------
     {
       var id = argv[0] || await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || ""
       var result = matchingJobInfo(runner, id, stack_path)
-      if(result.success) ids = result.data
+      if(result.success) job_info = result.data
       else return printResultState(result)
     }
 
-    const job_info = result.data
     var data:Dictionary = {}
     job_info.map((info:Dictionary) => {
-      if(flags.label)
+      if(flags?.label)
         data[info.id] = info.labels[flags.label]
       else
         data[info.id] = info.labels

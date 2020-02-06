@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/commands/stack-command'
+import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 import {matchingJobInfo, promptUserForJobId, readJobInfoLabel} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
@@ -26,7 +26,7 @@ export default class Copy extends StackCommand {
     if(!result.success) return printResultState(result)
     // copy results from any matching jobs
     const job_info = result.data
-    job_info.map((job:dictionary) => {
+    job_info.map((job:Dictionary) => {
       const info_label = readJobInfoLabel(job)
       if(flags["copy-path"]) info_label["copyPath"] = flags["copy-path"]
       result = runner.jobCopy(job.id, info_label, flags["all"])

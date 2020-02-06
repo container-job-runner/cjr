@@ -1,7 +1,7 @@
 import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
 import {StackCommand, Dictionary} from '../lib/commands/stack-command'
-import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, writeJSONJobFile} from '../lib/functions/run-functions'
+import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, addJobInfoLabel} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 
 export default class Run extends StackCommand {
@@ -39,7 +39,6 @@ export default class Run extends StackCommand {
         }
         const resultPaths = configuration.getResultPaths()
         if(resultPaths) job_object["resultPaths"] = resultPaths
-        // label job with important information
         addJobInfoLabel(configuration, job_object)
 
         var result = runner.jobStart(stack_path, job_object, configuration.runObject())
