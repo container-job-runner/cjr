@@ -22,6 +22,9 @@ export const ErrorStrings = {
   },
   JOBSHELL: {
     NOSTACK: chalk`{bold Stack flag empty } - you must specify a stack`
+  },
+  JOBINFOLABEL: {
+    INVALIDJSON: chalk`{bold Invalid JSON } - could not parse job json.`
   }
 }
 

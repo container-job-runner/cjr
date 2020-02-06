@@ -3,7 +3,7 @@ import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as inquirer from 'inquirer'
 import {flags} from '@oclif/command'
-import {JobCommand, Dictionary} from '../lib/commands/job-command'
+import {StackCommand, Dictionary} from '../lib/commands/stack-command'
 import {IfBuiltAndLoaded} from '../lib/functions/run-functions'
 import {cli_bundle_dir_name, project_settings_folder, project_settings_file, projectSettingsYMLPath} from '../lib/constants'
 import {printResultState} from '../lib/functions/misc-functions'
@@ -11,7 +11,7 @@ import {ShellCMD} from '../lib/shellcmd'
 import {FileTools} from '../lib/fileio/file-tools'
 import {YMLFile} from '../lib/fileio/yml-file'
 
-export default class Bundle extends JobCommand {
+export default class Bundle extends StackCommand {
   static description = 'bundle a stack and its project files for sharing.'
   static args = [{name: 'save_dir', required: true}]
   static flags = {

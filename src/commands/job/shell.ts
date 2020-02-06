@@ -1,21 +1,22 @@
 import * as path from 'path'
 import * as fs from 'fs-extra'
 import {flags} from '@oclif/command'
-import {JobCommand} from '../../lib/commands/job-command'
+import {StackCommand} from '../../lib/commands/stack-command'
 import {cli_storage_dir_name} from '../../lib/constants'
 import {JSTools} from '../../lib/js-tools'
 import {ErrorStrings} from '../../lib/error-strings'
-import {IfBuiltAndLoaded, promptUserForJobId, matchingJobInfo, writeJSONJobFile} from '../../lib/functions/run-functions'
+import {IfBuiltAndLoaded, promptUserForJobId, matchingJobInfo, validJobInfoLabel, addJobInfoLabel} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
-export default class Shell extends JobCommand {
+export default class Shell extends StackCommand {
   static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
   static args = [{name: 'id', required: false}]
   static flags = {
     stack: flags.string({env: 'STACK'}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
-    discard: flags.boolean({default: false})
+    discard: flags.boolean({default: false}),
+    message: flags.string({description: "use this flag to tag a job with a user-supplied message"})
   }
   static strict = true;
 
@@ -73,13 +74,12 @@ export default class Shell extends JobCommand {
         result.pushError(ErrorStrings.JOBSHELL.NOSTACK)
         return printResultState(result)
       }
-      // 0. read job json ------------------------------------------------------
-      result = this.job_json.read(job_id)
-      if(!result.success) return printResultState(result)
       // 1. load original job parameters ---------------------------------------
+      var result = validJobInfoLabel(job_info)
+      if(!result.success) return printResultState(result)
       const old_job_object = result.data
       // 2. choose temporary location for result files -------------------------
-      const tmp_storage_path = path.join(this.config.dataDir, cli_storage_dir_name, job_id) || "/UP8YSP9NHP/CADJCZ5UAQ/FNF7QB6P31/NXXAMCNI3H" // extra protection to prevent entry from ever being blank.
+      const tmp_storage_path = path.join(this.config.dataDir, cli_storage_dir_name, job_id) // extra protection to prevent entry from ever being blank.
       var   tmp_host_root = ""
       // 3. copy result data to temporary location -----------------------------
       if(old_job_object.hostRoot) {
@@ -97,21 +97,23 @@ export default class Shell extends JobCommand {
         const new_job_object = JSTools.rMerge(JSTools.rCopy(old_job_object), {
           command: this.settings.get("default_shell"),
           synchronous: false,
-          remove: flags.discard
+          removeOnExit: flags.discard
         })
         if(old_job_object.hostRoot) new_job_object.hostRoot = tmp_host_root
         var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
           (configuration) => {
+            if(flags.message) configuration.addLabel("message", flags.message)
+            addJobInfoLabel(configuration, new_job_object)
             var result = runner.jobStart(stack_path, new_job_object, configuration.runObject())
-            writeJSONJobFile(this.job_json, result, new_job_object)
             if(result.success) new_job_id = result.data
+            else printResultState(result)
           })
       }
-      // 5. remove temp dir --------------------------------------------------
+      // 5. remove temp dir ----------------------------------------------------
       if(old_job_object.hostRoot && tmp_storage_path != "/") {
           fs.removeSync(tmp_storage_path)
       }
-      // 6. attach to job ----------------------------------------------------
+      // 6. attach to job ------------------------------------------------------
       if(new_job_id) runner.jobAttach(new_job_id)
 
     }

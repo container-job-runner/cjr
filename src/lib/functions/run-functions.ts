@@ -286,6 +286,23 @@ export function readJobInfoLabel(job: Dictionary)
 }
 
 // -----------------------------------------------------------------------------
+// readJobInfoLabel parses json for jobinfo label
+// -- Parameters ---------------------------------------------------------------
+// job_info: Array<Dictionary> - result (possibly filtered) returned by runner.jobInfo
+// -----------------------------------------------------------------------------
+export function validJobInfoLabel(job: Dictionary)
+{
+  try
+  {
+    return new ValidatedOutput(true, JSON.parse(job?.labels?.jobinfo))
+  }
+  catch (e)
+  {
+    return new ValidatedOutput(false, [], [ErrorStrings.JOBINFOLABEL.INVALIDJSON])
+  }
+}
+
+// -----------------------------------------------------------------------------
 // JOBTOIMAGE creates an image from a running or completed job. If image_name is
 // blank it will overwrite stack image
 // -- Parameters ---------------------------------------------------------------
