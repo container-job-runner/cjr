@@ -7,7 +7,7 @@ import {StackCommand, Dictionary} from '../lib/commands/stack-command'
 import {IfBuiltAndLoaded} from '../lib/functions/run-functions'
 import {cli_bundle_dir_name, project_settings_folder, project_settings_file, projectSettingsYMLPath} from '../lib/constants'
 import {printResultState} from '../lib/functions/misc-functions'
-import {ShellCMD} from '../lib/shellcmd'
+import {ShellCommand} from '../lib/shell-command'
 import {FileTools} from '../lib/fileio/file-tools'
 import {YMLFile} from '../lib/fileio/yml-file'
 
@@ -45,16 +45,17 @@ export default class Bundle extends StackCommand {
     const stack_name = builder.stackName(stack_path)
     result = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name)) // tmp directory that stores bundle - extra protection to prevent entry from ever being blank.
     if(!result.success) return printResultState(result)
-    const temp_dir_path = result.data
+    const temp_dir = result.data
+    const bundle_path = (flags.hostRoot) ? path.join(temp_dir, path.basename(flags.hostRoot)) : temp_dir
 
     // -- get filenames and paths ----------------------------------------------
-    const settings_dir      = path.join(temp_dir_path, project_settings_folder)  // directory that stores project settings yml & stack
+    const settings_dir      = path.join(bundle_path, project_settings_folder)  // directory that stores project settings yml & stack
     const new_stack_path    = path.join(settings_dir, stack_name)                // location of copied stack
-    const settings_yml_path = projectSettingsYMLPath(temp_dir_path)              // location of settings yml
+    const settings_yml_path = projectSettingsYMLPath(bundle_path)              // location of settings yml
 
     // -- copy project files to bundle (remove any existing settings directory)
     if(copy_files) {
-      fs.copySync(flags.hostRoot, temp_dir_path)
+      fs.copySync(flags.hostRoot, bundle_path)
       fs.removeSync(settings_dir)
     }
 
@@ -68,7 +69,7 @@ export default class Bundle extends StackCommand {
     if(!result.success) return printResultState(result);
 
     // -- copy bundle to user specified location -------------------------------
-    const bundle_src_path = (copy_files) ? temp_dir_path : settings_dir         // root folder for bundle
+    const bundle_src_path = (copy_files) ? bundle_path : settings_dir         // root folder for bundle
     const bundle_dest_path = this.bundleDestPath(flags, argv, copy_files)       // final location for user
 
     // -- save bundle files ----------------------------------------------------
@@ -82,7 +83,7 @@ export default class Bundle extends StackCommand {
     }
 
     // -- remove temp_dir ------------------------------------------------------
-    fs.removeSync(temp_dir_path)
+    fs.removeSync(temp_dir)
   }
 
   async allowOverwrite(bundle_dest_path: string, interactive: boolean)
@@ -109,18 +110,18 @@ export default class Bundle extends StackCommand {
 
   zip(source_dir: string, destination: string, explicit:boolean)
   {
-    const shell = new ShellCMD(explicit, false)
-    const cmd_flags = {'r': {shorthand: true}, 'q': {shorthand: true}}
+    const shell = new ShellCommand(explicit, false)
+    const cmd_flags = {'r': {}, 'q': {}}
     const cmd_args  = [destination, path.basename(source_dir)]
-    shell.sync('zip', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})
+    shell.exec('zip', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})
   }
 
   tar(source_dir: string, destination: string, explicit:boolean)
   {
-    const shell = new ShellCMD(explicit, false)
+    const shell = new ShellCommand(explicit, false)
     const cmd_flags = {'czf': {shorthand: true}}
     const cmd_args  = [destination, path.basename(source_dir)]
-    shell.sync('tar', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})
+    shell.exec('tar', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})
   }
 
 }
