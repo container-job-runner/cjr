@@ -44,7 +44,7 @@ export class DockerRunDriver extends RunDriver
   }
 
   protected STATUSSTRING = {
-    COPY : (container_id: string, container_path: string, host_path) =>
+    COPY : (container_id: string, container_path: string, host_path: string) =>
       chalk` copy {green ${container_id}:${container_path}}\n   to {green ${host_path}}`
   }
 
