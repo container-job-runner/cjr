@@ -36,7 +36,7 @@ export default class Labels extends StackCommand {
       var id = argv[0] || await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || ""
       var result = matchingJobInfo(runner, id, stack_path)
       if(result.success) job_info = result.data
-      else return printResultState(result)
+      else return (flags.json) ? console.log("{}") : printResultState(result)
     }
 
     var data:Dictionary = {}
