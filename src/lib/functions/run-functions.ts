@@ -23,24 +23,6 @@ import {ps_vo_validator} from '../config/project-settings/project-settings-schem
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-// turns argv array into a properly escaped command string
-export function bashEscapeArgs(argv: Array<string>)
-{
-  return argv.map((a:string) => bashEscape(a))
-}
-
-// wraps a string in single quotes for bash, multiple times:
-// Based on shell-escape (https://www.npmjs.com/package/shell-escape)
-export function bashEscape(value: string, iterations: number = 1)
-{
-  for(var i = 0; i < iterations; i ++) {
-    value = `'${value.replace(/'/g, "'\\''")}'`
-      .replace(/^(?:'')+/g, '')   // unduplicate single-quote at the beginning
-      .replace(/\\'''/g, "\\'" ); // remove non-escaped single-quote if there are enclosed between 2 escaped
-  }
-  return value;
-}
-
 // -----------------------------------------------------------------------------
 // FILTERJOBINFOBYID filters the output of RunDriver.jobInfo() and returns all
 // jobs whose ID begins with the characters in the passed parameter "id"
@@ -345,7 +327,7 @@ export function prependXAuth(command: string, explicit: boolean = false)
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
     const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command].join(" && ")
-    return bashEscape(`bash -c ${bashEscape(script)}`)
+    return ShellCommand.bashEscape(`bash -c ${ShellCommand.bashEscape(script)}`)
   }
   return command
 }
