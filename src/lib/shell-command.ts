@@ -19,65 +19,84 @@ type Dictionary = {[key: string]: any}
 
 export class ShellCommand
 {
-    _explicit: boolean // if true then commands are printed before execution
-    _silent: boolean   // if true then no output will be shown and std_out will not be attached
-    _escape_args: boolean  = true
-    _escape_flags: boolean = true
+    explicit: boolean // if true then commands are printed before execution
+    silent: boolean   // if true then no output will be shown and std_out will not be attached
+    escape_args: boolean  = true
+    escape_flags: boolean = true
 
-    ErrorStrings = {
+    private ErrorStrings = {
       INVALID_JSON: chalk`{bold Invalid JSON} - shell output did not contain valid JSON.`,
       INVALID_LINEJSON: chalk`{bold INVALID LINE JSON} - shell output did not contain valid Line JSON.`
     }
 
+    private spawn_options = ['cwd', 'input', 'argv0', 'stdio', 'env', 'uid', 'gid', 'timeout', 'killSignal', 'maxBuffer', 'encoding', 'shell']
+
     constructor(explicit: boolean, silent: boolean)
     {
-      this._explicit = explicit;
-      this._silent = silent;
+      this.explicit = explicit;
+      this.silent = silent;
     }
 
     // Launches a syncronous command. Defaults to in a shell, which either stdio inherit
+    // EXAMPLES:
+    // shell.exec('echo', {}, ['$PATH']) // echo '$PATH' (escapes $PATH)
+    // shell.exec('ls', {l:{}}, []) // ls -l
+    // shell.exec('command', {flag: {value: 'val', escape: false}}) // command --flag=val
+    // shell.exec('command', {flag: ['val']}) // command --flag='val'
+    // shell.exec('command', {flag: ['val1','val2']}) // command --flag='val1' --flag='val2'
+    // shell.exec('command', {flag: {value: 'balls', noequals: true}})  // command --flag 'val1'
 
     exec(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {})
     {
-      const command_string = this.commandString(command, flags, args)
+      const command_string = this.commandString(command, flags, args, options)
       const default_options:Dictionary = {stdio : 'inherit', shell: '/bin/bash'}
-      if(this._silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
+      if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
       this.printCommand(command_string)
-      return spawnSync(command_string, [], {... default_options, ...options})
+      const child_process = spawnSync(command_string, [], JSTools.oSubset({... default_options, ...options}, this.spawn_options))
+      const result = new ValidatedOutput(true, child_process)
+      // -- check if exit-code is non zero -------------------------------------
+      if(child_process.status != 0) {
+        result.pushError(child_process?.stderr?.toString('ascii'))
+      }
+      return result
+    }
+
+    execAsync(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {})
+    {
+      const command_string = this.commandString(command, flags, args, options)
+      const default_options:Dictionary = {stdio : 'pipe', shell: '/bin/bash'}
+      if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
+      this.printCommand(command_string)
+      return new ValidatedOutput(
+        true,
+        spawn(command_string, [], JSTools.oSubset({... default_options, ...options}, this.spawn_options))
+      )
     }
 
     // Launches a syncronous command in a shell and returns output string
 
     output(command: string, flags: object, args: Array<string>, options:Dictionary = {}, post_process="")
     {
-      var child_process = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', encoding: 'buffer'}})
-
-      // -- exit with failure if exit-code is non zero -------------------------
-      if(child_process.status != 0) {
-        const stderr_str = child_process?.stderr?.toString('ascii')
-        return new ValidatedOutput(false, child_process, [stderr_str])
-      }
+      const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer'}})
+      if(!result.success) return result
 
       // process stdout --------------------------------------------------------
+      const child_process = result.data
       const stdout_str = child_process?.stdout?.toString('ascii')
-      var result = new ValidatedOutput(true, stdout_str);
       switch(post_process)
       {
         case 'json':
-          result = this.parseJSON(result)
-          break
+          return this.parseJSON(stdout_str)
         case 'line_json':
-          result = this.parseLineJSON(result)
-          break
+          return this.parseLineJSON(stdout_str)
         case 'trim':
-          result = this.trimOutput(result)
-          break
+          return this.trimOutput(stdout_str)
         default:
+          return new ValidatedOutput(true, stdout_str)
       }
-      return result;
     }
 
-    commandString(command: string, flags: Dictionary, args: Array<string>)
+    commandString(command: string, flags: Dictionary, args: Array<string>, options:Dictionary={})
     {
       // HELPER: wraps variable in array
       const arrayWrap = (x:any) => (JSTools.isArray(x)) ? x : [x]
@@ -93,25 +112,24 @@ export class ShellCommand
       for(var key in flags) {
         props = flags[key]
         shorthand = (props?.hasOwnProperty('shorthand')) ? props.shorthand : (key.length == 1) // by default intepret keys with one letter as shorthand
-        escape    = (props?.hasOwnProperty('escape')) ? props.escape : this._escape_flags
+        escape    = (props?.hasOwnProperty('escape')) ? props.escape : this.escape_flags
         value     = ""
         if(JSTools.isString(props) || JSTools.isArray(props)) value = props
         else if(JSTools.isObject(props)) value = props.value
         flag_arr  = arrayWrap(value).map((v:string) => flagString(v, key, shorthand, escape, props?.noequals || false))
         cmdstr   += flag_arr.join(" ")
       }
-      return `${cmdstr} ${(this._escape_args) ? ShellCommand.bashEscapeArgs(args).join(" ") : args.join(" ")}`;
+      return `${cmdstr} ${(this.escape_args) ? ShellCommand.bashEscapeArgs(args).join(" ") : args.join(" ")}`;
     }
 
     // == Start Output PostProcess Functions ===================================
 
     // checks if output is json and returns json data or returns failed result
-    private parseJSON(result:ValidatedOutput)
+    private parseJSON(stdout:string)
     {
-      if(!result.success) return result
       try
       {
-        return new ValidatedOutput(true, JSON.parse(result.data))
+        return new ValidatedOutput(true, JSON.parse(stdout))
       }
       catch(e)
       {
@@ -120,12 +138,11 @@ export class ShellCommand
     }
 
     // checks if each line of the output is json and returns an array of json data or returns failed result
-    private parseLineJSON(result:ValidatedOutput)
+    private parseLineJSON(stdout:string)
     {
-      if(!result.success) return result
       try
       {
-        return new ValidatedOutput(true, result.data.split("\n")
+        return new ValidatedOutput(true, stdout.split("\n")
           .filter((e:string) => e !== "") // remove empty strings
           .map((e:string) => JSON.parse(e)) // parse each line
         )
@@ -137,17 +154,16 @@ export class ShellCommand
     }
 
     // trims any whitespace from output
-    private trimOutput(result:ValidatedOutput)
+    private trimOutput(stdout:string)
     {
-      if(!result.success) return result
-      return new ValidatedOutput(true, result.data.trim())
+      return new ValidatedOutput(true, stdout.trim())
     }
 
     // == Console Log Functions ================================================
 
     private printCommand(command: string)
     {
-      if(this._explicit && !this._silent)
+      if(this.explicit && !this.silent)
         console.log(` ${command}`)
     }
 
