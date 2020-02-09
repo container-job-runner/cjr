@@ -43,6 +43,11 @@ export class DockerRunDriver extends RunDriver
     EMPTY_CREATE_ID: chalk`{bold Unable to create container.}`
   }
 
+  protected STATUSSTRING = {
+    COPY : (container_id: string, container_path: string, host_path) =>
+      chalk` copy {green ${container_id}:${container_path}}\n   to {green ${host_path}}`
+  }
+
   // job functions
 
   jobStart(stack_path: string, job_options: Dictionary, run_options: Dictionary={}){
@@ -111,10 +116,10 @@ export class DockerRunDriver extends RunDriver
     return this.shell.exec(command, flags, args)
   }
 
-  protected copyFromContainer(id: string, hostPath: string, containerPath: string)
+  protected copyFromContainer(container_id: string, containerPath: string, hostPath: string)
   {
     const command = `${this.base_command} ${this.sub_commands["copy"]}`;
-    const args = [`${id}:${containerPath}`, hostPath]
+    const args = [`${container_id}:${containerPath}`, hostPath]
     const flags = {}
     return this.shell.exec(command, flags, args)
   }
@@ -210,7 +215,7 @@ export class DockerRunDriver extends RunDriver
     }) : {};
   }
 
-  jobCopy(id: string, job_object: Dictionary, copy_all: boolean = false)
+  jobCopy(id: string, job_object: Dictionary, copy_all: boolean = false, verbose: boolean = false)
   {
     var result = this.job_copy_validator(job_object)
     if(!result.success)
@@ -220,27 +225,31 @@ export class DockerRunDriver extends RunDriver
     const containerRoot = job_object?.containerRoot
     const resultPaths = job_object?.resultPaths
 
-    if(hostRoot === undefined || containerRoot === undefined) // no copy necessary
+    if(!hostRoot || !containerRoot) // no copy necessary
       return new ValidatedOutput(true)
 
     const hostRoot_dirname = path.dirname(hostRoot)
     const hostRoot_basename = path.basename(hostRoot)
     const copy_all_flag = copy_all || resultPaths === undefined;
 
-    const container_copyfrom_paths = (copy_all_flag) ?
-      [path.posix.join(containerRoot, hostRoot_basename)] :
-      resultPaths.map((x:string) => path.posix.join(containerRoot, hostRoot_basename, x));
-    const host_copyto_paths = (copy_all_flag) ?
-      [job_object?.hostCopyPath || hostRoot_dirname] :
-      resultPaths.map((x:string) => path.posix.dirname(path.posix.join(job_object?.hostCopyPath || hostRoot, x)));
+    // -- determine host and container copy paths ------------------------------
+    const cp_paths:Array<Dictionary> = (copy_all_flag) ? // -- copy all files --
+        [{
+          container: path.posix.join(containerRoot, hostRoot_basename),
+          host: job_object?.hostCopyPath || hostRoot_dirname
+        }] : // -- only copy each result folder --------------------------------
+        resultPaths.map((x:string) => {
+          return {
+            container: path.posix.join(containerRoot, hostRoot_basename, x),
+            host: path.posix.dirname(path.posix.join(job_object?.hostCopyPath || hostRoot, x))
+          }
+        });
 
-    console.log("copy from:\t", container_copyfrom_paths)
-    console.log("copy to:\t", host_copyto_paths)
-
-    for(var i = 0; i < container_copyfrom_paths.length; i ++)
-    {
-      this.copyFromContainer(id, host_copyto_paths[i], container_copyfrom_paths[i])
-    }
+   // -- copy files ------------------------------------------------------------
+   cp_paths.map((o:Dictionary) => {
+     this.copyFromContainer(id, o.container, o.host)
+     if(verbose) console.log(this.STATUSSTRING.COPY(id, o.container, o.host))
+   })
 
     return new ValidatedOutput(true)
   }

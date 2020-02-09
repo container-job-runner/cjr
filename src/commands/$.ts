@@ -61,8 +61,10 @@ export default class Run extends StackCommand {
         var result = runner.jobStart(stack_path, job_object, configuration.runObject())
         if(result.success) job_id = result.data
         // -- copy results if autocopy flags are active ------------------------
-        if(result.success && (flags.autocopy || flags["autocopy-all"]))
-          result = runner.jobCopy(job_id, job_object, flags["autocopy-all"])
+        if(result.success && (flags.autocopy || flags["autocopy-all"])) {
+          this.printCopyHeader(flags.verbose)
+          result = runner.jobCopy(job_id, job_object, flags["autocopy-all"], flags.verbose)
+        }
 
         return result;
       })
@@ -80,6 +82,7 @@ export default class Run extends StackCommand {
   }
 
   printBuildHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Build Output} ${'-'.repeat(48)}`); }
+  printCopyHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Copy Output} ${'-'.repeat(49)}`); }
   printJobHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Job Output} ${'-'.repeat(50)}`); }
   printIDHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Job ID} ${'-'.repeat(54)}`); }
 

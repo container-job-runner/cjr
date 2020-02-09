@@ -10,6 +10,7 @@ export default class Copy extends StackCommand {
     stack: flags.string({env: 'STACK'}),
     "copy-path": flags.string({description: "overides job default copy path"}),
     explicit: flags.boolean({default: false}),
+    verbose: flags.boolean({default: false}),
     all: flags.boolean({default: false}),
   }
   static strict = true;
@@ -29,7 +30,7 @@ export default class Copy extends StackCommand {
     job_info.map((job:Dictionary) => {
       const info_label = readJobInfoLabel(job)
       if(flags["copy-path"]) info_label["hostCopyPath"] = flags["copy-path"]
-      result = runner.jobCopy(job.id, info_label, flags["all"])
+      result = runner.jobCopy(job.id, info_label, flags["all"], flags.verbose)
       if(!result.success) return printResultState(result)
     })
   }
