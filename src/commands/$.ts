@@ -32,7 +32,7 @@ export default class Run extends StackCommand {
     const builder    = this.newBuilder(flags.explicit, !flags.verbose)
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
-    const command    = ShellCommand.bashEscapeArgs(argv).join(" ")
+    const command    = argv.join(" ")
     const build_mode = this.buildMode(flags)
     var   job_id     = ""
 
