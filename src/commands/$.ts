@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {Dictionary, StackCommand} from '../lib/commands/stack-command'
-import {bashEscapeArgs, IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, addJobInfoLabel} from '../lib/functions/run-functions'
+import {ShellCommand} from '../lib/shell-command'
+import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, addJobInfoLabel} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 import {JSTools} from '../lib/js-tools'
 import * as chalk from 'chalk'
@@ -20,7 +21,7 @@ export default class Run extends StackCommand {
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
     autocopy: flags.boolean({default: false, exclusive: ["async", "autocopy-all"], description: "automatically copy files back to hostRoot on exit"}),
     "autocopy-all": flags.boolean({default: false, exclusive: ["async", "autocopy"], description: "automatically copy all files results back to hostRoot on exit"}),
-    "skip-rebuild": flags.boolean({default: false, description: "does not rebuild stack before running job"}),
+    "no-rebuild": flags.boolean({default: false, description: "does not rebuild stack before running job"}),
     "build-nocache": flags.boolean({default: false, exclusive: ["no-rebuild"], description: "rebuilds stack with no-cache flag active"})
   }
   static strict = false;
@@ -31,7 +32,7 @@ export default class Run extends StackCommand {
     const builder    = this.newBuilder(flags.explicit, !flags.verbose)
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
-    const command    = bashEscapeArgs(argv).join(" ")
+    const command    = ShellCommand.bashEscapeArgs(argv).join(" ")
     const build_mode = this.buildMode(flags)
     var   job_id     = ""
 
@@ -73,7 +74,7 @@ export default class Run extends StackCommand {
 
   buildMode(flags: Dictionary)
   {
-    if(flags["skip-rebuild"]) return "skip-rebuild"
+    if(flags["no-rebuild"]) return "no-rebuild"
     if(flags["build-nocache"]) return 'build-nocache'
     return "build"
   }
