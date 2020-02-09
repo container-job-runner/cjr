@@ -21,7 +21,7 @@ export class FileTools
   // creates a temporary directory inside parent_abs_path
   static mktempDir(parent_abs_path: string, shell:ShellCommand = new ShellCommand(false, false))
   {
-    fs.ensureDir(parent_abs_path)
+    fs.ensureDirSync(parent_abs_path)
     switch(os.platform())
     {
       case "darwin":
@@ -33,7 +33,7 @@ export class FileTools
         }
         return shell.output('mktemp', flags, [], {}, "trim")
       default: // not thread safe
-        var data = fs.ensureDir(path.join(parent_abs_path, `tmp.${JSTools.randomString(10)}`))
+        var data = fs.ensureDirSync(path.join(parent_abs_path, `tmp.${JSTools.randomString(10)}`))
         return new ValidatedOutput(true, data)
     }
   }
