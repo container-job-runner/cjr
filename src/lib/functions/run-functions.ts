@@ -501,9 +501,7 @@ export function printVerticalTable(configuration: Dictionary)
   const printRow = (row: Array<string>) => {
     console.log(
       row.map(
-        (s:string, index:number) => chalk.italic(
-          JSTools.clipAndPad(s, t_widths[index], c_widths[index], s_clip[index])
-        )
+        (s:string, index:number) => JSTools.clipAndPad(s, t_widths[index], c_widths[index], s_clip[index])
       ).join("")
     )
   }
@@ -535,7 +533,7 @@ export function printHorizontalTable(configuration: Dictionary)
         content.map((line:string, line_index:number) => {
           const header = (line_index == 0) ? r_headers[header_index] : "" // header only prints on first line
           console.log( // print header + data
-            chalk.italic(JSTools.clipAndPad(header, t_widths[0], c_widths[0], true)) +
+            JSTools.clipAndPad(header, t_widths[0], c_widths[0], true) +
             JSTools.clipAndPad(line, t_widths[1], c_widths[1], true)
           )
         })
