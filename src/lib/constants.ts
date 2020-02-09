@@ -4,6 +4,9 @@ import * as os from 'os'
 //cli names
 export const cli_name = "cjr"
 
+// labels
+export const job_info_label = "jobinfo"
+
 // flag message
 export const invalid_stack_flag_error = "specify stack flag --stack=stack or set environment variable STACK"
 

@@ -13,7 +13,7 @@ import {YMLFile} from '../fileio/yml-file'
 import {ValidatedOutput} from '../validated-output'
 import {printResultState} from './misc-functions'
 import {ShellCommand} from '../shell-command'
-import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, project_settings_folder, projectSettingsYMLPath, default_settings_object} from '../constants'
+import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, project_settings_folder, projectSettingsYMLPath, default_settings_object, job_info_label} from '../constants'
 import {buildIfNonExistant} from '../functions/build-functions'
 import {ErrorStrings, WarningStrings} from '../error-strings'
 import {PodmanConfiguration} from '../config/podman/podman-configuration'
@@ -244,7 +244,7 @@ export function enableX11(configuration: Configuration, explicit:boolean = false
 // -----------------------------------------------------------------------------
 export function addJobInfoLabel(configuration: Configuration, job_object: Dictionary)
 {
-  configuration.addLabel('jobinfo',
+  configuration.addLabel(job_info_label,
     JSON.stringify(
       JSTools.oSubset(job_object, ['hostRoot', 'containerRoot', 'resultPaths'])
     ))
@@ -259,7 +259,7 @@ export function readJobInfoLabel(job: Dictionary)
 {
   try
   {
-    return JSON.parse(job?.labels?.jobinfo)
+    return JSON.parse(job?.labels?.[job_info_label])
   }
   catch (e)
   {
