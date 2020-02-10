@@ -9,24 +9,25 @@ export default class Shell extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
-    containerRoot: flags.string(),
+    configFiles: flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     save: flags.string({description: "saves new image that contains modifications"}),
     port: flags.string({default: [], multiple: true}),
-    x11: flags.boolean({default: false})
+    x11: flags.boolean({default: false}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = true;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Shell, true)
-    const builder  = this.newBuilder(flags.explicit)
+    const {argv, flags} = this.parseWithLoad(Shell, {stack:true, configFiles: false, hostRoot:false})
+    const builder = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
     // if save is empty overwrite stack image
     if(flags.save === "") flags.save = builder.imageName(stack_path)
 
-    let result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
+    let result = IfBuiltAndLoaded(builder, "no-rebuild", {hostRoot: flags?.hostRoot}, stack_path, flags.configFiles,
       (configuration, containerRoot, hostRoot) => {
         bindHostRoot(configuration, containerRoot, hostRoot);
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())

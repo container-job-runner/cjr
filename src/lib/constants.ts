@@ -1,5 +1,6 @@
 import * as path from 'path'
 import * as os from 'os'
+import * as chalk from 'chalk'
 
 //cli names
 export const cli_name = "cjr"
@@ -8,7 +9,8 @@ export const cli_name = "cjr"
 export const job_info_label = "jobinfo"
 
 // flag message
-export const invalid_stack_flag_error = "specify stack flag --stack=stack or set environment variable STACK"
+//export const invalid_stack_flag_error = "specify stack flag --stack=stack or set environment variable STACK"
+export const missingFlagError = (flags: Array<string>) => chalk`The following flags could not be set automatically and must be specified manually: \n {italic ${flags.map((f:string, i:number) => `${i+1}. ${f}`).join("\n")}}`
 
 // name of files and directories in cli settings directory
 export const cli_settings_yml_name = "settings"
@@ -48,7 +50,8 @@ export const defaultCLISettings = (settings_dir:string) =>
       run_cmd: cmd,
       image_tag: cli_name,
       default_shell: "bash",
-      interactive: true
+      interactive: true,
+      auto_hostroot: true
   }
 }
 

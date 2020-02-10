@@ -17,7 +17,7 @@ export default class Stop extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Stop, true)
+    const {argv, flags} = this.parseWithLoad(Stop, {stack:true})
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 

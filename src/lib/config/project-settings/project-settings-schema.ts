@@ -7,6 +7,7 @@ export const project_settings_schema = {
   "description": "Scheme for optional file .cjr/settings.yml",
   "type": "object",
   "properties": {
+    "hostRoot" : {"$ref": "#/definitions/hostRoot"},
     "stack": {"$ref": "#/definitions/path"},
     "configFiles": {"$ref": "#/definitions/configFiles"}
   },
@@ -19,6 +20,10 @@ export const project_settings_schema = {
       "items": {
         "anyOf" : [ {"$ref": "#/definitions/path"} ]
       }
+    },
+    "hostRoot": {
+      "type": "string",
+      "pattern": "^auto$"
     }
   }
 }

@@ -11,13 +11,14 @@ export default class List extends StackCommand {
     explicit: flags.boolean({default: false}),
     json: flags.boolean({default: false}),
     verbose: flags.boolean({default: false}),
-    all: flags.boolean({default: false}) //if true shows jobs from all cjr stacks, regardless of whether stack is set
+    all: flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = true;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(List, false)
+    const {argv, flags} = this.parseWithLoad(List, {stack:false})
     const runner  = this.newRunner(flags.explicit)
     const stack_path = (!flags.all && flags.stack) ? this.fullStackPath(flags.stack) : ""
     const jobs = runner.jobInfo(stack_path)

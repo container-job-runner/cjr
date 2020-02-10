@@ -4,27 +4,28 @@ import {StackCommand, Dictionary} from '../lib/commands/stack-command'
 import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, addJobInfoLabel} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 
-export default class Run extends StackCommand {
+export default class Stash extends StackCommand {
   static description = 'Save current project state as a result.'
   static flags = {
     stack: flags.string({env: 'STACK'}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
-    containerRoot: flags.string(),
+    configFiles: flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     message: flags.string({description: "optional message to describes the job"}),
     explicit: flags.boolean({default: false}),
-    silent: flags.boolean({default: false}) // if selected will not print out job id
+    silent: flags.boolean({default: false}), // if selected will not print out job id
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Run, true)
+    const {argv, flags} = this.parseWithLoad(Stash, {stack:true, configFiles: false, hostRoot:true})
     const builder    = this.newBuilder(flags.explicit)
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
     var   job_id     = false
 
-    var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
+    var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, flags.configFiles,
       (configuration, containerRoot, hostRoot) => {
 
         configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.

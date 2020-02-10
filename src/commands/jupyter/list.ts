@@ -17,7 +17,7 @@ export default class List extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(List, true)
+    const {argv, flags} = this.parseWithLoad(List, {stack:true})
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 

@@ -103,7 +103,8 @@ export default class Shell extends StackCommand {
         var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
           (configuration) => {
             if(flags.message) configuration.addLabel("message", flags.message)
-            addJobInfoLabel(configuration, new_job_object)
+            const jobinfo_label = (old_job_object.hostRoot) ?  {...new_job_object, ...{hostRoot: old_job_object.hostRoot}} : new_job_object; // add original host root to new job
+            addJobInfoLabel(configuration, jobinfo_label)
             var result = runner.jobStart(stack_path, new_job_object, configuration.runObject())
             if(result.success) new_job_id = result.data
             else printResultState(result)

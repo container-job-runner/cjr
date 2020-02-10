@@ -7,6 +7,7 @@ import * as path from 'path'
 import Command from '@oclif/command'
 import * as chalk from 'chalk'
 import {Settings} from '../settings'
+import {JSTools} from '../js-tools'
 import {DockerBuildDriver} from '../drivers/docker/docker-build-driver'
 import {PodmanBuildDriver} from '../drivers/podman/podman-build-driver'
 import {BuildahBuildDriver} from '../drivers/buildah/buildah-build-driver'
@@ -15,11 +16,11 @@ import {PodmanRunDriver} from '../drivers/podman/podman-run-driver'
 import {ShellCommand} from '../shell-command'
 import {FileTools} from '../fileio/file-tools'
 import {YMLFile} from '../fileio/yml-file'
-import {invalid_stack_flag_error} from '../constants'
+import {missingFlagError} from '../constants'
 import {ValidatedOutput} from '../validated-output'
 import {WarningStrings} from '../error-strings'
 import {printResultState} from '../../lib/functions/misc-functions'
-import {loadProjectSettings} from '../../lib/functions/run-functions'
+import {loadProjectSettings, scanForSettingsDirectory} from '../../lib/functions/run-functions'
 
 // -- types --------------------------------------------------------------------
 export type Dictionary = {[key: string]: any}
@@ -27,25 +28,31 @@ export type Dictionary = {[key: string]: any}
 export abstract class StackCommand extends Command
 {
   protected settings = new Settings(this.config.configDir)
-  protected project_settings:Dictionary = {}
 
   fullStackPath(user_path: string) // leaves existent full path intact or generates full stack path from shortcut
   {
     return (fs.existsSync(user_path)) ? user_path : path.join(this.settings.get("stacks_path"), user_path)
   }
 
-  parseWithLoad(C:any, stack_flag_required:boolean = false)// overload parse command to allow for auto setting of stack flag
+  parseWithLoad(C:any, flag_props: {[key: string]: boolean}) // overload parse command to allow for auto setting of stack flag
   {
     const parse_object:Dictionary = this.parse(C)
-    const result = loadProjectSettings(parse_object?.flags?.hostRoot)
-    printResultState(result)
-    if(result.success) this.project_settings = result.data
-    // if flags.stack is undefined set to project.settings.stack
-    if(!parse_object?.flags?.stack && this.project_settings?.stack) {
-         parse_object.flags.stack = this.project_settings.stack
+    // -- exit if no-autoload flag is enabled ----------------------------------
+    if(parse_object.flags?.['no-autoload']) return parse_object
+    // -- load settings and augment flags  -------------------------------------
+    var result = new ValidatedOutput(false)
+    if(!parse_object.flags?.hostRoot && this.settings.get('auto_hostroot'))
+      result = scanForSettingsDirectory(process.cwd())
+    else if(!parse_object.flags?.hostRoot)
+      result = loadProjectSettings(parse_object.flags.hostRoot)
+    if(result.success) parse_object.flags = {
+      ...parse_object.flags,
+      ...JSTools.oSubset(result.data, Object.keys(flag_props))
     }
-    // exit with error if flags.stack is empty and stack is required
-    if(stack_flag_required && !parse_object?.flags?.stack) this.error(invalid_stack_flag_error)
+    // -- exit if required flags are missing -----------------------------------
+    const required_flags = Object.keys(flag_props).filter((name:string) => flag_props[name])
+    const missing_flags  = required_flags.filter((name:string) => !parse_object.flags.hasOwnProperty(name))
+    if(missing_flags.length != 0) this.error(missingFlagError(missing_flags))
     return parse_object
   }
 

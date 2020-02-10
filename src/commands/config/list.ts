@@ -13,7 +13,7 @@ export default class List extends StackCommand {
     for(var key in raw_data) {
       console.log(chalk`  {italic ${key}}:\t${raw_data[key]}`)
     }
-    this.log(chalk`\n-- {bold CLI Data Path:} stores job information ----\n  ${this.config.dataDir}`)
+    this.log(chalk`\n-- {bold CLI Data Path:} stores temporary job data ----\n  ${this.config.dataDir}`)
     this.log(chalk`\n-- {bold CLI Config Path:} stores ${cli_settings_yml_name}.yml -----\n  ${this.config.configDir}`, '\n')
 
   }

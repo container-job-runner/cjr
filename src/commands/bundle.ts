@@ -17,20 +17,22 @@ export default class Bundle extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
+    configFiles: flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     all: flags.boolean({default: false, description: 'include project files in bundle'}),
     zip: flags.boolean({default: false, exclusive: ['tar'], description: 'produces one .zip file (requires gzip)'}),
     tar:  flags.boolean({default: false, exclusive: ['zip'], description: 'produces one .tar.gz file (requires zip)'}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Bundle, true)
+    const {argv, flags} = this.parseWithLoad(Bundle, {stack:true, configFiles: false, hostRoot:false})
     const builder    = this.newBuilder(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
 
-    var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
+    var result = IfBuiltAndLoaded(builder, "no-rebuild", {hostRoot: flags?.hostRoot}, stack_path, flags.configFiles,
       (configuration, containerRoot, hostRoot) => {
         var result = configuration.bundle(stack_path);
         printResultState(result); // print any warnings from bundle

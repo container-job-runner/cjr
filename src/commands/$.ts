@@ -12,7 +12,7 @@ export default class Run extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
-    containerRoot: flags.string(),
+    configFiles: flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     async: flags.boolean({default: false}),
     verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}), // if selected will not print out job id
@@ -22,13 +22,14 @@ export default class Run extends StackCommand {
     autocopy: flags.boolean({default: false, exclusive: ["async", "autocopy-all"], description: "automatically copy files back to hostRoot on exit"}),
     "autocopy-all": flags.boolean({default: false, exclusive: ["async", "autocopy"], description: "automatically copy all files results back to hostRoot on exit"}),
     "no-rebuild": flags.boolean({default: false, description: "does not rebuild stack before running job"}),
-    "build-nocache": flags.boolean({default: false, exclusive: ["no-rebuild"], description: "rebuilds stack with no-cache flag active"})
+    "build-nocache": flags.boolean({default: false, exclusive: ["no-rebuild"], description: "rebuilds stack with no-cache flag active"}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Run, true)
+    const {argv, flags} = this.parseWithLoad(Run, {stack:true, configFiles: false, hostRoot:false})
     const builder    = this.newBuilder(flags.explicit, !flags.verbose)
     const runner     = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack)
@@ -36,8 +37,8 @@ export default class Run extends StackCommand {
     const build_mode = this.buildMode(flags)
     var   job_id     = ""
 
-    this.printBuildHeader(flags.verbose)
-    var result = IfBuiltAndLoaded(builder, build_mode, flags, stack_path, this.project_settings.configFiles,
+    this.printStatus(flags.verbose, "Build Output")
+    var result = IfBuiltAndLoaded(builder, build_mode, {hostRoot: flags?.hostRoot}, stack_path, flags.configFiles,
       (configuration, containerRoot, hostRoot) => {
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
         addPorts(configuration, flags.port)
@@ -57,18 +58,18 @@ export default class Run extends StackCommand {
         // label job with important information
         addJobInfoLabel(configuration, job_object)
 
-        this.printJobHeader(flags.verbose)
+        this.printStatus(flags.verbose, "Job Output")
         var result = runner.jobStart(stack_path, job_object, configuration.runObject())
         if(result.success) job_id = result.data
         // -- copy results if autocopy flags are active ------------------------
         if(result.success && (flags.autocopy || flags["autocopy-all"])) {
-          this.printCopyHeader(flags.verbose)
+          this.printStatus(flags.verbose, "Copy Output")
           result = runner.jobCopy(job_id, job_object, flags["autocopy-all"], flags.verbose)
         }
 
         return result;
       })
-    this.printIDHeader(flags.verbose)
+    this.printStatus(flags.verbose, "Job ID")
     if(job_id !== "" && (flags.async || flags.verbose)) console.log(job_id)
     printResultState(result);
 
@@ -81,9 +82,8 @@ export default class Run extends StackCommand {
     return "build"
   }
 
-  printBuildHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Build Output} ${'-'.repeat(48)}`); }
-  printCopyHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Copy Output} ${'-'.repeat(49)}`); }
-  printJobHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Job Output} ${'-'.repeat(50)}`); }
-  printIDHeader(verbose: boolean) {if(verbose) console.log(chalk`-- {bold Job ID} ${'-'.repeat(54)}`); }
+  printStatus(verbose: boolean, message: string, line_width:number = 70) {
+      if(verbose) console.log(chalk`-- {bold ${message}} ${'-'.repeat(line_width - message.length - 4)}`)
+  }
 
 }

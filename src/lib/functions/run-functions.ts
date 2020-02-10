@@ -332,6 +332,33 @@ export function prependXAuth(command: string, explicit: boolean = false)
   return command
 }
 
+// SCANFORSETTINGSDIRECTORY searchs up the directory structure for a settings
+// folder that contains a settings file with hostRoot: auto.
+// -- Parameters ---------------------------------------------------------------
+// dirpath: string - starting search location
+// -- Returns ------------------------------------------------------------------
+// ValidatedOutput - data is an object with fields:
+//    - hostRoot: hostRoot where settings directory lives
+//    - settings: settings that where loaded from file
+export function scanForSettingsDirectory(dirpath: string)
+{
+  var dirpath_parent = dirpath
+  var result: ValidatedOutput
+
+  do {
+    dirpath = dirpath_parent
+    dirpath_parent = path.dirname(dirpath)
+    // -- exit if settings file is invalid -------------------------------------
+    result = loadProjectSettings(dirpath)
+    if(result.success && result.data?.hostRoot == 'auto') { // require that hostRoot set to auto for automatic pickup
+      result.data.hostRoot = dirpath
+      return result
+    }
+  } while(dirpath != dirpath_parent)
+
+  return new ValidatedOutput(false)
+}
+
 // -----------------------------------------------------------------------------
 // LOADPROJECTSETTINGS: loads any project settings from the cjr dir in hostRoot
 // -- Parameters ---------------------------------------------------------------
@@ -347,7 +374,7 @@ export function loadProjectSettings(hostRoot: string)
 
   // -- exit if no settings file exists ----------------------------------------
   const yml_path = projectSettingsYMLPath(hostRoot)
-  if(!FileTools.existsFile(yml_path)) return new ValidatedOutput(true, {});
+  if(!FileTools.existsFile(yml_path)) return new ValidatedOutput(false, {});
 
   // -- exit if settings file is invalid ---------------------------------------
   const stack_file = new YMLFile("", false, ps_vo_validator)
