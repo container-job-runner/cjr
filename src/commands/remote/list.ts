@@ -1,0 +1,62 @@
+import {flags} from '@oclif/command'
+import {RemoteCommand, Dictionary} from '../../lib/remote/commands/remote-command'
+import {printResultState} from '../../lib/functions/misc-functions'
+import {printVerticalTable, printHorizontalTable} from '../../lib/functions/run-functions'
+
+export default class List extends RemoteCommand {
+  static description = 'List all remote resources.'
+  static args   = []
+  static flags  = {verbose: flags.boolean({default: false})}
+  static strict = true;
+
+  async run() {
+    const {args, flags} = this.parse(List)
+    const resource_config = this.readResourceConfig()
+    const resource_names = Object.keys(resource_config)
+
+    var table_parameters: Dictionary
+    var toArray: (e: Dictionary) => Array<any>
+    var printTable
+
+    if(flags.verbose)  // -- Verbose Output ------------------------------------
+    {
+      table_parameters = {
+          row_headers:    ["NAME", "ADDRESS", "USERNAME", "TYPE", "ENABLED", "KEY", "STORAGEDIR"],
+          column_widths:  [12, 103],
+          text_widths:    [11, 102],
+          silent_clip:    [true, true]
+      }
+      toArray = (name:string) => {
+        const r = resource_config[name]
+        return [name, r.address, r.username, r.type, `${r.enabled}`, r?.key || "", r['storage-dir']]
+      }
+      printTable = printHorizontalTable
+    }
+    else // -- Standard Output -------------------------------------------------
+    {
+      table_parameters = {
+          column_headers: ["NAME", "ADDRESS", "USERNAME", "TYPE", "ENABLED"],
+          column_widths:  [13, 20, 15, 10, 10],
+          text_widths:    [10, 17, 12, 7, 7],
+          silent_clip:    [true, false, false, false, false]
+      }
+
+      toArray = (name:string) => {
+        const r = resource_config[name]
+        return [name, r.address, r.username, r.type, `${r.enabled}`]
+      }
+      printTable = printVerticalTable
+    }
+
+    printTable({ ...table_parameters, ...{
+        title:  "Remote Resources",
+        data:   resource_names.map((name:string) => toArray(name))
+    }})
+
+
+
+
+
+
+  }
+}

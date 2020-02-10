@@ -24,6 +24,9 @@ export const project_settings_schema = {
     "hostRoot": {
       "type": "string",
       "pattern": "^auto$"
+    },
+    "remoteName": {
+      "type": "string"
     }
   }
 }
