@@ -323,11 +323,11 @@ export function prependXAuth(command: string, explicit: boolean = false)
 {
   if(os.platform() != "linux") return ""
   const shell = new ShellCommand(explicit, false)
-  const shell_result = shell.output("xauth list $DISPLAY", {}, [])
+  const shell_result = shell.output("xauth list $DISPLAY", {}, [], {}, "trim")
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
     const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command].join(" && ")
-    return ShellCommand.bashEscape(`bash -c ${ShellCommand.bashEscape(script)}`)
+    return `bash -c ${ShellCommand.bashEscape(script)}`
   }
   return command
 }
