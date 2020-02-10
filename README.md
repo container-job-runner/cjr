@@ -200,7 +200,7 @@ $ npm install -g cjr
 $ cjr COMMAND
 running command...
 $ cjr (-v|--version|version)
-cjr/0.1.1 linux-x64 node-v12.13.1
+cjr/0.1.2 linux-x64 node-v12.13.1
 $ cjr --help [COMMAND]
 USAGE
   $ cjr COMMAND
@@ -219,7 +219,7 @@ USAGE
 * [`cjr job:attach [ID]`](#cjr-jobattach-id)
 * [`cjr job:copy [ID]`](#cjr-jobcopy-id)
 * [`cjr job:delete [ID]`](#cjr-jobdelete-id)
-* [`cjr job:internal-data [ID]`](#cjr-jobinternal-data-id)
+* [`cjr job:labels [ID]`](#cjr-joblabels-id)
 * [`cjr job:list`](#cjr-joblist)
 * [`cjr job:log [ID]`](#cjr-joblog-id)
 * [`cjr job:shell [ID]`](#cjr-jobshell-id)
@@ -244,19 +244,22 @@ USAGE
 
 OPTIONS
   --async
-  --autocopy                     automatically copy files back to hostRoot on exit
-  --autocopy-all                 automatically copy all files results back to hostRoot on exit
-  --containerRoot=containerRoot
+  --autocopy                 automatically copy files back to hostRoot on exit
+  --autocopy-all             automatically copy all files results back to hostRoot on exit
+  --build-nocache            rebuilds stack with no-cache flag active
+  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --explicit
   --hostRoot=hostRoot
-  --message=message              optional message to describes the job
-  --port=port                    [default: ]
-  --silent
+  --message=message          use this flag to tag a job with a user-supplied message
+  --no-autoload              prevents cli from automatically loading flags using project settings files
+  --no-rebuild               does not rebuild stack before running job
+  --port=port                [default: ]
   --stack=stack
+  --verbose                  prints output from stack build output and id
   --x11
 ```
 
-_See code: [src/commands/$.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/$.ts)_
+_See code: [src/commands/$.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/$.ts)_
 
 ## `cjr bundle SAVE_DIR`
 
@@ -267,15 +270,17 @@ USAGE
   $ cjr bundle SAVE_DIR
 
 OPTIONS
-  --all                include project files in bundle
+  --all                      include project files in bundle
+  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --explicit
   --hostRoot=hostRoot
+  --no-autoload              prevents cli from automatically loading flags using project settings files
   --stack=stack
-  --tar                produces one .tar.gz file (requires zip)
-  --zip                produces one .zip file (requires gzip)
+  --tar                      produces one .tar.gz file (requires zip)
+  --zip                      produces one .zip file (requires gzip)
 ```
 
-_See code: [src/commands/bundle.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/bundle.ts)_
+_See code: [src/commands/bundle.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/bundle.ts)_
 
 ## `cjr config:get [KEY]`
 
@@ -286,7 +291,7 @@ USAGE
   $ cjr config:get [KEY]
 ```
 
-_See code: [src/commands/config/get.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/config/get.ts)_
+_See code: [src/commands/config/get.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/config/get.ts)_
 
 ## `cjr config:list`
 
@@ -297,7 +302,7 @@ USAGE
   $ cjr config:list
 ```
 
-_See code: [src/commands/config/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/config/list.ts)_
+_See code: [src/commands/config/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/config/list.ts)_
 
 ## `cjr config:set [KEY] [VALUE]`
 
@@ -308,7 +313,7 @@ USAGE
   $ cjr config:set [KEY] [VALUE]
 ```
 
-_See code: [src/commands/config/set.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/config/set.ts)_
+_See code: [src/commands/config/set.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/config/set.ts)_
 
 ## `cjr help [COMMAND]`
 
@@ -340,7 +345,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/attach.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/attach.ts)_
+_See code: [src/commands/job/attach.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/attach.ts)_
 
 ## `cjr job:copy [ID]`
 
@@ -352,11 +357,13 @@ USAGE
 
 OPTIONS
   --all
+  --copy-path=copy-path  overides job default copy path
   --explicit
   --stack=stack
+  --verbose
 ```
 
-_See code: [src/commands/job/copy.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/copy.ts)_
+_See code: [src/commands/job/copy.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/copy.ts)_
 
 ## `cjr job:delete [ID]`
 
@@ -375,15 +382,15 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/delete.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/delete.ts)_
+_See code: [src/commands/job/delete.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/delete.ts)_
 
-## `cjr job:internal-data [ID]`
+## `cjr job:labels [ID]`
 
 Retrieve internal cli data for a job.
 
 ```
 USAGE
-  $ cjr job:internal-data [ID]
+  $ cjr job:labels [ID]
 
 OPTIONS
   --all
@@ -391,10 +398,11 @@ OPTIONS
   --all-running
   --explicit
   --json
+  --label=label
   --stack=stack
 ```
 
-_See code: [src/commands/job/internal-data.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/internal-data.ts)_
+_See code: [src/commands/job/labels.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/labels.ts)_
 
 ## `cjr job:list`
 
@@ -405,15 +413,23 @@ USAGE
   $ cjr job:list
 
 OPTIONS
-  --all
+  --all                if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is
+                       set
+
   --explicit
+
   --hostRoot=hostRoot
+
   --json
+
+  --no-autoload        prevents cli from automatically loading flags using project settings files
+
   --stack=stack
+
   --verbose
 ```
 
-_See code: [src/commands/job/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/list.ts)_
+_See code: [src/commands/job/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/list.ts)_
 
 ## `cjr job:log [ID]`
 
@@ -429,7 +445,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/log.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/log.ts)_
+_See code: [src/commands/job/log.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/log.ts)_
 
 ## `cjr job:shell [ID]`
 
@@ -440,13 +456,15 @@ USAGE
   $ cjr job:shell [ID]
 
 OPTIONS
+  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --discard
   --explicit
   --hostRoot=hostRoot
+  --message=message          use this flag to tag a job with a user-supplied message
   --stack=stack
 ```
 
-_See code: [src/commands/job/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/shell.ts)_
+_See code: [src/commands/job/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/shell.ts)_
 
 ## `cjr job:stop [ID]`
 
@@ -465,7 +483,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/job/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/job/stop.ts)_
+_See code: [src/commands/job/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/stop.ts)_
 
 ## `cjr jupyter:list`
 
@@ -481,7 +499,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/jupyter/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/jupyter/list.ts)_
+_See code: [src/commands/jupyter/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/jupyter/list.ts)_
 
 ## `cjr jupyter:start`
 
@@ -492,15 +510,16 @@ USAGE
   $ cjr jupyter:start
 
 OPTIONS
-  --containerRoot=containerRoot
+  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --explicit
   --hostRoot=hostRoot
-  --port=port                    [default: 8888]
+  --no-autoload              prevents cli from automatically loading flags using project settings files
+  --port=port                [default: 8888]
   --stack=stack
   --sync
 ```
 
-_See code: [src/commands/jupyter/start.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/jupyter/start.ts)_
+_See code: [src/commands/jupyter/start.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/jupyter/start.ts)_
 
 ## `cjr jupyter:stop`
 
@@ -516,7 +535,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/jupyter/stop.ts)_
+_See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/jupyter/stop.ts)_
 
 ## `cjr shell`
 
@@ -527,16 +546,17 @@ USAGE
   $ cjr shell
 
 OPTIONS
-  --containerRoot=containerRoot
+  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --explicit
   --hostRoot=hostRoot
-  --port=port                    [default: ]
-  --save=save                    saves new image that contains modifications
+  --no-autoload              prevents cli from automatically loading flags using project settings files
+  --port=port                [default: ]
+  --save=save                saves new image that contains modifications
   --stack=stack
   --x11
 ```
 
-_See code: [src/commands/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/shell.ts)_
+_See code: [src/commands/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/shell.ts)_
 
 ## `cjr stack:build`
 
@@ -547,6 +567,7 @@ USAGE
   $ cjr stack:build
 
 OPTIONS
+  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --explicit
   --hostRoot=hostRoot
   --nocache
@@ -554,7 +575,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/stack/build.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/build.ts)_
+_See code: [src/commands/stack/build.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/stack/build.ts)_
 
 ## `cjr stack:clone URL`
 
@@ -569,7 +590,7 @@ OPTIONS
   --stacks_path=stacks_path
 ```
 
-_See code: [src/commands/stack/clone.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/clone.ts)_
+_See code: [src/commands/stack/clone.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/stack/clone.ts)_
 
 ## `cjr stack:list`
 
@@ -583,7 +604,7 @@ OPTIONS
   --stacks_path=stacks_path
 ```
 
-_See code: [src/commands/stack/list.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/list.ts)_
+_See code: [src/commands/stack/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/stack/list.ts)_
 
 ## `cjr stack:rmi`
 
@@ -600,7 +621,7 @@ OPTIONS
   --stack=stack
 ```
 
-_See code: [src/commands/stack/rmi.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stack/rmi.ts)_
+_See code: [src/commands/stack/rmi.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/stack/rmi.ts)_
 
 ## `cjr stash`
 
@@ -611,13 +632,14 @@ USAGE
   $ cjr stash
 
 OPTIONS
-  --containerRoot=containerRoot
+  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --explicit
   --hostRoot=hostRoot
-  --message=message              optional message to describes the job
+  --message=message          optional message to describes the job
+  --no-autoload              prevents cli from automatically loading flags using project settings files
   --silent
   --stack=stack
 ```
 
-_See code: [src/commands/stash.ts](https://github.com/buvoli/cjr/blob/v0.1.1/src/commands/stash.ts)_
+_See code: [src/commands/stash.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/stash.ts)_
 <!-- commandsstop -->

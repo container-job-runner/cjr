@@ -1,7 +1,7 @@
 {
   "name": "cjr",
   "description": "Runs jobs in linux containers",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "buvoli",
   "bin": {
     "penguin": "./bin/run"
