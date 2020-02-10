@@ -17,7 +17,7 @@ export default class Delete extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.this.parseWithLoad(Delete, {remoteName: true})
+    const {flags, args, argv} = this.parseWithLoad(Delete, {remoteName: true})
     const resource_config = this.readResourceConfig()
     // -- validate id ----------------------------------------------------------
     var result = this.validResourceName(flags.remoteName || "", resource_config)

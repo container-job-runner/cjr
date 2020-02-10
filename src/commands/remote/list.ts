@@ -11,11 +11,11 @@ export default class List extends RemoteCommand {
 
   async run() {
     const {args, flags} = this.parse(List)
-    const resource_config = this.readResourceConfig()
-    const resource_names = Object.keys(resource_config)
+    const resource_config:Dictionary = this.readResourceConfig()
+    const resource_names:Array<string> = Object.keys(resource_config)
 
     var table_parameters: Dictionary
-    var toArray: (e: Dictionary) => Array<any>
+    var toArray: (e: string) => Array<any>
     var printTable
 
     if(flags.verbose)  // -- Verbose Output ------------------------------------
