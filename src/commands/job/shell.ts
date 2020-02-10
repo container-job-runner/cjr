@@ -14,6 +14,7 @@ export default class Shell extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
+    configFiles: flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     discard: flags.boolean({default: false}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"})
@@ -100,7 +101,7 @@ export default class Shell extends StackCommand {
           removeOnExit: flags.discard
         })
         if(old_job_object.hostRoot) new_job_object.hostRoot = tmp_host_root
-        var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, this.project_settings.configFiles,
+        var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, flags.configFiles,
           (configuration) => {
             if(flags.message) configuration.addLabel("message", flags.message)
             const jobinfo_label = (old_job_object.hostRoot) ?  {...new_job_object, ...{hostRoot: old_job_object.hostRoot}} : new_job_object; // add original host root to new job
