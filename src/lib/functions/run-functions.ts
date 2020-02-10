@@ -326,7 +326,7 @@ export function prependXAuth(command: string, explicit: boolean = false)
   const shell_result = shell.output("xauth list $DISPLAY", {}, [], {}, "trim")
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
-    const script = ['cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, command].join(" && ")
+    const script = ['WD=$(pwd)', 'cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, 'cd $WD', command].join(" && ")
     return `bash -c ${ShellCommand.bashEscape(script)}`
   }
   return command
