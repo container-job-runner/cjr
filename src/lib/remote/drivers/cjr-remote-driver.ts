@@ -234,7 +234,7 @@ export class CJRRemoteDriver extends RemoteDriver
     const remote_job_path = result.data
     // -- copy stack -----------------------------------------------------------
     this.printStatus(StatusStrings.STARTJOB.UPLOADING_STACK, this.output_flags.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    const remote_stack_path = path.posix.join(remote_job_path, `${project_id}-${builder.stackName(stack_path)}`)
+    const remote_stack_path = path.posix.join(remote_job_path, `${path.posix.basename(remote_job_path)}-${builder.stackName(stack_path)}`)
     result = this.pushStack(builder, stack_path, remote_stack_path, bundled_configuration_raw_object)
     if(!result.success) return this.stopMultiplexAndReturn(result);
     this.printStatus(StatusStrings.DONE, true)
