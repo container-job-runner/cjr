@@ -8,6 +8,7 @@ export default class Ssh extends RemoteCommand {
   static args   = [{name: 'remote-name'}]
   static flags = {
     remoteName: flags.string({env: 'REMOTENAME'}),
+    x11: flags.boolean({default: false, char: 'X'}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
@@ -24,7 +25,7 @@ export default class Ssh extends RemoteCommand {
     const ssh_shell = new SshShellCommand(flags.explicit, false, this.config.dataDir)
     var result = ssh_shell.setResource(resource)
     if(!result.success) return printResultState(result)
-    ssh_shell.exec('', {}, [])
+    ssh_shell.exec('', {}, [], {ssh: {x11: flags.x11}})
     printResultState(result)
   }
 }
