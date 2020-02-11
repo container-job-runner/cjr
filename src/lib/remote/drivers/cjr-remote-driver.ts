@@ -223,7 +223,7 @@ export class CJRRemoteDriver extends RemoteDriver
     printResultState(result) // print any warnings from bundling
     const {configuration, bundled_configuration_raw_object} = result.data
     // -- start ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStart()
+    this.ssh_shell.multiplexStart({x11: flags?.x11})
     // -- ensure project has ID ------------------------------------------------
     if(host_root) result = ensureProjectId(host_root)
     if(!result.success) return this.stopMultiplexAndReturn(result);
@@ -432,14 +432,15 @@ export class CJRRemoteDriver extends RemoteDriver
     const cjr_flags:Dictionary = this.cliFlagsToShellFlags(flags, this.transferrable_flags['$'])
     if(remote_hostroot) cjr_flags.hostRoot = remote_hostroot
     cjr_flags.stack = remote_stack_path
+    cjr_flags["no-autoload"] = {}
     const cjr_command = this.ssh_shell.shell.commandString('cjr $', cjr_flags, argv)
     // -- 3.2 set appropriate working dir on remote ----------------------------
     const remote_wd = containerWorkingDir(process.cwd(), flags.hostRoot, path.posix.dirname(remote_hostroot))
     // -- execute ssh command ---------------------------------------------------
     const ssh_command = (remote_wd) ? `cd ${ShellCommand.bashEscape(remote_wd)} && ${cjr_command}` : cjr_command
-    const ssh_options:Dictionary = {ssh: {interactive: true}}
+    const ssh_options:Dictionary = {interactive: true}
     if(flags.x11) ssh_options.x11 = true
-    return this.ssh_shell.exec(ssh_command, {},[], ssh_options)
+    return this.ssh_shell.exec(ssh_command, {},[], {ssh: ssh_options})
   }
 
   // gets info label for all remote jobs whose id matches with the job_id string
