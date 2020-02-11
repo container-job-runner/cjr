@@ -86,18 +86,21 @@ export abstract class StackCommand extends Command
   newRunner(explicit: boolean = false, silent: boolean = false)
   {
     const run_cmd = this.settings.get('run_cmd');
-    const tag = this.settings.get('image_tag');
     const shell = new ShellCommand(explicit, silent)
+    const options = {
+      tag: this.settings.get('image_tag'),
+      selinux: this.settings.get('selinux')
+    }
 
     switch(run_cmd)
     {
         case "docker":
         {
-          return new DockerRunDriver(shell, tag);
+          return new DockerRunDriver(shell, options);
         }
         case "podman":
         {
-          return new PodmanRunDriver(shell, tag);
+          return new PodmanRunDriver(shell, options);
         }
         default:
         {

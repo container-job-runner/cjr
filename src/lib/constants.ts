@@ -51,7 +51,8 @@ export const defaultCLISettings = (settings_dir:string) =>
       image_tag: cli_name,
       default_shell: "bash",
       interactive: true,
-      auto_hostroot: true
+      auto_hostroot: true,
+      selinux: false
   }
 }
 

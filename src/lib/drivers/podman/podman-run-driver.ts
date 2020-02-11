@@ -44,6 +44,13 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
+  protected selinuxBindMountObjectToFlagStr(mo: Dictionary)
+  {
+    if(mo.type !== "bind") return []
+    const selinux_str = 'z' // allow sharing with all containers
+    return `${ShellCommand.bashEscape(mo.hostPath)}:${ShellCommand.bashEscape(mo.containerPath)}:${selinux_str}${(mo.readonly) ? ",readonly" : ""}`
+  }
+
   protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)
   {
     super.addSpecialFlags(flags, run_object)

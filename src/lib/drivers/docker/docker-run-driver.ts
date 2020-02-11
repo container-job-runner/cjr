@@ -48,6 +48,12 @@ export class DockerRunDriver extends RunDriver
       chalk` copy {green ${container_id}:${container_path}}\n   to {green ${host_path}}`
   }
 
+  constructor(shell: ShellCommand, options: {tag: string, selinux: boolean})
+  {
+    super(shell, options.tag)
+    this.selinux = options.selinux || false
+  }
+
   // job functions
 
   jobStart(stack_path: string, job_options: Dictionary, run_options: Dictionary={}){
@@ -420,10 +426,20 @@ export class DockerRunDriver extends RunDriver
   {
     if(run_object?.mounts?.length > 0)
     {
-      flags["mount"] = {
-        escape: false,
-        value: run_object.mounts.map(this.mountObjectToFlagStr)
-      }
+      // -- standard mounts use --mount flag -----------------------------------
+      const standard_mounts = (this.selinux) ? run_object.mounts.filter((mount:Dictionary) => mount.type != "bind") : run_object.mounts
+      if (standard_mounts.length > 0)
+        flags["mount"] = {
+          escape: false,
+          value: standard_mounts.map(this.mountObjectToFlagStr)
+        }
+      // -- selinux mounts require --volume flag -------------------------------
+      const selinux_mounts  = (this.selinux) ? run_object.mounts.filter((mount:Dictionary) => mount.type == "bind") : []
+      if(selinux_mounts.length > 0)
+        flags["volume"] = {
+          escape: false,
+          value: selinux_mounts.map(this.selinuxBindMountObjectToFlagStr)
+        }
     }
   }
 
@@ -438,6 +454,13 @@ export class DockerRunDriver extends RunDriver
       case "tmpfs":
         return `type=${mo.type},destination=${ShellCommand.bashEscape(mo.containerPath)}`
     }
+  }
+
+  protected selinuxBindMountObjectToFlagStr(mo: Dictionary)
+  {
+    if(mo.type !== "bind") return []
+    const selinux_str = 'z' // allow sharing with all containers
+    return `${ShellCommand.bashEscape(mo.hostPath)}:${ShellCommand.bashEscape(mo.containerPath)}:${selinux_str}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
   }
 
   protected addLabelFlags(flags: Dictionary, run_object: Dictionary)
