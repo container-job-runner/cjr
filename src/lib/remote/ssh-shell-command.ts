@@ -112,7 +112,7 @@ export class SshShellCommand
 
     // === Multiplex Commands ==================================================
 
-    multiplexStart() // start the multiplex master
+    multiplexStart(options:Dictionary={}) // start the multiplex master
     {
       if(this.multiplexSocketExists()) return true
       fs.ensureDirSync(path.dirname(this.multiplexSocketPath()))
@@ -124,6 +124,11 @@ export class SshShellCommand
         f: {}, // send to background
         o: {value: "ExitOnForwardFailure yes", noequals: true}, // does not sent process to background until connection is established
         S: {value: this.multiplexSocketPath(), noequals: true} // location of socket
+      }
+      if(options?.x11) {
+        const platform = os.platform()
+        if(platform === 'darwin') flags.Y = {}
+        else if(platform === 'linux') flags.X = {}
       }
       if(this.resource.key) flags.i = {value: this.resource.key, noequals: true}
       const args = [`${this.resource.username}@${this.resource.address}`]
