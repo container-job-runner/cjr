@@ -1,5 +1,7 @@
 import * as fs from 'fs'
+import * as path from 'path'
 import {flags} from '@oclif/command'
+import {FileTools} from '../../lib/fileio/file-tools'
 import {StackCommand} from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
@@ -14,7 +16,9 @@ export default class List extends StackCommand {
   {
     const {argv, flags} = this.parse(List)
     const stacks_path = flags.stacks_path || this.settings.get("stacks_path")
-    fs.readdirSync(stacks_path).map((path, i) => console.log(`\t${i+1}. ${path}`))
+    fs.readdirSync(stacks_path)
+      .filter((file_name: string) => !/^\./.test(path.basename(file_name)) && FileTools.existsDir(path.join(stacks_path, file_name)))
+      .map((file_name:string, i:number) => console.log(`\t${i+1}. ${file_name}`))
   }
 
 }
