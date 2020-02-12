@@ -22,6 +22,28 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
+  protected extractJobInfo(raw_ps_data: Array<Dictionary>)
+  {
+    // converts statusMessage to one of three states
+    const shortStatus = (x: String) => {
+      if(x.match(/^Exited/)) return "exited"
+      if(x.match(/^Created/)) return "created"
+      if(x.match(/^Up/)) return "running"
+    }
+
+    return raw_ps_data.map((x:Dictionary) => {
+      return {
+        id: x.ID,
+        names: x.Names,
+        command: x.Command,
+        status: shortStatus(x.Status),
+        stack: x?.Labels?.stack || "",
+        labels: x?.Labels || {},
+        statusString: x.Status
+      }
+    })
+  }
+
   protected addResourceFlags(flags: Dictionary, run_object: Dictionary)
   {
     const valid_keys = ["cpus", "gpu", "memory"] // podman does not support swap-memory

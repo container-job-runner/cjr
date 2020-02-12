@@ -201,6 +201,33 @@ export class DockerRunDriver extends RunDriver
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
 
+    return (result.success) ? this.extractJobInfo(result.data) : {}
+  }
+
+  protected extractJobInfo(raw_ps_data: Array<Dictionary>)
+  {
+    // NOTE: docker ps does not correctly format labels with --format {{json}}
+    // This Function calls docker inspect to extract properly formatted labels
+    const ids = raw_ps_data.map((x:Dictionary) => x.ID)
+    const result = this.shell.output(
+      `${this.base_command} inspect`,
+      {format: '{{json .Id}}:{{json .Config.Labels}}'},
+      ids
+    )
+    if(!result.success) return {}
+    const raw_output = result.data
+    const label_data = {}
+    raw_output.split("\n").map((raw_line:string) => {
+      const split_index = raw_line.search(':')
+      if(split_index > 1) {
+          try {
+            const id = JSON.parse(raw_line.substring(0, split_index))
+            const raw_label = raw_line.substring(split_index+1)
+            label_data[id] = JSON.parse(raw_label)
+          } catch (e) {}
+      }
+    })
+
     // converts statusMessage to one of three states
     const shortStatus = (x: String) => {
       if(x.match(/^Exited/)) return "exited"
@@ -208,17 +235,17 @@ export class DockerRunDriver extends RunDriver
       if(x.match(/^Up/)) return "running"
     }
 
-    return (result.success) ? result.data?.map((x:Dictionary) => {
+    return raw_ps_data.map((x:Dictionary) => {
       return {
         id: x.ID,
         names: x.Names,
         command: x.Command,
         status: shortStatus(x.Status),
-        stack: x?.Labels?.stack,
-        labels: x?.Labels || {},
+        stack: label_data?.[x.ID]?.stack || "",
+        labels: label_data?.[x.ID] || {},
         statusString: x.Status
       }
-    }) : {};
+    })
   }
 
   jobCopy(id: string, job_object: Dictionary, copy_all: boolean = false, verbose: boolean = false)
