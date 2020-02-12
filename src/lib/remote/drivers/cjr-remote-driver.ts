@@ -8,6 +8,7 @@ import {FileTools} from "../../fileio/file-tools"
 import {BuildDriver} from "../../drivers/abstract/build-driver"
 import {RemoteDriver} from "./remote-driver"
 import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label} from '../../constants'
+import {remote_storage_basename, remoteStoragePath} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserId, getProjectId} from '../../functions/run-functions'
 import {printResultState} from '../../functions/misc-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
@@ -132,7 +133,7 @@ export class CJRRemoteDriver extends RemoteDriver
     printResultState(result) // print any warnings from getRemoteRunDirectories
     // -- 2. ensure that paths contain remote_job_dir --------------------------
     const job_info_all: {[key: string]: string} = result.data
-    const remote_dirs = Object.values(job_info_all).filter((dir:string) => (new RegExp(`/${path.posix.basename(resource['storage-dir'])}/`)).test(dir))
+    const remote_dirs = Object.values(job_info_all).filter((dir:string) => (new RegExp(`/${remote_storage_basename}/`)).test(dir))
     // -- 3. run cjr:delete ----------------------------------------------------
     result = this.ssh_shell.exec(
       'cjr job:delete',
@@ -191,7 +192,7 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- start ssh master -----------------------------------------------------
     this.ssh_shell.multiplexStart()
     // -- create remote tmp directory for job ----------------------------------
-    result = this.mkTempDir(resource['storage-dir'], ['files'], false)
+    result = this.mkTempDir(remoteStoragePath(resource['storage-dir']), ['files'], false)
     if(!result.success) return this.stopMultiplexAndReturn(result);
     const remote_job_path = result.data
     // -- copy stack -----------------------------------------------------------
@@ -229,7 +230,7 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!result.success) return this.stopMultiplexAndReturn(result);
     const project_id = result.data
     // -- create remote tmp directory for job ----------------------------------
-    result = this.mkTempDir(resource['storage-dir'], ['files'], false)
+    result = this.mkTempDir(remoteStoragePath(resource['storage-dir']), ['files'], false)
     if(!result.success) return this.stopMultiplexAndReturn(result);
     const remote_job_path = result.data
     // -- copy stack -----------------------------------------------------------

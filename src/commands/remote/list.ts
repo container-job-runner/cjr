@@ -21,9 +21,9 @@ export default class List extends RemoteCommand {
     if(flags.verbose)  // -- Verbose Output ------------------------------------
     {
       table_parameters = {
-          row_headers:    ["NAME", "ADDRESS", "USERNAME", "TYPE", "ENABLED", "KEY", "STORAGEDIR"],
-          column_widths:  [12, 103],
-          text_widths:    [11, 102],
+          row_headers:    ["NAME", "ADDRESS", "USERNAME", "TYPE", "ENABLED", "KEY", "STORAGE-DIR"],
+          column_widths:  [13, 103],
+          text_widths:    [12, 102],
           silent_clip:    [true, true]
       }
       toArray = (name:string) => {

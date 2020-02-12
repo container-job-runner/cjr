@@ -4,7 +4,7 @@ import {FileTools} from '../../lib/fileio/file-tools'
 import {ValidatedOutput} from '../../lib/validated-output'
 import {printResultState} from '../../lib/functions/misc-functions'
 import {ErrorStrings} from '../../lib/remote/error-strings'
-import {remote_storage_dir} from '../../lib/remote/constants'
+import {default_remote_storage_dirname} from '../../lib/remote/constants'
 import * as path from 'path'
 
 export default class Add extends RemoteCommand {
@@ -34,7 +34,7 @@ export default class Add extends RemoteCommand {
       type: flags.type,
       address: flags.address,
       username: flags.username,
-      "storage-dir": flags['storage-dir'] || remote_storage_dir,
+      "storage-dir": flags['storage-dir'] || default_remote_storage_dirname,
       enabled: true
     }
     // -- verify that keyfile exists -------------------------------------------
