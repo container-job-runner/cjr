@@ -53,6 +53,10 @@ export class JSTools
     return s.join("")
   }
 
+  static arrayWrap(o:any) {
+    return (JSTools.isArray(o)) ? o : [o]
+  }
+
   static isObject(val: any) {
       return val instanceof Object;
   }

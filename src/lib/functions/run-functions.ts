@@ -23,42 +23,42 @@ import {ps_vo_validator} from '../config/project-settings/project-settings-schem
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-// -----------------------------------------------------------------------------
-// FILTERJOBINFOBYID filters the output of RunDriver.jobInfo() and returns all
-// jobs whose ID begins with the characters in the passed parameter "id"
-// -- Parameters ---------------------------------------------------------------
-// job_info: Array<Dictionary> - absolute path where cli was called from
-// id: string - string for matching ids
-// -- Returns ------------------------------------------------------------------
-// ValidatedOutput - data contains array of Dictinary with matching job info
-export function filterJobInfoByID(job_info: Array<Dictionary>, id: string)
-{
-  if(id.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
-  const regex = new RegExp(`^${id}`)
-  const matching_jobs = job_info.filter((job:Dictionary) => regex.test(job.id))
-  return (matching_jobs.length > 0) ?
-    new ValidatedOutput(true, matching_jobs) :
-    new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
-}
-
-// returns array of jobs info objects for all jobs whose id begins with the letters in the passed parameter "id"
-export function matchingJobInfo(runner: RunDriver, id: string, stack_path: string, status:string = "")
-{
-  return filterJobInfoByID(runner.jobInfo(stack_path, status), id)
-}
-
-// returns array of jobs ids for all jobs whose id begins with the letters in the passed parameter "id"
-export function matchingJobIds(runner: RunDriver, id: string, stack_path: string, status:string = "")
-{
-  const result = matchingJobInfo(runner, id, stack_path, status)
-  if(result.success) result.data = result.data.map((x:Dictionary) => x.id)
-  return result
-}
 
 // returns all running job ids
 export function allJobIds(runner: RunDriver, stack_path: string="", status:string = "")
 {
   return runner.jobInfo(stack_path, status).map((x:Dictionary) => x.id)
+}
+
+// returns array of jobs ids for all jobs whose id begins with the letters in any string in the passed parameter "id"
+export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_path: string, status:string = "")
+{
+  const result = matchingJobInfo(runner, ids, stack_path, status)
+  if(result.success) result.data = result.data.map((x:Dictionary) => x.id)
+  return result
+}
+
+//returns array of jobs info objects for all jobs whose id begins with the letters in any string in the passed parameter "id"
+export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_path: string, status:string = "")
+{
+  if(ids.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
+  return filterJobInfoByID(runner.jobInfo(stack_path, status), new RegExp(`^(${ids.join('|')})`))
+}
+
+// -----------------------------------------------------------------------------
+// FILTERJOBINFOBYID filters the output of RunDriver.jobInfo() and returns all
+// jobs whose ID satisfies the provided regular expression.
+// -- Parameters ---------------------------------------------------------------
+// job_info: Array<Dictionary> - absolute path where cli was called from
+// regex: RegExp - regular expression
+// -- Returns ------------------------------------------------------------------
+// ValidatedOutput - data contains array of Dictinary with matching job info
+function filterJobInfoByID(job_info: Array<Dictionary>, regex: RegExp)
+{
+  const matching_jobs = job_info.filter((job:Dictionary) => regex.test(job.id))
+  return (matching_jobs.length > 0) ?
+    new ValidatedOutput(true, matching_jobs) :
+    new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
 }
 
 // determines if job with given name exists. Refactor with resultNameId

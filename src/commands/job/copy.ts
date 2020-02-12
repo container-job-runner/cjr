@@ -23,7 +23,7 @@ export default class Copy extends StackCommand {
     var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
     var id = argv[0] || await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || ""
     // match with existing container ids
-    var result = matchingJobInfo(runner, id, stack_path)
+    var result = matchingJobInfo(runner, [id], stack_path)
     if(!result.success) return printResultState(result)
     // copy results from any matching jobs
     const job_info = result.data

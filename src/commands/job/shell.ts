@@ -50,7 +50,7 @@ export default class Shell extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     var id_str = argv[0] || await promptUserForJobId(runner, "", "", !this.settings.get('interactive')) || ""
     // -- determine if there is a job with a matching id -----------------------
-    var result = matchingJobInfo(runner, id_str, "")
+    var result = matchingJobInfo(runner, [id_str], "")
     if(!result.success) return printResultState(result) // exit if no matching job
     const job_info = result.data[0] // process only first result
     const job_id   = job_info.id;

@@ -1,5 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
+import {JSTools} from '../../lib/js-tools'
 import {allJobIds, matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
@@ -14,7 +15,7 @@ export default class Stop extends StackCommand {
     "all-running": flags.boolean({default: false}),
     silent: flags.boolean({default: false})
   }
-  static strict = true;
+  static strict = false;
 
   async run()
   {
@@ -30,8 +31,8 @@ export default class Stop extends StackCommand {
       ids_to_stop = allJobIds(runner, stack_path, "running")
     else  // -- stop only jobs specified by user -------------------------------
     {
-      const id = (argv[0] || await promptUserForJobId(runner, stack_path, "running", !this.settings.get('interactive')) || "")
-      const result = matchingJobIds(runner, id, stack_path)
+      const id = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_path, "running", !this.settings.get('interactive')) || "")
+      const result = matchingJobIds(runner, JSTools.arrayWrap(id), stack_path)
       if(result.success) ids_to_stop = result.data
       printResultState(result)
     }
