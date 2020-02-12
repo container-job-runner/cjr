@@ -5,7 +5,7 @@ import {matchingJobInfo, promptUserForJobId, allJobIds} from '../../lib/function
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Labels extends StackCommand {
-  static description = 'Retrieve internal cli data for a job.'
+  static description = 'Retrieve labels for a job.'
   static args = [{name: 'id'}]
   static flags = {
     stack: flags.string({env: 'STACK'}),

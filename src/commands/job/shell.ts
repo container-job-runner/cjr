@@ -17,7 +17,8 @@ export default class Shell extends StackCommand {
     configFiles: flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     discard: flags.boolean({default: false}),
-    message: flags.string({description: "use this flag to tag a job with a user-supplied message"})
+    message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
+    label: flags.string({default: [], multiple: true, description: "additional labels to append to new job"})
   }
   static strict = true;
 
@@ -103,6 +104,7 @@ export default class Shell extends StackCommand {
         if(old_job_object.hostRoot) new_job_object.hostRoot = tmp_host_root
         var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, flags.configFiles,
           (configuration) => {
+            this.addLabelFlagsToConfiguration(configuration, flags.label)
             if(flags.message) configuration.addLabel("message", flags.message)
             const jobinfo_label = (old_job_object.hostRoot) ?  {...new_job_object, ...{hostRoot: old_job_object.hostRoot}} : new_job_object; // add original host root to new job
             addJobInfoLabel(configuration, jobinfo_label)

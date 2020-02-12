@@ -8,6 +8,7 @@ import Command from '@oclif/command'
 import * as chalk from 'chalk'
 import {Settings} from '../settings'
 import {JSTools} from '../js-tools'
+import {Configuration} from '../config/abstract/configuration'
 import {DockerBuildDriver} from '../drivers/docker/docker-build-driver'
 import {PodmanBuildDriver} from '../drivers/podman/podman-build-driver'
 import {BuildahBuildDriver} from '../drivers/buildah/buildah-build-driver'
@@ -106,6 +107,25 @@ export abstract class StackCommand extends Command
         {
           this.error("invalid run command")
         }
+    }
+  }
+
+  addLabelFlagsToConfiguration(configuration: Configuration, label_flags: Array<string>)
+  {
+    label_flags.map((label_flag:string) => {
+      const label_object = this.parseLabelFlag(label_flag)
+      if(label_object !== false) configuration.addLabel(label_object.key, label_object.value)
+    })
+  }
+  // parses a string of the form key=value and returns key and value in Object
+  // or false of the string is malfomed
+  private parseLabelFlag(label_flag: string)
+  {
+    const split_index = label_flag.search('=')
+    if(split_index < 1) return false
+    else return {
+      key: label_flag.substring(0, split_index),
+      value:label_flag.substring(split_index + 1)
     }
   }
 

@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {Dictionary, StackCommand} from '../lib/commands/stack-command'
 import {ShellCommand} from '../lib/shell-command'
+import {Configuration} from '../lib/config/abstract/configuration'
 import {IfBuiltAndLoaded, setRelativeWorkDir, addPorts, enableX11, prependXAuth, addJobInfoLabel} from '../lib/functions/run-functions'
 import {printResultState} from '../lib/functions/misc-functions'
 import {JSTools} from '../lib/js-tools'
@@ -19,6 +20,7 @@ export default class Run extends StackCommand {
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
+    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     autocopy: flags.boolean({default: false, exclusive: ["async", "autocopy-all"], description: "automatically copy files back to hostRoot on exit"}),
     "autocopy-all": flags.boolean({default: false, exclusive: ["async", "autocopy"], description: "automatically copy all files results back to hostRoot on exit"}),
     "no-rebuild": flags.boolean({default: false, description: "does not rebuild stack before running job"}),
@@ -39,10 +41,11 @@ export default class Run extends StackCommand {
 
     this.printStatus(flags.verbose, "Build Output")
     var result = IfBuiltAndLoaded(builder, build_mode, {hostRoot: flags?.hostRoot}, stack_path, flags.configFiles,
-      (configuration, containerRoot, hostRoot) => {
+      (configuration:Configuration, containerRoot:string, hostRoot:string) => {
         setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
         addPorts(configuration, flags.port)
         if(flags.x11) enableX11(configuration, flags.explicit)
+        this.addLabelFlagsToConfiguration(configuration, flags.label)
         if(flags.message) configuration.addLabel("message", flags.message)
         configuration.removeFlag("userns") // currently causes permissions problems when using podman cp command.
 
