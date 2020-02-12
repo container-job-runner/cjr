@@ -248,7 +248,7 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- start job ------------------------------------------------------------
     const remote_hostRoot = (host_root) ? path.posix.join(remote_job_path, 'files', path.posix.basename(host_root)) : ""
     this.printStatus(StatusStrings.STARTJOB.RUNNING_JOB, true)
-    result = this.CJRJobStart(remote_stack_path, remote_hostRoot, flags, argv)
+    result = this.CJRJobStart(remote_stack_path, remote_hostRoot, remote_job_path, flags, argv)
     if(!result.success) return this.stopMultiplexAndReturn(result);
     this.printStatus(StatusStrings.DONE, true)
     // -- autocopy  ------------------------------------------------------------
@@ -427,11 +427,12 @@ export class CJRRemoteDriver extends RemoteDriver
    }, new ValidatedOutput(true))
   }
 
-  private CJRJobStart(remote_stack_path: string, remote_hostroot: string, flags: Dictionary, argv: Array<string>)
+  private CJRJobStart(remote_stack_path: string, remote_hostroot: string, remote_job_dir: string, flags: Dictionary, argv: Array<string>)
   {
     const cjr_flags:Dictionary = this.cliFlagsToShellFlags(flags, this.transferrable_flags['$'])
     if(remote_hostroot) cjr_flags.hostRoot = remote_hostroot
     cjr_flags.stack = remote_stack_path
+    cjr_flags.label = `remoteDir=${remote_job_dir}`
     cjr_flags["no-autoload"] = {}
     const cjr_command = this.ssh_shell.shell.commandString('cjr $', cjr_flags, argv)
     // -- 3.2 set appropriate working dir on remote ----------------------------
