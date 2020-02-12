@@ -37,6 +37,7 @@ export class DockerRunDriver extends RunDriver
   protected job_copy_validator    = djc_vo_validator
   protected exec_schema_validator = de_ajv_validator
   protected run_schema_validator  = dr_ajv_validator
+  protected selinux: boolean = false
 
   protected ERRORSTRINGS = {
     INVALID_JOB : chalk`{bold job_options object did not pass validation.}`,
@@ -200,8 +201,7 @@ export class DockerRunDriver extends RunDriver
     if(job_status) flags["filter"].push(`status=${job_status}`)
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-
-    return (result.success) ? this.extractJobInfo(result.data) : {}
+    return (result.success) ? this.extractJobInfo(result.data) : []
   }
 
   protected extractJobInfo(raw_ps_data: Array<Dictionary>)
@@ -214,9 +214,9 @@ export class DockerRunDriver extends RunDriver
       {format: '{{json .Id}}:{{json .Config.Labels}}'},
       ids
     )
-    if(!result.success) return {}
+    if(!result.success) return []
     const raw_output = result.data
-    const label_data = {}
+    const label_data:Dictionary = {}
     raw_output.split("\n").map((raw_line:string) => {
       const split_index = raw_line.search(':')
       if(split_index > 1) {
