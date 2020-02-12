@@ -47,8 +47,8 @@ export abstract class StackCommand extends Command
     else if(!parse_object.flags?.hostRoot)
       result = loadProjectSettings(parse_object.flags.hostRoot)
     if(result.success) parse_object.flags = {
-      ...parse_object.flags,
-      ...JSTools.oSubset(result.data, Object.keys(flag_props))
+      ...JSTools.oSubset(result.data, Object.keys(flag_props)),
+      ...parse_object.flags
     }
     // -- exit if required flags are missing -----------------------------------
     const required_flags = Object.keys(flag_props).filter((name:string) => flag_props[name])
