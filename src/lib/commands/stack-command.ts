@@ -45,22 +45,20 @@ export abstract class StackCommand extends Command
     var result = new ValidatedOutput(false)
     if(!flags?.hostRoot && this.settings.get('auto_hostroot'))
       result = scanForSettingsDirectory(process.cwd())
-    else if(!flags?.hostRoot)
+    else if(flags?.hostRoot)
       result = loadProjectSettings(parse_object.flags.hostRoot)
     // -- merge flags if load was successful -----------------------------------
     if(result.success) {
       var mergeable_fields = Object.keys(flag_props)
       // do not load project configFiles if user manually specifies another stack (See github issue #38).
-      if(!this.equivStackPaths(flags.stack, result.data.stack || ""))
+      if(flags.stack && !this.equivStackPaths(flags.stack, result.data.stack || ""))
         mergeable_fields = mergeable_fields.filter((e:string) => e != 'configFiles')
-      // merge
-      console.log(mergeable_fields)
-      parse_object.flags = {
-        ...JSTools.oSubset(result.data, mergeable_fields),
-        ...parse_object.flags
-      }
+      // merge empty fields
+      JSTools.rMergeOnEmpty(
+        parse_object.flags,
+        JSTools.oSubset(result.data, mergeable_fields))
     }
-    // -- exit if required flags are missing -----------------------------------
+    // -- exit with error if required flags are missing ------------------------
     const required_flags = Object.keys(flag_props).filter((name:string) => flag_props[name])
     const missing_flags  = required_flags.filter((name:string) => !parse_object.flags.hasOwnProperty(name))
     if(missing_flags.length != 0) this.error(missingFlagError(missing_flags))

@@ -27,6 +27,26 @@ export class JSTools
     }
   }
 
+  static rMergeOnEmpty(a: Dictionary, b: Dictionary)
+  {
+    if(JSTools.isObject(a) && JSTools.isObject(b))
+    {
+      for (const key in b)
+      {
+          a[key] = JSTools.rMergeOnEmpty(a[key], b[key])
+      }
+      return a;
+    }
+    else if(JSTools.isEmpty(a))
+    {
+      return b;
+    }
+    else
+    {
+      return a
+    }
+  }
+
   static rCopy(a: Dictionary)
   {
     return JSTools.rMerge({}, a)
@@ -69,9 +89,9 @@ export class JSTools
   }
 
   static isEmpty(val: any) {
-     return ((typeof val === 'string') && (val === "")) ||
-     ((val instanceof Array) && (val.length == 0)) ||
-     ((val instanceof Object) && (Object.entries(val).length === 0)) ||
+     return (JSTools.isString(val) && (val === "")) ||
+     (JSTools.isArray(val) && (val.length == 0)) ||
+     (JSTools.isObject(val) && (Object.entries(val).length === 0)) ||
      (!val)
   }
 
