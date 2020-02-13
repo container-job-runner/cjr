@@ -21,7 +21,7 @@ export class PodmanBuildDriver extends DockerBuildDriver
       var result = this.shell.output(command, flags, args, {}, this.json_output_format)
       if(!result.success) return false
       // extra logic since podman images --reference=name:tag is equivalent to docker images --reference=*name:tag
-      return result.data.some((image_data:ValidatedOutput) =>
+      return result.data.some((image_data:Dictionary) =>
         image_data.names.some((name: string) =>
           (new RegExp(`/${this.imageName(stack_path)}$`)).test(name)))
     }
