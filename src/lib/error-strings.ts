@@ -25,6 +25,9 @@ export const ErrorStrings = {
   },
   JOBINFOLABEL: {
     INVALIDJSON: chalk`{bold Invalid JSON } - could not parse job json.`
+  },
+  STACK: {
+    NO_STACK_SPECIFIED: (stack_name:string, stack_path: string) => ` Removing image for stack ${stack_name} (${stack_path})`
   }
 }
 
