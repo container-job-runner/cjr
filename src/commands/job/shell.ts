@@ -81,7 +81,7 @@ export default class Shell extends StackCommand {
       if(!result.success) return printResultState(result)
       const old_job_object = result.data
       // 2. choose temporary location for result files -------------------------
-      const tmp_storage_path = path.join(this.config.dataDir, cli_storage_dir_name, job_id) // extra protection to prevent entry from ever being blank.
+      const tmp_storage_path = path.join(this.config.dataDir, cli_storage_dir_name, job_id)
       var   tmp_host_root = ""
       // 3. copy result data to temporary location -----------------------------
       if(old_job_object.hostRoot) {
@@ -91,35 +91,31 @@ export default class Shell extends StackCommand {
         })
         fs.ensureDirSync(temp_job_object.hostRoot)
         result = runner.jobCopy(job_id, temp_job_object, true)
-      }
-      // 4. start new job ------------------------------------------------------
-      var new_job_id = false
-      if(result.success)
-      {
-        const new_job_object = JSTools.rMerge(JSTools.rCopy(old_job_object), {
-          command: this.settings.get("default_shell"),
-          synchronous: false,
-          removeOnExit: flags.discard
-        })
-        if(old_job_object.hostRoot) new_job_object.hostRoot = tmp_host_root
-        var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, flags.configFiles,
-          (configuration) => {
-            this.addLabelFlagsToConfiguration(configuration, flags.label)
-            if(flags.message) configuration.addLabel("message", flags.message)
-            const jobinfo_label = (old_job_object.hostRoot) ?  {...new_job_object, ...{hostRoot: old_job_object.hostRoot}} : new_job_object; // add original host root to new job
-            addJobInfoLabel(configuration, jobinfo_label)
-            var result = runner.jobStart(stack_path, new_job_object, configuration.runObject())
-            if(result.success) new_job_id = result.data
-            else printResultState(result)
-          })
-      }
-      // 5. remove temp dir ----------------------------------------------------
-      if(old_job_object.hostRoot && tmp_storage_path != "/") {
-          fs.removeSync(tmp_storage_path)
-      }
-      // 6. attach to job ------------------------------------------------------
-      if(new_job_id) runner.jobAttach(new_job_id)
 
+      }
+      if(result.success) return printResultState(result)
+      // 4. start new job ------------------------------------------------------
+      const new_job_object = JSTools.rMerge(JSTools.rCopy(old_job_object), {
+        command: this.settings.get("default_shell"),
+        synchronous: true,
+        removeOnExit: flags.discard
+      })
+      if(old_job_object.hostRoot) new_job_object.hostRoot = tmp_host_root
+      var result = IfBuiltAndLoaded(builder, "no-rebuild", flags, stack_path, flags.configFiles,
+        (configuration) => {
+          this.addLabelFlagsToConfiguration(configuration, flags.label)
+          if(flags.message) configuration.addLabel("message", flags.message)
+          const jobinfo_label = (old_job_object.hostRoot) ?  {...new_job_object, ...{hostRoot: old_job_object.hostRoot}} : new_job_object; // add original host root to new job
+          addJobInfoLabel(configuration, jobinfo_label)
+          var result = runner.jobStart(
+            stack_path,
+            new_job_object,
+            configuration.runObject(),
+            {postCopy: () => fs.remove(tmp_storage_path)}
+          )
+          if(result.success) new_job_id = result.data
+          else printResultState(result)
+        })
     }
     printResultState(result)
   }
