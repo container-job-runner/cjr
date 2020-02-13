@@ -31,6 +31,10 @@ export class DockerBuildDriver extends BuildDriver
       "INVALID_NAME": (path: string) => chalk`{bold Invalid Stack Name} - stack names may contain only lowercase and uppercase letters, digits, underscores, periods and dashes.\n  {italic  path:} ${path}`
     }
 
+    protected WARNINGSTRINGS = {
+      IMAGE_NONEXISTANT: (name: string) => chalk`There is no image named ${name}.`
+    }
+
     validate(stack_path: string, overloaded_config_paths: Array<string> = [])
     {
       var result = new ValidatedOutput(true);
@@ -96,9 +100,9 @@ export class DockerBuildDriver extends BuildDriver
           const command = `${this.base_command} ${this.sub_commands["remove"]}`;
           const args = [this.imageName(stack_path)]
           const flags = {}
-          return new ValidatedOutput(true, this.shell.exec(command, flags, args, {cwd: stack_path}))
+          return this.shell.exec(command, flags, args)
       }
-      return new ValidatedOutput(true)
+      return new ValidatedOutput(true, [], [], [this.WARNINGSTRINGS.IMAGE_NONEXISTANT(this.imageName(stack_path))])
     }
 
     // Load stack_path/config.yml and any additional config files. The settings in the last file in the array has highest priorty
