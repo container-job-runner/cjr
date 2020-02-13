@@ -51,9 +51,10 @@ export abstract class StackCommand extends Command
     if(result.success) {
       var mergeable_fields = Object.keys(flag_props)
       // do not load project configFiles if user manually specifies another stack (See github issue #38).
-      if(flags.stack && this.fullStackPath(flags.stack) != this.fullStackPath(result.data.stack || ""))
+      if(!this.equivStackPaths(flags.stack, result.data.stack || ""))
         mergeable_fields = mergeable_fields.filter((e:string) => e != 'configFiles')
       // merge
+      console.log(mergeable_fields)
       parse_object.flags = {
         ...JSTools.oSubset(result.data, mergeable_fields),
         ...parse_object.flags
@@ -64,6 +65,13 @@ export abstract class StackCommand extends Command
     const missing_flags  = required_flags.filter((name:string) => !parse_object.flags.hasOwnProperty(name))
     if(missing_flags.length != 0) this.error(missingFlagError(missing_flags))
     return parse_object
+  }
+
+  private equivStackPaths(path_a: string, path_b: string)
+  {
+    path_a = this.fullStackPath(path_a)
+    path_b = this.fullStackPath(path_b)
+    return (path.basename(path_a) == path.basename(path_b) && path.dirname(path_a) == path.dirname(path_b))
   }
 
   newBuilder(explicit: boolean = false, silent: boolean = false)
