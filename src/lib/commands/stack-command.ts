@@ -41,14 +41,23 @@ export abstract class StackCommand extends Command
     // -- exit if no-autoload flag is enabled ----------------------------------
     if(parse_object.flags?.['no-autoload']) return parse_object
     // -- load settings and augment flags  -------------------------------------
+    const flags = parse_object.flags
     var result = new ValidatedOutput(false)
-    if(!parse_object.flags?.hostRoot && this.settings.get('auto_hostroot'))
+    if(!flags?.hostRoot && this.settings.get('auto_hostroot'))
       result = scanForSettingsDirectory(process.cwd())
-    else if(!parse_object.flags?.hostRoot)
+    else if(!flags?.hostRoot)
       result = loadProjectSettings(parse_object.flags.hostRoot)
-    if(result.success) parse_object.flags = {
-      ...JSTools.oSubset(result.data, Object.keys(flag_props)),
-      ...parse_object.flags
+    // -- merge flags if load was successful -----------------------------------
+    if(result.success) {
+      var mergeable_fields = Object.keys(flag_props)
+      // do not load project configFiles if user manually specifies another stack (See github issue #38).
+      if(flags.stack && this.fullStackPath(flags.stack) != this.fullStackPath(result.data.stack || ""))
+        mergeable_fields = mergeable_fields.filter((e:string) => e != 'configFiles')
+      // merge
+      parse_object.flags = {
+        ...JSTools.oSubset(result.data, mergeable_fields),
+        ...parse_object.flags
+      }
     }
     // -- exit if required flags are missing -----------------------------------
     const required_flags = Object.keys(flag_props).filter((name:string) => flag_props[name])
