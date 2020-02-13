@@ -57,7 +57,7 @@ export class DockerRunDriver extends RunDriver
 
   // job functions
 
-  jobStart(stack_path: string, job_options: Dictionary, run_options: Dictionary={}){
+  jobStart(stack_path: string, job_options: Dictionary, run_options: Dictionary={}, callbacks:Dictionary={}){
 
     var result = this.job_schema_validator(job_options)
     if(!result.success) {
@@ -79,9 +79,11 @@ export class DockerRunDriver extends RunDriver
 
     result = this.create(stack_path, command_str, run_options)
     if(!result.success) return result
+    if(callbacks?.postCreate) callbacks.postCreate(result)
 
     const container_id = result.data;
     if(hostRoot) this.copyToContainer(container_id, hostRoot, containerRoot)
+    if(callbacks?.postCopy) callbacks.postCopy(result)
 
     const command = `${this.base_command} ${this.sub_commands["start"]}`;
     const args: Array<string> = [container_id]
@@ -97,7 +99,9 @@ export class DockerRunDriver extends RunDriver
       flags = {}
       shell_options = {stdio: "pipe"} // hide any output (id of process)
     }
-    this.shell.exec(command, flags, args, shell_options)
+    const exec_result = this.shell.exec(command, flags, args, shell_options)
+    if(exec_result.success) return exec_result
+    if(callbacks?.postExec) callbacks.postExec(result)
 
     return result
   }
@@ -109,8 +113,7 @@ export class DockerRunDriver extends RunDriver
     const command = `${this.base_command} ${this.sub_commands["create"]}`;
     const args  = [this.imageName(stack_path), command_string]
     const flags = this.runFlags(run_options)
-    var result = this.shell.output(command, flags, args, {stdio: "pipe"})
-    if(result.success) result.data = result.data.trim()
+    var result = this.shell.output(command, flags, args, {stdio: "pipe"}, "trim")
     if(result.data === "") return new ValidatedOutput(false, [], [this.ERRORSTRINGS.EMPTY_CREATE_ID])
     return result
   }
