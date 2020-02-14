@@ -22,7 +22,6 @@ export default class List extends StackCommand {
     fs.readdirSync(stacks_path)
       .filter((file_name: string) => !/^\./.test(path.basename(file_name)) && FileTools.existsDir(path.join(stacks_path, file_name)))
       .map((file_name:string, i:number) => console.log(`${(i == 0) ? "" : "        "}${file_name}`))
-
   }
 
 }

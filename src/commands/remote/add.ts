@@ -27,7 +27,7 @@ export default class Add extends RemoteCommand {
     // -- verify that name is unique -------------------------------------------
     if(resource_config.hasOwnProperty(flags.name))
       return printResultState(
-        new ValidatedOutput(false, [], [ErrorStrings.NEWENTRY.NAME_EXISTS(flags.name)])
+        new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.NAME_EXISTS(flags.name)])
       )
     // -- create new entry -----------------------------------------------------
     var new_entry:Dictionary = {
@@ -39,7 +39,7 @@ export default class Add extends RemoteCommand {
     }
     // -- verify that keyfile exists -------------------------------------------
     if(flags.key && !FileTools.existsFile(flags.key))
-      return printResultState(new ValidatedOutput(false, [], [ErrorStrings.NEWENTRY.KEYFILE_NONEXISTANT(flags.key)]))
+      return printResultState(new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.KEYFILE_NONEXISTANT(flags.key)]))
     // -- save or copy keyfile -------------------------------------------------
     if(flags.key) new_entry.key = path.resolve((flags["copy-key"]) ? this.copyKeyfile(flags.key, Object.keys(resource_config).length) : flags.key)
     resource_config[flags.name] = new_entry

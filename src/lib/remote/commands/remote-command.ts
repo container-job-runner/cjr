@@ -40,7 +40,7 @@ export abstract class RemoteCommand extends StackCommand
     validResourceName(name: string, resources: Dictionary)
     {
       if(!resources.hasOwnProperty(name))
-        return new ValidatedOutput(false, [], [ErrorStrings.REMOTENAME.NON_EXISTANT(name)])
+        return new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NAME_NON_EXISTANT(name)])
       return new ValidatedOutput(true, name)
     }
 
