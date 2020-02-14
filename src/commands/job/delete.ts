@@ -32,6 +32,7 @@ export default class Delete extends StackCommand {
     else  // -- stop only jobs specified by user -------------------------------
     {
       const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || "")
+      if(ids === "") return // exit if user selects empty
       const result = matchingJobIds(runner, JSTools.arrayWrap(ids), stack_path)
       if(result.success) ids_to_delete = result.data
       printResultState(result)

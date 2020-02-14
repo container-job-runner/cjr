@@ -32,6 +32,7 @@ export default class Stop extends StackCommand {
     else  // -- stop only jobs specified by user -------------------------------
     {
       const id = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_path, "running", !this.settings.get('interactive')) || "")
+      if(id === "") return // exit if user selects empty
       const result = matchingJobIds(runner, JSTools.arrayWrap(id), stack_path)
       if(result.success) ids_to_stop = result.data
       printResultState(result)
