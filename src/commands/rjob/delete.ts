@@ -1,7 +1,7 @@
 import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../../lib/remote/commands/remote-command'
-import {JSTools} from '../../../lib/js-tools'
-import {printResultState} from '../../../lib/functions/misc-functions'
+import {RemoteCommand} from '../../lib/remote/commands/remote-command'
+import {JSTools} from '../../lib/js-tools'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Delete extends RemoteCommand {
   static description = 'Delete a job and its associated data. This command works on both running and completed jobs'

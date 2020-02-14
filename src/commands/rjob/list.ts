@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../../lib/remote/commands/remote-command'
-import {printResultState} from '../../../lib/functions/misc-functions'
+import {RemoteCommand} from '../../lib/remote/commands/remote-command'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class List extends RemoteCommand {
   static description = 'List all running jobs for a stack.'

@@ -200,7 +200,7 @@ $ npm install -g cjr
 $ cjr COMMAND
 running command...
 $ cjr (-v|--version|version)
-cjr/0.1.2 linux-x64 node-v12.13.1
+cjr/0.1.3 linux-x64 node-v12.13.1
 $ cjr --help [COMMAND]
 USAGE
   $ cjr COMMAND
@@ -209,333 +209,230 @@ USAGE
 <!-- usagestop -->
 
 # Commands
-<!-- commands -->
-* [`cjr $ COMMAND`](#cjr--command)
-* [`cjr bundle SAVE_DIR`](#cjr-bundle-save_dir)
-* [`cjr config:get [KEY]`](#cjr-configget-key)
-* [`cjr config:list`](#cjr-configlist)
-* [`cjr config:set [KEY] [VALUE]`](#cjr-configset-key-value)
-* [`cjr help [COMMAND]`](#cjr-help-command)
-* [`cjr job:attach [ID]`](#cjr-jobattach-id)
-* [`cjr job:copy [ID]`](#cjr-jobcopy-id)
-* [`cjr job:delete [ID]`](#cjr-jobdelete-id)
-* [`cjr job:labels [ID]`](#cjr-joblabels-id)
-* [`cjr job:list`](#cjr-joblist)
-* [`cjr job:log [ID]`](#cjr-joblog-id)
-* [`cjr job:shell [ID]`](#cjr-jobshell-id)
-* [`cjr job:stop [ID]`](#cjr-jobstop-id)
-* [`cjr jupyter:list`](#cjr-jupyterlist)
-* [`cjr jupyter:start`](#cjr-jupyterstart)
-* [`cjr jupyter:stop`](#cjr-jupyterstop)
-* [`cjr shell`](#cjr-shell)
-* [`cjr stack:build`](#cjr-stackbuild)
-* [`cjr stack:clone URL`](#cjr-stackclone-url)
-* [`cjr stack:list`](#cjr-stacklist)
-* [`cjr stack:rmi`](#cjr-stackrmi)
-* [`cjr stash`](#cjr-stash)
 
-## `cjr $ COMMAND`
 
-Run a command as a new job.
+Run a command as a new job on a remote resource.
 
 ```
 USAGE
-  $ cjr $ COMMAND
+  $ cjr remote:$
 
 OPTIONS
   --async
   --autocopy                 automatically copy files back to hostRoot on exit
   --autocopy-all             automatically copy all files results back to hostRoot on exit
-  --build-nocache            rebuilds stack with no-cache flag active
   --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --explicit
   --hostRoot=hostRoot
-  --message=message          use this flag to tag a job with a user-supplied message
   --no-autoload              prevents cli from automatically loading flags using project settings files
-  --no-rebuild               does not rebuild stack before running job
   --port=port                [default: ]
+  --remoteName=remoteName
+  --silent
   --stack=stack
-  --verbose                  prints output from stack build output and id
+  --verbose                  shows upload progress
   --x11
 ```
 
-_See code: [src/commands/$.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/$.ts)_
+_See code: [src/commands/remote/$.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/$.ts)_
 
-## `cjr bundle SAVE_DIR`
+## `cjr remote:add`
 
-bundle a stack and its project files for sharing.
+Add a remote resource.
 
 ```
 USAGE
-  $ cjr bundle SAVE_DIR
+  $ cjr remote:add
 
 OPTIONS
-  --all                      include project files in bundle
-  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
-  --explicit
-  --hostRoot=hostRoot
-  --no-autoload              prevents cli from automatically loading flags using project settings files
-  --stack=stack
-  --tar                      produces one .tar.gz file (requires zip)
-  --zip                      produces one .zip file (requires gzip)
+  --address=address          (required)
+  --copy-key
+  --key=key
+  --name=name                (required)
+  --storage-dir=storage-dir  location where job data is stored on remote host.
+  --type=type                (required)
+  --username=username        (required)
 ```
 
-_See code: [src/commands/bundle.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/bundle.ts)_
+_See code: [src/commands/remote/add.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/add.ts)_
 
-## `cjr config:get [KEY]`
+## `cjr remote:delete REMOTE-NAME`
 
-Get a CLI parameter.
-
-```
-USAGE
-  $ cjr config:get [KEY]
-```
-
-_See code: [src/commands/config/get.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/config/get.ts)_
-
-## `cjr config:list`
-
-List all CLI parameters and data directories.
+Remove a remote resource.
 
 ```
 USAGE
-  $ cjr config:list
+  $ cjr remote:delete REMOTE-NAME
 ```
 
-_See code: [src/commands/config/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/config/list.ts)_
+_See code: [src/commands/remote/delete.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/delete.ts)_
 
-## `cjr config:set [KEY] [VALUE]`
-
-Set a CLI parameter.
-
-```
-USAGE
-  $ cjr config:set [KEY] [VALUE]
-```
-
-_See code: [src/commands/config/set.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/config/set.ts)_
-
-## `cjr help [COMMAND]`
-
-display help for cjr
-
-```
-USAGE
-  $ cjr help [COMMAND]
-
-ARGUMENTS
-  COMMAND  command to show help for
-
-OPTIONS
-  --all  see all commands in CLI
-```
-
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.2.3/src/commands/help.ts)_
-
-## `cjr job:attach [ID]`
+## `cjr remote:job:attach [ID]`
 
 Attach back to a running job.
 
 ```
 USAGE
-  $ cjr job:attach [ID]
+  $ cjr remote:job:attach [ID]
 
 OPTIONS
   --explicit
-  --stack=stack
+  --remoteName=remoteName
 ```
 
-_See code: [src/commands/job/attach.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/attach.ts)_
+_See code: [src/commands/remote/job/attach.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/job/attach.ts)_
 
-## `cjr job:copy [ID]`
+## `cjr remote:job:copy [ID]`
 
 Copy job data back into the host directories. Works with both running and completed jobs.
 
 ```
 USAGE
-  $ cjr job:copy [ID]
+  $ cjr remote:job:copy [ID]
 
 OPTIONS
   --all
-  --copy-path=copy-path  overides job default copy path
   --explicit
-  --stack=stack
-  --verbose
+  --force                  force copy into any directory
+  --hostRoot=hostRoot
+  --remoteName=remoteName
+  --silent
+  --verbose                shows upload progress
 ```
 
-_See code: [src/commands/job/copy.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/copy.ts)_
+_See code: [src/commands/remote/job/copy.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/job/copy.ts)_
 
-## `cjr job:delete [ID]`
+## `cjr remote:job:delete [ID]`
 
 Delete a job and its associated data. This command works on both running and completed jobs
 
 ```
 USAGE
-  $ cjr job:delete [ID]
+  $ cjr remote:job:delete [ID]
 
 OPTIONS
   --all
   --all-completed
   --all-running
   --explicit
+  --remoteName=remoteName
   --silent
-  --stack=stack
 ```
 
-_See code: [src/commands/job/delete.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/delete.ts)_
+_See code: [src/commands/remote/job/delete.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/job/delete.ts)_
 
-## `cjr job:labels [ID]`
+## `cjr remote:job:list`
 
-Retrieve internal cli data for a job.
+List all running jobs for a stack.
 
 ```
 USAGE
-  $ cjr job:labels [ID]
+  $ cjr remote:job:list
 
 OPTIONS
   --all
-  --all-completed
-  --all-running
   --explicit
-  --json
-  --label=label
-  --stack=stack
-```
-
-_See code: [src/commands/job/labels.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/labels.ts)_
-
-## `cjr job:list`
-
-List all running jobs, or all running jobs for a stack.
-
-```
-USAGE
-  $ cjr job:list
-
-OPTIONS
-  --all                if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is
-                       set
-
-  --explicit
-
   --hostRoot=hostRoot
-
   --json
-
-  --no-autoload        prevents cli from automatically loading flags using project settings files
-
-  --stack=stack
-
+  --remoteName=remoteName
   --verbose
 ```
 
-_See code: [src/commands/job/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/list.ts)_
+_See code: [src/commands/remote/job/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/job/list.ts)_
 
-## `cjr job:log [ID]`
+## `cjr remote:job:log [ID]`
 
 Print any output generated by a job.
 
 ```
 USAGE
-  $ cjr job:log [ID]
+  $ cjr remote:job:log [ID]
 
 OPTIONS
   --explicit
-  --lines=lines  [default: 100]
-  --stack=stack
+  --lines=lines            [default: 100]
+  --remoteName=remoteName
 ```
 
-_See code: [src/commands/job/log.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/log.ts)_
+_See code: [src/commands/remote/job/log.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/job/log.ts)_
 
-## `cjr job:shell [ID]`
+## `cjr remote:job:shell [ID]`
 
 Start a shell inside a result. After exiting the changes will be stored as a new result
 
 ```
 USAGE
-  $ cjr job:shell [ID]
+  $ cjr remote:job:shell [ID]
 
 OPTIONS
   --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
   --discard
   --explicit
   --hostRoot=hostRoot
-  --message=message          use this flag to tag a job with a user-supplied message
+  --no-autoload              prevents cli from automatically loading flags using project settings files
+  --remoteName=remoteName
   --stack=stack
 ```
 
-_See code: [src/commands/job/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/shell.ts)_
+_See code: [src/commands/remote/job/shell.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/job/shell.ts)_
 
-## `cjr job:stop [ID]`
+## `cjr remote:job:stop [ID]`
 
 Stop a running job. This command has no effect on completed jobs.
 
 ```
 USAGE
-  $ cjr job:stop [ID]
+  $ cjr remote:job:stop [ID]
 
 OPTIONS
   --all
   --all-completed
   --all-running
   --explicit
+  --remoteName=remoteName
   --silent
-  --stack=stack
 ```
 
-_See code: [src/commands/job/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/job/stop.ts)_
+_See code: [src/commands/remote/job/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/job/stop.ts)_
 
-## `cjr jupyter:list`
+## `cjr remote:list`
 
-List the url of any running jupiter servers for stack.
-
-```
-USAGE
-  $ cjr jupyter:list
-
-OPTIONS
-  --explicit
-  --hostRoot=hostRoot
-  --stack=stack
-```
-
-_See code: [src/commands/jupyter/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/jupyter/list.ts)_
-
-## `cjr jupyter:start`
-
-Start Jupyter server for a stack.
+List all remote resources.
 
 ```
 USAGE
-  $ cjr jupyter:start
+  $ cjr remote:list
 
 OPTIONS
-  --configFiles=configFiles  [default: ] additional configuration file to override stack configuration
-  --explicit
-  --hostRoot=hostRoot
-  --no-autoload              prevents cli from automatically loading flags using project settings files
-  --port=port                [default: 8888]
-  --stack=stack
-  --sync
+  --verbose
 ```
 
-_See code: [src/commands/jupyter/start.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/jupyter/start.ts)_
+_See code: [src/commands/remote/list.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/list.ts)_
 
-## `cjr jupyter:stop`
+## `cjr remote:set REMOTE-NAME PROP VALUE`
 
-Stop the Jupyter server for stack.
+Set a remote resource parameter.
 
 ```
 USAGE
-  $ cjr jupyter:stop
+  $ cjr remote:set REMOTE-NAME PROP VALUE
+```
+
+_See code: [src/commands/remote/set.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/set.ts)_
+
+## `cjr remote:ssh [REMOTE-NAME]`
+
+ssh into a remote resource.
+
+```
+USAGE
+  $ cjr remote:ssh [REMOTE-NAME]
 
 OPTIONS
   --explicit
-  --hostRoot=hostRoot
-  --stack=stack
+  --remoteName=remoteName
 ```
 
-_See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/jupyter/stop.ts)_
+_See code: [src/commands/remote/ssh.ts](https://github.com/buvoli/cjr/blob/v0.1.2/src/commands/remote/ssh.ts)_
 
 ## `cjr shell`
 

@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../../lib/remote/commands/remote-command'
-import {printResultState} from '../../../lib/functions/misc-functions'
+import {RemoteCommand} from '../../lib/remote/commands/remote-command'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Copy extends RemoteCommand {
   static description = 'Copy job data back into the host directories. Works with both running and completed jobs.'

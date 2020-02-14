@@ -1,7 +1,7 @@
 {
   "name": "cjr",
   "description": "Runs jobs in linux containers",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "buvoli",
   "bin": {
     "penguin": "./bin/run"
@@ -59,7 +59,13 @@
         "description": "Build, list, and delete images cooresponding to a stack."
       },
       "job": {
-        "description": "View and manage jobs."
+        "description": "View and manage local jobs."
+      },
+      "rjob": {
+        "description": "View and manage remote jobs."
+      },
+      "remote": {
+        "description": "View and manage remote resources."
       },
       "jupyter": {
         "description": "Start and stop Jupyter lab and Jupyter notebook."

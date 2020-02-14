@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../../lib/remote/commands/remote-command'
-import {printResultState} from '../../../lib/functions/misc-functions'
+import {RemoteCommand} from '../../lib/remote/commands/remote-command'
+import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Attach extends RemoteCommand {
   static description = 'Attach back to a running job.'
