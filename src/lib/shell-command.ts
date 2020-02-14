@@ -96,7 +96,7 @@ export class ShellCommand
       }
     }
 
-    commandString(command: string, flags: Dictionary, args: Array<string>, options:Dictionary={})
+    commandString(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary={})
     {
       // HELPER: wraps variable in array
       const arrayWrap = (x:any) => (JSTools.isArray(x)) ? x : [x]
