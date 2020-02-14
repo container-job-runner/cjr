@@ -49,7 +49,7 @@ export default class Shell extends StackCommand {
     const builder  = this.newBuilder(flags.explicit)
     const runner  = this.newRunner(flags.explicit)
     var id_str = argv[0] || await promptUserForJobId(runner, "", "", !this.settings.get('interactive')) || ""
-    if(id === "") return // exit if user selects empty
+    if(id_str === "") return // exit if user selects empty
     // -- determine if there is a job with a matching id -----------------------
     var result = matchingJobInfo(runner, [id_str], "")
     if(!result.success) return printResultState(result) // exit if no matching job
@@ -114,8 +114,6 @@ export default class Shell extends StackCommand {
             configuration.runObject(),
             {postCopy: () => fs.remove(tmp_storage_path)}
           )
-          if(result.success) new_job_id = result.data
-          else printResultState(result)
         })
     }
     printResultState(result)
