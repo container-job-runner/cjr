@@ -1,5 +1,6 @@
 import {flags} from '@oclif/command'
 import * as chalk from 'chalk'
+import {JSTools} from '../../lib/js-tools'
 import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 import {matchingJobInfo, promptUserForJobId, allJobIds} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
@@ -16,7 +17,7 @@ export default class Labels extends StackCommand {
     "all-running": flags.boolean({default: false}),
     json: flags.boolean({default: false})
   }
-  static strict = true;
+  static strict = false;
 
   async run()
   {
@@ -33,8 +34,9 @@ export default class Labels extends StackCommand {
       job_info = runner.jobInfo(stack_path, "running")
     else  // -- stop only jobs specified by user -------------------------------
     {
-      var id = argv[0] || await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || ""
-      var result = matchingJobInfo(runner, [id], stack_path)
+      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || "")
+      if(ids === "") return // exit if user selects empty
+      var result = matchingJobInfo(runner, JSTools.arrayWrap(ids), stack_path)
       if(result.success) job_info = result.data
       else return (flags.json) ? console.log("{}") : printResultState(result)
     }
