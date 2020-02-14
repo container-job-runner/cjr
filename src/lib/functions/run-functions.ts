@@ -23,7 +23,6 @@ import {ps_vo_validator} from '../config/project-settings/project-settings-schem
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-
 // returns all running job ids
 export function allJobIds(runner: RunDriver, stack_path: string="", status:string = "")
 {
@@ -41,6 +40,7 @@ export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_path
 //returns array of jobs info objects for all jobs whose id begins with the letters in any string in the passed parameter "id"
 export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_path: string, status:string = "")
 {
+  ids = ids.filter((id:string) => id !== "") // remove empty ids
   if(ids.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
   return filterJobInfoByID(runner.jobInfo(stack_path, status), new RegExp(`^(${ids.join('|')})`))
 }
