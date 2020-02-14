@@ -17,11 +17,11 @@ export default class List extends StackCommand {
   {
     const {argv, flags} = this.parse(List)
     const stacks_path = flags.stacks_path || this.settings.get("stacks_path")
-    console.log(chalk`{bold Path:} ${this.settings.get("stacks_path")}`)
-    console.log(chalk`{bold Stacks:}`)
+    console.log(chalk`{bold PATH}    ${this.settings.get("stacks_path")}`)
+    process.stdout.write(chalk`{bold STACKS}  `)
     fs.readdirSync(stacks_path)
       .filter((file_name: string) => !/^\./.test(path.basename(file_name)) && FileTools.existsDir(path.join(stacks_path, file_name)))
-      .map((file_name:string, i:number) => console.log(` - ${file_name}`))
+      .map((file_name:string, i:number) => console.log(`${(i == 0) ? "" : "        "}${file_name}`))
 
   }
 
