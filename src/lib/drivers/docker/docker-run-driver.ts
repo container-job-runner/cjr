@@ -100,7 +100,7 @@ export class DockerRunDriver extends RunDriver
       shell_options = {stdio: "pipe"} // hide any output (id of process)
     }
     const exec_result = this.shell.exec(command, flags, args, shell_options)
-    if(exec_result.success) return exec_result
+    if(!exec_result.success) return exec_result
     if(callbacks?.postExec) callbacks.postExec(result)
 
     return result
