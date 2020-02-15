@@ -18,7 +18,7 @@ export default class RMI extends StackCommand {
   async run()
   {
     const {argv, flags} = this.parseWithLoad(RMI, {stack:false})
-    const stack_list = (argv.length > 0) ? argv : (flags.stack || [])
+    const stack_list = (argv.length > 0) ? argv : ([flags.stack] || [])
     const builder = this.newBuilder(flags.explicit, flags.silent)
     stack_list.map((stack_name:string) => {
       const stack_path = this.fullStackPath(stack_name)
