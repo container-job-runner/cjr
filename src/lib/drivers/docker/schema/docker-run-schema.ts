@@ -1,5 +1,5 @@
 import * as Ajv from 'ajv'
-import {docker_configuration_schema} from '../../../config/docker/schema/docker-configuration-schema'
+import {docker_stack_configuration_schema} from '../../../config/stacks/docker/schema/docker-stack-configuration-schema'
 import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
 
 export const docker_run_schema = {
@@ -8,6 +8,7 @@ export const docker_run_schema = {
   "description": "Used internally by DockerRunDriver in run command",
   "type": "object",
   "properties": {
+    "command": {"type": "string"},
     "mounts": {"$ref": "docker-configuration-schema.json#/definitions/mounts"},
     "ports": {"$ref": "docker-configuration-schema.json#/definitions/ports"},
     "environment": {"$ref": "docker-configuration-schema.json#/definitions/args"},
@@ -40,7 +41,7 @@ export const docker_run_schema = {
 
 // create new Ajv validator for docker_run_schema
 type Dictionary = {[key:string] : any}
-var ajv = new Ajv({schemas: [docker_run_schema, docker_configuration_schema]})
+var ajv = new Ajv({schemas: [docker_run_schema, docker_stack_configuration_schema]})
 export const dr_ajv_validator = ajv.getSchema(docker_run_schema["$id"])
 export const dr_vo_validator  = (raw_object: Dictionary) => ajvValidatorToValidatedOutput(dr_ajv_validator, raw_object)
 

@@ -9,15 +9,15 @@ export default class List extends StackCommand {
   static description = 'List all stacks present in the stacks path.'
   static args = []
   static flags = {
-    stacks_path: flags.string()
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"})
   }
   static strict = true;
 
   async run()
   {
-    const {argv, flags} = this.parse(List)
-    const stacks_path = flags.stacks_path || this.settings.get("stacks_path")
-    console.log(chalk`{bold PATH}    ${this.settings.get("stacks_path")}`)
+    const {argv, flags} = this.parseWithLoad(List, {"stacks-dir": false})
+    const stacks_path = flags["stacks-dir"] || this.settings.get("stacks_dir")
+    console.log(chalk`{bold PATH}    ${stacks_path}`)
     process.stdout.write(chalk`{bold STACKS}  `)
     fs.readdirSync(stacks_path)
       .filter((file_name: string) => !/^\./.test(path.basename(file_name)) && FileTools.existsDir(path.join(stacks_path, file_name)))

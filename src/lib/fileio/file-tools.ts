@@ -33,8 +33,8 @@ export class FileTools
         }
         return shell.output('mktemp', flags, [], {}, "trim")
       default: // not thread safe
-        var data = fs.ensureDirSync(path.join(parent_abs_path, `tmp.${JSTools.randomString(10)}`))
-        return new ValidatedOutput(true, data)
+        const tmp_file_path = fs.mkdtempSync(`${parent_abs_path.replace(new RegExp(`${path.sep}$`), "")}${path.sep}`) // ensure trailing separator on path
+        return new ValidatedOutput(true, tmp_file_path)
     }
   }
 

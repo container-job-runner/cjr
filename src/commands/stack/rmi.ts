@@ -11,17 +11,18 @@ export default class RMI extends StackCommand {
     stack: flags.string({env: 'STACK', multiple: true}),
     hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
-    silent:   flags.boolean({default: false})
+    silent:   flags.boolean({default: false}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(RMI, {stack:false})
-    const stack_list = (argv.length > 0) ? argv : ([flags.stack] || [])
+    const {argv, flags} = this.parseWithLoad(RMI, {stack:false, "stacks-dir": false})
+    const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
     const builder = this.newBuilder(flags.explicit, flags.silent)
     stack_list.map((stack_name:string) => {
-      const stack_path = this.fullStackPath(stack_name)
+      const stack_path = this.fullStackPath(stack_name, flags["stacks-dir"])
       if(!flags.silent) console.log(ErrorStrings.STACK.NO_STACK_SPECIFIED(stack_name, stack_path))
       printResultState(builder.removeImage(stack_path))
     });

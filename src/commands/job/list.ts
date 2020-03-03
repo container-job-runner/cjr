@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {printVerticalTable, printHorizontalTable} from '../../lib/functions/run-functions'
+import {printVerticalTable, printHorizontalTable} from '../../lib/functions/misc-functions'
 import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {

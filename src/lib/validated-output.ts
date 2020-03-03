@@ -17,10 +17,20 @@ export class ValidatedOutput
     {
       this.error.push(message)
       this.success = false;
+      return this
     }
 
     pushWarning(message: string)
     {
       this.warning.push(message)
+      return this
+    }
+
+    absorb(vo:ValidatedOutput)
+    {
+      this.success = this.success && vo.success
+      this.error.concat(vo.error)
+      this.warning.concat(vo.warning)
+      return this
     }
 }

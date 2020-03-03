@@ -1,7 +1,8 @@
 import * as path from 'path'
 import {ShellCommand} from "../../shell-command"
+import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 
-export class ContainerDriver
+export abstract class ContainerDriver
 {
 
   protected shell: ShellCommand
@@ -22,5 +23,7 @@ export class ContainerDriver
   {
     return `${this.stackName(stack_path)}:${this.tag}`
   }
+
+  abstract emptyConfiguration(): StackConfiguration
 
 }

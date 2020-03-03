@@ -31,7 +31,7 @@ export default class List extends StackCommand {
     }
     else
     {
-      runner.jobExec(jupiter_id, 'jupyter notebook list')
+      runner.jobExec(jupiter_id, ['jupyter', 'notebook', 'list'])
     }
 
     printResultState(result)

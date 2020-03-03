@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
-import {IfBuiltAndLoaded, bindHostRoot, setRelativeWorkDir, addPorts, jobToImage, enableX11, prependXAuth} from '../lib/functions/run-functions'
+import {jobStart, jobToImage, ContainerRuntime, OutputOptions, JobOptions} from "../lib/functions/run-functions"
 import {printResultState} from '../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
@@ -8,47 +8,52 @@ export default class Shell extends StackCommand {
   static args = []
   static flags = {
     stack: flags.string({env: 'STACK'}),
-    hostRoot: flags.string({env: 'HOSTROOT'}),
-    configFiles: flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    "project-root": flags.string({env: 'PROJECTROOT'}),
+    "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     save: flags.string({description: "saves new image that contains modifications"}),
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
-    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"})
   }
   static strict = true;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Shell, {stack:true, configFiles: false, hostRoot:false})
-    const builder = this.newBuilder(flags.explicit)
-    const runner  = this.newRunner(flags.explicit)
-    const stack_path = this.fullStackPath(flags.stack)
-    // if save is empty overwrite stack image
-    if(flags.save === "") flags.save = builder.imageName(stack_path)
+    const {argv, flags} = this.parseWithLoad(Shell, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
+    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    // -- set output options ---------------------------------------------------
+    const output_options:OutputOptions = {
+      verbose:  false,
+      silent:   false,
+      explicit: flags.explicit
+    }
+    // -- set container runtime options ----------------------------------------
+    const runtime_options:ContainerRuntime = {
+      builder: this.newBuilder(flags.explicit),
+      runner:  this.newRunner(flags.explicit)
+    }
+    // -- set job options ------------------------------------------------------
+    var job_options:JobOptions = {
+      "stack-path":   stack_path,
+      "config-files": flags["config-files"],
+      "build-mode":   "no-rebuild",
+      "command":      this.settings.get("default_shell"),
+      "host-root":    flags["project-root"] || "",
+      "cwd":          process.cwd(),
+      "file-access":  "bind",
+      "synchronous":  true,
+      "x11":          flags.x11,
+      "ports":        this.parsePortFlag(flags.port),
+      "remove":       (flags.save !== undefined) ? false : true
+    }
 
-    let result = IfBuiltAndLoaded(builder, "no-rebuild", {hostRoot: flags?.hostRoot}, stack_path, flags.configFiles,
-      (configuration, containerRoot, hostRoot) => {
-        bindHostRoot(configuration, containerRoot, hostRoot);
-        setRelativeWorkDir(configuration, containerRoot, hostRoot, process.cwd())
-        addPorts(configuration, flags.port)
-        if(flags.x11) enableX11(configuration, flags.explicit)
+    var result = jobStart(runtime_options, job_options, output_options)
+    if(!result.success) return printResultState(result)
 
-        const job_object = {
-          command: (flags.x11) ? prependXAuth(this.settings.get("default_shell"), flags.explicit) : this.settings.get("default_shell"),
-          hostRoot: false, // set false so that no data copy is performed
-          containerRoot: containerRoot,
-          synchronous: true,
-          removeOnExit: (flags.save !== undefined) ? false : true
-        }
-
-        let result = runner.jobStart(stack_path, job_object, configuration.runObject())
-        return result
-      })
-
-    if(flags.save !== undefined) await jobToImage(runner, result, flags.save, true, this.settings.get('interactive'))
+    if(flags.save !== undefined) await jobToImage(runtime_options.runner, result, flags.save, true, this.settings.get('interactive'))
     printResultState(result);
-
   }
 
 }

@@ -9,39 +9,22 @@ import {ValidatedOutput} from '../../validated-output'
 import {PathTools} from '../../fileio/path-tools'
 import {RunDriver, Dictionary} from '../abstract/run-driver'
 import {ShellCommand} from "../../shell-command"
-import {dr_ajv_validator} from './schema/docker-run-schema'
-import {de_ajv_validator} from './schema/docker-exec-schema'
-import {dj_vo_validator} from './schema/docker-job-schema'
-import {djc_vo_validator} from './schema/docker-job-copy-schema'
-import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
-
+import {dr_vo_validator} from './schema/docker-run-schema'
+import {de_vo_validator} from './schema/docker-exec-schema'
+import {DockerStackConfiguration} from '../../config/stacks/docker/docker-stack-configuration'
 
 export class DockerRunDriver extends RunDriver
 {
   protected base_command = 'docker'
-  protected sub_commands = {
-    run: "run",
-    list: "ps",
-    stop: "stop",
-    attach: "attach",
-    log: "logs",
-    remove: "rm",
-    create: "create",
-    copy: "cp",
-    start: "start",
-    exec: "exec",
-    commit: "commit"
-  }
   protected json_output_format = "line_json"
-  protected job_schema_validator  = dj_vo_validator
-  protected job_copy_validator    = djc_vo_validator
-  protected exec_schema_validator = de_ajv_validator
-  protected run_schema_validator  = dr_ajv_validator
   protected selinux: boolean = false
+  protected run_schema_validator = dr_vo_validator
+  protected exec_schema_validator = de_vo_validator
 
   protected ERRORSTRINGS = {
     INVALID_JOB : chalk`{bold job_options object did not pass validation.}`,
-    EMPTY_CREATE_ID: chalk`{bold Unable to create container.}`
+    EMPTY_CREATE_ID: chalk`{bold Unable to create container.}`,
+    FAILED_CREATE_VOLUME: chalk`{bold Unable to create volume.}`
   }
 
   protected STATUSSTRING = {
@@ -55,90 +38,48 @@ export class DockerRunDriver extends RunDriver
     this.selinux = options.selinux || false
   }
 
-  // job functions
+  emptyConfiguration()
+  {
+    return new DockerStackConfiguration()
+  }
 
-  jobStart(stack_path: string, job_options: Dictionary, run_options: Dictionary={}, callbacks:Dictionary={}){
-
-    var result = this.job_schema_validator(job_options)
-    if(!result.success) {
-      result.pushError(this.ERRORSTRINGS.INVALID_JOB)
-      return result
-    }
-
-    // copy variables for convience
-    const hostRoot = job_options?.hostRoot
-    const containerRoot = job_options?.containerRoot
-    const command_str = job_options.command
-    // force job to be interactive so that we can attach to it
-    run_options["interactive"] = true;
-    run_options["remove"] = job_options["removeOnExit"]
-    if(job_options?.name) run_options["name"] = job_options["name"]
+  jobStart(stack_path: string, configuration: DockerStackConfiguration, callbacks:Dictionary={})
+  {
+    const job_options = configuration.runObject()
     // add mandatory labels
-    const job_labels = {runner: cli_name, stack: this.stackName(stack_path)}
-    run_options["labels"] = { ...(run_options["labels"] || {}), ...job_labels}
-
-    result = this.create(stack_path, command_str, run_options)
+    const mandatory_labels = {runner: cli_name}
+    job_options["labels"] = { ...(job_options["labels"] || {}), ...mandatory_labels}
+    var result = this.run_schema_validator(job_options)
+    if(!result.success) return result.pushError(this.ERRORSTRINGS.INVALID_JOB)
+    // -- create container -----------------------------------------------------
+    result = this.create(stack_path, configuration.getCommand(), job_options)
     if(!result.success) return result
-    if(callbacks?.postCreate) callbacks.postCreate(result)
-
     const container_id = result.data;
-    if(hostRoot) this.copyToContainer(container_id, hostRoot, containerRoot)
-    if(callbacks?.postCopy) callbacks.postCopy(result)
-
-    const command = `${this.base_command} ${this.sub_commands["start"]}`;
+    if(callbacks?.postCreate) callbacks.postCreate(container_id)
+    // -- run container --------------------------------------------------------
+    const command = `${this.base_command} start`;
     const args: Array<string> = [container_id]
-    var flags: Dictionary
-    var shell_options: Dictionary
-    if(job_options.synchronous) // run attached if specified
-    {
-      flags = {attach: {}, interactive: {}}
-      shell_options = {stdio: "inherit"}
-    }
-    else // by default run detached
-    {
-      flags = {}
-      shell_options = {stdio: "pipe"} // hide any output (id of process)
-    }
-    const exec_result = this.shell.exec(command, flags, args, shell_options)
-    if(!exec_result.success) return exec_result
+    const flags = (!job_options.detached) ? {attach: {}, interactive: {}} : {}
+    const shell_options = (!job_options.detached) ? {stdio: "inherit"} : {stdio: "pipe"}
+    result = this.shell.exec(command, flags, args, shell_options)
+    if(!result.success) return result
     if(callbacks?.postExec) callbacks.postExec(result)
-
     return result
   }
 
-  // === START Job Helper Functions ============================================
-
   protected create(stack_path: string, command_string: string, run_options={})
   {
-    const command = `${this.base_command} ${this.sub_commands["create"]}`;
+    const command = `${this.base_command} create`;
     const args  = [this.imageName(stack_path), command_string]
     const flags = this.runFlags(run_options)
-    var result = this.shell.output(command, flags, args, {stdio: "pipe"}, "trim")
+    var result = this.shell.output(command, flags, args, {}, "trim")
     if(result.data === "") return new ValidatedOutput(false, [], [this.ERRORSTRINGS.EMPTY_CREATE_ID])
     return result
   }
 
-  protected copyToContainer(id: string, hostPath: string, containerPath: string)
-  {
-    const command = `${this.base_command} ${this.sub_commands["copy"]}`;
-    const args = [hostPath, `${id}:${containerPath}`]
-    const flags = {}
-    return this.shell.exec(command, flags, args)
-  }
-
-  protected copyFromContainer(container_id: string, containerPath: string, hostPath: string)
-  {
-    const command = `${this.base_command} ${this.sub_commands["copy"]}`;
-    const args = [`${container_id}:${containerPath}`, hostPath]
-    const flags = {}
-    return this.shell.exec(command, flags, args)
-  }
-
-  // === END Job Helper Functions ============================================
-
   jobLog(id: string, lines: string="all")
   {
-    var command = `${this.base_command} ${this.sub_commands["log"]}`;
+    var command = `${this.base_command} logs`;
     var args = [id]
     const lines_int = parseInt(lines)
     const flags = (isNaN(lines_int)) ? {} : {tail: `${lines_int}`}
@@ -147,16 +88,16 @@ export class DockerRunDriver extends RunDriver
 
   jobAttach(id: string)
   {
-    var command = `${this.base_command} ${this.sub_commands["attach"]}`;
+    var command = `${this.base_command} attach`;
     var args = [id]
     var flags = {}
     return new ValidatedOutput(true, this.shell.exec(command, flags, args))
   }
 
-  jobExec(id: string, exec_command: string, exec_options:Dictionary={})
+  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={})
   {
-    var command = `${this.base_command} ${this.sub_commands["exec"]}`;
-    var args = [id, exec_command]
+    var command = `${this.base_command} exec`;
+    var args = [id].concat(exec_command)
     const flags = this.execFlags(exec_options)
     return new ValidatedOutput(true, this.shell.exec(command, flags, args))
   }
@@ -176,7 +117,7 @@ export class DockerRunDriver extends RunDriver
   protected stop(ids: Array<string>)
   {
     if(ids.length == 0) return;
-    const command = `${this.base_command} ${this.sub_commands["stop"]}`;
+    const command = `${this.base_command} stop`;
     const args = ids
     const flags = {}
     return this.shell.exec(command, flags, args, {stdio: "pipe"})
@@ -185,7 +126,7 @@ export class DockerRunDriver extends RunDriver
   protected remove(ids: Array<string>)
   {
     if(ids.length == 0) return;
-    const command = `${this.base_command} ${this.sub_commands["remove"]}`;
+    const command = `${this.base_command} remove`;
     const args = ids
     const flags = {}
     return this.shell.exec(command, flags, args, {stdio: "pipe"})
@@ -193,14 +134,14 @@ export class DockerRunDriver extends RunDriver
 
   jobInfo(stack_path: string, job_status: string = "") // Note: this allows for empty image_name. In which case it returns all running containers on host
   {
-    const command = `${this.base_command} ${this.sub_commands["list"]}`;
+    const command = `${this.base_command} ps`;
     const args: Array<string> = []
     var   flags: Dictionary = {
       "a" : {},
       "no-trunc": {},
       "filter": [`label=runner=${cli_name}`]
     };
-    if(stack_path) flags["filter"].push(`label=stack=${this.stackName(stack_path)}`)
+    if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
     if(job_status) flags["filter"].push(`status=${job_status}`)
     this.addFormatFlags(flags, {format: "json"})
     var result = this.shell.output(command, flags, args, {}, this.json_output_format)
@@ -251,90 +192,34 @@ export class DockerRunDriver extends RunDriver
     })
   }
 
-  jobCopy(id: string, job_object: Dictionary, copy_all: boolean = false, verbose: boolean = false)
-  {
-    var result = this.job_copy_validator(job_object)
-    if(!result.success)
-      return new ValidatedOutput(false, undefined, [this.ERRORSTRINGS.INVALID_JOB])
-
-    const hostRoot = job_object?.hostRoot
-    const containerRoot = job_object?.containerRoot
-    const resultPaths = job_object?.resultPaths
-
-    if(!hostRoot || !containerRoot) // no copy necessary
-      return new ValidatedOutput(true)
-
-    const hostRoot_dirname = path.dirname(hostRoot)
-    const hostRoot_basename = path.basename(hostRoot)
-    const copy_all_flag = copy_all || resultPaths === undefined;
-
-    // -- determine host and container copy paths ------------------------------
-    const cp_paths:Array<Dictionary> = (copy_all_flag) ? // -- copy all files --
-        [{
-          container: path.posix.join(containerRoot, hostRoot_basename),
-          host: job_object?.hostCopyPath || hostRoot_dirname
-        }] : // -- only copy each result folder --------------------------------
-        resultPaths.map((x:string) => {
-          return {
-            container: path.posix.join(containerRoot, hostRoot_basename, x),
-            host: path.posix.dirname(path.posix.join(job_object?.hostCopyPath || hostRoot, x))
-          }
-        });
-
-   // -- copy files ------------------------------------------------------------
-   cp_paths.map((o:Dictionary) => {
-     this.copyFromContainer(id, o.container, o.host)
-     if(verbose) console.log(this.STATUSSTRING.COPY(id, o.container, o.host))
-   })
-
-    return new ValidatedOutput(true)
-  }
-
   jobToImage(id: string, image_name: string)
   {
-    const command = `${this.base_command} ${this.sub_commands["commit"]}`
+    const command = `${this.base_command} commit`
     const args  = [id, image_name]
     const flags = {}
     return this.shell.output(command, flags, args)
   }
 
-  // Depricated: result shell was implemented by
-  // > commiting the job (an exited container) to an image
-  // > start a new container with bash using the same name using commited image
-  // resultShell(id: string)
-  // {
-  //   const image_name = this.imageName(`result-${id}`)
-  //   this.commit(id, image_name, {jobid: id})
-  //   //this.delete(id)
-  //   const command = `${this.base_command} ${this.sub_commands["run"]}`
-  //   const args = `${image_name} bash`
-  //   const flags = {
-  //     'name:': {shorthand: false, id}
-  //   }
-  //   this.shell.exec(command, args, flags, {stdio: "inherit"})
-  // }
-  //
-  // private commit(id: string, image_name: string, labels: object={}) // image name including optional tag
-  // {
-  //   const command = `${this.base_command} commit`
-  //   const args  = [id, image_name]
-  //   const flags = (labels === {}) ? {} : {
-  //     "change": {
-  //       shorthand: false,
-  //       value: Object.keys(labels).map(k => `LABEL ${k}=${labels[k]}`)}
-  //   }
-  //   return this.shell.exec(command, flags, args, {stdio: "pipe"})
-  // }
+  // options accepts following properties {lables?: Array<string>, driver?: string, name?:string}
+  volumeCreate(options:Dictionary = {})
+  {
+    const command = `${this.base_command} volume create`
+    var flags:Dictionary = {}
+    if(options?.labels?.length > 0) flags.labels = options?.labels
+    if(options?.driver) flags.driver = options?.driver
+    const args = (options.name) ? [options.name] : []
+    return this.shell.output(command, flags, args, {}, "trim")
+  }
 
   imageName(stack_path: string)
   {
     return super.imageName(stack_path).toLowerCase() // Docker only accepts lowercase image names
   }
 
-  protected runFlags(run_object: Dictionary)
+  protected runFlags(run_object: Dictionary) // TODO: CONSOLIDATE ALL FUNCTIONS THAT DID NOT REQUIRE OVERLOADING
   {
     var flags = {};
-    if(this.run_schema_validator(run_object)) //verify docker-run schema
+    if(this.run_schema_validator(run_object).success) //verify docker-run schema
     {
       this.addFormatFlags(flags, run_object)
       this.addRemovalFlags(flags, run_object)
@@ -355,7 +240,7 @@ export class DockerRunDriver extends RunDriver
   protected execFlags(exec_object: Dictionary)
   {
     var flags = {};
-    if(this.exec_schema_validator(exec_object)) //verify docker-run schema
+    if(this.exec_schema_validator(exec_object).success) //verify docker-run schema
     {
       this.addInteractiveFlags(flags, exec_object)
       this.addWorkingDirFlags(flags, exec_object)

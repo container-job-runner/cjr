@@ -7,26 +7,22 @@ export const project_settings_schema = {
   "description": "Scheme for optional file .cjr/settings.yml",
   "type": "object",
   "properties": {
-    "hostRoot" : {"$ref": "#/definitions/hostRoot"},
-    "stack": {"$ref": "#/definitions/path"},
-    "configFiles": {"$ref": "#/definitions/configFiles"}
+    "project-root" : {"$ref": "#/definitions/project-root"},
+    "stack": {"type": "string"},
+    "config-files": {"$ref": "#/definitions/config-files"},
+    "stacks-dir": {"type": "string"},
+    "remote-name": {"type": "string"}
   },
   "definitions": {
-    "path": {
-      "type": "string"
-    },
-    "configFiles": {
-      "type": "array",
-      "items": {
-        "anyOf" : [ {"$ref": "#/definitions/path"} ]
-      }
-    },
-    "hostRoot": {
+    "project-root": {
       "type": "string",
       "pattern": "^auto$"
     },
-    "remoteName": {
-      "type": "string"
+    "config-files": {
+      "type": "array",
+      "items": {
+        "anyOf" : [ {"type": "string"} ]
+      }
     }
   }
 }

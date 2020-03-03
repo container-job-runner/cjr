@@ -1,5 +1,5 @@
 import {DockerBuildDriver} from '../docker/docker-build-driver'
-import {PodmanConfiguration} from '../../config/podman/podman-configuration'
+import {PodmanStackConfiguration} from '../../config/stacks/podman/podman-stack-configuration'
 
 // - types ---------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -8,11 +8,11 @@ export class PodmanBuildDriver extends DockerBuildDriver
 {
     protected base_command = 'podman'
     protected json_output_format = "json"
-    protected configuration_constructor = PodmanConfiguration // pointer to configuration class constructor
+    protected configuration_constructor = PodmanStackConfiguration // pointer to configuration class constructor
 
     isBuilt(stack_path: string)
     {
-      const command = `${this.base_command} ${this.sub_commands["images"]}`;
+      const command = `${this.base_command} images`;
       const args:Array<string> = []
       const flags:Dictionary = {
         filter: `reference=${this.imageName(stack_path)}`
@@ -30,6 +30,11 @@ export class PodmanBuildDriver extends DockerBuildDriver
     {
       flags["format"] = {shorthand: false, value: 'json'}
       return flags
+    }
+
+    emptyConfiguration()
+    {
+      return new PodmanStackConfiguration()
     }
 
 }

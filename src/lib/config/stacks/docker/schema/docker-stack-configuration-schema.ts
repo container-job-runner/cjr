@@ -1,7 +1,7 @@
 import * as Ajv from 'ajv'
-import {ajvValidatorToValidatedOutput} from '../../../functions/misc-functions'
+import {ajvValidatorToValidatedOutput} from '../../../../functions/misc-functions'
 
-export const docker_configuration_schema = {
+export const docker_stack_configuration_schema = {
   "$id": "docker-configuration-schema.json",
   "title": "Docker Configuration Schema",
   "description": "Full Configuration Specification for a Docker Stack",
@@ -89,19 +89,17 @@ export const docker_configuration_schema = {
     "files": {
       "type": "object",
       "properties": {
-        "hostRoot": {
-          "type": "string"
-        },
         "containerRoot": {
           "type": "string"
         },
-        "resultPaths": {
-          "type": "array",
-          "items": [
-            {
-              "type": "string"
-            }
-          ]
+        "rsync": {
+          "type": "object",
+          "properties": {
+            "upload-exclude-from" : {type: "string"},
+            "upload-include-from" : {type: "string"},
+            "download-exclude-from" : {type: "string"},
+            "download-include-from" : {type: "string"},
+          }
         }
       }
     },
@@ -185,6 +183,6 @@ export const docker_configuration_schema = {
 
 // Ajv validator for validating schema
 type Dictionary = {[key:string] : any}
-const ajv = new Ajv({schemas: [docker_configuration_schema]})
-export const dc_ajv_validator = ajv.getSchema(docker_configuration_schema["$id"])
-export const dc_vo_validator  = (raw_object: Dictionary) => ajvValidatorToValidatedOutput(dc_ajv_validator, raw_object)
+const ajv = new Ajv({schemas: [docker_stack_configuration_schema]})
+export const dsc_ajv_validator = ajv.getSchema(docker_stack_configuration_schema["$id"])
+export const dsc_vo_validator  = (raw_object: Dictionary) => ajvValidatorToValidatedOutput(dsc_ajv_validator, raw_object)

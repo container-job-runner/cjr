@@ -7,21 +7,17 @@ import * as path from 'path'
 import Command from '@oclif/command'
 import * as chalk from 'chalk'
 import {Settings} from '../settings'
-import {JSTools} from '../js-tools'
-import {Configuration} from '../config/abstract/configuration'
 import {DockerBuildDriver} from '../drivers/docker/docker-build-driver'
 import {PodmanBuildDriver} from '../drivers/podman/podman-build-driver'
 import {BuildahBuildDriver} from '../drivers/buildah/buildah-build-driver'
 import {DockerRunDriver} from '../drivers/docker/docker-run-driver'
 import {PodmanRunDriver} from '../drivers/podman/podman-run-driver'
 import {ShellCommand} from '../shell-command'
-import {FileTools} from '../fileio/file-tools'
-import {YMLFile} from '../fileio/yml-file'
+import {JSTools} from '../js-tools'
 import {missingFlagError} from '../constants'
 import {ValidatedOutput} from '../validated-output'
-import {WarningStrings} from '../error-strings'
-import {printResultState} from '../../lib/functions/misc-functions'
-import {loadProjectSettings, scanForSettingsDirectory} from '../../lib/functions/run-functions'
+import {loadProjectSettings, scanForSettingsDirectory} from '../functions/run-functions'
+import {ProjectSettings, ps_fields} from '../config/project-settings/project-settings'
 
 // -- types --------------------------------------------------------------------
 export type Dictionary = {[key: string]: any}
@@ -30,12 +26,18 @@ export abstract class StackCommand extends Command
 {
   protected settings = new Settings(this.config.configDir)
 
-  fullStackPath(user_path: string) // leaves existent full path intact or generates full stack path from shortcut
+  // if user_path exists, returns user_path
+  // if stack named user_paths exists in cli stack_path returns stacks_path/user_path
+  // otherwise returns user_path
+  fullStackPath(stack_name: string, stacks_path: string = "")
   {
-    return (fs.existsSync(user_path)) ? user_path : path.join(this.settings.get("stacks_path"), user_path)
+    if(!stacks_path) stacks_path = this.settings.get("stacks_dir");
+    const local_stack_path = path.join(stacks_path, stack_name)
+    if(fs.existsSync(stack_name) || !fs.existsSync(local_stack_path)) return stack_name
+    return local_stack_path
   }
 
-  parseWithLoad(C:any, flag_props: {[key: string]: boolean}) // overload parse command to allow for auto setting of stack flag
+  parseWithLoad(C:any, flag_props: {[key in ps_fields]+?: boolean}) // overload parse command to allow for auto setting of stack flag
   {
     const parse_object:Dictionary = this.parse(C)
     // -- exit if no-autoload flag is enabled ----------------------------------
@@ -43,23 +45,26 @@ export abstract class StackCommand extends Command
     // -- load settings and augment flags  -------------------------------------
     const flags = parse_object.flags
     var result = new ValidatedOutput(false)
-    if(!flags?.hostRoot && this.settings.get('auto_hostroot'))
-      result = scanForSettingsDirectory(process.cwd())
-    else if(flags?.hostRoot)
-      result = loadProjectSettings(parse_object.flags.hostRoot)
+    var project_settings:ProjectSettings = new ProjectSettings()
+    if(!flags?.['project-root'] && this.settings.get('auto_project_root')){
+      ;( {result, project_settings} = scanForSettingsDirectory(process.cwd()) )
+    } else if(flags?.['project-root']){
+      ;( {result, project_settings} = loadProjectSettings(parse_object.flags.hostRoot) )
+    }
     // -- merge flags if load was successful -----------------------------------
     if(result.success) {
-      var mergeable_fields = Object.keys(flag_props)
+      var mergeable_fields:Array<ps_fields> = Object.keys(flag_props) as Array<ps_fields>
       // do not load project configFiles if user manually specifies another stack (See github issue #38).
-      if(flags.stack && !this.equivStackPaths(flags.stack, result.data.stack || ""))
-        mergeable_fields = mergeable_fields.filter((e:string) => e != 'configFiles')
+      if(flags.stack && !this.equivStackPaths(flags.stack, (project_settings.get("stack") as string) || ""))
+        mergeable_fields = mergeable_fields.filter((e:string) => e != 'config-files')
+
       // merge empty fields
       JSTools.rMergeOnEmpty(
         parse_object.flags,
-        JSTools.oSubset(result.data, mergeable_fields))
+        project_settings.getMultiple(mergeable_fields))
     }
     // -- exit with error if required flags are missing ------------------------
-    const required_flags = Object.keys(flag_props).filter((name:string) => flag_props[name])
+    const required_flags = (Object.keys(flag_props) as Array<ps_fields>).filter((name:ps_fields) => flag_props[name])
     const missing_flags  = required_flags.filter((name:string) => !parse_object.flags.hasOwnProperty(name))
     if(missing_flags.length != 0) this.error(missingFlagError(missing_flags))
     return parse_object
@@ -70,6 +75,57 @@ export abstract class StackCommand extends Command
     path_a = this.fullStackPath(path_a)
     path_b = this.fullStackPath(path_b)
     return (path.basename(path_a) == path.basename(path_b) && path.dirname(path_a) == path.dirname(path_b))
+  }
+
+  // ---------------------------------------------------------------------------
+  // PARSELABELFLAG parses array of strings "key=value", and returns an array
+  // of objects with key and value fields. Any malformed strings are ignored
+  // -- Parameters -------------------------------------------------------------
+  // raw_labels: Array<string> Array of raw label data. Each entry should
+  // adhere to the format "key=value"
+  // -- Returns ----------------------------------------------------------------
+  //  Array<object> Each object has properties "key" and "value"
+  // ---------------------------------------------------------------------------
+  protected parseLabelFlag(raw_labels: Array<string>, message: string="")
+  {
+    const labels = []
+    raw_labels.map((l:string) => {
+      const split_index = l.search('=')
+      if(split_index >= 1) labels.push({
+        key: l.substring(0, split_index),
+        value:l.substring(split_index + 1)
+      })
+    })
+    if(message) labels.push({key: 'message', value: message})
+    return labels
+  }
+
+  // ---------------------------------------------------------------------------
+  // PARSEPORTFLAG parses array of strings "port:port" or "port", and returns
+  // an array of objects with hostPort and containerPort fields. Any malformed
+  // strings are ignored
+  // -- Parameters -------------------------------------------------------------
+  // raw_ports: Array<string> Array of raw label data. Each entry should
+  // adhere to the format "port:port" or "port" where port is a positive integer
+  // -- Returns ----------------------------------------------------------------
+  //  Array<object> Each object has properties "hostPort" and "containerPort"
+  // ---------------------------------------------------------------------------
+  protected parsePortFlag(raw_ports: Array<string>)
+  {
+    const ports:Array<{hostPort: number, containerPort: number}> = []
+    var regex_a = RegExp(/^\d+:\d+$/) // flag format: --port=hostPort:containerPort
+    var regex_b = RegExp(/^\d+$/)     // flag format: --port=port
+    raw_ports?.map(port_string => {
+      if(regex_a.test(port_string)) {
+        let p = port_string.split(':').map((e:string) => parseInt(e))
+        ports.push({hostPort: p[0], containerPort: p[1]})
+      }
+      else if(regex_b.test(port_string)) {
+        let p = parseInt(port_string)
+        ports.push({hostPort: p, containerPort: p})
+      }
+    })
+    return ports
   }
 
   newBuilder(explicit: boolean = false, silent: boolean = false)
@@ -122,25 +178,6 @@ export abstract class StackCommand extends Command
         {
           this.error("invalid run command")
         }
-    }
-  }
-
-  addLabelFlagsToConfiguration(configuration: Configuration, label_flags: Array<string>)
-  {
-    label_flags.map((label_flag:string) => {
-      const label_object = this.parseLabelFlag(label_flag)
-      if(label_object !== false) configuration.addLabel(label_object.key, label_object.value)
-    })
-  }
-  // parses a string of the form key=value and returns key and value in Object
-  // or false of the string is malfomed
-  private parseLabelFlag(label_flag: string)
-  {
-    const split_index = label_flag.search('=')
-    if(split_index < 1) return false
-    else return {
-      key: label_flag.substring(0, split_index),
-      value:label_flag.substring(split_index + 1)
     }
   }
 

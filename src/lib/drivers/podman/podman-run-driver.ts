@@ -4,7 +4,8 @@
 
 import {ShellCommand} from "../../shell-command"
 import {DockerRunDriver} from '../docker/docker-run-driver'
-import {pr_ajv_validator} from './schema/podman-run-schema'
+import {pr_vo_validator} from './schema/podman-run-schema'
+import {PodmanStackConfiguration} from '../../config/stacks/podman/podman-stack-configuration'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -13,7 +14,7 @@ export class PodmanRunDriver extends DockerRunDriver
 {
   protected base_command = 'podman'
   protected json_output_format = "json"
-  protected run_schema_validator  = pr_ajv_validator
+  protected run_schema_validator  = pr_vo_validator
 
   protected addFormatFlags(flags: Dictionary, run_flags: Dictionary)
   {
@@ -83,6 +84,11 @@ export class PodmanRunDriver extends DockerRunDriver
       flags["security-opt"] = run_object.flags["security-opt"]
     }
     return flags
+  }
+
+  emptyConfiguration()
+  {
+    return new PodmanStackConfiguration()
   }
 
 }
