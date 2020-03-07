@@ -1,8 +1,9 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 import {JSTools} from '../../lib/js-tools'
-import {allJobIds, matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
+import {allJobIds, matchingJobInfo, promptUserForJobId} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
+import {file_volume_label} from '../../lib/constants'
 
 export default class Delete extends StackCommand {
   static description = 'Delete a job and its associated data. This command works on both running and completed jobs'
@@ -22,24 +23,27 @@ export default class Delete extends StackCommand {
     const {argv, flags} = this.parse(Delete)
     const runner  = this.newRunner(flags.explicit)
     const stack_path = (flags?.stack) ? this.fullStackPath(flags.stack) : ""
-    var ids_to_delete:Array<string> = []
+    var job_info:Array<Dictionary> = []
     if(flags.all) // -- delete all jobs ----------------------------------------
-      ids_to_delete = allJobIds(runner, stack_path)
+      job_info = runner.jobInfo(stack_path)
     else if(flags["all-completed"]) // -- delete all jobs ----------------------
-      ids_to_delete = allJobIds(runner, stack_path, "exited")
+      job_info = runner.jobInfo(stack_path, "exited")
     else if(flags["all-running"])
-      ids_to_delete = allJobIds(runner, stack_path, "running")
+      job_info = runner.jobInfo(stack_path, "running")
     else  // -- stop only jobs specified by user -------------------------------
     {
       const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || "")
       if(ids === "") return // exit if user selects empty
-      const result = matchingJobIds(runner, JSTools.arrayWrap(ids), stack_path)
-      if(result.success) ids_to_delete = result.data
+      const result = matchingJobInfo(runner, JSTools.arrayWrap(ids), stack_path)
+      if(result.success) job_info = result.data
       printResultState(result)
     }
     // -- delete jobs ----------------------------------------------------------
-    if(!flags.silent) ids_to_delete.map((x:string) => console.log(` Deleting ${x}`))
-    runner.jobDelete(ids_to_delete)
+    const job_ids = job_info.map((job:Dictionary) => job.id)
+    const volume_ids = job_info.map((job:Dictionary) => job?.labels?.[file_volume_label] || "").filter((s:string) => s !== "")
+    if(!flags.silent) job_ids.map((x:string) => console.log(` Deleting ${x}`))
+    runner.jobDelete(job_ids)
+    runner.volumeDelete(volume_ids)
   }
 
 }
