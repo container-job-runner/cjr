@@ -112,6 +112,12 @@ export class DockerRunDriver extends RunDriver
     return new ValidatedOutput(true, this.stop(ids))
   }
 
+  volumeDelete(ids: Array<string>)
+  {
+    const command = `${this.base_command} volume rm`
+    return this.shell.exec(command, {}, ids, {stdio: "pipe"})
+  }
+
   // protected helpers
 
   protected stop(ids: Array<string>)
@@ -126,7 +132,7 @@ export class DockerRunDriver extends RunDriver
   protected remove(ids: Array<string>)
   {
     if(ids.length == 0) return;
-    const command = `${this.base_command} remove`;
+    const command = `${this.base_command} rm`;
     const args = ids
     const flags = {}
     return this.shell.exec(command, flags, args, {stdio: "pipe"})

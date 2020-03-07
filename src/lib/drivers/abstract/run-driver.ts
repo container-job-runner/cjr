@@ -20,4 +20,5 @@ export abstract class RunDriver extends ContainerDriver
   abstract jobStop(ids: Array<string>) : ValidatedOutput;
   abstract jobDelete(ids: Array<string>) : ValidatedOutput;
   abstract volumeCreate(options:Dictionary): ValidatedOutput
+  abstract volumeDelete(options:Dictionary): ValidatedOutput
 }
