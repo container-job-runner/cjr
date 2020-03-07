@@ -15,7 +15,8 @@ export default class Shell extends StackCommand {
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "stacks-dir": flags.string({default: "", description: "override default stack directory"})
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
   }
   static strict = true;
 
@@ -41,7 +42,7 @@ export default class Shell extends StackCommand {
       "build-mode":   "no-rebuild",
       "command":      this.settings.get("default_shell"),
       "host-root":    flags["project-root"] || "",
-      "cwd":          process.cwd(),
+      "cwd":          flags["working-directory"],
       "file-access":  "bind",
       "synchronous":  true,
       "x11":          flags.x11,
