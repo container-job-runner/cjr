@@ -66,6 +66,18 @@ export const rsync_constants = {
   exclude_file_name: 'excludes'
 }
 
+// relative paths of rsync config files used for stackBundle() - paths are relative to bundle root folder
+export const stack_bundle_rsync_file_paths = {
+  upload: {
+    exclude: "upload-exclude",
+    include: "upload-include"
+  },
+  download: {
+    exclude: "download-exclude",
+    include: "download-include"
+  }
+}
+
 // stack run options
 export const DefaultContainerRoot = "/"                                         // Note: though this choice may lead to collisions, it always works docker cp which does not create subfolders.
 
