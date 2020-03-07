@@ -10,10 +10,10 @@ export default class Copy extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     "copy-path": flags.string({description: "overides job default copy path"}),
-    explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false}),
     mode: flags.string({default: "update", options: ["update", "overwrite", "mirror"], description: 'specify copy mode. "update" copies only newer files, "merge" copies all files, "mirror" copies all files and removes any extranious files'}),
     manual: flags.boolean({default: false, description: "opens an interactive bash shell which allows the user can manually copy individual files"}),
+    explicit: flags.boolean({default: false}),
+    verbose: flags.boolean({default: false})
   }
   static strict = true;
 
@@ -27,7 +27,7 @@ export default class Copy extends StackCommand {
       runner:  this.newRunner(flags.explicit)
     }
     // -- get job ids ----------------------------------------------------------
-    var ids = argv || JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_path, "", !this.settings.get('interactive')) || [])
+    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_path, "", !this.settings.get('interactive')) || [])
     // -- set copy options -----------------------------------------------------
     const copy_options:CopyOptions = {
       "ids": ids,
