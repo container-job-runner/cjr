@@ -23,7 +23,8 @@ export default class Run extends StackCommand {
     "file-access": flags.string({default: "volume", options: ["volume", "bind"], description: "how files are accessed from the container. Options are: volume and bind."}),
     "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "stacks-dir": flags.string({default: "", description: "override default stack directory"})
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
   }
   static strict = false;
 
@@ -52,7 +53,7 @@ export default class Run extends StackCommand {
       "build-mode":   flags["build-mode"],
       "command":      run_shortcut.apply(argv).join(" "),
       "host-root":    flags["project-root"] || "",
-      "cwd":          process.cwd(),
+      "cwd":          flags['working-directory'],
       "file-access":  flags['file-access'],
       "synchronous":  !flags.async,
       "x11":          flags.x11,
@@ -66,7 +67,7 @@ export default class Run extends StackCommand {
     const job_id = result.data
     if(job_id !== "" && (flags.async && !flags.verbose && !flags.silent)) console.log(job_id)
     // -- autocopy results -----------------------------------------------------
-    if(this.autocopyJob(flags)) {
+    if(this.shouldAutocopy(flags)) {
       // -- set copy options ---------------------------------------------------
       const copy_options:CopyOptions = {
         "ids": [job_id],
@@ -78,8 +79,9 @@ export default class Run extends StackCommand {
     }
   }
 
-  autocopyJob(flags: Dictionary)
+  shouldAutocopy(flags: Dictionary)
   {
+    if(flags["file-access"] === 'bind') return false
     if(flags["autocopy"]) return true
     if(!flags.async && this.settings.get('autocopy_sync_job')) return true
     return false
