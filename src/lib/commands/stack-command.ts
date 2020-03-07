@@ -49,7 +49,7 @@ export abstract class StackCommand extends Command
     if(!flags?.['project-root'] && this.settings.get('auto_project_root')){
       ;( {result, project_settings} = scanForSettingsDirectory(process.cwd()) )
     } else if(flags?.['project-root']){
-      ;( {result, project_settings} = loadProjectSettings(parse_object.flags.hostRoot) )
+      ;( {result, project_settings} = loadProjectSettings(parse_object.flags['project-root']) )
     }
     // -- merge flags if load was successful -----------------------------------
     if(result.success) {
