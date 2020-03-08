@@ -216,6 +216,7 @@ export function jobExec(container_runtime:ContainerRuntime, job_id: string, shel
   // -- set job properties -----------------------------------------------------
   shell_job_options['stack-path'] = shell_job_options['stack-path'] || job_stack_path
   shell_job_options['host-root'] = host_root
+  shell_job_options['file-access'] = "volume"
   shell_job_options['file-volume-id'] = file_volume_id
   return jobStart(container_runtime, shell_job_options, output_options)
 }
