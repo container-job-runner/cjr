@@ -14,7 +14,7 @@ export default class State extends StackCommand {
   async run()
   {
     const {args, flags} = this.parse(State)
-    const runner  = this.newRunner(flags.explicit)
+    const runner  = this.newRunner(false)
     const stack_path = (flags?.stack) ? this.fullStackPath(flags.stack) : ""
     const result = matchingJobInfo(runner, [args.id], stack_path)
     if(!result.success) return printResultState(result)
