@@ -50,8 +50,9 @@ export type CopyOptions = {
   "stack-path"?: string,                                                        // only copy jobs that pertain to this stack
   mode:"update"|"overwrite"|"mirror",                                           // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
   verbose:boolean,                                                              // if true rsync will by run with -v flag
-  "host-path"?:string                                                           // location where files should be copied. if specified this setting overrides job hostDir
-  manual?:boolean                                                               // manually copy - runs terminal instead of rsync command
+  "host-path"?:string,                                                          // location where files should be copied. if specified this setting overrides job hostDir
+  manual?:boolean,                                                              // manually copy - runs terminal instead of rsync command
+  force?:boolean                                                                // used by remote for copying into project directories that differ from project directory that was used to start job
 }
 
 export type ContainerRuntime = {
@@ -727,6 +728,7 @@ return response.id;
 
 export function ensureProjectId(hostRoot: string)
 {
+  if(!hostRoot) return new ValidatedOutput(false)
   var result = getProjectId(hostRoot)
   if(result.success) return result
   const proj_settings_abspath = path.join(hostRoot, project_settings_folder)
@@ -744,6 +746,7 @@ export function ensureProjectId(hostRoot: string)
 
 export function getProjectId(hostRoot: string)
 {
+  if(!hostRoot) return new ValidatedOutput(false)
   const proj_settings_abspath = path.join(hostRoot, project_settings_folder)
   const file = new JSONFile(proj_settings_abspath, false)
   const result = file.read(project_idfile)
