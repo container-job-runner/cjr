@@ -201,7 +201,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
   return result
 }
 
-export function jobShell(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false})
+export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false})
 {
   // -- get job information ----------------------------------------------------
   var result = matchingJobInfo(container_runtime.runner, [job_id], "")
@@ -211,8 +211,8 @@ export function jobShell(container_runtime:ContainerRuntime, job_id: string, she
   const host_root = job_info?.labels?.hostRoot || ""
   const file_volume_id = job_info?.labels?.[file_volume_label] || ""
   const job_stack_path = job_info?.labels?.stack || ""
-  if(!host_root) return result.pushWarning(WarningStrings.JOBSHELL.NO_HOSTROOT(job_info.id))
-  if(!file_volume_id) return result.pushWarning(WarningStrings.JOBSHELL.NO_VOLUME(job_info.id))
+  if(!host_root) return result.pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
+  if(!file_volume_id) return result.pushWarning(WarningStrings.JOBEXEC.NO_VOLUME(job_info.id))
   // -- set job properties -----------------------------------------------------
   shell_job_options['stack-path'] = shell_job_options['stack-path'] || job_stack_path
   shell_job_options['host-root'] = host_root

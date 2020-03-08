@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
-import {jobShell, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions} from '../../lib/functions/run-functions'
+import {jobExec, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
@@ -45,6 +45,6 @@ export default class Shell extends StackCommand {
       silent:   false,
       explicit: flags.explicit
     }
-    printResultState(jobShell(runtime_options, id_str, job_options, output_options))
+    printResultState(jobExec(runtime_options, id_str, job_options, output_options))
   }
 }

@@ -50,9 +50,9 @@ export const WarningStrings = {
     NO_VOLUME : (id:string) => chalk`{bold No Copy Required:} job ${id} has no associated volume.`,
     NO_HOSTROOT : (id:string) => chalk`{bold No Copy Required:} job ${id} has no associated hostRoot.`
   },
-  JOBSHELL:{
-    NO_VOLUME : (id:string) => chalk`{bold Cannot Shell into Job Files:} job ${id} has no associated volume.`,
-    NO_HOSTROOT : (id:string) => chalk`{bold Cannot Shell into Job Files:} job ${id} has no associated hostRoot.`
+  JOBEXEC:{
+    NO_VOLUME : (id:string) => chalk`{bold No Associated Job File volume:} job ${id} has no associated volume; job:exec and job:shell can only be used on jobs that where started with --file-access=volume`,
+    NO_HOSTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated hostRoot.`
   },
   BUNDLE : {
     FAILED_BUNDLE_STACK: (stack_path: string) => chalk`{bold Unable to Bundle Stack:} - verify that the stack contains necessary files and builds correctly.\n  {italic stack:} ${stack_path}`,
