@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/commands/stack-command'
+import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 import {JSTools} from '../../lib/js-tools'
 import {allJobIds, matchingJobInfo, promptUserForJobId} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
