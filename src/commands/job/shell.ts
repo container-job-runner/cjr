@@ -9,16 +9,21 @@ export default class Shell extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
-    explicit: flags.boolean({default: false})
+    port: flags.string({default: [], multiple: true}),
+    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    explicit: flags.boolean({default: false}),
+    "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
   }
   static strict = true;
 
   async run()
   {
     const {argv, flags} = this.parseWithLoad(Shell, {stack:false, "config-files": false})
-    const stack_path = this.fullStackPath(flags.stack)
+    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit),
@@ -30,13 +35,14 @@ export default class Shell extends StackCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   "no-rebuild",
+      "build-mode":   flags["build-mode"],
       "command":      this.settings.get("default_shell"),
-      "cwd":          process.cwd(),
+      "cwd":          flags['working-directory'],
       "file-access":  "volume",
       "synchronous":  true,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
+      "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
       "remove":       true
     }
     // -- set output options ---------------------------------------------------
