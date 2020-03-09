@@ -81,6 +81,7 @@ export default class Run extends StackCommand {
 
   shouldAutocopy(flags: Dictionary)
   {
+    if(!flags["project-root"]) return false
     if(flags["file-access"] === 'bind') return false
     if(flags["autocopy"]) return true
     if(!flags.async && this.settings.get('autocopy_sync_job')) return true
