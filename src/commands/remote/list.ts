@@ -1,6 +1,7 @@
 import {flags} from '@oclif/command'
 import {RemoteCommand, Dictionary} from '../../lib/remote/commands/remote-command'
 import {printResultState, printVerticalTable, printHorizontalTable} from '../../lib/functions/misc-functions'
+import {Resource} from '../../lib/remote/config/resource-configuration'
 
 export default class List extends RemoteCommand {
   static description = 'List all remote resources.'
@@ -10,11 +11,11 @@ export default class List extends RemoteCommand {
 
   async run() {
     const {args, flags} = this.parse(List)
-    const resource_config:Dictionary = this.readResourceConfig()
+    const resource_config:{[key:string]: Resource} = this.resource_configuration.getAllResources()
     const resource_names:Array<string> = Object.keys(resource_config)
 
     var table_parameters: Dictionary
-    var toArray: (e: string) => Array<any>
+    var toArray: (e: string) => Array<string>
     var printTable
 
     if(flags.verbose)  // -- Verbose Output ------------------------------------

@@ -1,5 +1,6 @@
 import {flags} from '@oclif/command'
 import {RemoteCommand, Dictionary} from '../../lib/remote/commands/remote-command'
+import {Resource} from '../../lib/remote/config/resource-configuration'
 import {FileTools} from '../../lib/fileio/file-tools'
 import {ValidatedOutput} from '../../lib/validated-output'
 import {printResultState} from '../../lib/functions/misc-functions'
@@ -9,13 +10,12 @@ import * as path from 'path'
 
 export default class Add extends RemoteCommand {
   static description = 'Add a remote resource.'
-  static args  = []
+  static args  = [{name: 'remote-name', required: true}]
   static flags = {
-    name:          flags.string({required: true}),
-    type:          flags.string({required: true}),
+    type:          flags.string({required: true, options: ['cjr']}),
     address:       flags.string({required: true}),
     username:      flags.string({required: true}),
-    key:           flags.string({}),
+    key:           flags.string({default:  ""}),
     "copy-key":    flags.boolean({dependsOn: ['key']}),
     "storage-dir": flags.string({description: 'location where job data is stored on remote host.'})
   }
@@ -23,15 +23,16 @@ export default class Add extends RemoteCommand {
 
   async run() {
     const {args, flags} = this.parse(Add)
-    const resource_config = this.readResourceConfig()
+    const name = args['remote-name']
     // -- verify that name is unique -------------------------------------------
-    if(resource_config.hasOwnProperty(flags.name))
+    if(this.resource_configuration.isResource(name))
       return printResultState(
-        new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.NAME_EXISTS(flags.name)])
+        new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.NAME_EXISTS(name)])
       )
+    return
     // -- create new entry -----------------------------------------------------
-    var new_entry:Dictionary = {
-      type: flags.type,
+    var new_entry:Resource = {
+      type: (flags.type as 'cjr'),
       address: flags.address,
       username: flags.username,
       "storage-dir": flags['storage-dir'] || default_remote_storage_dirname,
@@ -41,8 +42,8 @@ export default class Add extends RemoteCommand {
     if(flags.key && !FileTools.existsFile(flags.key))
       return printResultState(new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.KEYFILE_NONEXISTANT(flags.key)]))
     // -- save or copy keyfile -------------------------------------------------
-    if(flags.key) new_entry.key = path.resolve((flags["copy-key"]) ? this.copyKeyfile(flags.key, Object.keys(resource_config).length) : flags.key)
-    resource_config[flags.name] = new_entry
-    printResultState(this.writeResourceConfig(resource_config))
+    if(flags.key) new_entry.key = path.resolve((flags["copy-key"]) ? this.copyKeyfile(flags.key, this.resource_configuration.numResources()) : flags.key)
+    this.resource_configuration.setResource(name, new_entry)
+    printResultState(this.resource_configuration.writeToFile())
   }
 }

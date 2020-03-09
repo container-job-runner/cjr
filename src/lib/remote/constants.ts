@@ -7,3 +7,4 @@ export const remote_sshsocket_dirname = 'ssh-sockets'     // sockets for ssh mul
 export const default_remote_storage_dirname = '$HOME'        // location where remote data folder will be created
 export const remote_storage_basename  = '.cjr-remote-data'  // name of remote data folder
 export const remoteStoragePath        = (dirname: string) => path.posix.join(dirname, remote_storage_basename)
+export const remote_stack_rsync_config_dirname = 'remote-stack-rsync-config'

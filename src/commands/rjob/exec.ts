@@ -1,38 +1,38 @@
 import {flags} from '@oclif/command'
-import {Dictionary, StackCommand} from '../lib/commands/stack-command'
-import {RemoteCommand} from '../lib/remote/commands/remote-command'
-import {ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
-import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
-import {printResultState} from '../lib/functions/misc-functions'
+import {RemoteCommand} from '../../lib/remote/commands/remote-command'
+import {OutputOptions, ContainerRuntime, JobOptions} from '../../lib/functions/run-functions'
+import {RunShortcuts} from "../../lib/config/run-shortcuts/run-shortcuts"
+import {printResultState} from '../../lib/functions/misc-functions'
 
-export default class Run extends RemoteCommand {
-  static description = 'Run a command as a new job on a remote resource.'
-  static args  = []
+export default class Exec extends RemoteCommand {
+  static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
+  static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
-    "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
+    "remote-name": flags.string({env: 'REMOTENAME'}),
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
-    async: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
-    silent: flags.boolean({default: false, description: 'no output is printed'}),
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
-    message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
-    autocopy: flags.boolean({default: false, exclusive: ["async"], description: "automatically copy files back to the projec root on exit"}),
-    "file-access": flags.string({default: "volume", options: ["volume", "bind"], description: "how files are accessed from the container. Options are: volume and bind."}),
     "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "stacks-dir": flags.string({default: "", description: "override default stack directory"})
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
   }
   static strict = false;
 
-  async run() {
-    const {flags, args, argv} = this.parseWithLoad(Run, {stack:true, "config-files": false, "project-root":false, "remote-name": true})
+  async run()
+  {
+    const {flags, args, argv} = this.parseWithLoad(Exec, {
+      "stack": true,
+      "project-root": true,
+      "config-files": false,
+      "remote-name": true
+    })
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
-    // -- initialize run shortcuts --------------------------------------------
+    // -- initialize run shortcuts ---------------------------------------------
     const run_shortcut = new RunShortcuts()
     const rs_result = run_shortcut.loadFromFile(this.settings.get('run_shortcuts_file'))
     if(!rs_result.success) printResultState(rs_result)
@@ -42,49 +42,38 @@ export default class Run extends RemoteCommand {
     if(!result.success) return printResultState(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
-      verbose:  flags.verbose,
-      silent:   flags.silent,
+      verbose:  false,
+      silent:   false,
       explicit: flags.explicit
     }
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    var driver = this.newRemoteDriver(resource["type"], output_options)
+    const driver = this.newRemoteDriver(resource["type"], output_options)
+    // -- get job id  ----------------------------------------------------------
+    const id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.silent)
     }
     // -- set job options ------------------------------------------------------
-    var job_options:JobOptions = {
+    const command = run_shortcut.apply(argv.splice(1)).join(" ")
+    const job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
       "build-mode":   flags["build-mode"],
-      "command":      run_shortcut.apply(argv).join(" "),
-      "host-root":    flags["project-root"] || "",
-      "cwd":          process.cwd(),
-      "file-access":  flags['file-access'],
-      "synchronous":  !flags.async,
+      "command":      command,
+      "cwd":          flags["working-directory"],
+      "file-access":  "volume",
+      "synchronous":  !flags["async"],
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
-      "remove":       (flags['file-access'] === "bind") ? true : false
+      "remove":       false
     }
-    result = driver.jobStart(
-      resource,
-      runtime_options,
-      job_options,
-      this.shouldAutocopy(flags)
-    )
+    result = driver.jobExec(resource, runtime_options, job_options, {id: id, mode: 'job:exec', "host-project-root": flags["project-root"]})
     printResultState(result)
-  }
-
-  shouldAutocopy(flags: Dictionary)
-  {
-    if(!flags["project-root"]) return false
-    if(flags["autocopy"]) return true
-    if(!flags.async && this.settings.get('autocopy_sync_job')) return true
-    return false
   }
 
 }

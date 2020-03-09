@@ -15,62 +15,52 @@ import {ErrorStrings} from '../error-strings'
 import {CJRRemoteDriver} from '../drivers/cjr-remote-driver'
 import {SshShellCommand} from '../ssh-shell-command'
 import {printResultState} from '../../functions/misc-functions'
+import {OutputOptions} from "../../functions/run-functions"
 import {StackCommand} from '../../commands/stack-command'
+import {ResourceConfiguration, Resource} from '../config/resource-configuration'
 
 export type  Dictionary= {[key: string]: any}
-type DriverCommands = "jobAttach" | "jobDelete" | "jobList" | "jobLog" | "jobStop"
+type DriverCommands = "jobAttach" | "jobList" | "jobLog" | "jobStop" | "jobState"
 
 export abstract class RemoteCommand extends StackCommand
 {
-    protected resource_config_file = new JSONFile(this.config.configDir, true, rc_vo_validator)
+    protected resource_configuration = new ResourceConfiguration(this.config.configDir)
 
     remoteCommand(command: DriverCommands, flags:Dictionary, args:Dictionary, argv:Array<string>)
     {
-      const resource_config = this.readResourceConfig()
-      // -- validate id ----------------------------------------------------------
-      var result = this.validResourceName(flags["remoteName"], resource_config)
+      // -- validate id --------------------------------------------------------
+      var result = this.validResourceName(flags["remote-name"])
       if(!result.success) return printResultState(result)
       const remote_name = result.data
-      // -- modify resource and write file ---------------------------------------
-      const resource = resource_config[remote_name]
-      const driver = this.newRemoteDriver(resource["type"], flags.explicit, flags.silent, flags.verbose)
-      printResultState(driver[command](resource, flags, args, argv))
+      // -- modify resource and write file -------------------------------------
+      const resource = this.resource_configuration.getResource(remote_name)
+      if(resource !== undefined) {
+        const driver = this.newRemoteDriver(resource["type"], {explicit: flags.explicit, verbose: flags.verbose, silent: flags.silent})
+        printResultState(driver[command](resource, flags, args, argv))
+      }
     }
 
-    validResourceName(name: string, resources: Dictionary)
+    validResourceName(name: string)
     {
-      if(!resources.hasOwnProperty(name))
+      if(!this.resource_configuration.isResource(name))
         return new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NAME_NON_EXISTANT(name)])
       return new ValidatedOutput(true, name)
     }
 
-    newRemoteDriver(remote_type: string, explicit: boolean, silent:boolean, verbose:boolean)
+    newRemoteDriver(remote_type: string, output_options: OutputOptions)
     {
       switch(remote_type)
       {
         case "cjr":
         {
-          const ssh_shell = new SshShellCommand(explicit, silent, this.config.dataDir)
-          return new CJRRemoteDriver(ssh_shell, verbose, silent, this.config);
+          const ssh_shell = new SshShellCommand(output_options.explicit, output_options.silent, this.config.dataDir)
+          return new CJRRemoteDriver(ssh_shell, output_options, this.config.dataDir);
         }
         default:
         {
           this.error("invalid remote type")
         }
       }
-    }
-
-    // -- Config file functions ------------------------------------------------
-
-    writeResourceConfig(data: any)
-    {
-      return this.resource_config_file.validatedWrite(remote_config_filename, data)
-    }
-
-    readResourceConfig()
-    {
-      const result = this.resource_config_file.validatedRead(remote_config_filename)
-      return (result.success) ? result.data : default_remote_config
     }
 
     // -- key functions --------------------------------------------------------

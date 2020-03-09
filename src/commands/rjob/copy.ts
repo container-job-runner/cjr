@@ -1,34 +1,54 @@
 import {flags} from '@oclif/command'
 import {RemoteCommand} from '../../lib/remote/commands/remote-command'
 import {printResultState} from '../../lib/functions/misc-functions'
+import {OutputOptions, CopyOptions} from '../../lib/functions/run-functions'
+import {JSTools} from '../../lib/js-tools'
 
 export default class Copy extends RemoteCommand {
   static description = 'Copy job data back into the host directories. Works with both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {
-    remoteName: flags.string({env: 'REMOTENAME'}), // new remote flag
-    hostRoot: flags.string({env: 'HOSTROOT'}),
+    "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
+    "project-root": flags.string({env: 'PROJECTROOT', description: "location for copy operation"}),
+    mode: flags.string({default: "update", options: ["update", "overwrite", "mirror"], description: 'specify copy mode. "update" copies only newer files, "merge" copies all files, "mirror" copies all files and removes any extranious files'}),
+    manual: flags.boolean({default: false, description: "opens an interactive bash shell which allows the user can manually copy individual files"}),
+    force: flags.boolean({default: false, description: 'force copy into any directory even if it differs from original project root'}),
     explicit: flags.boolean({default: false}),
     silent: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false, description: 'shows upload progress'}),
-    force: flags.boolean({default: false, description: 'force copy into any directory'}),
-    all: flags.boolean({default: false}),
+    verbose: flags.boolean({default: false, description: 'shows upload progress'})
   }
   static strict = true;
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Copy, {hostRoot:true, remoteName: true})
-    const resource_config = this.readResourceConfig()
-    // -- validate id ----------------------------------------------------------
-    var result = this.validResourceName(flags.remoteName || "", resource_config)
+    const {flags, args, argv} = this.parseWithLoad(Copy, {"project-root":true, "remote-name": true})
+    // -- validate name --------------------------------------------------------
+    const name = flags['remote-name']
+    var result = this.validResourceName(name)
     if(!result.success) return printResultState(result)
-    const resource_name = result.data
+    // -- set output options ---------------------------------------------------
+    const output_options:OutputOptions = {
+      verbose:  flags.verbose,
+      silent:   flags.silent,
+      explicit: flags.explicit
+    }
     // -- get resource & driver ------------------------------------------------
-    const resource = resource_config[resource_name]
-    const driver = this.newRemoteDriver(resource["type"], flags.explicit, flags.silent, flags.verbose)
-    const job_id = argv[0] || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
-    printResultState(driver.jobCopy(resource, flags, {id: job_id}, [job_id]))
+    const resource = this.resource_configuration.getResource(name)
+    if(resource === undefined) return
+    var driver = this.newRemoteDriver(resource["type"], output_options)
+    // -- get job ids ----------------------------------------------------------
+    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await driver.promptUserForJobId(resource, this.settings.get('interactive')) || [])
+    // -- set copy options -----------------------------------------------------
+    const copy_options:CopyOptions = {
+      "ids": ids,
+      "host-path": flags["project-root"],
+      "mode": (flags.mode as "update"|"overwrite"|"mirror"),
+      "verbose": flags.verbose,
+      "force": flags.force
+    }
+    if(flags?.["manual"]) copy_options["manual"] = true
+    // -- copy jobs ------------------------------------------------------------
+    printResultState(driver.jobCopy(resource, copy_options))
   }
 
 }

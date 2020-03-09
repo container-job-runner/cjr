@@ -5,20 +5,26 @@ import {JSTools} from "../../js-tools"
 import {ShellCommand} from "../../shell-command"
 import {SshShellCommand} from "../ssh-shell-command"
 import {FileTools} from "../../fileio/file-tools"
+import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 import {BuildDriver} from "../../drivers/abstract/build-driver"
-import {RemoteDriver} from "./remote-driver"
-import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label} from '../../constants'
-import {remote_storage_basename, remoteStoragePath} from '../constants'
-import {ensureProjectId, containerWorkingDir, promptUserId, getProjectId} from '../../functions/run-functions'
+import {RemoteDriver, RemoteExecOptions, RemoteDeleteOptions} from "./remote-driver"
+import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label, stack_bundle_rsync_file_paths} from '../../constants'
+import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
+import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
 import {printResultState} from '../../functions/misc-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
+import {Resource} from "../../remote/config/resource-configuration"
 
 type Dictionary = {[key: string]: any}
-type RemoteJobParams = {
-  remoteDir: string, // path  that contains all job data
-  hostRoot: string,  // path to hostRoot
-  stackPath: string, // path to stack
-  projectId: string, // id of project that started job
+
+// internal data type used for start job
+export type RemoteJobParams = {
+  'remote-job-dir': string, // path  that contains all job data
+  'remote-project-root': string,  // path to hostRoot
+  'remote-stack-path': string, // path to stack
+  'project-id': string, // id of project that started job
+  'previous-job-id'?: string, // id of previous job (used by job:shell and job:exec)
+  'auto-copy'?: boolean // turn on --autocopy flag
 }
 
 export class CJRRemoteDriver extends RemoteDriver
@@ -34,16 +40,16 @@ export class CJRRemoteDriver extends RemoteDriver
      'job:log'    : ['explicit', 'lines'],
      'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'silent'],
      'job:shell'  : ['explicit', 'discard'],
-     '$'          : ['explicit', 'async', 'verbose', 'silent', 'port', 'x11', 'autocopy', 'autocopy-all']
+     '$'          : ['explicit', 'async', 'verbose', 'silent', 'port', 'x11', 'message', 'label', 'autocopy', 'build-mode']
   }
   private ssh_shell: SshShellCommand
-  private labels = {remoteDir: 'remoteDir', projectId: 'projectId'}
-  private remoteStackName = (remote_job_path: string, stack_name: string) => `${path.posix.basename(remote_job_path)}-${stack_name}`
-  private remoteStackPath = (remote_job_path: string, stack_name: string) => path.posix.join(remote_job_path, this.remoteStackName(remote_job_path, stack_name))
+  private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': 'hostRoot', 'stack-path': 'stack'}
+  private remoteStackName = (remote_job_dir: string, stack_name: string) => `${path.posix.basename(remote_job_dir)}-${stack_name}`
+  private remoteStackPath = (remote_job_dir: string, stack_name: string) => path.posix.join(remote_job_dir, this.remoteStackName(remote_job_dir, stack_name))
 
-  constructor(ssh_shell: SshShellCommand, verbose:boolean, silent:boolean, oclif_config: Dictionary)
+  constructor(ssh_shell: SshShellCommand, output_options: OutputOptions, storage_directory: string)
   {
-    super(verbose, silent, oclif_config);
+    super(output_options, storage_directory);
     this.ssh_shell = ssh_shell
   }
 
@@ -61,123 +67,140 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  jobCopy(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobCopy(resource: Dictionary, copy_options:CopyOptions)
   {
     // -- set resource ---------------------------------------------------------
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
     // -- validate parameters --------------------------------------------------
-    if(!args.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
+    if(copy_options.ids.length == 0) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.EMPTY_ID)
     // -- do not copy if there is no local hostRoot set ------------------------
-    if(!flags.hostRoot) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.COPY.EMPTY_LOCAL_HOSTROOT])
+    if(!copy_options['host-path']) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.COPY.EMPTY_LOCAL_HOSTROOT)
     // -- start ssh master -----------------------------------------------------
     this.ssh_shell.multiplexStart()
 
-    // == 1. read json job data ================================================
-    this.printStatus(StatusStrings.REMOTEJOB.COPY.READING_JOBINFO, this.output_flags.verbose)
-    result = this.getJobLabels({}, [args.id])
+    // == read json job data ===================================================
+    this.printStatus(StatusStrings.REMOTEJOB.COPY.READING_JOBINFO, this.output_options.verbose)
+    result = this.getJobLabels(copy_options.ids)
     if(!result.success) return this.stopMultiplexAndReturn(result)
     const all_job_labels = result.data
 
-    const matching_ids = Object.keys(result.data)
+    const matching_ids:Array<string> = Object.keys(result.data)
     if(matching_ids.length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID]))
 
-    // extract information for first job
-    const job_id = matching_ids[0]
-    const job_labels = all_job_labels[job_id]
-    const remote_hostRoot = job_labels?.[job_info_label]?.hostRoot || ""
-    const resultPaths = job_labels?.[job_info_label]?.resultPaths || ""
-    const remote_project_id = job_labels?.projectId || ""
+    // == map over each matching job ===========================================
+    result = new ValidatedOutput(true)
+    matching_ids.map((job_id:string) => {
+      // -- extract job information --------------------------------------------
+      const job_labels = all_job_labels[job_id]
+      const remote_project_root = job_labels?.[this.label_names['project-root']] || ""
+      const remote_project_id   = job_labels?.[this.label_names['project-id']] || ""
+      const remote_stack_path   = job_labels?.[this.label_names['stack-path']] || ""
+      // -- exit with warning if remote job has not hostRoot -------------------
+      if(!remote_project_root)
+        return result.pushWarning(
+          WarningStrings.REMOTEJOB.COPY.EMPTY_REMOTE_HOSTROOT(job_id)
+        )
 
-    // -- exit with warning if remote job has not hostRoot ---------------------
-    if(!remote_hostRoot) return this.stopMultiplexAndReturn(new ValidatedOutput(true, [], [WarningStrings.REMOTEJOB.COPY.EMPTY_REMOTE_HOSTROOT], []))
-
-    // == 2. verify remote project matches with local project  =================
-    if(!flags["force"])
-    {
-      // -- read local project id file -----------------------------------------
-      result = getProjectId(flags.hostRoot)
-      const local_project_id = (result.success) ? result.data : false;
-      // verify matching project ids
-      if(remote_project_id != local_project_id) {
-        return this.stopMultiplexAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.COPY.DIFFERING_PROJECT_ID]))
+      // == 1. verify remote project matches with local project  ===============
+      if(!copy_options["force"]) {
+        // -- read local project id file ---------------------------------------
+        result = getProjectId(copy_options['host-path'] || "")
+        const local_project_id = (result.success) ? result.data : false;
+        // verify matching project ids
+        if(remote_project_id != local_project_id) {
+          return result.pushWarning(
+            ErrorStrings.REMOTEJOB.COPY.DIFFERING_PROJECT_ID(job_id)
+          )
+        }
       }
-      // verify matching project hostRoot names
-      if(path.basename(flags.hostRoot) != path.posix.basename(remote_hostRoot)) {
-        return this.stopMultiplexAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.COPY.DIFFERING_PROJECT_DIRNAME]))
-      }
-    }
-    this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
+      this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
 
-    // == 3. Call Remote COPY ==================================================
-    result = this.ssh_shell.exec(
-      'cjr job:copy',
-      this.cliFlagsToShellFlags(flags,this.transferrable_flags['job:copy']),
-      [job_id],
-      this.interactive_ssh_options
-    )
-    if(!result.success) return this.stopMultiplexAndReturn(result)
+      // == 2. Run Remote CJR Remote COPY ======================================
+      const copy_flags:Dictionary = {mode: copy_options.mode}
+      if(copy_options['manual']) copy_flags['manual'] = {}
+      if(this.output_options.verbose) copy_flags['verbose'] = {}
+      if(this.output_options.explicit) copy_flags['explicit'] = {}
+      if(this.output_options.silent) copy_flags['silent'] = {}
+      const exec_result = this.ssh_shell.exec(
+        'cjr job:copy',
+        copy_flags,
+        [job_id],
+        this.interactive_ssh_options
+      )
+      if(!exec_result.success) return result.absorb(exec_result)
 
-    // == 4. Copy Directories ==================================================
-    this.printStatus(StatusStrings.REMOTEJOB.COPY.DOWNLOADING_FILES, this.output_flags.verbose)
-    result = this.pullProjectFiles(flags.hostRoot, remote_hostRoot, resultPaths || [], flags.all || false)
-    this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
+      // == 3. Copy Directories ================================================
+      this.printStatus(StatusStrings.REMOTEJOB.COPY.DOWNLOADING_FILES, this.output_options.verbose)
+      const pull_result = this.pullProjectFiles({
+          "local-project-root": (copy_options['host-path'] as string), // garanteed string due to early exit condition
+          "remote-project-root": remote_project_root,
+          "remote-stack-path": remote_stack_path,
+          "copy-mode": copy_options['mode'],
+          "verbose": this.output_options.verbose
+        })
+      result.absorb(pull_result)
+      this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
+
+    })
 
     // -- stop ssh master -----------------------------------------------------
     this.ssh_shell.multiplexStop()
     return result
   }
 
-  jobDelete(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobDelete(resource: Resource, delete_options:RemoteDeleteOptions)
   {
     // -- set resource ---------------------------------------------------------
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
     // -- validate parameters -----------------------------------------------
-    if(argv.length == 0 && !flags.all && !flags['all-completed'] && !flags['all-running'])
-      return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
+    if(delete_options['ids'].length == 0)
+      return new ValidatedOutput(true).pushWarning(ErrorStrings.REMOTEJOB.EMPTY_ID)
     // -- start ssh master -----------------------------------------------------
     this.ssh_shell.multiplexStart()
 
     // -- 1. read job info and extract job stacks & job directories ------------
-    this.printStatus(StatusStrings.REMOTEJOB.DELETE.READING_JOBINFO, this.output_flags.verbose)
-    result = this.getJobLabels(flags, argv)
+    this.printStatus(StatusStrings.REMOTEJOB.DELETE.READING_JOBINFO, this.output_options.verbose)
+    result = this.getJobLabels(delete_options['ids'])
     if(!result.success) return this.stopMultiplexAndReturn(result)
-    printResultState(result) // print any warnings from getJobLabels
     const all_job_labels = result.data
-    if(Object.keys(all_job_labels).length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(true, [], [], [WarningStrings.REMOTEJOB.DELETE.NO_MATCHING_JOBS])) // no jobs to delete
     // -- 2. filter out jobs where Remote path does not contain remote_job_dir -
     const job_labels = JSTools.oSubset(
       all_job_labels,
       Object.keys(all_job_labels).filter(
-        (id:string) => (new RegExp(`/${remote_storage_basename}/`)).test(all_job_labels[id]?.remoteDir || "")
+        (id:string) => (new RegExp(`/${remote_storage_basename}/`)).test(all_job_labels[id]?.[this.label_names['remote-job-dir']] || "")
     ))
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
+
+    const cjr_flags:Dictionary = {}
+    if(this.output_options.explicit) cjr_flags['explicit'] = {}
+    if(this.output_options.silent) cjr_flags['silent'] = {}
     // -- 3. run cjr:delete ----------------------------------------------------
-    this.printStatus(StatusStrings.REMOTEJOB.DELETE.JOBS, this.output_flags.verbose)
+    this.printStatus(StatusStrings.REMOTEJOB.DELETE.JOBS, this.output_options.verbose)
     const job_ids = Object.keys(job_labels)
     if(job_ids.length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(true, [], [], [WarningStrings.REMOTEJOB.DELETE.NO_MATCHING_REMOTEJOBS])) // no jobs to delete
     result = this.ssh_shell.exec(
       'cjr job:delete',
-      this.cliFlagsToShellFlags(flags, this.transferrable_flags['job:delete']),
+      cjr_flags,
       job_ids,
       this.interactive_ssh_options
     )
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- 4. run cjr:rmi for associated image ----------------------------------
-    this.printStatus(StatusStrings.REMOTEJOB.DELETE.IMAGES, this.output_flags.verbose)
-    const job_stack_names  = job_ids.map((id:string) => path.posix.join(job_labels[id].remoteDir, job_labels[id].stack))
+    this.printStatus(StatusStrings.REMOTEJOB.DELETE.IMAGES, this.output_options.verbose)
+    const job_stack_paths  = job_ids.map((id:string) => job_labels[id].stack)
     result = this.ssh_shell.exec(
       'cjr stack:rmi',
-      {},
-      job_stack_names,
+      cjr_flags,
+      job_stack_paths,
       this.interactive_ssh_options
     )
     if(!result.success) return this.stopMultiplexAndReturn(result)
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-    // -- 5. Delete Data Directories -------------------------------------------
-    this.printStatus(StatusStrings.REMOTEJOB.DELETE.REMOTE_DIRECTORIES, this.output_flags.verbose)
-    const job_remote_paths = job_ids.map((id:string) => job_labels[id].remoteDir)
+    // // -- 5. Delete Data Directories -------------------------------------------
+    this.printStatus(StatusStrings.REMOTEJOB.DELETE.REMOTE_DIRECTORIES, this.output_options.verbose)
+    const job_remote_paths = job_ids.map((id:string) => job_labels[id]?.[this.label_names['remote-job-dir']])
     result = this.ssh_shell.exec('rm', {r: {}}, [ ... new Set(job_remote_paths)])  // [ .. new Set(Array<string>)]  gives unique values only
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     return this.stopMultiplexAndReturn(result)
@@ -211,104 +234,120 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  jobShell(resource: Dictionary, builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobExec(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, exec_options: RemoteExecOptions)
   {
     // -- set resource ---------------------------------------------------------
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
-    // -- validate parameters -----------------------------------------------
-    if(!args.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
-    // -- load stack -----------------------------------------------------------
-    result = this.loadAndBundleConfiguration(builder, stack_path, overloaded_config_paths)
-    if(!result.success) return result
-    printResultState(result) // print any warnings from bundling
-    const {configuration, bundled_configuration_raw_object} = result.data
+    // -- validate parameters --------------------------------------------------
+    if(!exec_options.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
     // -- start ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStart()
+    this.ssh_shell.multiplexStart({x11: job_options?.x11 || false})
     // -- read json job data to extract projectid ==============================
-    this.printStatus(StatusStrings.REMOTEJOB.SHELL.READING_JOBINFO, this.output_flags.verbose)
-    result = this.getJobLabels({}, [args.id])
+    this.printStatus(StatusStrings.REMOTEJOB.SHELL.READING_JOBINFO, this.output_options.verbose)
+    result = this.getJobLabels([exec_options.id])
     if(!result.success) return this.stopMultiplexAndReturn(result)
     const matching_ids = Object.keys(result.data)
     if(matching_ids.length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID]))
     const job_id = matching_ids[0]
-    const project_id = result.data[job_id]?.[this.labels.projectId]
+    const remote_project_id = result.data[job_id]?.[this.label_names['project-id']]
+    const remote_project_root = result.data[job_id]?.[this.label_names['project-root']]
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-
+    // -- load current project root --------------------------------------------
+    result = getProjectId(exec_options['host-project-root'] || "")
+    const local_project_id = (result.success) ? result.data : false;
+    const local_host_root  = (local_project_id === remote_project_id) ? (exec_options['host-project-root'] as string) : ""
     // -- create remote tmp directory for job ----------------------------------
-    result = this.mkTempDir(remoteStoragePath(resource['storage-dir']), ['files'], false)
+    result = this.mkTempDir(remoteStoragePath(resource['storage-dir']), [], false)
     if(!result.success) return this.stopMultiplexAndReturn(result);
-    const remote_job_path = result.data
+    const remote_job_dir = result.data
     // -- copy stack -----------------------------------------------------------
-    this.printStatus(StatusStrings.REMOTEJOB.SHELL.UPLOADING_STACK, this.output_flags.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    const remote_stack_path = this.remoteStackPath(remote_job_path, builder.stackName(stack_path))
-    result = this.pushStack(builder, stack_path, remote_stack_path, bundled_configuration_raw_object)
+    this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_STACK, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
+    const remote_stack_path = this.remoteStackPath(remote_job_dir, container_runtime.builder.stackName(job_options['stack-path']))
+    result = this.pushStack(container_runtime, {
+      "local-stack-path":job_options['stack-path'],
+      "local-config-files":job_options['config-files'],
+      "remote-stack-path": remote_stack_path,
+      "verbose": this.output_options.verbose
+    })
     if(!result.success) return this.stopMultiplexAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-    // -- execute cjr job:shell command ----------------------------------------
-    const cjr_command = this.ssh_shell.shell.commandString(
-      'cjr job:shell',
-      { ...this.cliFlagsToShellFlags(flags, this.transferrable_flags['job:shell']), ...{stack: remote_stack_path}},
-      (job_id) ? [job_id] : [],
-      this.interactive_ssh_options
-    ) + this.ssh_shell.shell.commandString('', {
-      'label': [
-        `${this.labels.remoteDir}=${remote_job_path}`,
-        `${this.labels.projectId}=${project_id}`
-      ]
-    }) // NOTE: append --label flag due to OCLIF BUG (https://github.com/oclif/oclif/issues/190)
-    result = this.ssh_shell.exec(cjr_command, {}, [], this.interactive_ssh_options)
+    // -- start job ------------------------------------------------------------
+    this.printStatus((job_options['synchronous']) ? StatusStrings.REMOTEJOB.START.RUNNING_JOB : StatusStrings.REMOTEJOB.START.STARTING_JOB, true)
+    if(local_host_root) job_options['host-root'] = local_host_root
+    result = this.CJRJobStart(job_options, {
+        'remote-job-dir': remote_job_dir, // path  that contains all job data
+        'remote-stack-path': remote_stack_path, // path to stack
+        'remote-project-root': remote_project_root,
+        'project-id': remote_project_id, // id of project that started job
+        'previous-job-id': exec_options.id
+      }, exec_options.mode)
+    if(!result.success) return this.stopMultiplexAndReturn(result);
     // -- stop ssh master ------------------------------------------------------
     return this.stopMultiplexAndReturn(result);
   }
 
-  jobStart(resource: Dictionary, builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  //jobStart(resource: Dictionary, builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, auto_copy: boolean)
   {
-    const host_root = flags?.hostRoot || ""
+    const host_root = job_options['host-root'] || ""
     // -- set resource ---------------------------------------------------------
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
-    // -- load stack -----------------------------------------------------------
-    result = this.loadAndBundleConfiguration(builder, stack_path, overloaded_config_paths)
-    if(!result.success) return result
-    printResultState(result) // print any warnings from bundling
-    const {configuration, bundled_configuration_raw_object} = result.data
-    // -- start ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStart({x11: flags?.x11})
     // -- ensure project has ID ------------------------------------------------
     if(host_root) result = ensureProjectId(host_root)
-    if(!result.success) return this.stopMultiplexAndReturn(result);
-    const project_id = result.data
+    if(!result.success) return result;
+    const project_id:string = result.data
+    // -- start ssh master -----------------------------------------------------
+    this.ssh_shell.multiplexStart({x11: job_options?.x11 || false})
     // -- create remote tmp directory for job ----------------------------------
     result = this.mkTempDir(remoteStoragePath(resource['storage-dir']), ['files'], false)
     if(!result.success) return this.stopMultiplexAndReturn(result);
-    const remote_job_path = result.data
+    const remote_job_dir:string = result.data
     // -- copy stack -----------------------------------------------------------
-    this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_STACK, this.output_flags.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    const remote_stack_path = this.remoteStackPath(remote_job_path, builder.stackName(stack_path))
-    result = this.pushStack(builder, stack_path, remote_stack_path, bundled_configuration_raw_object)
+    this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_STACK, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
+    const remote_stack_path = this.remoteStackPath(remote_job_dir, container_runtime.builder.stackName(job_options['stack-path']))
+    result = this.pushStack(container_runtime, {
+      "local-stack-path":job_options['stack-path'],
+      "local-config-files":job_options['config-files'],
+      "remote-stack-path": remote_stack_path,
+      "verbose": this.output_options.verbose
+    })
     if(!result.success) return this.stopMultiplexAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy files & project id ----------------------------------------------
-    this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_FILES, this.output_flags.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    result = this.pushProjectFiles(host_root, path.posix.join(remote_job_path, 'files'))
+    this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_FILES, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
+    const remote_project_root = (host_root) ? path.posix.join(remote_job_dir, 'files', path.posix.basename(host_root)) : ""
+    result = this.pushProjectFiles(container_runtime, {
+      "local-project-root": job_options['host-root'] || "",
+      "local-stack-path": job_options['stack-path'],
+      "local-config-files": job_options['config-files'],
+      "remote-project-root": remote_project_root,
+      "verbose": this.output_options.verbose
+    })
     if(!result.success) return this.stopMultiplexAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- start job ------------------------------------------------------------
-    const remote_hostRoot = (host_root) ? path.posix.join(remote_job_path, 'files', path.posix.basename(host_root)) : ""
-    this.printStatus((flags.async) ? StatusStrings.REMOTEJOB.START.STARTING_JOB : StatusStrings.REMOTEJOB.START.RUNNING_JOB, true)
-    result = this.CJRJobStart({
-        remoteDir: remote_job_path,   // path  that contains all job data
-        hostRoot:  remote_hostRoot,   // path to hostRoot
-        stackPath: remote_stack_path, // path to stack
-        projectId: project_id,        // id of project that started job
-      }, flags, argv)
+    this.printStatus((job_options['synchronous']) ? StatusStrings.REMOTEJOB.START.RUNNING_JOB : StatusStrings.REMOTEJOB.START.STARTING_JOB, true)
+    result = this.CJRJobStart(job_options, {
+        'remote-job-dir': remote_job_dir, // path  that contains all job data
+        'remote-project-root': remote_project_root,  // path to hostRoot
+        'remote-stack-path': remote_stack_path, // path to stack
+        'project-id': project_id, // id of project that started job
+      }, '$')
     if(!result.success) return this.stopMultiplexAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-    // -- autocopy  ------------------------------------------------------------
-    if(flags["autocopy"] || flags["autocopy-all"]) {
-      this.printStatus(StatusStrings.REMOTEJOB.START.DOWNLOADING_FILES, this.output_flags.verbose)
-      result = this.pullProjectFiles(host_root, remote_hostRoot, configuration.getResultPaths() || [], flags["autocopy-all"] || false)
+    if(auto_copy && host_root)
+    {
+      this.printStatus(StatusStrings.REMOTEJOB.COPY.DOWNLOADING_FILES, this.output_options.verbose)
+      const pull_result = this.pullProjectFiles({
+          "local-project-root": host_root,
+          "remote-project-root": remote_project_root,
+          "remote-stack-path": remote_stack_path,
+          "copy-mode": 'update',
+          "verbose": this.output_options.verbose
+        })
+      result.absorb(pull_result)
       this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     }
     return this.stopMultiplexAndReturn(result);
@@ -328,6 +367,20 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
+  jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  {
+    // -- set resource ---------------------------------------------------------
+    var result = this.ssh_shell.setResource(resource)
+    if(!result.success) return result
+    // -- execute ssh command --------------------------------------------------
+    return this.ssh_shell.exec(
+      'cjr job:state',
+      {},
+      [args.id],
+      this.interactive_ssh_options
+    )
+  }
+
   async promptUserForJobId(resource: Dictionary, interactive: boolean)
   {
     if(!interactive) return ""
@@ -341,7 +394,27 @@ export class CJRRemoteDriver extends RemoteDriver
       'json'
     )
     if(!result.success) return result;
-    return await promptUserId(result.data)
+    return await promptUserForId(result.data)
+  }
+
+  jobInfo(resource: Dictionary, status?: string)
+  {
+    // -- set resource ---------------------------------------------------------
+    var result = this.ssh_shell.setResource(resource)
+    if(!result.success) return result
+    // -- execute ssh command --------------------------------------------------
+    result = this.ssh_shell.output(
+      'cjr job:list',
+      {json:{}},
+      [],
+      this.interactive_ssh_options,
+      'json'
+    )
+    if(!result.success) return result
+    // -- filter jobs ----------------------------------------------------------
+    if(status) result.data = result.data.filter((job:Dictionary) => (job.status === status))
+    return result
+
   }
 
   // -- Helper Functions -------------------------------------------------------
@@ -362,28 +435,16 @@ export class CJRRemoteDriver extends RemoteDriver
 
   private printStatus(message: string, newline: boolean)
   {
-   if(this.output_flags.silent) return
+   if(this.output_options.silent) return
    if(newline) console.log(message)
    else process.stdout.write(message)
   }
 
   private scpShellOptions(){
-   return (this.output_flags.verbose) ? {} : {stdio:'ignore'}
+   return (this.output_options.verbose) ? {} : {stdio:'ignore'}
   }
 
   // -- Core Remote Functions --------------------------------------------------
-
-  private loadAndBundleConfiguration(builder:BuildDriver, stack_path: string, overloaded_config_paths: Array<string>)
-  {
-   var result = builder.loadConfiguration(stack_path, overloaded_config_paths)
-   if(!result.success) return result;
-   const configuration = result.data
-
-   result = configuration.bundle(stack_path)
-   if(!result.success) return result;
-   result.data = {configuration: configuration, bundled_configuration_raw_object: result.data}
-   return result
-  }
 
   // MKTEMPDIR: creates a temporary directory and any specified child directories
   // parent_abs_path: string - absolute path where tmp folder should be created
@@ -406,104 +467,150 @@ export class CJRRemoteDriver extends RemoteDriver
   // builder - BuildDriver for building stack
   // stack_path: path on local machine where stack is located
   // configuration: Dictionary - result from stack configuration.bundle()
-  private pushStack(builder:BuildDriver, stack_path: string, remote_cp_path: string, configuration: Dictionary|boolean=false)
+  private pushStack(container_runtime: ContainerRuntime, options: {"local-stack-path":string, "local-config-files":Array<string>, "remote-stack-path": string, verbose: boolean})
   {
-  // -- 1. copy stack into a local tmp directory ------------------------------
-  var result = FileTools.mktempDir(
-    path.join(this.config.dataDir, cli_bundle_dir_name),
-    this.ssh_shell.shell)
-   if(!result.success) return result;
-   const temp_stack_path = result.data
-
-   result = builder.copy(stack_path, temp_stack_path, configuration)
-   if(!result.success) return result;
-
-   // -- 2. transfer stack over scp --------------------------------------------
-   result = this.ssh_shell.scp(temp_stack_path, remote_cp_path, 'push', this.scpShellOptions())
-   if(!result.success) return result;
-
-   // -- 3. remove local tml directory -----------------------------------------
-   fs.remove(temp_stack_path)
-   return result
+    // -- 1. create local tmp directory ----------------------------------------
+    var result = FileTools.mktempDir(
+      path.join(this.storage_directory, cli_bundle_dir_name),
+      this.ssh_shell.shell)
+    if(!result.success) return result;
+    const temp_stack_path = result.data
+    const removeTmpStackAndReturn = (result: ValidatedOutput) => {
+      fs.remove(temp_stack_path);
+      return result
+    }
+    // -- 2. bundle stack inside tmp directory ---------------------------------
+    const bundle_options:StackBundleOptions =
+    {
+      "stack-path":   options['local-stack-path'],
+      "config-files": options['local-config-files'],
+      "bundle-path":  temp_stack_path,
+      "build-mode":   'no-build'
+    }
+    result = bundleStack(container_runtime, bundle_options)
+    if(!result.success) removeTmpStackAndReturn(result)
+    // -- 3. load stack configuration ------------------------------------------
+    const rsync_flags:Dictionary = {a:{}}
+    if(options.verbose) rsync_flags.v = {}
+    result = this.ssh_shell.rsync(
+      FileTools.addTrailingSeparator(temp_stack_path, 'posix'), // upload contents
+      options['remote-stack-path'],
+      'push',
+      rsync_flags
+    )
+    // -- 4. remove local tml directory ----------------------------------------
+    return removeTmpStackAndReturn(result);
   }
+
 
   // scp project files remote resource
-  private pushProjectFiles(host_root: string, remote_cp_path: string)
+  private pushProjectFiles(container_runtime: ContainerRuntime, options: {"local-project-root":string, "local-stack-path":string, "local-config-files":Array<string>, "remote-project-root": string, verbose: boolean})
   {
-   if(!host_root) return new ValidatedOutput(true) // projects with no hostRoot do not require copy
-   return this.ssh_shell.scp(host_root, remote_cp_path, 'push', this.scpShellOptions())
+    if(!options['local-project-root']) return new ValidatedOutput(true)
+    // -- 1. load stack configuration ------------------------------------------
+    var result = container_runtime.builder.loadConfiguration(options['local-stack-path'], options['local-config-files'])
+    if(!result.success) return result
+    const configuration:StackConfiguration = result.data
+    // -- 3. transfer stack over rsync ------------------------------------------
+    const upload_settings = configuration.getRsyncUploadSettings()
+    const rsync_flags:Dictionary = {a:{}}
+    if(options.verbose) rsync_flags.v = {}
+    // note: always add include before exclude
+    if(upload_settings.include) rsync_flags['include-from'] = upload_settings.include
+    if(upload_settings.exclude) rsync_flags['exclude-from'] = upload_settings.exclude
+    result = this.ssh_shell.rsync(
+      FileTools.addTrailingSeparator(options["local-project-root"], 'posix'), // upload contents
+      options["remote-project-root"],
+      'push',
+      rsync_flags
+    )
+    return result
   }
 
-  // scp project id to remote resource
-  private pushProjectId(host_root: string, remote_cp_path: string)
+
+  private pullProjectFiles(options: {"local-project-root":string, "remote-project-root": string, "remote-stack-path": string, 'copy-mode': 'update'|'overwrite'|'mirror', verbose: boolean})
   {
-   if(!host_root) return new ValidatedOutput(true) // projects with no hostRoot do not require copy
-   // -- push project ID -------------------------------------------------------
-   return this.ssh_shell.scp(
-     projectIDPath(host_root),
-     path.posix.join(remote_cp_path, project_idfile),
-     'push',
-     this.scpShellOptions()
-   )
+    if(!options["local-project-root"]) return new ValidatedOutput(true) // projects with no hostRoot do not require copy
+
+    // -- extract rsync configuration files from remote stack ------------------
+    var result = this.pullRsyncConfig(options['remote-stack-path'], options.verbose)
+    if(!result.success) return result
+    const rconfig: {local_tmp_dir: string, rsync_files_flag:{'include-from'?:string, 'exclude-from'?:string}} = result.data
+    // -- rsync projec files ---------------------------------------------------
+    const rsync_flags:Dictionary = {
+     ...{a: {}},
+     ...rconfig.rsync_files_flag
+    }
+    if(options.verbose) rsync_flags['v'] = {}
+    switch(options['copy-mode'])
+    {
+      case "update":
+        rsync_flags['update'] = {}
+        break
+      case "overwrite":
+        break
+      case "mirror":
+        rsync_flags['delete'] = {}
+        break
+    }
+    result = this.ssh_shell.rsync(
+     FileTools.addTrailingSeparator(options['local-project-root']), // pull folder contents
+     FileTools.addTrailingSeparator(options['remote-project-root'], 'posix'),
+     'pull',
+     rsync_flags
+    )
+    fs.removeSync(rconfig.local_tmp_dir)
+    return result
   }
 
-  private pullProjectFiles(local_hostRoot:string, remote_hostRoot: string, remote_resultPaths: Array<string>=[], copy_all: boolean)
+  private CJRJobStart(job_options: JobOptions, remote_params:RemoteJobParams, mode:"$"|"job:shell"|"job:exec")
   {
-   if(!local_hostRoot) return new ValidatedOutput(true) // projects with no hostRoot do not require copy
-   // -- select function for computing local copy paths -----------------------
-   var local_path: (result_path: string) => string
-   // ----> case 1: remote and local project folder match ---------------------
-   if(path.basename(local_hostRoot) === path.posix.basename(remote_hostRoot))
-     local_path = (result_path: string) => path.dirname(path.join(local_hostRoot, result_path))
-   else // ----> case 2: remote and local project folder names do not match ---
-     local_path = (result_path: string) => (result_path) ? path.dirname(path.join(local_hostRoot, result_path)) : local_hostRoot
+    // -- set args -------------------------------------------------------------
+    var cjr_args:Array<string> = []
+    if(mode === '$')
+      cjr_args = [job_options['command']]
+    else if(mode === "job:exec")
+      cjr_args = [remote_params['previous-job-id'] || "", job_options['command']]
+    else if(mode === "job:shell")
+      cjr_args = [remote_params['previous-job-id'] || ""]
+    // -- set flags ------------------------------------------------------------
+    const cjr_flags:Dictionary = {
+      'stack':        remote_params["remote-stack-path"],
+      'build-mode':   job_options["build-mode"],
+      'no-autoload':  {}
+    }
+    if(mode == "$") cjr_flags['file-access'] = job_options["file-access"]
+    if(mode == "$" && remote_params['remote-project-root']) cjr_flags['project-root'] = remote_params['remote-project-root']
+    if(job_options['x11']) cjr_flags["x11"] = {}
+    if(job_options['synchronous'] === false) cjr_flags['async'] = {}
+    if(job_options['host-root']) {
+      const remote_wd = containerWorkingDir(job_options['cwd'], job_options['host-root'], path.posix.dirname(remote_params['remote-project-root']))
+      if(remote_wd) cjr_flags['working-directory'] = remote_wd
+    }
+    if(mode === '$' && remote_params['auto-copy']) cjr_flags['auto-copy'] = {}
+    if(this.output_options.explicit) cjr_flags['explicit'] = {}
+    if(this.output_options.silent) cjr_flags['silent'] = {}
+    if(this.output_options.verbose) cjr_flags['verbose'] = {}
 
-   // -- compute scp paths ----------------------------------------------------
-   if(remote_resultPaths.length == 0 || copy_all) remote_resultPaths = [""]
+    const labels:Array<string> = job_options['labels']?.map((label:{key:string, value: string}) => `${label.key}=${label.value}`) || []
+    const ports:Array<string>  = job_options['ports']?.map((port:{hostPort:number, containerPort: number}) => `${port.hostPort}:${port.containerPort}`) || []
 
-   const scp_paths:Array<Dictionary> = remote_resultPaths.map((result_path:string) => {
-       return {
-         remote: path.posix.join(remote_hostRoot, result_path),
-         local:  local_path(result_path)
-       }
-     })
-
-   // -- scp files ------------------------------------------------------------
-   const results = scp_paths.map((t:Dictionary, i:number) => {
-     if(this.output_flags.verbose) console.log(StatusStrings.REMOTEJOB.FILES.SCP_DOWNLOAD(i+1, t.remote, t.local))
-     return this.ssh_shell.scp(t.local, t.remote, "pull", this.scpShellOptions())
-   })
-   // -- validate each copy result --------------------------------------------
-   return results.reduce((accumulator:ValidatedOutput, currentValue:ValidatedOutput) => {
-     accumulator.success = accumulator.success && currentValue.success
-     accumulator.error.concat(currentValue.error)
-     return accumulator
-   }, new ValidatedOutput(true))
-  }
-
-  private CJRJobStart(job_params:RemoteJobParams, flags: Dictionary, argv: Array<string>)
-  {
-    const cjr_flags:Dictionary = this.cliFlagsToShellFlags(flags, this.transferrable_flags['$'])
-    if(job_params.hostRoot) cjr_flags.hostRoot = job_params.hostRoot
-    cjr_flags.stack = job_params.stackPath
-    cjr_flags["no-autoload"] = {}
     // Note: OCLIF does not support flags with multiple values before args
     //       (https://github.com/oclif/oclif/issues/190). Therefore we must
-    //       manually append the --label flag at end of the cjr command.
-    const cjr_command = this.ssh_shell.shell.commandString('cjr $', cjr_flags, argv)
+    //       manually append the --label and --port flags at end of cjr command.
+    const cjr_command = this.ssh_shell.shell.commandString(`cjr ${mode}`, cjr_flags, cjr_args)
      + this.ssh_shell.shell.commandString("", {
-       label: [
-         `${this.labels.remoteDir}=${job_params.remoteDir}`,
-         `${this.labels.projectId}=${job_params.projectId}`
-       ]}
+       label: labels.concat([
+         `${this.label_names['remote-job-dir']}=${remote_params['remote-job-dir']}`,
+         `${this.label_names['project-id']}=${remote_params['project-id']}`
+       ]),
+       port: ports
+      }
      )
-    // -- set appropriate working dir on remote --------------------------------
-    const remote_wd = containerWorkingDir(process.cwd(), flags.hostRoot, path.posix.dirname(job_params.hostRoot))
+
     // -- execute ssh command --------------------------------------------------
-    const ssh_command = (remote_wd) ? `cd ${ShellCommand.bashEscape(remote_wd)} && ${cjr_command}` : cjr_command
     const ssh_options:Dictionary = {interactive: true}
-    if(flags.x11) ssh_options.x11 = true
-    return this.ssh_shell.exec(ssh_command, {},[], {ssh: ssh_options})
+    return this.ssh_shell.exec(cjr_command, {},[], {ssh: ssh_options})
   }
 
   // gets labels for all remote jobs whose id matches with the job_id string
@@ -511,14 +618,13 @@ export class CJRRemoteDriver extends RemoteDriver
   //              The flags --json and -label=job_info_label cannot be overridden
   // job_id:string (optional) any characters that need to match with job idea
 
-  private getJobLabels(label_flags: Dictionary, job_id:Array<string> = [])
+  private getJobLabels(job_ids:Array<string> = [])
   {
     // -- read job data and extract job directories ----------------------------
-    const user_flags = this.cliFlagsToShellFlags(label_flags, this.transferrable_flags['job:labels'])
     var result = this.ssh_shell.output(
       'cjr job:labels',
-      { ...user_flags, ...{json: {}}},
-      job_id,
+      {json: {}},
+      job_ids,
       {},
       'json'
     )
@@ -526,19 +632,47 @@ export class CJRRemoteDriver extends RemoteDriver
       return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.LABEL.INVALID_JSON])
 
     const label_data = result.data
-    if(job_id && label_data === {}) // exit if user specified an id but there are no matching jobs
+    if(job_ids.length > 0 && label_data === {}) // exit if user specified an id but there are no matching jobs
       return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID])
 
-    // parse job info data
-    Object.keys(label_data).map((job_id:string) => {
-      try {
-        label_data[job_id][job_info_label] = JSON.parse(label_data[job_id]?.[job_info_label])
-      }
-      catch (e) {
-        result.pushWarning(WarningStrings.REMOTEJOB.LABELS.INVALID_JOBINFO_JSON(job_id))
-      }
-    })
     return new ValidatedOutput(true, label_data)
+  }
+
+  // PULLRSYNCCONFIG pulls rsync include and exclude files from a remote stack
+  // folder. This function assumes the stack was bundled properly.
+  private pullRsyncConfig(remote_stack_path: string, verbose: boolean)
+  {
+    // -- create a temp directory ----------------------------------------------
+    var result = FileTools.mktempDir(path.join(this.storage_directory, remote_stack_rsync_config_dirname))
+    if(!result.success) return result
+    const local_tmp_dir:string = result.data
+    // -- rsync download include and exclude files to local --------------------
+    const flags:Dictionary = {
+      a: {},
+      include: [
+        stack_bundle_rsync_file_paths['download']['include'],
+        stack_bundle_rsync_file_paths['download']['exclude']
+      ],
+      exclude: '*'
+    }
+    if(verbose) flags['v'] = {}
+    result = this.ssh_shell.rsync(
+      local_tmp_dir,
+      FileTools.addTrailingSeparator(remote_stack_path),
+      'pull',
+      flags
+    )
+    if(!result.success) return result
+    // -- package results (only include existing files) ------------------------
+    const rsync_files_flag:Dictionary = {}
+    const local_include_file = path.join(local_tmp_dir, stack_bundle_rsync_file_paths['download']['include'])
+    if(fs.existsSync(local_include_file)) rsync_files_flag['include-from'] = local_include_file
+    const local_exclude_file = path.join(local_tmp_dir, stack_bundle_rsync_file_paths['download']['include'])
+    if(fs.existsSync(local_exclude_file)) rsync_files_flag['exclude-from'] = local_exclude_file
+    return new ValidatedOutput(true, {
+      rsync_files_flag: rsync_files_flag,
+      local_tmp_dir: local_tmp_dir
+    })
   }
 
   // helper function for early exits

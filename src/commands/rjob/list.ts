@@ -6,7 +6,7 @@ export default class List extends RemoteCommand {
   static description = 'List all running jobs for a stack.'
   static args = []
   static flags = {
-    remoteName: flags.string({env: 'REMOTENAME'}), // new remote flag
+    "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
     //stack: flags.string({env: 'STACK'}),      TEMPORARILY DISABLED
     hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
@@ -18,7 +18,7 @@ export default class List extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(List, {remoteName: true})
+    const {flags, args, argv} = this.parseWithLoad(List, {"remote-name": true})
     this.remoteCommand("jobList", flags, args, argv)
   }
 

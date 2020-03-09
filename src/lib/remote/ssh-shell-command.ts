@@ -110,6 +110,23 @@ export class SshShellCommand
       return this.shell.exec("scp", flags, args, options)
     }
 
+    rsync(local_path: string, remote_path: string, direction: string, flags: Dictionary, options: Dictionary = {})
+    {
+      if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, [], ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
+      const use_multiplex = (this.multiplex && this.multiplexSocketExists())
+      // -- set flags ----------------------------------------------------------
+      if(!use_multiplex && this.resource.key) // no resource needed if socket exists
+        flags.e = `ssh -i "${this.resource.key}"`
+      if(use_multiplex)
+        flags.e = `ssh -o 'ControlPath=${this.multiplexSocketPath()}'`
+      // -- set args -----------------------------------------------------------
+      const escaped_remote_path = `${this.resource.username}@${this.resource.address}:${ShellCommand.bashEscape(remote_path)}` // NOTE: remote arguments must be escaped twice, since they are resolved on host and on remote. Since shell-command already escapes arguments we only do it once here
+      const args = (direction === "push") ?
+        [local_path, escaped_remote_path] : //push
+        [escaped_remote_path, local_path]   //pull
+      return this.shell.exec("rsync", flags, args, options)
+    }
+
     // === Multiplex Commands ==================================================
 
     multiplexStart(options:Dictionary={}) // start the multiplex master

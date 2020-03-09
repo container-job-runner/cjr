@@ -7,23 +7,23 @@ export default class Ssh extends RemoteCommand {
   static description = 'ssh into a remote resource.'
   static args   = [{name: 'remote-name'}]
   static flags = {
-    remoteName: flags.string({env: 'REMOTENAME'}),
+    'remote-name': flags.string({env: 'REMOTENAME'}),
     x11: flags.boolean({default: false, char: 'X'}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
 
   async run() {
-    const {flags, args, argv} = this.parseWithLoad(Ssh, {remoteName: false})
-    const resource_config = this.readResourceConfig()
+    const {flags, args, argv} = this.parseWithLoad(Ssh, {"remote-name": false})
     // -- validate id ----------------------------------------------------------
-    var result = this.validResourceName(args["remote-name"] || flags["remoteName"] || "", resource_config)
+    const name = args["remote-name"] || flags["remote-name"] || ""
+    var result = this.validResourceName(name)
     if(!result.success) return printResultState(result)
-    const remote_name = result.data
     // -- get resource & driver ------------------------------------------------
-    const resource = resource_config[remote_name]
+    const resource = this.resource_configuration.getResource(name)
+    if(resource === undefined) return
     const ssh_shell = new SshShellCommand(flags.explicit, false, this.config.dataDir)
-    var result = ssh_shell.setResource(resource)
+    result = ssh_shell.setResource(resource)
     if(!result.success) return printResultState(result)
     ssh_shell.exec('', {}, [], {ssh: {x11: flags.x11}})
     printResultState(result)

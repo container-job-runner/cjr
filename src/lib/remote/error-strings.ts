@@ -13,9 +13,8 @@ export const ErrorStrings = {
     NO_MATCHING_ID: chalk`{bold No Matching Remote Job IDs}`,
     EMPTY_ID: chalk`{bold Empty Job ID} - you must select a remote job id.`,
     COPY: {
-      EMPTY_LOCAL_HOSTROOT: chalk`{bold Empty HostRoot} - you must set a hostroot to copy a job.`,
-      DIFFERING_PROJECT_ID: chalk`{bold Differing Project IDs} - this job was started from a different project. Use flag --force if you want to copy files into current project.`,
-      DIFFERING_PROJECT_DIRNAME: chalk`{bold Different Project Folder Names} - this job was started from a differently named project folder. Use flag --force if you want to copy files into current project.`
+      EMPTY_LOCAL_HOSTROOT: chalk`{bold Empty HostRoot} - you must set a hostroot to copy jobs.`,
+      DIFFERING_PROJECT_ID: (id:string) => chalk`{bold Differing Project IDs} - the job ${id} was started from a project with a different id. Use flag --force if you want to copy files into current project.`
     },
     LABEL: {
       INVALID_JSON: chalk`{bold Invalid Job Label JSON} - job label information could not be retrieved since json data was invalid.`
@@ -26,7 +25,7 @@ export const ErrorStrings = {
 export const WarningStrings = {
   REMOTEJOB: {
     COPY: {
-      EMPTY_REMOTE_HOSTROOT: chalk`{bold Empty Job HostRoot} - no copy needed since job has no associated files`
+      EMPTY_REMOTE_HOSTROOT: (id:string) => chalk`{bold Empty Job Project-Root} - no copy required for job ${id} since it has no associated files`
     },
     DELETE:{
       NO_MATCHING_REMOTEJOBS: chalk`{bold No Matching Remote IDs} - all the jobs with matching ids where not started remotely`,

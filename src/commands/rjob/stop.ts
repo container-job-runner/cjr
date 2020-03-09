@@ -6,7 +6,7 @@ export default class Stop extends RemoteCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
-    remoteName: flags.string({env: 'REMOTENAME'}), // new remote flag
+    "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
     //stack: flags.string({env: 'STACK'}),
     explicit: flags.boolean({default: false}),
     all: flags.boolean({default: false}),
@@ -18,7 +18,7 @@ export default class Stop extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Stop, {remoteName: true})
+    const {flags, args, argv} = this.parseWithLoad(Stop, {"remote-name": true})
     this.remoteCommand("jobStop", flags, args, argv)
   }
 

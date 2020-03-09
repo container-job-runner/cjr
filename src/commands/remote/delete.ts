@@ -10,14 +10,16 @@ export default class Delete extends RemoteCommand {
 
   async run() {
     const {args, flags} = this.parse(Delete)
-    const resource_config = this.readResourceConfig()
-    // -- validate name ----------------------------------------------------------
-    var result = this.validResourceName(args["remote-name"], resource_config)
+    // -- validate name --------------------------------------------------------
+    const name = args["remote-name"]
+    const result = this.validResourceName(name)
     if(!result.success) return printResultState(result)
     // -- delete resource ------------------------------------------------------
-    const name = result.data
-    this.removeKeyfile(resource_config[name]?.key || "")
-    delete resource_config[name]
-    printResultState(this.writeResourceConfig(resource_config))
+    const resource = this.resource_configuration.getResource(name)
+    if(resource !== undefined) {
+      this.removeKeyfile(resource?.key || "")
+      this.resource_configuration.deleteResource(name)
+      printResultState(this.resource_configuration.writeToFile())
+    }
   }
 }
