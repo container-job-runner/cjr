@@ -27,11 +27,12 @@ export type Dictionary = {[key: string]: any}
 // -- options for core function startJob ---------------------------------------
 export type ports = Array<{hostPort:number, containerPort: number}>
 export type labels = Array<{key:string, value: string}>
+export type buildmodes = "no-rebuild"|"build"|"build-nocache"
 
 export type JobOptions = {
     "stack-path": string,                                                       // stack that should be used to run job
     "config-files": Array<string>,                                              // any additional configuration files for stack
-    "build-mode": "no-rebuild"|"build"|"build-nocache",                         // specifies how to build stack before run
+    "build-mode": buildmodes,                                                   // specifies how to build stack before run
     "command": string,                                                          // command for job
     "host-root"?: string,                                                       // project host root
     "file-access": "volume"|"bind",                                             // specifies how project files are accessed by container
