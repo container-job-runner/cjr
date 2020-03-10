@@ -127,7 +127,8 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
     mountFileVolume(configuration, job_options["host-root"], job_options["file-volume-id"])
   else if(job_options["host-root"] && job_options["file-access"] === "volume") {
     printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY, output_options)
-    createAndMountFileVolume(container_runtime.runner, configuration, job_options["host-root"], output_options.verbose)
+    result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
+    if(!result.success) return result
   }
   if(job_options["host-root"])
     setRelativeWorkDir(configuration, job_options["host-root"], job_options["cwd"])
@@ -197,7 +198,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
       verbose: copy_options.verbose,
       files: configuration.getRsyncDownloadSettings()
     }
-    syncHostDirAndVolume(container_runtime.runner, rsync_options, copy_options?.manual || false)
+    result = syncHostDirAndVolume(container_runtime, rsync_options, copy_options?.manual || false)
     if(!result.success) return printResultState(result)
   })
   return result
@@ -214,12 +215,19 @@ export function jobExec(container_runtime:ContainerRuntime, job_id: string, shel
   const file_volume_id = job_info?.labels?.[file_volume_label] || ""
   const job_stack_path = job_info?.labels?.stack || ""
   if(!host_root) return result.pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
-  if(!file_volume_id) return result.pushWarning(WarningStrings.JOBEXEC.NO_VOLUME(job_info.id))
+  //if(!file_volume_id) return result.pushWarning(WarningStrings.JOBEXEC.NO_VOLUME(job_info.id))
   // -- set job properties -----------------------------------------------------
   shell_job_options['stack-path'] = shell_job_options['stack-path'] || job_stack_path
   shell_job_options['host-root'] = host_root
-  shell_job_options['file-access'] = "volume"
-  shell_job_options['file-volume-id'] = file_volume_id
+  if(file_volume_id)
+  {
+    shell_job_options['file-access'] = "volume"
+    shell_job_options['file-volume-id'] = file_volume_id
+  }
+  else // if no volume bind to job-host root (for local this is equivalent to job:shell, however this enables remote driver to shell into a bound job)
+  {
+    shell_job_options['file-access'] = "bind"
+  }
   return jobStart(container_runtime, shell_job_options, output_options)
 }
 
@@ -379,10 +387,10 @@ export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: st
 // hostRoot:string  - Project root folder
 // verbose: boolean - flag for rsync
 // -----------------------------------------------------------------------------
-export function createAndMountFileVolume(runner: RunDriver, configuration: StackConfiguration, hostRoot: string, verbose: boolean=false)
+export function createAndMountFileVolume(container_runtime: ContainerRuntime, configuration: StackConfiguration, hostRoot: string, verbose: boolean=false)
 {
   // -- create volume ----------------------------------------------------
-  var result = runner.volumeCreate({});
+  var result = container_runtime.runner.volumeCreate({});
   if(!result.success) return result
   const volume_id = result.data
   // -- sync to volume ---------------------------------------------------
@@ -394,10 +402,11 @@ export function createAndMountFileVolume(runner: RunDriver, configuration: Stack
     verbose: verbose,
     files: configuration.getRsyncUploadSettings()
   }
-  result = syncHostDirAndVolume(runner, copy_options)
+  result = syncHostDirAndVolume(container_runtime, copy_options)
   if(!result.success) return result
   // -- mount volume to job ----------------------------------------------
   mountFileVolume(configuration, hostRoot, volume_id)
+  return new ValidatedOutput(true)
 }
 
 // -----------------------------------------------------------------------------
@@ -421,12 +430,12 @@ export function mountFileVolume(configuration: StackConfiguration, hostRoot: str
 // runner: RunDriver - runner that is used to start rsync job
 // copy_options: string - options for file sync
 // -----------------------------------------------------------------------------
-export function syncHostDirAndVolume(runner: RunDriver, copy_options:RsyncOptions, manual_copy:boolean = false)
+export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_options:RsyncOptions, manual_copy:boolean = false)
 {
   if(!copy_options["host-path"]) return new ValidatedOutput(true)
   if(!copy_options["volume"]) return new ValidatedOutput(true)
   // -- create configuration for rsync job -------------------------------------
-  const rsync_configuration = rsyncJobConfiguration(runner, copy_options)
+  const rsync_configuration = rsyncJobConfiguration(container_runtime.runner, copy_options)
   // -- mount any rsync include or exclude files -------------------------------
   const rsync_flags:Dictionary = {a: {}}
   addrsyncIncludeExclude(
@@ -454,7 +463,9 @@ export function syncHostDirAndVolume(runner: RunDriver, copy_options:RsyncOption
     rsync_flags
   )
   rsync_configuration.setCommand((manual_copy) ? manual_copy_command : rsync_command)
-  return runner.jobStart(
+  const result = container_runtime.builder.build(rsync_constants.stack_path, [])
+  if(!result.success) return result
+  return container_runtime.runner.jobStart(
     rsync_constants.stack_path,
     rsync_configuration,
     {verbose: false, explicit: false, silent: false}
