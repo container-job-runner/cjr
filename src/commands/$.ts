@@ -24,7 +24,8 @@ export default class Run extends StackCommand {
     "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
+    "keep-record": flags.boolean({default: false, description: "prevents container deletion after process exit"}) // only mean for remote cjr controller. Once socket is used remove this
   }
   static strict = false;
 
@@ -59,7 +60,7 @@ export default class Run extends StackCommand {
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
-      "remove":       (flags['file-access'] === "bind") ? true : false
+      "remove":       (flags['file-access'] === "bind" && !flags["keep-record"]) ? true : false
     }
     // -- start job and extract job id -----------------------------------------
     var result = jobStart(runtime_options, job_options, output_options)
