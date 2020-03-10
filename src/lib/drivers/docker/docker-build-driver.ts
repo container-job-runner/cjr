@@ -36,11 +36,12 @@ export class DockerBuildDriver extends BuildDriver
       var result = new ValidatedOutput(true);
       var stack_type
       // -- check that folder name is valid ------------------------------------
-      const name_re = new RegExp(/^[a-zA-z0-9-_.]+$/)
-      if(!name_re.test(this.stackName(stack_path)))
-        result.pushError(this.ERRORSTRINGS["INVALID_NAME"](stack_path))
       if(FileTools.existsDir(stack_path)) // -- assume local stack -------------
       {
+        const name_re = new RegExp(/^[a-zA-z0-9-_.]+$/)
+        if(!name_re.test(this.stackName(stack_path)))
+          result.pushError(this.ERRORSTRINGS["INVALID_NAME"](stack_path))
+
         if(FileTools.existsFile(path.join(stack_path, 'Dockerfile')))
           stack_type = 'local-dockerfile'
         else if(FileTools.existsFile(path.join(stack_path, 'image.tar.gz')))
@@ -51,8 +52,10 @@ export class DockerBuildDriver extends BuildDriver
       else // -- assume remote image -------------------------------------------
       {
         stack_type = 'remote'
-        const pull_result = this.shell.exec(`${this.base_command} pull`, {}, [stack_path])
-        if(!pull_result.success) result.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path));
+        if(!this.isBuilt(stack_path)) {
+          const pull_result = this.shell.exec(`${this.base_command} pull`, {}, [stack_path])
+          if(!pull_result.success) result.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path));
+        }
       }
       if(!result.success) return result
       result = this.loadConfiguration(stack_path, overloaded_config_paths);
