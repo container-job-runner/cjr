@@ -41,6 +41,7 @@ export const WarningStrings = {
 export const StatusStrings = {
   REMOTEJOB:{
     START: {
+      CREATING_DIRECTORIES: chalk`{bold Creating Remote Directories... }`,
       UPLOADING_STACK: chalk`{bold Uploading Stack... }`,
       UPLOADING_FILES: chalk`{bold Uploading Files... }`,
       RUNNING_JOB: chalk`{bold Running Job... }`,

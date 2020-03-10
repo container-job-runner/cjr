@@ -85,4 +85,29 @@ export abstract class RemoteCommand extends StackCommand
     {
       return path.join(this.config.configDir, remote_keys_dir_name)
     }
+
+    // -- quickness flag -------------------------------------------------------
+
+    applyProtocolFlag(flags:Dictionary)
+    {
+      if(!flags['protocol']) return // missing
+      if(!/\d{1,4}/.test(flags['protocol'] || "")) return // malformed
+      // split protocl flag into digits ----------------------------------------
+      const protocol_str = `${flags['protocol']}`
+      const protocol_digits = protocol_str.split("").map((d:string) => Number(d))
+      const [stack_upload, file_upload, build, file_access] = protocol_digits
+      // -- stack-upload-mode --------------------------------------------------
+      if(stack_upload === 0) flags['stack-upload-mode'] = "cached"
+      else if(stack_upload === 1) flags['stack-upload-mode'] = "uncached"
+      // -- file-upload-mode ---------------------------------------------------
+      if(file_upload === 0) flags['file-upload-mode'] = "cached"
+      else if(file_upload === 1) flags['file-upload-mode'] = "uncached"
+      // -- build-mode ---------------------------------------------------------
+      if(build === 0) flags['build-mode'] = "no-build"
+      else if(build === 1) flags['build-mode'] = "build"
+      else if(build === 2) flags['build-mode'] = "build-nocache"
+      // -- build-mode ---------------------------------------------------------
+      if(file_access === 0) flags['file-access'] = "bind"
+      else if(file_access === 1) flags['file-access'] = "volume"
+    }
 }

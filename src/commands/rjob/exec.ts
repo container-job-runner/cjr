@@ -16,7 +16,9 @@ export default class Exec extends RemoteCommand {
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    "stack-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
     "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
+    "protocol": flags.string({exclusive: ['stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying stack-upload-mode, and build-mode'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
@@ -31,6 +33,7 @@ export default class Exec extends RemoteCommand {
       "config-files": false,
       "remote-name": true
     })
+    this.applyProtocolFlag(flags)
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- initialize run shortcuts ---------------------------------------------
     const run_shortcut = new RunShortcuts()
@@ -72,7 +75,16 @@ export default class Exec extends RemoteCommand {
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
       "remove":       false
     }
-    result = driver.jobExec(resource, runtime_options, job_options, {id: id, mode: 'job:exec', "host-project-root": flags["project-root"]})
+    result = driver.jobExec(
+      resource,
+      runtime_options,
+      job_options,
+      {
+        id: id,
+        mode: 'job:exec',
+        "host-project-root": flags["project-root"],
+        "stack-upload-mode": flags["stack-upload-mode"]
+      })
     printResultState(result)
   }
 

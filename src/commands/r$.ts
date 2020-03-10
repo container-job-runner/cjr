@@ -23,7 +23,10 @@ export default class Run extends RemoteCommand {
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     autocopy: flags.boolean({default: false, exclusive: ["async"], description: "automatically copy files back to the projec root on exit"}),
     "file-access": flags.string({default: "volume", options: ["volume", "bind"], description: "how files are accessed from the container. Options are: volume and bind."}),
+    "file-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description:  'specifies how project-root is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed location'}),
+    "stack-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
     "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
+    "protocol": flags.string({exclusive: ['file-upload-mode', 'stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying file-upload-mode, stack-upload-mode, and build-mode'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"})
   }
@@ -31,6 +34,7 @@ export default class Run extends RemoteCommand {
 
   async run() {
     const {flags, args, argv} = this.parseWithLoad(Run, {stack:true, "config-files": false, "project-root":false, "remote-name": true})
+    this.applyProtocolFlag(flags)
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- initialize run shortcuts --------------------------------------------
     const run_shortcut = new RunShortcuts()
@@ -74,7 +78,11 @@ export default class Run extends RemoteCommand {
       resource,
       runtime_options,
       job_options,
-      this.shouldAutocopy(flags)
+      {
+        "auto-copy":         this.shouldAutocopy(flags),
+        "stack-upload-mode": flags['stack-upload-mode'],
+        "file-upload-mode":  flags['file-upload-mode']
+      }
     )
     printResultState(result)
   }

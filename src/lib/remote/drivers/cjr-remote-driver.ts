@@ -7,7 +7,7 @@ import {SshShellCommand} from "../ssh-shell-command"
 import {FileTools} from "../../fileio/file-tools"
 import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 import {BuildDriver} from "../../drivers/abstract/build-driver"
-import {RemoteDriver, RemoteExecOptions, RemoteDeleteOptions} from "./remote-driver"
+import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions} from "./remote-driver"
 import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label, stack_bundle_rsync_file_paths} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
@@ -84,9 +84,9 @@ export class CJRRemoteDriver extends RemoteDriver
     result = this.getJobLabels(copy_options.ids)
     if(!result.success) return this.stopMultiplexAndReturn(result)
     const all_job_labels = result.data
-
-    const matching_ids:Array<string> = Object.keys(result.data)
+    const matching_ids:Array<string> = Object.keys(all_job_labels)
     if(matching_ids.length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID]))
+    this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
 
     // == map over each matching job ===========================================
     result = new ValidatedOutput(true)
@@ -114,7 +114,6 @@ export class CJRRemoteDriver extends RemoteDriver
           )
         }
       }
-      this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
 
       // == 2. Run Remote CJR Remote COPY ======================================
       const copy_flags:Dictionary = {mode: copy_options.mode}
@@ -189,7 +188,7 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- 4. run cjr:rmi for associated image ----------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.IMAGES, this.output_options.verbose)
-    const job_stack_paths  = job_ids.map((id:string) => job_labels[id].stack)
+    const job_stack_paths  = job_ids.map((id:string) => job_labels[id]?.[this.label_names['stack-path']])
     result = this.ssh_shell.exec(
       'cjr stack:rmi',
       cjr_flags,
@@ -198,10 +197,12 @@ export class CJRRemoteDriver extends RemoteDriver
     )
     if(!result.success) return this.stopMultiplexAndReturn(result)
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-    // // -- 5. Delete Data Directories -------------------------------------------
+    // -- 5. Delete Data Directories -------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.REMOTE_DIRECTORIES, this.output_options.verbose)
+    // ----> stacks & job_directories (use set since there may be duplicates)
     const job_remote_paths = job_ids.map((id:string) => job_labels[id]?.[this.label_names['remote-job-dir']])
-    result = this.ssh_shell.exec('rm', {r: {}}, [ ... new Set(job_remote_paths)])  // [ .. new Set(Array<string>)]  gives unique values only
+    const unique_rm_paths = [ ... new Set(job_stack_paths.concat(job_remote_paths))] // [ .. new Set(Array<string>)]  gives unique values only
+    result = this.ssh_shell.exec('rm', {r: {}}, unique_rm_paths)
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     return this.stopMultiplexAndReturn(result)
   }
@@ -243,7 +244,7 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!exec_options.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
     // -- start ssh master -----------------------------------------------------
     this.ssh_shell.multiplexStart({x11: job_options?.x11 || false})
-    // -- read json job data to extract projectid ==============================
+    // -- read json job data to extract projectid ------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.SHELL.READING_JOBINFO, this.output_options.verbose)
     result = this.getJobLabels([exec_options.id])
     if(!result.success) return this.stopMultiplexAndReturn(result)
@@ -253,17 +254,24 @@ export class CJRRemoteDriver extends RemoteDriver
     const remote_project_id = result.data[job_id]?.[this.label_names['project-id']]
     const remote_project_root = result.data[job_id]?.[this.label_names['project-root']]
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-    // -- load current project root --------------------------------------------
-    result = getProjectId(exec_options['host-project-root'] || "")
-    const local_project_id = (result.success) ? result.data : false;
+    // -- ensure project has ID ------------------------------------------------
+    if(exec_options['host-project-root']) result = ensureProjectId(exec_options['host-project-root'])
+    if(!result.success) return result;
+    const local_project_id:string = (exec_options['host-project-root']) ? result.data : "EMPTY" // USE ID EMPTY FOR JOBS WITH NO HOST ROOT
     const local_host_root  = (local_project_id === remote_project_id) ? (exec_options['host-project-root'] as string) : ""
     // -- create remote tmp directory for job ----------------------------------
-    result = this.mkTempDir(remoteStoragePath(resource['storage-dir']), [], false)
+    this.printStatus(StatusStrings.REMOTEJOB.START.CREATING_DIRECTORIES, this.output_options.verbose)
+    result = this.getStackUploadDirectories(resource, {
+      'stack-upload-mode':  exec_options['stack-upload-mode'],
+      'local-stack-name':   container_runtime.builder.stackName(job_options['stack-path']),
+      'project-id':         local_project_id
+    })
     if(!result.success) return this.stopMultiplexAndReturn(result);
-    const remote_job_dir = result.data
+    const remote_stack_path = result.data
+    const remote_job_dir    = result.data
+    this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy stack -----------------------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_STACK, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    const remote_stack_path = this.remoteStackPath(remote_job_dir, container_runtime.builder.stackName(job_options['stack-path']))
     result = this.pushStack(container_runtime, {
       "local-stack-path":job_options['stack-path'],
       "local-config-files":job_options['config-files'],
@@ -288,7 +296,7 @@ export class CJRRemoteDriver extends RemoteDriver
   }
 
   //jobStart(resource: Dictionary, builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>, flags: Dictionary, args: Dictionary, argv: Array<string>)
-  jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, auto_copy: boolean)
+  jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, remote_options: RemoteStartOptions)
   {
     const host_root = job_options['host-root'] || ""
     // -- set resource ---------------------------------------------------------
@@ -297,16 +305,25 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- ensure project has ID ------------------------------------------------
     if(host_root) result = ensureProjectId(host_root)
     if(!result.success) return result;
-    const project_id:string = result.data
+    const project_id:string = (host_root) ? result.data : "EMPTY" // USE ID EMPTY FOR JOBS WITH NO HOST ROOT
     // -- start ssh master -----------------------------------------------------
     this.ssh_shell.multiplexStart({x11: job_options?.x11 || false})
-    // -- create remote tmp directory for job ----------------------------------
-    result = this.mkTempDir(remoteStoragePath(resource['storage-dir']), ['files'], false)
-    if(!result.success) return this.stopMultiplexAndReturn(result);
-    const remote_job_dir:string = result.data
+    // -- set and create remote directories for job ----------------------------
+    this.printStatus(StatusStrings.REMOTEJOB.START.CREATING_DIRECTORIES, this.output_options.verbose)
+    result = this.getUploadDirectories(resource, {
+        "local-project-root": host_root,
+        "local-stack-name":   container_runtime.builder.stackName(job_options['stack-path']),
+        "project-id":         project_id,
+        "file-upload-mode":   remote_options["file-upload-mode"],
+        "stack-upload-mode":  remote_options["stack-upload-mode"]
+    })
+    if(!result.success) return result
+    const remote_job_dir: string = result.data['remote-job-dir']
+    const remote_project_root: string = result.data['remote-project-root']
+    const remote_stack_path: string = result.data['remote-stack-path']
+    this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy stack -----------------------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_STACK, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    const remote_stack_path = this.remoteStackPath(remote_job_dir, container_runtime.builder.stackName(job_options['stack-path']))
     result = this.pushStack(container_runtime, {
       "local-stack-path":job_options['stack-path'],
       "local-config-files":job_options['config-files'],
@@ -317,9 +334,8 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy files & project id ----------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_FILES, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    const remote_project_root = (host_root) ? path.posix.join(remote_job_dir, 'files', path.posix.basename(host_root)) : ""
     result = this.pushProjectFiles(container_runtime, {
-      "local-project-root": job_options['host-root'] || "",
+      "local-project-root": host_root,
       "local-stack-path": job_options['stack-path'],
       "local-config-files": job_options['config-files'],
       "remote-project-root": remote_project_root,
@@ -337,7 +353,7 @@ export class CJRRemoteDriver extends RemoteDriver
       }, '$')
     if(!result.success) return this.stopMultiplexAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-    if(auto_copy && host_root)
+    if(remote_options['auto-copy'] && host_root)
     {
       this.printStatus(StatusStrings.REMOTEJOB.COPY.DOWNLOADING_FILES, this.output_options.verbose)
       const pull_result = this.pullProjectFiles({
@@ -463,6 +479,18 @@ export class CJRRemoteDriver extends RemoteDriver
    return this.ssh_shell.output(commands.join(' && '),{},[])
   }
 
+  // MKDIRS: creates a remote directory and any specified child directories
+  // parent_abs_path: string - absolute path where subfolders should be created
+  // sub_paths: Array<string> - names of any subdirectories
+  // escape_parent_path: boolean - if true parent_abs_path will be properly escaped. However we allow to avoid escaping so that you can use environmental variables like $HOME. However paths can no longer contain quotes.
+  private mkDirs(parent_abs_path: string, subpaths: Array<string>=[], escape_parent_path: boolean = true)
+  {
+   const escaped_parent_abs_path = (escape_parent_path) ? ShellCommand.bashEscape(parent_abs_path) : `"${parent_abs_path}"`
+   const commands = subpaths.map((subpath:string) => `mkdir -p ${escaped_parent_abs_path}/${ShellCommand.bashEscape(subpath)}`)
+   .concat([`echo "${escaped_parent_abs_path}"`])
+   return this.ssh_shell.output(commands.join(' && '),{},[])
+  }
+
   // PUSHSTACK: copies a stack to remote resource inside specified parent folder.
   // builder - BuildDriver for building stack
   // stack_path: path on local machine where stack is located
@@ -490,7 +518,7 @@ export class CJRRemoteDriver extends RemoteDriver
     result = bundleStack(container_runtime, bundle_options)
     if(!result.success) removeTmpStackAndReturn(result)
     // -- 3. load stack configuration ------------------------------------------
-    const rsync_flags:Dictionary = {a:{}}
+    const rsync_flags:Dictionary = {a:{}, delete: {}}
     if(options.verbose) rsync_flags.v = {}
     result = this.ssh_shell.rsync(
       FileTools.addTrailingSeparator(temp_stack_path, 'posix'), // upload contents
@@ -507,13 +535,14 @@ export class CJRRemoteDriver extends RemoteDriver
   private pushProjectFiles(container_runtime: ContainerRuntime, options: {"local-project-root":string, "local-stack-path":string, "local-config-files":Array<string>, "remote-project-root": string, verbose: boolean})
   {
     if(!options['local-project-root']) return new ValidatedOutput(true)
+    if(!options['remote-project-root']) return new ValidatedOutput(false).pushError('Internal Error: missing remote-project-root')
     // -- 1. load stack configuration ------------------------------------------
     var result = container_runtime.builder.loadConfiguration(options['local-stack-path'], options['local-config-files'])
     if(!result.success) return result
     const configuration:StackConfiguration = result.data
     // -- 3. transfer stack over rsync ------------------------------------------
     const upload_settings = configuration.getRsyncUploadSettings()
-    const rsync_flags:Dictionary = {a:{}}
+    const rsync_flags:Dictionary = {a:{}, delete:{}}
     if(options.verbose) rsync_flags.v = {}
     // note: always add include before exclude
     if(upload_settings.include) rsync_flags['include-from'] = upload_settings.include
@@ -579,6 +608,7 @@ export class CJRRemoteDriver extends RemoteDriver
       'build-mode':   job_options["build-mode"],
       'no-autoload':  {}
     }
+    if(mode == "$") cjr_flags['keep-record'] = {} // ensure both bind and volume jobs are not deleted (to allow user to copy them back)
     if(mode == "$") cjr_flags['file-access'] = job_options["file-access"]
     if(mode == "$" && remote_params['remote-project-root']) cjr_flags['project-root'] = remote_params['remote-project-root']
     if(job_options['x11']) cjr_flags["x11"] = {}
@@ -673,6 +703,98 @@ export class CJRRemoteDriver extends RemoteDriver
       rsync_files_flag: rsync_files_flag,
       local_tmp_dir: local_tmp_dir
     })
+  }
+
+  private getFileUploadDirectories(resource: Resource, params:{'file-upload-mode': 'cached'|'uncached', 'local-project-root': string, 'project-id':string})
+  {
+    const remote_storage_dir = remoteStoragePath(resource['storage-dir'])
+    const remoteProjectRoot = (remote_job_dir:string) =>
+      (params['local-project-root']) ?
+        path.posix.join(remote_job_dir, 'files', path.basename(params['local-project-root'])) :
+        ""
+
+    var result: ValidatedOutput
+    var remote_job_dir: string
+    if(params["file-upload-mode"] == "uncached")
+    {
+      result = this.mkTempDir(remote_storage_dir, ['files'], false)
+      if(!result.success) return result
+      remote_job_dir = result.data
+    }
+    else if(params["file-upload-mode"] == "cached")
+    {
+      result = this.mkDirs(remote_storage_dir, [`${params['project-id']}/files`], false)
+      if(!result.success) return result
+      remote_job_dir = path.posix.join(result.data, params['project-id'])
+    }
+    else
+    {
+      return new ValidatedOutput(false) // invalid options where passed
+    }
+
+    return new ValidatedOutput(true, {
+        "remote-job-dir": remote_job_dir,
+        "remote-project-root": remoteProjectRoot(remote_job_dir)
+    })
+  }
+
+  private getStackUploadDirectories(resource: Resource, params:{'stack-upload-mode': 'cached'|'uncached', 'local-stack-name': string, 'project-id':string})
+  {
+    const namedStack = (stack_dir:string) => path.posix.join(stack_dir, params['local-stack-name'])
+    const remote_storage_dir = remoteStoragePath(resource['storage-dir'])
+
+    var result: ValidatedOutput
+    var stack_dir: string
+    if(params["stack-upload-mode"] == "cached") // upload into project_id
+    {
+      result = this.mkDirs(remote_storage_dir, [`${params['project-id']}`], false)
+      if(!result.success) return result
+      stack_dir = path.posix.join(result.data, params['project-id'])
+      return new ValidatedOutput(true, namedStack(stack_dir))
+    }
+    else if(params["stack-upload-mode"] == "uncached")
+    {
+      // -- create new tmp directory -------------------------------------------
+      result = this.mkTempDir(remote_storage_dir, ['files'], false)
+      if(!result.success) return result
+      return new ValidatedOutput(true, result.data) // store stack directly in tmp directory
+    }
+    else
+    {
+      return new ValidatedOutput(false, '') // invalid parameters passed
+    }
+  }
+
+  private getUploadDirectories(resource: Resource, params:{'stack-upload-mode': 'cached'|'uncached', 'local-stack-name': string, 'local-project-root': string, 'project-id':string, 'file-upload-mode': 'cached'|'uncached'})
+  {
+    if(!params['project-id']) return new ValidatedOutput(false)
+
+    var result: ValidatedOutput
+    result = this.getFileUploadDirectories(resource, {
+      'project-id':         params['project-id'],
+      'local-project-root': params['local-project-root'],
+      'file-upload-mode':   params['file-upload-mode']
+    })
+    if(!result.success) return result
+    const directories:Dictionary = result.data
+
+    // if both stack and files are set to cache store both in same tmp directory
+    if(params['file-upload-mode'] == 'uncached' && params['stack-upload-mode'] == 'uncached')
+    {
+      directories['remote-stack-path'] = path.posix.join(directories['remote-job-dir'], params['local-stack-name'])
+    }
+    else // -- otherwise compute paths regularly -------------------------------
+    {
+      result = this.getStackUploadDirectories(resource, {
+        'project-id':         params['project-id'],
+        'local-stack-name':   params['local-stack-name'],
+        'stack-upload-mode':  params['stack-upload-mode']
+      })
+      if(!result.success) return result
+      directories['remote-stack-path'] = result.data
+    }
+
+    return new ValidatedOutput(true, directories)
   }
 
   // helper function for early exits

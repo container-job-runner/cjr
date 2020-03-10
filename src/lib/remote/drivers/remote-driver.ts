@@ -15,6 +15,13 @@ export type RemoteExecOptions = {
   "id": string,                   // id of job that user wants to shell/exec into
   "host-project-root": string,         // current project root (used only for setting cwd in remote container)
   "mode": "job:exec"|"job:shell"
+  "stack-upload-mode": "cached"|"uncached"
+}
+
+export type RemoteStartOptions = {
+  "auto-copy": boolean,
+  "file-upload-mode": "cached"|"uncached"
+  "stack-upload-mode": "cached"|"uncached"
 }
 
 export abstract class RemoteDriver
@@ -37,7 +44,7 @@ export abstract class RemoteDriver
   abstract jobLog(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
 
   abstract jobExec(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, exec_options: RemoteExecOptions): ValidatedOutput;
-  abstract jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, auto_copy:boolean): ValidatedOutput;
+  abstract jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, remote_options:RemoteStartOptions): ValidatedOutput;
 
   abstract jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
   abstract jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
