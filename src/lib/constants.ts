@@ -61,7 +61,7 @@ export const rsync_constants = {
   source_dir: "/rsync/source/", // note trailing slash so that contents of source are copied into dest, not folder source
   dest_dir:   "/rsync/dest",
   config_dir: "/rsync/config",
-  stack_path: "alpine-rsync",
+  stack_path: "buvoli/alpine-rsync:cjr",
   include_file_name: 'includes',
   exclude_file_name: 'excludes'
 }
