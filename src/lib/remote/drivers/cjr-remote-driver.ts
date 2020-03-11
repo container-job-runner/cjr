@@ -46,11 +46,13 @@ export class CJRRemoteDriver extends RemoteDriver
   private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': 'hostRoot', 'stack-path': 'stack'}
   private remoteStackName = (remote_job_dir: string, stack_name: string) => `${path.posix.basename(remote_job_dir)}-${stack_name}`
   private remoteStackPath = (remote_job_dir: string, stack_name: string) => path.posix.join(remote_job_dir, this.remoteStackName(remote_job_dir, stack_name))
+  private multiplex_options: {"autodisconnect": boolean, 'autoconnect': boolean}
 
-  constructor(ssh_shell: SshShellCommand, output_options: OutputOptions, storage_directory: string)
+  constructor(ssh_shell: SshShellCommand, output_options: OutputOptions, storage_directory: string, multiplex_options: {"autodisconnect": boolean, 'autoconnect': boolean} = {"autodisconnect": true, "autoconnect": true})
   {
     super(output_options, storage_directory);
     this.ssh_shell = ssh_shell
+    this.multiplex_options = multiplex_options
   }
 
   jobAttach(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
@@ -77,15 +79,14 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- do not copy if there is no local hostRoot set ------------------------
     if(!copy_options['host-path']) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.COPY.EMPTY_LOCAL_HOSTROOT)
     // -- start ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStart()
-
+    this.startMultiplexMaster()
     // == read json job data ===================================================
     this.printStatus(StatusStrings.REMOTEJOB.COPY.READING_JOBINFO, this.output_options.verbose)
     result = this.getJobLabels(copy_options.ids)
-    if(!result.success) return this.stopMultiplexAndReturn(result)
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result)
     const all_job_labels = result.data
     const matching_ids:Array<string> = Object.keys(all_job_labels)
-    if(matching_ids.length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID]))
+    if(matching_ids.length == 0) return this.stopMultiplexMasterAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID]))
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
 
     // == map over each matching job ===========================================
@@ -144,8 +145,7 @@ export class CJRRemoteDriver extends RemoteDriver
     })
 
     // -- stop ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStop()
-    return result
+    return this.stopMultiplexMasterAndReturn(result)
   }
 
   jobDelete(resource: Resource, delete_options:RemoteDeleteOptions)
@@ -157,12 +157,11 @@ export class CJRRemoteDriver extends RemoteDriver
     if(delete_options['ids'].length == 0)
       return new ValidatedOutput(true).pushWarning(ErrorStrings.REMOTEJOB.EMPTY_ID)
     // -- start ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStart()
-
+    this.startMultiplexMaster()
     // -- 1. read job info and extract job stacks & job directories ------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.READING_JOBINFO, this.output_options.verbose)
     result = this.getJobLabels(delete_options['ids'])
-    if(!result.success) return this.stopMultiplexAndReturn(result)
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result)
     const all_job_labels = result.data
     // -- 2. filter out jobs where Remote path does not contain remote_job_dir -
     const job_labels = JSTools.oSubset(
@@ -178,7 +177,7 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- 3. run cjr:delete ----------------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.JOBS, this.output_options.verbose)
     const job_ids = Object.keys(job_labels)
-    if(job_ids.length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(true, [], [], [WarningStrings.REMOTEJOB.DELETE.NO_MATCHING_REMOTEJOBS])) // no jobs to delete
+    if(job_ids.length == 0) return this.stopMultiplexMasterAndReturn(new ValidatedOutput(true, [], [], [WarningStrings.REMOTEJOB.DELETE.NO_MATCHING_REMOTEJOBS])) // no jobs to delete
     result = this.ssh_shell.exec(
       'cjr job:delete',
       cjr_flags,
@@ -195,7 +194,7 @@ export class CJRRemoteDriver extends RemoteDriver
       job_stack_paths,
       this.interactive_ssh_options
     )
-    if(!result.success) return this.stopMultiplexAndReturn(result)
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result)
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- 5. Delete Data Directories -------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.REMOTE_DIRECTORIES, this.output_options.verbose)
@@ -204,7 +203,7 @@ export class CJRRemoteDriver extends RemoteDriver
     const unique_rm_paths = [ ... new Set(job_stack_paths.concat(job_remote_paths))] // [ .. new Set(Array<string>)]  gives unique values only
     result = this.ssh_shell.exec('rm', {r: {}}, unique_rm_paths)
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
-    return this.stopMultiplexAndReturn(result)
+    return this.stopMultiplexMasterAndReturn(result)
   }
 
   jobList(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
@@ -247,9 +246,9 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- read json job data to extract projectid ------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.SHELL.READING_JOBINFO, this.output_options.verbose)
     result = this.getJobLabels([exec_options.id])
-    if(!result.success) return this.stopMultiplexAndReturn(result)
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result)
     const matching_ids = Object.keys(result.data)
-    if(matching_ids.length == 0) return this.stopMultiplexAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID]))
+    if(matching_ids.length == 0) return this.stopMultiplexMasterAndReturn(new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.NO_MATCHING_ID]))
     const job_id = matching_ids[0]
     const remote_project_id = result.data[job_id]?.[this.label_names['project-id']]
     const remote_project_root = result.data[job_id]?.[this.label_names['project-root']]
@@ -266,7 +265,7 @@ export class CJRRemoteDriver extends RemoteDriver
       'local-stack-name':   container_runtime.builder.stackName(job_options['stack-path']),
       'project-id':         local_project_id
     })
-    if(!result.success) return this.stopMultiplexAndReturn(result);
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result);
     const remote_stack_path = result.data
     const remote_job_dir    = result.data
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
@@ -278,7 +277,7 @@ export class CJRRemoteDriver extends RemoteDriver
       "remote-stack-path": remote_stack_path,
       "verbose": this.output_options.verbose
     })
-    if(!result.success) return this.stopMultiplexAndReturn(result);
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- start job ------------------------------------------------------------
     this.printStatus((job_options['synchronous']) ? StatusStrings.REMOTEJOB.START.RUNNING_JOB : StatusStrings.REMOTEJOB.START.STARTING_JOB, true)
@@ -290,9 +289,9 @@ export class CJRRemoteDriver extends RemoteDriver
         'project-id': remote_project_id, // id of project that started job
         'previous-job-id': exec_options.id
       }, exec_options.mode)
-    if(!result.success) return this.stopMultiplexAndReturn(result);
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result);
     // -- stop ssh master ------------------------------------------------------
-    return this.stopMultiplexAndReturn(result);
+    return this.stopMultiplexMasterAndReturn(result);
   }
 
   //jobStart(resource: Dictionary, builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>, flags: Dictionary, args: Dictionary, argv: Array<string>)
@@ -330,7 +329,7 @@ export class CJRRemoteDriver extends RemoteDriver
       "remote-stack-path": remote_stack_path,
       "verbose": this.output_options.verbose
     })
-    if(!result.success) return this.stopMultiplexAndReturn(result);
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy files & project id ----------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_FILES, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
@@ -341,7 +340,7 @@ export class CJRRemoteDriver extends RemoteDriver
       "remote-project-root": remote_project_root,
       "verbose": this.output_options.verbose
     })
-    if(!result.success) return this.stopMultiplexAndReturn(result);
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- start job ------------------------------------------------------------
     this.printStatus((job_options['synchronous']) ? StatusStrings.REMOTEJOB.START.RUNNING_JOB : StatusStrings.REMOTEJOB.START.STARTING_JOB, true)
@@ -351,7 +350,7 @@ export class CJRRemoteDriver extends RemoteDriver
         'remote-stack-path': remote_stack_path, // path to stack
         'project-id': project_id, // id of project that started job
       }, '$')
-    if(!result.success) return this.stopMultiplexAndReturn(result);
+    if(!result.success) return this.stopMultiplexMasterAndReturn(result);
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     if(remote_options['auto-copy'] && host_root)
     {
@@ -366,7 +365,7 @@ export class CJRRemoteDriver extends RemoteDriver
       result.absorb(pull_result)
       this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     }
-    return this.stopMultiplexAndReturn(result);
+    return this.stopMultiplexMasterAndReturn(result);
   }
 
   jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
@@ -798,10 +797,31 @@ export class CJRRemoteDriver extends RemoteDriver
   }
 
   // helper function for early exits
-  private stopMultiplexAndReturn(x:ValidatedOutput)
+  private startMultiplexMaster()
   {
-    this.ssh_shell.multiplexStop();
+    if(this.multiplex_options.autoconnect)
+      this.ssh_shell.multiplexStart()
+  }
+
+  private stopMultiplexMasterAndReturn(x:ValidatedOutput)
+  {
+    if(this.multiplex_options.autodisconnect)
+      this.ssh_shell.multiplexStop();
     return x
+  }
+
+  disconnect(resource: Resource)
+  {
+    var result = this.ssh_shell.setResource(resource)
+    if(!result.success) return false
+    else return this.ssh_shell.multiplexStop()
+  }
+
+  connect(resource: Resource)
+  {
+    var result = this.ssh_shell.setResource(resource)
+    if(!result.success) return false
+    else return this.ssh_shell.multiplexStart()
   }
 
 }

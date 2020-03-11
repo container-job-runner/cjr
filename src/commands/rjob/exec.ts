@@ -52,7 +52,7 @@ export default class Exec extends RemoteCommand {
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    const driver = this.newRemoteDriver(resource["type"], output_options)
+    const driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- get job id  ----------------------------------------------------------
     const id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
     // -- set container runtime options ----------------------------------------
@@ -86,6 +86,7 @@ export default class Exec extends RemoteCommand {
         "stack-upload-mode": flags["stack-upload-mode"]
       })
     printResultState(result)
+    driver.disconnect(resource)
   }
 
 }

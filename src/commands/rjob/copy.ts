@@ -35,7 +35,7 @@ export default class Copy extends RemoteCommand {
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    var driver = this.newRemoteDriver(resource["type"], output_options)
+    var driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- get job ids ----------------------------------------------------------
     var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await driver.promptUserForJobId(resource, this.settings.get('interactive')) || [])
     // -- set copy options -----------------------------------------------------
@@ -49,6 +49,7 @@ export default class Copy extends RemoteCommand {
     if(flags?.["manual"]) copy_options["manual"] = true
     // -- copy jobs ------------------------------------------------------------
     printResultState(driver.jobCopy(resource, copy_options))
+    driver.disconnect(resource)
   }
 
 }

@@ -22,6 +22,9 @@ import {ResourceConfiguration, Resource} from '../config/resource-configuration'
 export type  Dictionary= {[key: string]: any}
 type DriverCommands = "jobAttach" | "jobList" | "jobLog" | "jobStop" | "jobState"
 
+var a = {}
+a.b = 1
+
 export abstract class RemoteCommand extends StackCommand
 {
     protected resource_configuration = new ResourceConfiguration(this.config.configDir)
@@ -47,14 +50,14 @@ export abstract class RemoteCommand extends StackCommand
       return new ValidatedOutput(true, name)
     }
 
-    newRemoteDriver(remote_type: string, output_options: OutputOptions)
+    newRemoteDriver(remote_type: string, output_options: OutputOptions, autodisconnect: boolean = true)
     {
       switch(remote_type)
       {
         case "cjr":
         {
           const ssh_shell = new SshShellCommand(output_options.explicit, output_options.silent, this.config.dataDir)
-          return new CJRRemoteDriver(ssh_shell, output_options, this.config.dataDir);
+          return new CJRRemoteDriver(ssh_shell, output_options, this.config.dataDir, {autodisconnect: autodisconnect, autoconnect: true});
         }
         default:
         {

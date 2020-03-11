@@ -149,7 +149,8 @@ export class SshShellCommand
       }
       if(this.resource.key) flags.i = {value: this.resource.key, noequals: true}
       const args = [`${this.resource.username}@${this.resource.address}`]
-      this.shell.exec(command, flags, args, {stdio: 'ignore'})
+      const result = this.shell.output(command, flags, args)
+      return (result.success && this.multiplexSocketExists())
     }
 
     multiplexStop() // stop the multiplex master
@@ -161,7 +162,7 @@ export class SshShellCommand
         S: {value: this.multiplexSocketPath(), noequals: true} // location of socket
       }
       const args = [`${this.resource.username}@${this.resource.address}`]
-      const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
+      const result = this.shell.output(command, flags, args)
       return (result.success && !this.multiplexSocketExists())
     }
 

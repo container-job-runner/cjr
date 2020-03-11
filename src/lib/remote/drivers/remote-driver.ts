@@ -49,7 +49,8 @@ export abstract class RemoteDriver
   abstract jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
   abstract jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
 
-
+  abstract connect(resource: Dictionary):boolean
+  abstract disconnect(resource: Dictionary):boolean
   abstract jobInfo(resource: Dictionary, status: string): ValidatedOutput;
   abstract async promptUserForJobId(resource: Dictionary, interactive: boolean): Promise<string>
 

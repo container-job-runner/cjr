@@ -53,7 +53,7 @@ export default class Run extends RemoteCommand {
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    var driver = this.newRemoteDriver(resource["type"], output_options)
+    var driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
@@ -85,6 +85,7 @@ export default class Run extends RemoteCommand {
       }
     )
     printResultState(result)
+    driver.disconnect(resource)
   }
 
   shouldAutocopy(flags: Dictionary)

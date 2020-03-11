@@ -36,7 +36,7 @@ export default class Delete extends RemoteCommand {
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    var driver = this.newRemoteDriver(resource["type"], output_options)
+    var driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- get job ids ----------------------------------------------------------
     var ids: Array<string> = []
     var status_filter:undefined|string = undefined
@@ -63,8 +63,7 @@ export default class Delete extends RemoteCommand {
       "delete-files": flags['delete-files']
     }
     driver.jobDelete(resource, delete_options)
+    driver.disconnect(resource)
   }
-
-
 
 }
