@@ -24,7 +24,7 @@ stackRoot: STRING
 environment: OBJECT_OF_STRINGS  
 mounts: ARRAY_OF_OBJECTS
 ports: ARRAY_OF_OBJECTS
-files: OBJECTS
+files: OBJECT
 resources:
   cpus: STRING
   memory: STRING
@@ -157,18 +157,18 @@ resources:
 
 ### `files` (optional)
 
-1. hostRoot - (STRING) default hostRoot for stack. This parameter can be overwritten from cli call.
-2. containerRoot - (STRING) default containerRoot for stacks. This parameter can be overwritten from cli call.
-3. resultPaths - (ARRAY) contains any result folders that should be copied over with result:copy command.
+1. containerRoot - (STRING) default containerRoot for stacks. This parameter can be overwritten from cli call.
+2. rsync - (OBJECT) rsync include and exclude files for upload and download. Upload files are used when job data files are transferred to a volume or remote resource during job creation. Download files are used when job data is copied back from a volume or remote resource back to a host file. The fields for specifying these files are **"upload-exclude-from"**, **"upload-include-from"**, **"download-exclude-from"**, **"download-include-from"**.
 
 Example:
 ```yaml
 files:
-  hostRoot: "/path/"
   containerRoot: "/"
-  resultPaths:
-  - "results/minor"
-  - "result/major"
+  rsync:
+    upload-exclude-from: "path/to/file"
+    upload-include-from: "path/to/file"
+    download-exclude-from: "path/to/file"
+    download-include-from: "path/to/file"
 ```
 
 <!-- toc -->
