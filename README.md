@@ -214,32 +214,7 @@ USAGE
 * [`cjr jupyter:list`](#cjr-jupyterlist)
 * [`cjr jupyter:start`](#cjr-jupyterstart)
 * [`cjr jupyter:stop`](#cjr-jupyterstop)
-* [`cjr rcjr
-=======
-
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/gitbucket/gitbucket/blob/master/LICENSE)
-
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-
-cjr is a tool for running jobs in linux containers
-
-<!-- toc -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g cjr
-$ cjr COMMAND
-running command...
-$ cjr (-v|--version|version)
-cjr/0.2.0 linux-x64 node-v12.13.1
-$ cjr --help [COMMAND]
-USAGE
-  $ cjr COMMAND
-...
-```
-<!-- usagestop -->
-# Commands
-](#cjr-r)
+* [`cjr r$`](#cjr-r$)
 * [`cjr remote:add REMOTE-NAME`](#cjr-remoteadd-remote-name)
 * [`cjr remote:delete REMOTE-NAME`](#cjr-remotedelete-remote-name)
 * [`cjr remote:list`](#cjr-remotelist)
@@ -664,34 +639,7 @@ OPTIONS
 
 _See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.2.0/src/commands/jupyter/stop.ts)_
 
-## `cjr rcjr
-=======
-
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/gitbucket/gitbucket/blob/master/LICENSE)
-
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-
-cjr is a tool for running jobs in linux containers
-
-<!-- toc -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g cjr
-$ cjr COMMAND
-running command...
-$ cjr (-v|--version|version)
-cjr/0.2.0 linux-x64 node-v12.13.1
-$ cjr --help [COMMAND]
-USAGE
-  $ cjr COMMAND
-...
-```
-<!-- usagestop -->
-# Commands
-
-
-Run a command as a new job on a remote resource.
+## `cjr r$`
 
 ```
 USAGE
