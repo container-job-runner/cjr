@@ -40,7 +40,7 @@ export default class Shell extends StackCommand {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
       "build-mode":   "no-rebuild",
-      "command":      this.settings.get("default_shell"),
+      "command":      this.settings.get("container_default_shell"),
       "host-root":    flags["project-root"] || "",
       "cwd":          flags["working-directory"],
       "file-access":  "bind",

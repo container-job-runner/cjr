@@ -36,7 +36,7 @@ export default class Shell extends StackCommand {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
       "build-mode":   flags["build-mode"],
-      "command":      this.settings.get("default_shell"),
+      "command":      this.settings.get("container_default_shell"),
       "cwd":          flags['working-directory'],
       "file-access":  "volume",
       "synchronous":  true,

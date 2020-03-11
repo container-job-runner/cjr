@@ -1,3 +1,4 @@
+import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
 import {Dictionary, StackCommand} from '../lib/commands/stack-command'
 import {jobStart, jobCopy, ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
@@ -66,7 +67,10 @@ export default class Run extends StackCommand {
     var result = jobStart(runtime_options, job_options, output_options)
     if(!result.success) return printResultState(result)
     const job_id = result.data
-    if(job_id !== "" && (flags.async && !flags.verbose && !flags.silent)) console.log(job_id)
+    if(job_id !== "" && flags.async && !flags.silent)
+      console.log(job_id)
+    if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway_print_job_id'))
+      console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
     // -- autocopy results -----------------------------------------------------
     if(this.shouldAutocopy(flags)) {
       // -- set copy options ---------------------------------------------------

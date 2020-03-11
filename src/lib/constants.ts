@@ -42,17 +42,20 @@ export const defaultCLISettings = (settings_dir:string) =>
   }
 
   return {
+      // cli-props
+      auto_project_root: true,
+      interactive: true,
       stacks_dir: path.join(settings_dir, "stacks"),
+      alway_print_job_id: false,
+      autocopy_sync_job: true,
+      run_shortcuts_file: "",
       build_cmd: cmd,
       run_cmd: cmd,
       image_tag: cli_name,
-      default_shell: "bash",
-      interactive: true,
-      auto_project_root: true,
+      // container props
+      container_default_shell: "bash",
       selinux: false,
-      autocopy_sync_job: true,
-      jupyter_command: "jupyter notebook",
-      run_shortcuts_file: ""
+      jupyter_command: "jupyter lab",
   }
 }
 

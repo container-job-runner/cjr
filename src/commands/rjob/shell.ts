@@ -60,7 +60,7 @@ export default class Shell extends RemoteCommand {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
       "build-mode":   flags["build-mode"],
-      "command":      this.settings.get("default_shell"), // NOTE: NO EFFECT for cjr driver (command is overridden by remote cjr)
+      "command":      this.settings.get("container_default_shell"), // NOTE: NO EFFECT for cjr driver (command is overridden by remote cjr)
       "cwd":          flags["working-directory"],
       "file-access":  "volume",
       "synchronous":  true,
