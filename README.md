@@ -214,7 +214,7 @@ USAGE
 * [`cjr jupyter:list`](#cjr-jupyterlist)
 * [`cjr jupyter:start`](#cjr-jupyterstart)
 * [`cjr jupyter:stop`](#cjr-jupyterstop)
-* [`cjr r$`](#cjr-r$)
+* [`cjr r$ COMMAND`](#cjr-r$)
 * [`cjr remote:add REMOTE-NAME`](#cjr-remoteadd-remote-name)
 * [`cjr remote:delete REMOTE-NAME`](#cjr-remotedelete-remote-name)
 * [`cjr remote:list`](#cjr-remotelist)
@@ -639,7 +639,7 @@ OPTIONS
 
 _See code: [src/commands/jupyter/stop.ts](https://github.com/buvoli/cjr/blob/v0.2.0/src/commands/jupyter/stop.ts)_
 
-## `cjr r$`
+## `cjr r$ COMMAND`
 
 ```
 USAGE
