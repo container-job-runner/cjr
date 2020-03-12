@@ -6,6 +6,7 @@ export class TextFile
 {
   parent_dir: string // files will be created relative to the parent_dir
   create_base_dir: boolean
+  add_extension: boolean = true
   protected extension: string = "txt"
   protected validator: (x: any) => any
 
@@ -79,7 +80,7 @@ export class TextFile
   private filePath(name: string)
   {
     const re = RegExp(`.${this.extension}$`)
-    const file_path = (re.test(name)) ? name : `${name}.${this.extension}`
+    const file_path = (re.test(name) || !this.add_extension) ? name : `${name}.${this.extension}`
     return (this.parent_dir) ? path.join(this.parent_dir, file_path) : file_path
   }
 
