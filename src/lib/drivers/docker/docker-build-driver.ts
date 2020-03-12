@@ -8,6 +8,7 @@ import {JSTools} from '../../js-tools'
 import {DockerStackConfiguration} from '../../config/stacks/docker/docker-stack-configuration'
 import {FileTools} from '../../fileio/file-tools'
 import {YMLFile} from '../../fileio/yml-file'
+import {TextFile} from '../../fileio/text-file'
 
 // - types ---------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -138,7 +139,9 @@ export class DockerBuildDriver extends BuildDriver
 
     loadConfiguration(stack_path: string, overloaded_config_paths: Array<string> = [])
     {
-      overloaded_config_paths = [path.join(stack_path, this.default_config_name)].concat(overloaded_config_paths) // always add stack config file first. Note create new array to prevent modifying overloaded_config_paths for calling function
+      const stack_config = path.join(stack_path, this.default_config_name)
+      if(path.isAbsolute(stack_config))
+        overloaded_config_paths = [path.join(stack_path, this.default_config_name)].concat(overloaded_config_paths) // if stack_path is absolute (implies a local stack) then prepend stack config file. Note: create new array with = to prevent modifying overloaded_config_paths for calling function
       var configuration = this.emptyConfiguration()
       var result = overloaded_config_paths.reduce(
         (result: ValidatedOutput, path: string) => {
@@ -157,15 +160,26 @@ export class DockerBuildDriver extends BuildDriver
     {
       try
       {
-        fs.copySync(stack_path, new_stack_path)
-        if(configuration !== undefined)
-          return configuration.writeToFile(path.join(new_stack_path,this.default_config_name))
+        if(path.isAbsolute(stack_path))
+          fs.copySync(stack_path, new_stack_path)
+        this.copyConfig(stack_path, new_stack_path, configuration)
       }
       catch(e)
       {
         return new ValidatedOutput(false, e, [e?.message])
       }
       return new ValidatedOutput(true)
+    }
+
+    copyConfig(stack_path: string, new_stack_path: string, configuration?: DockerStackConfiguration)
+    {
+      if(!path.isAbsolute(stack_path)) { // create Dockerfile for nonlocal stack
+        const file = (new TextFile(new_stack_path, false))
+        file.add_extension = false
+        file.write('Dockerfile', `FROM ${stack_path}`)
+      }
+      if(configuration !== undefined) // write any configurion files
+        return configuration.writeToFile(path.join(new_stack_path,this.default_config_name))
     }
 
     // Special function for reducing code repetition in Podman Driver Class
