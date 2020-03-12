@@ -27,6 +27,12 @@ export type RemoteJobParams = {
   'auto-copy'?: boolean // turn on --autocopy flag
 }
 
+export type MultiplexOptions = {
+  "autodisconnect"?:               boolean,
+  "autoconnect"?:                  boolean,
+  "restart-existing-connection"?:  boolean
+}
+
 export class CJRRemoteDriver extends RemoteDriver
 {
 
@@ -46,13 +52,13 @@ export class CJRRemoteDriver extends RemoteDriver
   private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': 'hostRoot', 'stack-path': 'stack'}
   private remoteStackName = (remote_job_dir: string, stack_name: string) => `${path.posix.basename(remote_job_dir)}-${stack_name}`
   private remoteStackPath = (remote_job_dir: string, stack_name: string) => path.posix.join(remote_job_dir, this.remoteStackName(remote_job_dir, stack_name))
-  private multiplex_options: {"autodisconnect": boolean, 'autoconnect': boolean}
+  private multiplex_options: MultiplexOptions = {"autodisconnect": true, "autoconnect": true, "restart-existing-connection": true}
 
-  constructor(ssh_shell: SshShellCommand, output_options: OutputOptions, storage_directory: string, multiplex_options: {"autodisconnect": boolean, 'autoconnect': boolean} = {"autodisconnect": true, "autoconnect": true})
+  constructor(ssh_shell: SshShellCommand, output_options: OutputOptions, storage_directory: string, multiplex_options: MultiplexOptions = {})
   {
     super(output_options, storage_directory);
     this.ssh_shell = ssh_shell
-    this.multiplex_options = multiplex_options
+    this.multiplex_options = { ...this.multiplex_options, ...multiplex_options}
   }
 
   jobAttach(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
@@ -71,15 +77,13 @@ export class CJRRemoteDriver extends RemoteDriver
 
   jobCopy(resource: Dictionary, copy_options:CopyOptions)
   {
-    // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
     // -- validate parameters --------------------------------------------------
     if(copy_options.ids.length == 0) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.EMPTY_ID)
     // -- do not copy if there is no local hostRoot set ------------------------
     if(!copy_options['host-path']) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.COPY.EMPTY_LOCAL_HOSTROOT)
     // -- start ssh master -----------------------------------------------------
-    this.startMultiplexMaster()
+    var result = this.initConnection(resource)
+    if(!result.success) return result
     // == read json job data ===================================================
     this.printStatus(StatusStrings.REMOTEJOB.COPY.READING_JOBINFO, this.output_options.verbose)
     result = this.getJobLabels(copy_options.ids)
@@ -150,14 +154,12 @@ export class CJRRemoteDriver extends RemoteDriver
 
   jobDelete(resource: Resource, delete_options:RemoteDeleteOptions)
   {
-    // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
     // -- validate parameters -----------------------------------------------
     if(delete_options['ids'].length == 0)
       return new ValidatedOutput(true).pushWarning(ErrorStrings.REMOTEJOB.EMPTY_ID)
     // -- start ssh master -----------------------------------------------------
-    this.startMultiplexMaster()
+    var result = this.initConnection(resource)
+    if(!result.success) return result
     // -- 1. read job info and extract job stacks & job directories ------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.READING_JOBINFO, this.output_options.verbose)
     result = this.getJobLabels(delete_options['ids'])
@@ -236,13 +238,11 @@ export class CJRRemoteDriver extends RemoteDriver
 
   jobExec(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, exec_options: RemoteExecOptions)
   {
-    // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
     // -- validate parameters --------------------------------------------------
     if(!exec_options.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
     // -- start ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStart({x11: job_options?.x11 || false})
+    var result = this.initConnection(resource, {x11: job_options?.x11 || false})
+    if(!result.success) return result
     // -- read json job data to extract projectid ------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.SHELL.READING_JOBINFO, this.output_options.verbose)
     result = this.getJobLabels([exec_options.id])
@@ -306,7 +306,8 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!result.success) return result;
     const project_id:string = (host_root) ? result.data : "EMPTY" // USE ID EMPTY FOR JOBS WITH NO HOST ROOT
     // -- start ssh master -----------------------------------------------------
-    this.ssh_shell.multiplexStart({x11: job_options?.x11 || false})
+    var result = this.initConnection(resource, {x11: job_options?.x11 || false})
+    if(!result.success) return result
     // -- set and create remote directories for job ----------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.CREATING_DIRECTORIES, this.output_options.verbose)
     result = this.getUploadDirectories(resource, {
@@ -813,11 +814,6 @@ export class CJRRemoteDriver extends RemoteDriver
   }
 
   // helper function for early exits
-  private startMultiplexMaster()
-  {
-    if(this.multiplex_options.autoconnect)
-      this.ssh_shell.multiplexStart()
-  }
 
   private stopMultiplexMasterAndReturn(x:ValidatedOutput)
   {
@@ -826,18 +822,30 @@ export class CJRRemoteDriver extends RemoteDriver
     return x
   }
 
-  disconnect(resource: Resource)
+  private initConnection(resource: Resource, options: Dictionary = {})
+  {
+    if(this.multiplex_options.autoconnect)
+      return this.connect(resource)
+    else
+      return this.ssh_shell.setResource(resource)
+  }
+
+  disconnect(resource: Resource, options: Dictionary = {})
   {
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return false
     else return this.ssh_shell.multiplexStop()
   }
 
-  connect(resource: Resource)
+  connect(resource: Resource, options: Dictionary = {})
   {
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return false
-    else return this.ssh_shell.multiplexStart()
+
+    if(this.multiplex_options['restart-existing-connection'] && this.ssh_shell.multiplexExists()) {
+      this.ssh_shell.multiplexStop()
+    }
+    return new ValidatedOutput(this.ssh_shell.multiplexStart(options))
   }
 
 }
