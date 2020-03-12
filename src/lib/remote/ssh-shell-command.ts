@@ -70,7 +70,7 @@ export class SshShellCommand
 
     private sshFlagsAndArgs(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {})
     {
-      const use_multiplex = (this.multiplex && this.multiplexSocketExists())
+      const use_multiplex = (this.multiplex && this.multiplexExists())
       var ssh_flags:Dictionary = {}
       if(options?.ssh?.interactive) {
         ssh_flags.t = {}
@@ -95,7 +95,7 @@ export class SshShellCommand
     scp(local_path: string, remote_path: string, direction: string, options: Dictionary = {})
     {
       if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, [], ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
-      const use_multiplex = (this.multiplex && this.multiplexSocketExists())
+      const use_multiplex = (this.multiplex && this.multiplexExists())
       // -- set flags ----------------------------------------------------------
       var flags:Dictionary = {r: {}, p: {}}
       if(!use_multiplex && this.resource.key) // no resource needed if socket exists
@@ -113,7 +113,7 @@ export class SshShellCommand
     rsync(local_path: string, remote_path: string, direction: string, flags: Dictionary, options: Dictionary = {})
     {
       if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, [], ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
-      const use_multiplex = (this.multiplex && this.multiplexSocketExists())
+      const use_multiplex = (this.multiplex && this.multiplexExists())
       // -- set flags ----------------------------------------------------------
       if(!use_multiplex && this.resource.key) // no resource needed if socket exists
         flags.e = `ssh -i "${this.resource.key}"`
@@ -131,7 +131,7 @@ export class SshShellCommand
 
     multiplexStart(options:Dictionary={}) // start the multiplex master
     {
-      if(this.multiplexSocketExists()) return true
+      if(this.multiplexExists()) return true
       fs.ensureDirSync(path.dirname(this.multiplexSocketPath()))
 
       const command = "ssh"
@@ -149,21 +149,26 @@ export class SshShellCommand
       }
       if(this.resource.key) flags.i = {value: this.resource.key, noequals: true}
       const args = [`${this.resource.username}@${this.resource.address}`]
-      const result = this.shell.output(command, flags, args)
-      return (result.success && this.multiplexSocketExists())
+      const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
+      return (this.multiplexExists())
     }
 
     multiplexStop() // stop the multiplex master
     {
-      if(!this.multiplexSocketExists()) return true
+      if(!this.multiplexExists()) return true
       const command = 'ssh'
       const flags = {
         O: {value: 'stop', noequals: true}, // Control multiplex. Request stop
         S: {value: this.multiplexSocketPath(), noequals: true} // location of socket
       }
       const args = [`${this.resource.username}@${this.resource.address}`]
-      const result = this.shell.output(command, flags, args)
-      return (result.success && !this.multiplexSocketExists())
+      const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
+      return (!this.multiplexExists())
+    }
+
+    multiplexExists() // returns true if multiplex socket file exists
+    {
+        return fs.existsSync(this.multiplexSocketPath())
     }
 
     private multiplexSocketPath() // returns name of multiplex socket
@@ -171,9 +176,6 @@ export class SshShellCommand
       return path.join(this.cli_data_dir, remote_sshsocket_dirname, `${this.resource.username}@${this.resource.address}:22`)
     }
 
-    private multiplexSocketExists() // returns true if multiplex socket file exists
-    {
-        return fs.existsSync(this.multiplexSocketPath())
-    }
+
 
 }
