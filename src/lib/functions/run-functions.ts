@@ -92,11 +92,12 @@ export type ProjectBundleOptions =
 // -- used by function bundleStack
 export type StackBundleOptions =
 {
-  "stack-path":   string              // absolute path to stack that should be bundled
-  "config-files": Array<string>,
-  "bundle-path":  string,
-  "build-mode"?:  "no-rebuild"|"build"|"build-nocache"|"no-build",
-  "verbose"?:     boolean
+  "stack-path":           string              // absolute path to stack that should be bundled
+  "config-files":         Array<string>,
+  "bundle-path":          string,
+  "config-files-only"?:   boolean, // if selected only configuration files are bundled
+  "build-mode"?:          "no-rebuild"|"build"|"build-nocache"|"no-build",
+  "verbose"?:             boolean
 }
 
 // == CORE FUNCTIONS ===========================================================
@@ -317,7 +318,16 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
   configuration.setRsyncDownloadSettings(rsync_settings.download)
   // --> 3. copy stack
   fs.ensureDirSync(options["bundle-path"])
-  container_runtime.builder.copy(options["stack-path"], options["bundle-path"], configuration)
+  if(options?.['config-files-only'])
+    container_runtime.builder.copyConfig(
+      options["stack-path"],
+      options["bundle-path"],
+      configuration)
+  else
+    container_runtime.builder.copy(
+      options["stack-path"],
+      options["bundle-path"],
+      configuration)
   // --> 4. copy additional files
   copy_ops.map((e:{source:string, destination:string}) =>
     fs.copySync(e.source, e.destination, {preserveTimestamps: true}))
