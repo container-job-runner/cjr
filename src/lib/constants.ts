@@ -52,6 +52,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       build_cmd: cmd,
       run_cmd: cmd,
       image_tag: cli_name,
+      job_list_fields: 'id, command, message, statusString',
       // container props
       container_default_shell: "bash",
       selinux: false,
