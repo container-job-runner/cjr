@@ -506,24 +506,40 @@ export class CJRRemoteDriver extends RemoteDriver
       fs.remove(temp_stack_path);
       return result
     }
-    // -- 2. bundle stack inside tmp directory ---------------------------------
+    // -- 2. bundle stack config  inside tmp directory -------------------------
     const bundle_options:StackBundleOptions =
     {
       "stack-path":   options['local-stack-path'],
       "config-files": options['local-config-files'],
       "bundle-path":  temp_stack_path,
-      "build-mode":   'no-build'
+      "build-mode":   'no-build',
+      "config-files-only": true
     }
     result = bundleStack(container_runtime, bundle_options)
     if(!result.success) removeTmpStackAndReturn(result)
-    // -- 3. load stack configuration ------------------------------------------
-    const rsync_flags:Dictionary = {a:{}, delete: {}}
-    if(options.verbose) rsync_flags.v = {}
+    // -- 3. upload local stack ------------------------------------------------
+    if(path.isAbsolute(options['local-stack-path']) && fs.existsSync(options['local-stack-path']))
+    {
+      const rsync_stack_flags:Dictionary = {a:{}, delete: {}}
+      if(options.verbose) rsync_stack_flags.v = {}
+      result = this.ssh_shell.rsync(
+        FileTools.addTrailingSeparator(options['local-stack-path'], 'posix'), // upload contents
+        options['remote-stack-path'],
+        'push',
+        rsync_stack_flags
+      )
+    }
+    if(!result.success) removeTmpStackAndReturn(result)
+    // -- 4. upload run configuration (overwrites config files from step 3) ----
+    // Note: breaking upload into two steps prevents the copying of files from
+    // local stack which is important if large files are in stack (e.g. tarred images)
+    const rsync_config_flags:Dictionary = {a:{}}
+    if(options.verbose) rsync_config_flags.v = {}
     result = this.ssh_shell.rsync(
       FileTools.addTrailingSeparator(temp_stack_path, 'posix'), // upload contents
       options['remote-stack-path'],
       'push',
-      rsync_flags
+      rsync_config_flags
     )
     // -- 4. remove local tml directory ----------------------------------------
     return removeTmpStackAndReturn(result);
