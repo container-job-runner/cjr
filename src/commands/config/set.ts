@@ -13,7 +13,7 @@ export default class Set extends StackCommand {
     const key    = args['key']
     const value  = args['value']
     var result = this.settings.set(key, value)
-    if(result.success) this.log(chalk`{italic ${key}} -> ${value}`)
+    if(result.success) this.log(chalk`{italic ${key}} -> {green ${value}}`)
     printResultState(result)
   }
 }

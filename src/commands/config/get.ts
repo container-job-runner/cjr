@@ -11,6 +11,6 @@ export default class Get extends StackCommand {
     const {args, flags} = this.parse(Get)
     const key    = args['key']
     const value  = this.settings.get(key)
-    this.log(chalk`{italic ${key}}: ${value}`)
+    this.log(chalk`{italic ${key}}: {green ${value}}`)
   }
 }
