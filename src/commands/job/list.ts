@@ -63,6 +63,13 @@ export default class List extends StackCommand {
           "silent_clip":    false,
           "getter": (d:Dictionary) => d.stack
         },
+        stackName: {
+          "column_header":  "STACKNAME",
+          "column_width":   20,
+          "text_width":     15,
+          "silent_clip":    false,
+          "getter": (d:Dictionary) => runner.stackName(d.stack)
+        },
         command: {
           "column_header":  "COMMAND",
           "column_width":   40,
