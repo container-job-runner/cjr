@@ -13,6 +13,7 @@ export default class Stop extends StackCommand {
     "all-running": flags.boolean({default: false}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
     silent: flags.boolean({default: false})
   }

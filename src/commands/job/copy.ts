@@ -13,6 +13,7 @@ export default class Copy extends StackCommand {
     manual: flags.boolean({default: false, description: "opens an interactive bash shell which allows the user can manually copy individual files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
     verbose: flags.boolean({default: false})
   }
