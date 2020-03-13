@@ -75,7 +75,7 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  jobCopy(resource: Dictionary, copy_options:CopyOptions)
+  jobCopy(resource: Resource, copy_options:CopyOptions)
   {
     // -- validate parameters --------------------------------------------------
     if(copy_options.ids.length == 0) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.EMPTY_ID)
@@ -833,14 +833,14 @@ export class CJRRemoteDriver extends RemoteDriver
   disconnect(resource: Resource, options: Dictionary = {})
   {
     var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return false
-    else return this.ssh_shell.multiplexStop()
+    if(!result.success) return result
+    else return new ValidatedOutput(this.ssh_shell.multiplexStop())
   }
 
   connect(resource: Resource, options: Dictionary = {})
   {
     var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return false
+    if(!result.success) return result
 
     if(this.multiplex_options['restart-existing-connection'] && this.ssh_shell.multiplexExists()) {
       this.ssh_shell.multiplexStop()

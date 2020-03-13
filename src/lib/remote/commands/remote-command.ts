@@ -22,9 +22,6 @@ import {ResourceConfiguration, Resource} from '../config/resource-configuration'
 export type  Dictionary= {[key: string]: any}
 type DriverCommands = "jobAttach" | "jobList" | "jobLog" | "jobStop" | "jobState"
 
-var a = {}
-a.b = 1
-
 export abstract class RemoteCommand extends StackCommand
 {
     protected resource_configuration = new ResourceConfiguration(this.config.configDir)
