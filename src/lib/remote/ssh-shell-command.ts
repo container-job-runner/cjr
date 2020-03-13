@@ -92,7 +92,7 @@ export class SshShellCommand
 
     // === File Transfer Functions  ============================================
 
-    scp(local_path: string, remote_path: string, direction: string, options: Dictionary = {})
+    scp(local_path: string, remote_path: string, direction: "push"|"pull", options: Dictionary = {})
     {
       if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, [], ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
       const use_multiplex = (this.multiplex && this.multiplexExists())
@@ -110,7 +110,7 @@ export class SshShellCommand
       return this.shell.exec("scp", flags, args, options)
     }
 
-    rsync(local_path: string, remote_path: string, direction: string, flags: Dictionary, options: Dictionary = {})
+    rsync(local_path: string, remote_path: string, direction: "push"|"pull", flags: Dictionary, options: Dictionary = {})
     {
       if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, [], ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
       const use_multiplex = (this.multiplex && this.multiplexExists())
