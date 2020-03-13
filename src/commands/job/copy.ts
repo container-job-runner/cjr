@@ -8,10 +8,11 @@ export default class Copy extends StackCommand {
   static description = 'Copy job data back into the host directories. Works with both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {
-    stack: flags.string({env: 'STACK'}),
     "copy-path": flags.string({description: "overides job default copy path"}),
     mode: flags.string({default: "update", options: ["update", "overwrite", "mirror"], description: 'specify copy mode. "update" copies only newer files, "merge" copies all files, "mirror" copies all files and removes any extranious files'}),
     manual: flags.boolean({default: false, description: "opens an interactive bash shell which allows the user can manually copy individual files"}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
     explicit: flags.boolean({default: false}),
     verbose: flags.boolean({default: false})
   }
@@ -19,19 +20,19 @@ export default class Copy extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Copy)
-    var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
+    const {argv, flags} = this.parseWithLoad(Copy, {"visible-stacks":false, "stacks-dir": false})
+    var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
     // -- get job ids ----------------------------------------------------------
-    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_path, "", !this.settings.get('interactive')) || [])
+    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_paths, "", !this.settings.get('interactive')) || [])
     // -- set copy options -----------------------------------------------------
     const copy_options:CopyOptions = {
       "ids": ids,
-      "stack-path": stack_path,
+      "stack-paths": stack_paths,
       "mode": (flags.mode as "update"|"overwrite"|"mirror"),
       "verbose": flags.verbose,
     }

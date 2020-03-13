@@ -9,34 +9,35 @@ export default class Labels extends StackCommand {
   static description = 'Retrieve labels for a job.'
   static args = [{name: 'id'}]
   static flags = {
-    stack: flags.string({env: 'STACK'}),
-    explicit: flags.boolean({default: false}),
     label: flags.string({}),
     all: flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
-    json: flags.boolean({default: false})
+    json: flags.boolean({default: false}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    explicit: flags.boolean({default: false})
   }
   static strict = false;
 
   async run()
   {
-    const {argv, flags} = this.parse(Labels)
-    const runner  = this.newRunner(flags.explicit)
+    const {argv, flags} = this.parseWithLoad(Labels, {"visible-stacks":false, "stacks-dir": false})
+    const runner = this.newRunner(flags.explicit)
+    var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // get id and stack_path
-    var stack_path = (flags.stack) ? this.fullStackPath(flags.stack) : ""
     var job_info
     if(flags.all) // -- select all jobs ----------------------------------------
-      job_info = runner.jobInfo(stack_path)
+      job_info = runner.jobInfo(stack_paths)
     else if(flags["all-completed"]) // -- select all completed jobs ------------
-      job_info = runner.jobInfo(stack_path, "exited")
+      job_info = runner.jobInfo(stack_paths, "exited")
     else if(flags["all-running"])
-      job_info = runner.jobInfo(stack_path, "running")
+      job_info = runner.jobInfo(stack_paths, "running")
     else  // -- stop only jobs specified by user -------------------------------
     {
-      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_path, "", !this.settings.get('interactive')) || "")
+      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, "", !this.settings.get('interactive')) || "")
       if(ids === "") return // exit if user selects empty
-      var result = matchingJobInfo(runner, JSTools.arrayWrap(ids), stack_path)
+      var result = matchingJobInfo(runner, JSTools.arrayWrap(ids), stack_paths)
       if(result.success) job_info = result.data
       else return (flags.json) ? console.log("{}") : printResultState(result)
     }

@@ -17,7 +17,7 @@ export abstract class ContainerDriver
 
   stackName(stack_path: string)
   {
-    return path.basename(stack_path).split(':').shift()
+    return path.basename(stack_path).split(':').shift() || ""
   }
 
   imageName(stack_path: string)

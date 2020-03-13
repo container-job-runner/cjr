@@ -76,7 +76,7 @@ export default class Run extends StackCommand {
       // -- set copy options ---------------------------------------------------
       const copy_options:CopyOptions = {
         "ids": [job_id],
-        "stack-path": stack_path,
+        "stack-paths": [stack_path],
         "mode": "update",
         "verbose": flags.verbose,
       }

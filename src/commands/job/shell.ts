@@ -16,13 +16,14 @@ export default class Shell extends StackCommand {
     "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
+    "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
   }
   static strict = true;
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Shell, {stack:false, "config-files": false})
+    const {argv, flags} = this.parseWithLoad(Shell, {stack:false, "config-files": false, "visible-stacks":false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {
@@ -30,7 +31,7 @@ export default class Shell extends StackCommand {
       runner:  this.newRunner(flags.explicit)
     }
     // -- get job id -----------------------------------------------------------
-    const id_str = argv[0] || await promptUserForJobId(runtime_options.runner, "", "", !this.settings.get('interactive')) || ""
+    const id_str = argv[0] || await promptUserForJobId(runtime_options.runner, flags["visible-stacks"], "", !this.settings.get('interactive')) || ""
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,

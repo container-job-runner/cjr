@@ -138,20 +138,25 @@ export class DockerRunDriver extends RunDriver
     return this.shell.exec(command, flags, args, {stdio: "pipe"})
   }
 
-  jobInfo(stack_path: string, job_status: string = "") // Note: this allows for empty image_name. In which case it returns all running containers on host
+  jobInfo(stack_paths: Array<string>, job_status: string = "") // Note: this allows for empty stack path [""] In which case it returns all running containers on host
   {
-    const command = `${this.base_command} ps`;
-    const args: Array<string> = []
-    var   flags: Dictionary = {
-      "a" : {},
-      "no-trunc": {},
-      "filter": [`label=runner=${cli_name}`]
-    };
-    if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
-    if(job_status) flags["filter"].push(`status=${job_status}`)
-    this.addFormatFlags(flags, {format: "json"})
-    var result = this.shell.output(command, flags, args, {}, this.json_output_format)
-    return (result.success) ? this.extractJobInfo(result.data) : []
+    const ids:Array<Dictionary> = []
+    stack_paths.map((stack_path:string) =>
+    {
+      const command = `${this.base_command} ps`;
+      const args: Array<string> = []
+      const flags: Dictionary = {
+        "a" : {},
+        "no-trunc": {},
+        "filter": [`label=runner=${cli_name}`]
+      };
+      if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
+      if(job_status) flags["filter"].push(`status=${job_status}`)
+      this.addFormatFlags(flags, {format: "json"})
+      const result = this.shell.output(command, flags, args, {}, this.json_output_format)
+      if(result.success) ids.push( ...this.extractJobInfo(result.data))
+    })
+    return ids
   }
 
   protected extractJobInfo(raw_ps_data: Array<Dictionary>)

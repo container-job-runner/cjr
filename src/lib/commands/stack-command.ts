@@ -31,6 +31,7 @@ export abstract class StackCommand extends Command
   // otherwise returns user_path
   fullStackPath(stack_name: string, stacks_path: string = "")
   {
+    if(!stack_name) return ""
     if(!stacks_path) stacks_path = this.settings.get("stacks_dir");
     const local_stack_path = path.join(stacks_path, stack_name)
     if(fs.existsSync(stack_name) || !fs.existsSync(local_stack_path)) return stack_name

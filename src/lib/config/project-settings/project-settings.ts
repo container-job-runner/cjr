@@ -11,10 +11,11 @@ export type ps_props = {
   "stack"?: string,
   "config-files"?: Array<string>,
   "stacks-dir"?: string,
-  "remote-name"?: string
+  "remote-name"?: string,
+  "visible-stacks"?: Array<string>
 }
 
-export type ps_fields = "project-root"|"stack"|"config-files"|"stacks-dir"|"remote-name"
+export type ps_fields = "project-root"|"stack"|"config-files"|"stacks-dir"|"remote-name"|"visible-stacks"
 
 export class ProjectSettings
 {

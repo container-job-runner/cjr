@@ -48,7 +48,7 @@ export type JobOptions = {
 // -- options for core function copyJob ----------------------------------------
 export type CopyOptions = {
   ids: Array<string>,                                                           // job ids that should be copied
-  "stack-path"?: string,                                                        // only copy jobs that pertain to this stack
+  "stack-paths"?: Array<string>,                                                // only copy jobs that pertain to this stack
   mode:"update"|"overwrite"|"mirror",                                           // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
   verbose:boolean,                                                              // if true rsync will by run with -v flag
   "host-path"?:string,                                                          // location where files should be copied. if specified this setting overrides job hostDir
@@ -173,7 +173,7 @@ function printStatusHeader(message: string, output_options: OutputOptions, line_
 export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyOptions)
 {
   // -- get information on all matching jobs -----------------------------------
-  var result = matchingJobInfo(container_runtime.runner, copy_options["ids"], copy_options["stack-path"] || "")
+  var result = matchingJobInfo(container_runtime.runner, copy_options["ids"], copy_options["stack-paths"] || [""])
   if(!result.success) return result
   const job_info_array = result.data
   // -- copy results from all matching jobs ------------------------------------
@@ -208,7 +208,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
 export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false})
 {
   // -- get job information ----------------------------------------------------
-  var result = matchingJobInfo(container_runtime.runner, [job_id], "")
+  var result = matchingJobInfo(container_runtime.runner, [job_id], [""])
   if(!result.success) return result
   const job_info = result.data[0] // only shell into first resut
   // -- extract hostRoot and file_volume_id ------------------------------------
@@ -337,25 +337,25 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
 // == JOB INFO FUNCTIONS =======================================================
 
 // returns all running job ids
-export function allJobIds(runner: RunDriver, stack_path: string="", status:string = "")
+export function allJobIds(runner: RunDriver, stack_paths: Array<string>=[""], status:string = "")
 {
-  return runner.jobInfo(stack_path, status).map((x:Dictionary) => x.id)
+  return runner.jobInfo(stack_paths, status).map((x:Dictionary) => x.id)
 }
 
 // returns array of jobs ids for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_path: string, status:string = "")
+export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, status:string = "")
 {
-  const result = matchingJobInfo(runner, ids, stack_path, status)
+  const result = matchingJobInfo(runner, ids, stack_paths, status)
   if(result.success) result.data = result.data.map((x:Dictionary) => x.id)
   return result
 }
 
 // returns array of jobs info objects for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_path: string, status:string = "")
+export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, status:string = "")
 {
   ids = ids.filter((id:string) => id !== "") // remove empty ids
   if(ids.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
-  return filterJobInfoByID(runner.jobInfo(stack_path, status), new RegExp(`^(${ids.join('|')})`))
+  return filterJobInfoByID(runner.jobInfo(stack_paths, status), new RegExp(`^(${ids.join('|')})`))
 }
 
 // -----------------------------------------------------------------------------
@@ -377,7 +377,7 @@ function filterJobInfoByID(job_info: Array<Dictionary>, regex: RegExp)
 // determines if job with given name exists. Refactor with resultNameId
 export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: string, status:string = "")
 {
-  const job_info = runner.jobInfo(stack_path, status)
+  const job_info = runner.jobInfo([stack_path], status)
   const index    = job_info.map((x:Dictionary) => x?.labels?.name).indexOf(name)
   return (index == -1) ? false : job_info[index].id
 }
@@ -680,6 +680,7 @@ export function scanForSettingsDirectory(dirpath: string):{result: ValidatedOutp
     dirpath_parent = path.dirname(dirpath)
     // -- exit if settings file is invalid -------------------------------------
     ;( {result, project_settings} = loadProjectSettings(dirpath) )              // see https://stackoverflow.com/questions/27386234/object-destructuring-without-var
+    printResultState(result) // print any warnings if file is invalid
     if(result.success && project_settings.get("project-root") == 'auto') {
       project_settings.set({"project-root": dirpath})
       return {
@@ -712,7 +713,7 @@ export function loadProjectSettings(project_root: string):{result: ValidatedOutp
 
 // == Interactive Functions ====================================================
 
-export async function promptUserForJobId(runner: RunDriver, stack_path: string, status:string="", silent: boolean = false)
+export async function promptUserForJobId(runner: RunDriver, stack_path: Array<string>, status:string="", silent: boolean = false)
 {
   if(silent) return false;
   const job_info = runner.jobInfo(stack_path, status)

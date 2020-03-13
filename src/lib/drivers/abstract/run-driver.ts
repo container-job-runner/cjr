@@ -11,7 +11,7 @@ export type Dictionary = {[key: string]: any}
 
 export abstract class RunDriver extends ContainerDriver
 {
-  abstract jobInfo(stack_path: string, job_status: string) : Array<Dictionary>;
+  abstract jobInfo(stack_paths: Array<string>, job_status: string) : Array<Dictionary>;
   abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput;
   abstract jobLog(id: string) : ValidatedOutput;
   abstract jobAttach(id: string) : ValidatedOutput;

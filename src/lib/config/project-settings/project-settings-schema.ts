@@ -9,7 +9,8 @@ export const project_settings_schema = {
   "properties": {
     "project-root" : {"$ref": "#/definitions/project-root"},
     "stack": {"type": "string"},
-    "config-files": {"$ref": "#/definitions/config-files"},
+    "visible-stacks": {"$ref": "#/definitions/array-of-strings"},
+    "config-files": {"$ref": "#/definitions/array-of-strings"},
     "stacks-dir": {"type": "string"},
     "remote-name": {"type": "string"}
   },
@@ -18,7 +19,7 @@ export const project_settings_schema = {
       "type": "string",
       "pattern": "^auto$"
     },
-    "config-files": {
+    "array-of-strings": {
       "type": "array",
       "items": {
         "anyOf" : [ {"type": "string"} ]

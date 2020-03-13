@@ -7,16 +7,17 @@ export default class State extends StackCommand {
   static description = 'get the current state of a single job'
   static args = [{name: 'id', required: true}]
   static flags = {
-    stack: flags.string({env: 'STACK'})
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"})
   }
   static strict = true;
 
   async run()
   {
-    const {args, flags} = this.parse(State)
-    const runner  = this.newRunner(false)
-    const stack_path = (flags?.stack) ? this.fullStackPath(flags.stack) : ""
-    const result = matchingJobInfo(runner, [args.id], stack_path)
+    const {args, flags} = this.parseWithLoad(State, {"visible-stacks":false, "stacks-dir": false})
+    const runner = this.newRunner(flags.explicit)
+    var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
+    const result = matchingJobInfo(runner, [args.id], stack_paths)
     if(!result.success) return printResultState(result)
     const job_info = result.data
     console.log(job_info[0].status)
