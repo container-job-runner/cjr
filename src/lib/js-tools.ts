@@ -78,7 +78,7 @@ export class JSTools
   }
 
   static isObject(val: any) {
-      return val instanceof Object;
+      return (val instanceof Object) && !(val instanceof Array);
   }
   static isString(val: any) {
       return (typeof val === 'string' || val instanceof String);
