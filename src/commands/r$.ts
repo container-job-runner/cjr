@@ -33,7 +33,8 @@ export default class Run extends RemoteCommand {
   static strict = false;
 
   async run() {
-    const {flags, args, argv} = this.parseWithLoad(Run, {stack:true, "config-files": false, "project-root":false, "remote-name": true})
+    const {flags, args, argv} = this.parse(Run)
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "remote-name": true})
     this.applyProtocolFlag(flags)
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- initialize run shortcuts --------------------------------------------

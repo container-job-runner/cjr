@@ -17,7 +17,8 @@ export default class Log extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Log, {"visible-stacks":false, "stacks-dir": false})
+    const {argv, flags} = this.parse(Log)
+    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner = this.newRunner(flags.explicit)
     // get id and stack_path
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))

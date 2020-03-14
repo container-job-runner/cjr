@@ -17,7 +17,8 @@ export default class Pull extends StackCommand {
 
   async run()
   {
-    const {args, flags} = this.parseWithLoad(Pull, {"stacks-dir": true})
+    const {args, flags} = this.parse(Pull)
+    this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": true})
     const shell = new ShellCommand(flags.explicit, false)
     var result: ValidatedOutput
     // -- get stacks directory and name of git repo ----------------------------

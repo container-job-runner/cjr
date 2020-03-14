@@ -18,7 +18,8 @@ export default class List extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(List, {"remote-name": true})
+    const {flags, args, argv} = this.parse(List)
+    this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     this.remoteCommand("jobList", flags, args, argv)
   }
 

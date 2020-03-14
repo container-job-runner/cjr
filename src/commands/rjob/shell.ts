@@ -26,7 +26,8 @@ export default class Shell extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Shell, {
+    const {flags, args, argv} = this.parse(Shell)
+    this.augmentFlagsWithProjectSettings(flags, {
       "stack": true,
       "project-root": false,
       "config-files": false,

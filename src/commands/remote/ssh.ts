@@ -14,7 +14,8 @@ export default class Ssh extends RemoteCommand {
   static strict = false;
 
   async run() {
-    const {flags, args, argv} = this.parseWithLoad(Ssh, {"remote-name": false})
+    const {flags, args, argv} = this.parse(Ssh)
+    this.augmentFlagsWithProjectSettings(flags, {"remote-name": false})
     // -- validate id ----------------------------------------------------------
     const name = args["remote-name"] || flags["remote-name"] || ""
     var result = this.validResourceName(name)

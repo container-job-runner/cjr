@@ -32,7 +32,8 @@ export default class Run extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Run, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
+    const {argv, flags} = this.parseWithLoad(Run)
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     const run_shortcut = new RunShortcuts()
     const rs_result = run_shortcut.loadFromFile(this.settings.get('run_shortcuts_file'))

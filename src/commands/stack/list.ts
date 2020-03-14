@@ -15,7 +15,8 @@ export default class List extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(List, {"stacks-dir": false})
+    const {argv, flags} = this.parse(List)
+    this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": false})
     const stacks_path = flags["stacks-dir"] || this.settings.get("stacks_dir")
     console.log(chalk`{bold PATH}    ${stacks_path}`)
     process.stdout.write(chalk`{bold STACKS}  `)

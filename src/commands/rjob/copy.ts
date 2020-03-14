@@ -21,7 +21,8 @@ export default class Copy extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Copy, {"project-root":true, "remote-name": true})
+    const {flags, args, argv} = this.parse(Copy)
+    this.augmentFlagsWithProjectSettings(flags, {"project-root":true, "remote-name": true})
     // -- validate name --------------------------------------------------------
     const name = flags['remote-name']
     var result = this.validResourceName(name)

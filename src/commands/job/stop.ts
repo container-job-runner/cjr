@@ -21,7 +21,8 @@ export default class Stop extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Stop, {"visible-stacks":false, "stacks-dir": false})
+    const {argv, flags} = this.parse(Stop)
+    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner  = this.newRunner(flags.explicit)
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var ids_to_stop:Array<string> = []

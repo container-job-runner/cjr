@@ -27,7 +27,8 @@ export default class Exec extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Exec, {
+    const {flags, args, argv} = this.parse(Exec)
+    this.augmentFlagsWithProjectSettings(flags, {
       "stack": true,
       "project-root": true,
       "config-files": false,

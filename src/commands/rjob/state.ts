@@ -13,7 +13,8 @@ export default class State extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(State, {"remote-name": true})
+    const {flags, args, argv} = this.parse(State)
+    this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     this.remoteCommand("jobState", flags, args, argv)
   }
 

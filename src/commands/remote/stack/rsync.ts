@@ -21,7 +21,8 @@ export default class Rsync extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Rsync, {"remote-name": false, "stacks-dir": false})
+    const {flags, args, argv} = this.parse(Rsync)
+    this.augmentFlagsWithProjectSettings(flags, {"remote-name": false, "stacks-dir": false})
     // -- validate id ----------------------------------------------------------
     const name = args["remote-name"] || flags["remote-name"] || ""
     var result = this.validResourceName(name)

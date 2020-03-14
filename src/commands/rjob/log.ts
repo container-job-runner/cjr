@@ -15,7 +15,8 @@ export default class Log extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Log, {"remote-name": true})
+    const {flags, args, argv} = this.parse(Log)
+    this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     this.remoteCommand("jobLog", flags, args, argv)
   }
 

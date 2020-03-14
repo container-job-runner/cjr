@@ -13,7 +13,8 @@ export default class Attach extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Attach, {"remote-name": true})
+    const {flags, args, argv} = this.parse(Attach)
+    this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     this.remoteCommand("jobAttach", flags, args, argv)
   }
 

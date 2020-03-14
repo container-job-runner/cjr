@@ -18,7 +18,8 @@ export default class Stop extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parseWithLoad(Stop, {"remote-name": true})
+    const {flags, args, argv} = this.parse(Stop)
+    this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     this.remoteCommand("jobStop", flags, args, argv)
   }
 

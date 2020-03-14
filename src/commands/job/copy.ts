@@ -21,7 +21,8 @@ export default class Copy extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Copy, {"visible-stacks":false, "stacks-dir": false})
+    const {argv, flags} = this.parse(Copy)
+    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {

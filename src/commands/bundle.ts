@@ -30,7 +30,8 @@ export default class Bundle extends StackCommand {
 
   async run()
   {
-    const {args, flags} = this.parseWithLoad(Bundle, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
+    const {args, flags} = this.parse(Bundle)
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {

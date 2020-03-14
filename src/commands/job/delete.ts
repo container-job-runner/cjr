@@ -22,7 +22,8 @@ export default class Delete extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Delete, {"visible-stacks":false, "stacks-dir": false})
+    const {argv, flags} = this.parse(Delete)
+    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner  = this.newRunner(flags.explicit)
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var job_info:Array<Dictionary> = []

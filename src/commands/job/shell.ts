@@ -23,7 +23,8 @@ export default class Shell extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Shell, {stack:false, "config-files": false, "visible-stacks":false, "stacks-dir": false})
+    const {argv, flags} = this.parse(Shell)
+    this.augmentFlagsWithProjectSettings(flags, {stack:false, "config-files": false, "visible-stacks":false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {

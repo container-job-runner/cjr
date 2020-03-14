@@ -21,7 +21,8 @@ export default class Start extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Start, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
+    const {argv, flags} = this.parse(Start)
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {

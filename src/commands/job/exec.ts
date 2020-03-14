@@ -24,7 +24,8 @@ export default class Shell extends StackCommand {
 
   async run()
   {
-    const {args, argv, flags} = this.parseWithLoad(Shell, {stack:false, "config-files": false})
+    const {args, argv, flags} = this.parse(Shell)
+    this.augmentFlagsWithProjectSettings(flags, {stack:false, "config-files": false})
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     const run_shortcut = new RunShortcuts()
     // -- set container runtime options ----------------------------------------

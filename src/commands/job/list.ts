@@ -18,7 +18,8 @@ export default class List extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(List, {"visible-stacks":false, "stacks-dir": false})
+    const {argv, flags} = this.parse(List)
+    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner  = this.newRunner(flags.explicit)
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     const jobs = runner.jobInfo(stack_paths)

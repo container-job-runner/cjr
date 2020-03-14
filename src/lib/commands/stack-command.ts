@@ -38,19 +38,17 @@ export abstract class StackCommand extends Command
     return local_stack_path
   }
 
-  parseWithLoad(C:any, flag_props: {[key in ps_fields]+?: boolean}) // overload parse command to allow for auto setting of stack flag
+  augmentFlagsWithProjectSettings(flags:Dictionary, flag_props: {[key in ps_fields]+?: boolean}) // overload parse command to allow for auto setting of stack flag
   {
-    const parse_object:Dictionary = this.parse(C)
     // -- exit if no-autoload flag is enabled ----------------------------------
-    if(parse_object.flags?.['no-autoload']) return parse_object
+    if(flags?.['no-autoload']) return flags
     // -- load settings and augment flags  -------------------------------------
-    const flags = parse_object.flags
     var result = new ValidatedOutput(false)
     var project_settings:ProjectSettings = new ProjectSettings()
     if(!flags?.['project-root'] && this.settings.get('auto_project_root')){
       ;( {result, project_settings} = scanForSettingsDirectory(process.cwd()) )
     } else if(flags?.['project-root']){
-      ;( {result, project_settings} = loadProjectSettings(parse_object.flags['project-root']) )
+      ;( {result, project_settings} = loadProjectSettings(flags['project-root']) )
     }
     // -- merge flags if load was successful -----------------------------------
     if(result.success) {
@@ -61,14 +59,14 @@ export abstract class StackCommand extends Command
 
       // merge empty fields
       JSTools.rMergeOnEmpty(
-        parse_object.flags,
+        flags,
         project_settings.getMultiple(mergeable_fields))
     }
     // -- exit with error if required flags are missing ------------------------
     const required_flags = (Object.keys(flag_props) as Array<ps_fields>).filter((name:ps_fields) => flag_props[name])
-    const missing_flags  = required_flags.filter((name:string) => !parse_object.flags.hasOwnProperty(name))
+    const missing_flags  = required_flags.filter((name:string) => !flags.hasOwnProperty(name))
     if(missing_flags.length != 0) this.error(missingFlagError(missing_flags))
-    return parse_object
+    return flags
   }
 
   private equivStackPaths(path_a: string, path_b: string)

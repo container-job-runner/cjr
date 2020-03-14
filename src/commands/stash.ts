@@ -20,7 +20,8 @@ export default class Stash extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Stash, {stack:true, "project-root":true, "config-files": false, "stacks-dir": false})
+    const {argv, flags} = this.parse(Stash)
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "project-root":true, "config-files": false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
