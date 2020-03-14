@@ -9,7 +9,8 @@ export default class State extends StackCommand {
   static flags = {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
-    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
+    explicit: flags.boolean({default: false})
   }
   static strict = true;
 

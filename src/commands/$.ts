@@ -32,9 +32,9 @@ export default class Run extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parseWithLoad(Run)
+    const {argv, flags} = this.parse(Run)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    const stack_path = this.fullStackPath(flags.stack || "", flags["stacks-dir"] || "")
     const run_shortcut = new RunShortcuts()
     const rs_result = run_shortcut.loadFromFile(this.settings.get('run_shortcuts_file'))
     if(!rs_result.success) printResultState(rs_result)
@@ -45,7 +45,7 @@ export default class Run extends StackCommand {
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
+    const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.silent)
     }
@@ -53,11 +53,11 @@ export default class Run extends StackCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   flags["build-mode"],
+      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
       "command":      run_shortcut.apply(argv).join(" "),
       "host-root":    flags["project-root"] || "",
       "cwd":          flags['working-directory'],
-      "file-access":  flags['file-access'],
+      "file-access":  (flags['file-access'] as "volume"|"bind"),
       "synchronous":  !flags.async,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
@@ -65,7 +65,7 @@ export default class Run extends StackCommand {
       "remove":       (flags['file-access'] === "bind" && !flags["keep-record"]) ? true : false
     }
     // -- start job and extract job id -----------------------------------------
-    var result = jobStart(runtime_options, job_options, output_options)
+    var result = jobStart(c_runtime, job_options, output_options)
     if(!result.success) return printResultState(result)
     const job_id = result.data
     if(job_id !== "" && flags.async && !flags.silent)
@@ -81,7 +81,7 @@ export default class Run extends StackCommand {
         "mode": "update",
         "verbose": flags.verbose,
       }
-      printResultState(jobCopy(runtime_options, copy_options))
+      printResultState(jobCopy(c_runtime, copy_options))
     }
   }
 

@@ -34,9 +34,9 @@ export default class Shell extends RemoteCommand {
       "remote-name": true
     })
     this.applyProtocolFlag(flags)
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- validate name --------------------------------------------------------
-    const name = flags['remote-name']
+    const name = (flags['remote-name'] as string)
     var result = this.validResourceName(name)
     if(!result.success) return printResultState(result)
     // -- set output options ---------------------------------------------------
@@ -53,21 +53,21 @@ export default class Shell extends RemoteCommand {
     var id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {
-      builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.silent)
+      builder: this.newBuilder(flags.explicit),
+      runner:  this.newRunner(flags.explicit)
     }
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   flags["build-mode"],
+      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
       "command":      this.settings.get("container_default_shell"), // NOTE: NO EFFECT for cjr driver (command is overridden by remote cjr)
       "cwd":          flags["working-directory"],
       "file-access":  "volume",
       "synchronous":  true,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
-      "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
+      "labels":       this.parseLabelFlag(flags.label),
       "remove":       true // NOTE: NO EFFECT for cjr driver
     }
     result = driver.jobExec(
@@ -77,8 +77,8 @@ export default class Shell extends RemoteCommand {
       {
         id: id,
         mode: 'job:shell',
-        "host-project-root": flags["project-root"],
-        "stack-upload-mode": flags["stack-upload-mode"]
+        "host-project-root": (flags["project-root"] as string),
+        "stack-upload-mode": (flags["stack-upload-mode"] as "cached"|"uncached")
       })
     printResultState(result)
     driver.disconnect(resource)

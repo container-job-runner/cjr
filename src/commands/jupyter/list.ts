@@ -20,22 +20,19 @@ export default class List extends StackCommand {
     const {argv, flags} = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {stack:true})
     const runner  = this.newRunner(flags.explicit)
-    const stack_path = this.fullStackPath(flags.stack)
-
+    const stack_path = this.fullStackPath(flags.stack as string)
     const image_name = runner.imageName(stack_path)
     const jupiter_id = jobNameLabeltoID(runner, JUPYTER_JOB_NAME, stack_path, "running");
 
-    const result = new ValidatedOutput(true);
     if(jupiter_id === false)
     {
-      result.pushError(`Jupiter is not running.`)
+      printResultState(new ValidatedOutput(false).pushError(`Jupiter is not running.`))
     }
     else
     {
       runner.jobExec(jupiter_id, ['jupyter', 'notebook', 'list'])
     }
 
-    printResultState(result)
   }
 
 }

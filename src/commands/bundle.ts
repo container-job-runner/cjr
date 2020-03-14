@@ -24,6 +24,7 @@ export default class Bundle extends StackCommand {
     tar:  flags.boolean({default: false, exclusive: ['zip'], description: 'produces a tar.gz output file (requires zip)'}),
     "include-files": flags.boolean({default: false, description: 'include project files in bundle'}),
     "include-stacks-dir": flags.boolean({default: false, description: 'include all stacks in stacks directory'}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = true;
@@ -32,11 +33,11 @@ export default class Bundle extends StackCommand {
   {
     const {args, flags} = this.parse(Bundle)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
+    const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.silent)
+      runner:  this.newRunner(flags.explicit, true)
     }
     // -- create tmp dir for bundle --------------------------------------------
     var result = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name))
@@ -44,18 +45,18 @@ export default class Bundle extends StackCommand {
     const tmp_dir = result.data
     // -- set copy options -----------------------------------------------------
     const options: ProjectBundleOptions = {
-      "project-root": flags["project-root"],
+      "project-root": (flags["project-root"] as string),
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "bundle-path":  (flags['include-files']) ? path.join(tmp_dir, path.basename(flags['project-root'])) : path.join(tmp_dir, project_settings_folder),
+      "bundle-path":  (flags['include-files']) ? path.join(tmp_dir, path.basename(flags['project-root'] as string)) : path.join(tmp_dir, project_settings_folder),
       "verbose":      flags.verbose
     }
     if(flags['include-stacks-dir']) options["stacks-dir"] = flags["stacks-dir"]
 
     if(flags['include-files']) // -- bundle all files --------------------------
-      result = bundleProject(runtime_options, options)
+      result = bundleProject(c_runtime, options)
     else // -- bundle project configuration ------------------------------------
-      result = bundleProjectSettings(runtime_options, options)
+      result = bundleProjectSettings(c_runtime, options)
     printResultState(result)
 
     // -- copy bundle to user specified location -------------------------------

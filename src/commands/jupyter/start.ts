@@ -12,6 +12,7 @@ export default class Start extends StackCommand {
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     explicit: flags.boolean({default: false}),
     port: flags.integer({default: 8888}),
     sync: flags.boolean({default: false}),
@@ -23,7 +24,7 @@ export default class Start extends StackCommand {
   {
     const {argv, flags} = this.parse(Start)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  false,

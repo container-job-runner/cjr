@@ -9,7 +9,7 @@ export default class Delete extends RemoteCommand {
   static description = 'Delete a job and its associated data (including image). This command works on both running and completed jobs'
   static args = [{name: 'id'}]
   static flags = {
-    remoteName: flags.string({env: 'REMOTENAME'}), // new remote flag
+    "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
     all: flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
@@ -25,7 +25,7 @@ export default class Delete extends RemoteCommand {
     const {flags, args, argv} = this.parse(Delete)
     this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     // -- validate name --------------------------------------------------------
-    const name = flags['remote-name']
+    const name = (flags['remote-name'] as string)
     var result = this.validResourceName(name)
     if(!result.success) return printResultState(result)
     // -- set output options ---------------------------------------------------

@@ -24,27 +24,27 @@ export default class Shell extends StackCommand {
   async run()
   {
     const {argv, flags} = this.parse(Shell)
-    this.augmentFlagsWithProjectSettings(flags, {stack:false, "config-files": false, "visible-stacks":false, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "visible-stacks":false, "stacks-dir": false})
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
+    const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
     // -- get job id -----------------------------------------------------------
-    const id_str = argv[0] || await promptUserForJobId(runtime_options.runner, flags["visible-stacks"], "", !this.settings.get('interactive')) || ""
+    const id_str = argv[0] || await promptUserForJobId(c_runtime.runner, flags["visible-stacks"], "", !this.settings.get('interactive')) || ""
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   flags["build-mode"],
+      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
       "command":      this.settings.get("container_default_shell"),
       "cwd":          flags['working-directory'],
       "file-access":  "volume",
       "synchronous":  true,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
-      "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
+      "labels":       this.parseLabelFlag(flags.label),
       "remove":       true
     }
     // -- set output options ---------------------------------------------------
@@ -53,6 +53,6 @@ export default class Shell extends StackCommand {
       silent:   false,
       explicit: flags.explicit
     }
-    printResultState(jobExec(runtime_options, id_str, job_options, output_options))
+    printResultState(jobExec(c_runtime, id_str, job_options, output_options))
   }
 }

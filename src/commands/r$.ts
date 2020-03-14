@@ -36,13 +36,13 @@ export default class Run extends RemoteCommand {
     const {flags, args, argv} = this.parse(Run)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "remote-name": true})
     this.applyProtocolFlag(flags)
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- initialize run shortcuts --------------------------------------------
     const run_shortcut = new RunShortcuts()
     const rs_result = run_shortcut.loadFromFile(this.settings.get('run_shortcuts_file'))
     if(!rs_result.success) printResultState(rs_result)
     // -- validate name --------------------------------------------------------
-    const name = flags['remote-name']
+    const name = flags['remote-name'] || ""
     var result = this.validResourceName(name)
     if(!result.success) return printResultState(result)
     // -- set output options ---------------------------------------------------
@@ -56,7 +56,7 @@ export default class Run extends RemoteCommand {
     if(resource === undefined) return
     var driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
+    const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.silent)
     }
@@ -64,11 +64,11 @@ export default class Run extends RemoteCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   flags["build-mode"],
+      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
       "command":      run_shortcut.apply(argv).join(" "),
       "host-root":    flags["project-root"] || "",
       "cwd":          process.cwd(),
-      "file-access":  flags['file-access'],
+      "file-access":  (flags['file-access'] as "bind"|"volume"),
       "synchronous":  !flags.async,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
@@ -77,12 +77,12 @@ export default class Run extends RemoteCommand {
     }
     result = driver.jobStart(
       resource,
-      runtime_options,
+      c_runtime,
       job_options,
       {
         "auto-copy":         this.shouldAutocopy(flags),
-        "stack-upload-mode": flags['stack-upload-mode'],
-        "file-upload-mode":  flags['file-upload-mode']
+        "stack-upload-mode": (flags['stack-upload-mode'] as "cached"|"uncached"),
+        "file-upload-mode":  (flags['file-upload-mode'] as "cached"|"uncached")
       }
     )
     printResultState(result)

@@ -20,22 +20,18 @@ export default class Stop extends StackCommand {
     const {argv, flags} = this.parse(Stop)
     this.augmentFlagsWithProjectSettings(flags, {stack:true})
     const runner  = this.newRunner(flags.explicit)
-    const stack_path = this.fullStackPath(flags.stack)
-
+    const stack_path = this.fullStackPath(flags.stack as string)
     const image_name = runner.imageName(stack_path)
     const jupiter_id = jobNameLabeltoID(runner, JUPYTER_JOB_NAME, stack_path, "running");
 
-    const result = new ValidatedOutput(true);
-    if(jupiter_id == false)
+    if(jupiter_id === false)
     {
-      result.pushError(`Jupiter is not running.`)
+      printResultState(new ValidatedOutput(false).pushError(`Jupiter is not running.`))
     }
     else
     {
       runner.jobStop([jupiter_id])
     }
-
-    printResultState(result)
   }
 
 }

@@ -24,7 +24,7 @@ export default class Shell extends StackCommand {
   {
     const {argv, flags} = this.parse(Shell)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  false,
@@ -32,7 +32,7 @@ export default class Shell extends StackCommand {
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
+    const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
@@ -51,10 +51,10 @@ export default class Shell extends StackCommand {
       "remove":       (flags.save !== undefined) ? false : true
     }
 
-    var result = jobStart(runtime_options, job_options, output_options)
+    var result = jobStart(c_runtime, job_options, output_options)
     if(!result.success) return printResultState(result)
 
-    if(flags.save !== undefined) await jobToImage(runtime_options.runner, result, flags.save, true, this.settings.get('interactive'))
+    if(flags.save !== undefined) await jobToImage(c_runtime.runner, result, flags.save, true, this.settings.get('interactive'))
     printResultState(result);
   }
 

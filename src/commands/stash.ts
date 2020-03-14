@@ -22,15 +22,15 @@ export default class Stash extends StackCommand {
   {
     const {argv, flags} = this.parse(Stash)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "project-root":true, "config-files": false, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
-      verbose:  flags.verbose,
+      verbose:  false,
       silent:   flags.silent,
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
+    const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
@@ -48,10 +48,11 @@ export default class Stash extends StackCommand {
       "remove":       false
     }
     // -- start job and extract job id -----------------------------------------
-    var result = jobStart(runtime_options, job_options, output_options)
+    var result = jobStart(c_runtime, job_options, output_options)
     if(!result.success) return printResultState(result)
     const job_id = result.data
-    if(job_id !== "" && (flags.async && !flags.verbose)) console.log(job_id)
+    if(job_id != "" && !flags.silent && this.settings.get('alway_print_job_id'))
+      console.log(job_id)
   }
 
 }

@@ -14,6 +14,8 @@ export default class Shell extends StackCommand {
     x11: flags.boolean({default: false}),
     port: flags.string({default: [], multiple: true}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
+    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
     explicit: flags.boolean({default: false}),
     "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -25,13 +27,13 @@ export default class Shell extends StackCommand {
   async run()
   {
     const {args, argv, flags} = this.parse(Shell)
-    this.augmentFlagsWithProjectSettings(flags, {stack:false, "config-files": false})
-    const stack_path = this.fullStackPath(flags.stack, flags["stacks-dir"])
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false})
+    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     const run_shortcut = new RunShortcuts()
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
-      builder: this.newBuilder(flags.explicit, true),
-      runner:  this.newRunner(flags.explicit)
+    const c_runtime:ContainerRuntime = {
+      builder: this.newBuilder(flags.explicit, !flags.verbose),
+      runner:  this.newRunner(flags.explicit, flags.verbose)
     }
     // -- get job id -----------------------------------------------------------
     const id_str = argv[0]
@@ -40,7 +42,7 @@ export default class Shell extends StackCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   flags["build-mode"],
+      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
       "command":      command,
       "cwd":          flags["working-directory"],
       "file-access":  "volume",
@@ -56,6 +58,6 @@ export default class Shell extends StackCommand {
       silent:   false,
       explicit: flags.explicit
     }
-    printResultState(jobExec(runtime_options, id_str, job_options, output_options))
+    printResultState(jobExec(c_runtime, id_str, job_options, output_options))
   }
 }

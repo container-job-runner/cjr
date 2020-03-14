@@ -6,11 +6,11 @@ import {loadProjectSettings} from "../../lib/functions/run-functions"
 import {projectSettingsYMLPath} from "../../lib/constants"
 import {printResultState} from '../../lib/functions/misc-functions'
 import {ValidatedOutput} from '../../lib/validated-output'
-import {ProjectSettings, ps_fields, ps_props} from '../../config/project-settings/project-settings'
+import {ProjectSettings, ps_fields, ps_props} from '../../lib/config/project-settings/project-settings'
 
 export default class Set extends ProjectSettingsCommand {
   static description = 'Set project settings'
-  static args = [{}]
+  static args = []
   static flags = {
     "stack": flags.string({env: 'STACK', description: "default stack for project"}),
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
@@ -26,13 +26,14 @@ export default class Set extends ProjectSettingsCommand {
   {
     const {flags} = this.parse(Set)
     this.augmentFlagsWithProjectSettings(flags, {"project-root":true})
-    const {project_settings} = loadProjectSettings(flags["project-root"])
+    const project_root: string = (flags["project-root"] as string)
+    const {project_settings} = loadProjectSettings(project_root)
     const fields:Array<ps_fields> = ['stack', 'remote-name', 'config-files', 'stacks-dir', 'visible-stacks']
     project_settings.set((JSTools.oSubset(flags, fields) as ps_props))
     if(flags['project-root-auto']) project_settings.set({'project-root': 'auto'})
-    const result = project_settings.writeToFile(projectSettingsYMLPath(flags['project-root']))
+    const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
     if(!result.success) return printResultState(result)
-    else this.printProjectSettings(project_settings, flags["project-root"])
+    else this.printProjectSettings(project_settings, project_root)
   }
 
 }

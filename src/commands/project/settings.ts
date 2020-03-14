@@ -18,9 +18,10 @@ export default class Settings extends ProjectSettingsCommand {
   {
     const {flags} = this.parse(Settings)
     this.augmentFlagsWithProjectSettings(flags, {"project-root":true})
-    const {result, project_settings} = loadProjectSettings(flags["project-root"])
+    const project_root: string = (flags["project-root"] as string)
+    const {result, project_settings} = loadProjectSettings(project_root)
     if(!result.success) return printResultState(result)
-    this.printProjectSettings(project_settings, flags['project-root'])
+    this.printProjectSettings(project_settings, project_root)
   }
 
 }

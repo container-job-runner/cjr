@@ -47,7 +47,7 @@ export default class Rsync extends RemoteCommand {
     ssh_shell.rsync(
       FileTools.addTrailingSeparator(local_stacks_dir),
       FileTools.addTrailingSeparator(remote_stacks_dir),
-      flags.direction,
+      (flags.direction as "push"|"pull"),
       rsync_flags
     )
   }

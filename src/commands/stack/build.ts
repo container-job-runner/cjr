@@ -25,7 +25,7 @@ export default class Build extends StackCommand {
     const builder = this.newBuilder(flags.explicit, flags.silent)
     stack_list.map((stack_name:string) => {
       const stack_path = this.fullStackPath(stack_name, flags["stacks-dir"])
-      printResultState(builder.build(stack_path, flags.configFiles || [], flags['no-cache']))
+      printResultState(builder.build(stack_path, flags['config-files'], flags['no-cache']))
     });
   }
 
