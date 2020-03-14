@@ -70,6 +70,9 @@
       "jupyter": {
         "description": "Start and stop Jupyter lab and Jupyter notebook."
       },
+      "project": {
+        "description": "View and manage configuration options for projects."
+      },
       "help": {
         "description": "Display help for cjr."
       }
