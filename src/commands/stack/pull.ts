@@ -28,7 +28,7 @@ export default class Pull extends StackCommand {
     if(FileTools.existsDir(stack_abs_path))
       result = shell.output('git pull', {}, [], {cwd: stack_abs_path})
     else
-      result = shell.output('git clone', {depth: "1"}, [args.name], {cwd: local_stacks_path})
+      result = shell.output('git clone', {depth: "1"}, [args.url], {cwd: local_stacks_path})
     printResultState(result);
   }
 
