@@ -648,7 +648,7 @@ export function addGenericLabels(configuration: StackConfiguration, hostRoot: st
 // -----------------------------------------------------------------------------
 export function prependXAuth(command: string, explicit: boolean = false)
 {
-  if(os.platform() != "linux") return ""
+  if(os.platform() != "linux") return command
   const shell = new ShellCommand(explicit, false)
   const shell_result = shell.output("xauth list $DISPLAY", {}, [], {}, "trim")
   if(shell_result.success) {
