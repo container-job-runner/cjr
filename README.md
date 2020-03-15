@@ -7,6 +7,15 @@ cjr
 
 cjr is a tool for running jobs in linux containers
 
+<!-- toc -->
+* [Introduction](#introduction)
+* [YML Configuration Format for Podman and Docker Stacks](#yml-configuration-format-for-podman-and-docker-stacks)
+* [YML Configuration Format for Project Directories](#yml-configuration-format-for-project-directories)
+* [CLI config settings](#cli-config-settings)
+* [Usage](#usage)
+* [Commands](#commands)
+<!-- tocstop -->
+
 # Introduction
 
 # YML Configuration Format for Podman and Docker Stacks
@@ -253,14 +262,6 @@ This would map
   cjr $ script.m  -> cjr $ matlab -nosplash -nodisplay -nojvm -nodesktop script.m
   cjr $ script.py -> cjr $ python script.py`
 
-<!-- toc -->
-* [Introduction](#introduction)
-* [YML Configuration Format for Podman and Docker Stacks](#yml-configuration-format-for-podman-and-docker-stacks)
-* [YML Configuration Format for Project Directories](#yml-configuration-format-for-project-directories)
-* [CLI config settings](#cli-config-settings)
-* [Usage](#usage)
-* [Commands](#commands)
-<!-- tocstop -->
 # Usage
 <!-- usage -->
 ```sh-session
