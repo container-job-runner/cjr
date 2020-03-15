@@ -171,9 +171,93 @@ files:
     download-include-from: "path/to/file"
 ```
 
+# YML Configuration Format for Project Directories
+
+Many cli parameters can be be set using environment variables. For example
+`export PROJECTROOT=$(pwd)
+export STACK=fedora
+export REMOTENAME=resource`
+These options can also be specified inside a project-settings.yml file that must be located in a hidden .cjr folder in the project root folder. The command `cjr project:init` can be used to create this file and `cjr project:set`, `cjr project:delete` can be used to modify it. Alternatively the file can be also be created and edited manually. The project-settings.yml file must adhere to the following format. Note that all fields are optional.
+
+```yaml
+project-root : "auto",
+stack": STRING,
+visible-stacks": ARRAY_OF_STRINGS,
+config-files": ARRAY_OF_STRINGS,
+stacks-dir": STRING,
+remote-name": STRING
+```
+
+Whenever cjr is called from inside of the project root that contains the .cjr/project-settings file it will automatically set certain flag values. Note that these automatically loaded values can all be overridden by manually specifying the flag during the cli call.
+
+### `project-root` (optional)
+
+If this option is specified then the field must be set to "auto". If the CJR setting *auto_project_root* is set to true using
+`cjr config:set auto_project_root true`
+then the cjr will automatically pick up the project-root if it is called from anywhere within the project root folder.
+
+### `stack` (optional)
+
+If this option is specified then the cjr will automatically set --stack flag to this value of it is called from within the project root folder.
+
+### `visible-stacks` (optional)
+
+If this option is specified then the cjr:job commands will only show and affect stacks from the visible-stacks array when cjr is called from within the project root folder.
+
+### `config-files` (optional)
+
+Absolute or relative paths to overriding configuration files that should be automatically loaded for any stacks when cjr is called from within the project root folder.
+
+### `stacks-dir` (optional)
+
+If this option is specified then the default stacks directory (`cjr config:get stacks_dir`) will be overridden whenever cjr is called from within the project root folder.
+
+### `remote-name` (optional)
+
+If this option is specified then cjr will automatically set the --remote-name flag to this this remote resource when called from within the project root folder.
+
+# CLI config settings
+
+We describe the settings that can be viewed and modified using `cjr config:list`, `cjr config:set` and `cjr config:get`  
+
+- **auto_project_root**: *boolean* - if true then cjr will automatically look for .cjr/project-settings directories with project-root: "auto" and set the --project-root flag to this directory.
+- **interactive**: *boolean* - if true then certain cli commands will prompt the user with interactive menus.
+- **stacks_dir**: *string* - specifid the path to a folder that contains cjr stacks.
+- **alway_print_job_id**: *boolean* - if true cjr $ command will always print the user id even if --async flag is not selected.
+- **autocopy_sync_job**: *boolean* - if true then cjr will automatically run job:copy at the end of all synchronous jobs.
+- **run_shortcuts_file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below .
+- **build_cmd**: *"podman"|"docker"* - container environment used to build images.
+- **run_cmd**: *"podman"|"docker"* - container environment used to run images.
+- **image_tag**: *string* tag that cli uses when building all its images.
+- **job_list_fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message". For example:
+`cjr config:set job_list_fields 'id, stackName, command, statusString'`
+- **container_default_shell**: *string* default shell that should be started for job:shell command
+- **selinux**: *boolean* - if true then the :Z option will be applied to all bind mounts
+- **jupyter_command**: *string* - command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook.
+
+The run_shortcuts_file option allows you to define custom shortcuts for the `cjr $` command when called it's called with a single argument. For example you can map `cjr $ script.sh` to `cjr $ bash script.sh`. The yml file must correspond to an object with string keys and values. For example
+```yaml
+  KEY1: VALUE1
+  KEY2: VALUE2
+  KEY3: VALUE3
+```
+The key will corresponds to a regular expression, and the value should contain the letters $ARG. If the regular expression matches the user argument, then the $ARG will be replaced with the user arg. An example file could be
+```yaml
+"\\.sh$": bash $ARG
+"\\.m$": matlab -nosplash -nodisplay -nojvm -nodesktop $ARG
+"\\.py$": python $ARG
+```
+This would map
+
+  `cjr $ script.sh -> cjr $ bash script.sh
+  cjr $ script.m  -> cjr $ matlab -nosplash -nodisplay -nojvm -nodesktop script.m
+  cjr $ script.py -> cjr $ python script.py`
+
 <!-- toc -->
 * [Introduction](#introduction)
 * [YML Configuration Format for Podman and Docker Stacks](#yml-configuration-format-for-podman-and-docker-stacks)
+* [YML Configuration Format for Project Directories](#yml-configuration-format-for-project-directories)
+* [CLI config settings](#cli-config-settings)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
