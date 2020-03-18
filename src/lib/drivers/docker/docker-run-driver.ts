@@ -239,7 +239,6 @@ export class DockerRunDriver extends RunDriver
       this.addRemovalFlags(flags, run_object)
       this.addInteractiveFlags(flags, run_object)
       this.addWorkingDirFlags(flags, run_object)
-      this.addDetachedFlags(flags, run_object)
       this.addNameFlags(flags, run_object)
       this.addPortFlags(flags, run_object)
       this.addENVFlags(flags, run_object)
