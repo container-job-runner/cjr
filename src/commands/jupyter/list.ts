@@ -10,7 +10,6 @@ export default class List extends StackCommand {
   static args = []
   static flags = {
     stack: flags.string({env: 'STACK'}),
-    hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
@@ -22,15 +21,16 @@ export default class List extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     const stack_path = this.fullStackPath(flags.stack as string)
     const image_name = runner.imageName(stack_path)
-    const jupiter_id = jobNameLabeltoID(runner, JUPYTER_JOB_NAME, stack_path, "running");
+    const jupyter_id = jobNameLabeltoID(runner, JUPYTER_JOB_NAME, stack_path, "running");
 
-    if(jupiter_id === false)
+
+    if(jupyter_id === false)
     {
-      printResultState(new ValidatedOutput(false).pushError(`Jupiter is not running.`))
+      printResultState(new ValidatedOutput(false).pushError(`Jupyter is not running.`))
     }
     else
     {
-      runner.jobExec(jupiter_id, ['jupyter', 'notebook', 'list'])
+      runner.jobExec(jupyter_id, ['jupyter', 'notebook', 'list'], {}, "print")
     }
 
   }
