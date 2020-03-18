@@ -1,4 +1,5 @@
 import * as path from 'path'
+import * as fs from 'fs-extra'
 import {flags} from '@oclif/command'
 import {StackCommand} from '../../lib/commands/stack-command'
 import {ShellCommand} from '../../lib/shell-command'
@@ -23,6 +24,7 @@ export default class Pull extends StackCommand {
     var result: ValidatedOutput
     // -- get stacks directory and name of git repo ----------------------------
     const local_stacks_path = flags["stacks-dir"] || this.settings.get("stacks_dir")
+    fs.ensureDirSync(local_stacks_path)
     const repo_name = args.url.split("/").pop().replace(/.git$/, "")
     const stack_abs_path = path.join(local_stacks_path, repo_name)
     if(FileTools.existsDir(stack_abs_path))

@@ -1,4 +1,4 @@
-import * as fs from 'fs'
+import * as fs from 'fs-extra'
 import * as path from 'path'
 import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
@@ -18,6 +18,7 @@ export default class List extends StackCommand {
     const {argv, flags} = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": false})
     const stacks_path = flags["stacks-dir"] || this.settings.get("stacks_dir")
+    fs.ensureDirSync(stacks_path)
     console.log(chalk`{bold PATH}    ${stacks_path}`)
     process.stdout.write(chalk`{bold STACKS}  `)
     fs.readdirSync(stacks_path)
