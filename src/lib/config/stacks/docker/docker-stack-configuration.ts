@@ -17,7 +17,7 @@ type Dictionary = {[key: string]: any}
 export class DockerStackConfiguration extends StackConfiguration
 {
   protected yml_file = new YMLFile("", false, dsc_vo_validator)
-  protected valid_flag_fieldnames = ["network"] // only these fields will be read in from config.flags
+  protected valid_flag_fieldnames = ["network", "chownvolumes"] // only these fields will be read in from config.flags
   protected working_directory: string = ""
   protected command: string = ""
   protected synchronous: boolean = true
@@ -145,6 +145,10 @@ export class DockerStackConfiguration extends StackConfiguration
     }
   }
 
+  getFlags() {
+    return JSTools.oSubset(this.raw_object?.flags || {}, this.valid_flag_fieldnames)
+  }
+
   // output objects for run-drivers or build-drivers
 
   runObject()
@@ -154,7 +158,7 @@ export class DockerStackConfiguration extends StackConfiguration
     if(this.raw_object?.ports) run_object.ports = this.raw_object.ports
     if(this.raw_object?.environment) run_object.environment = this.raw_object.environment
     if(this.raw_object?.resources) run_object.resources = this.raw_object.resources
-    if(this.raw_object?.flags) run_object.flags = this.raw_object.flags
+    if(this.raw_object?.flags) run_object.flags = this.getFlags()
     if(this.raw_object?.labels) run_object.labels = this.raw_object.labels
     if(this.working_directory) run_object.wd = this.working_directory
     run_object.command = this.command

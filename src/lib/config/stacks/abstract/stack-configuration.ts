@@ -68,6 +68,7 @@ export abstract class StackConfiguration
   abstract getContainerRoot() : string;
   abstract getRsyncUploadSettings(): {include: string, exclude: string}
   abstract getRsyncDownloadSettings(): {include: string, exclude: string}
+  abstract getFlags(): Dictionary;
   // output objects for run-drivers or build-drivers
   abstract runObject() : Dictionary;
   abstract buildObject() : Dictionary;
