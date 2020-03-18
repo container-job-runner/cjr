@@ -33,9 +33,10 @@ export abstract class StackCommand extends Command
   {
     if(!stack_name) return ""
     if(!stacks_path) stacks_path = this.settings.get("stacks_dir");
+    if(fs.existsSync(stack_name)) return path.resolve(stack_name)
     const local_stack_path = path.join(stacks_path, stack_name)
-    if(fs.existsSync(stack_name) || !fs.existsSync(local_stack_path)) return stack_name
-    return local_stack_path
+    if(fs.existsSync(local_stack_path)) return local_stack_path
+    return stack_name
   }
 
   augmentFlagsWithProjectSettings(flags:Dictionary, flag_props: {[key in ps_fields]+?: boolean}) // overload parse command to allow for auto setting of stack flag
