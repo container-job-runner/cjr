@@ -17,7 +17,7 @@ type Dictionary = {[key: string]: any}
 export class DockerStackConfiguration extends StackConfiguration
 {
   protected yml_file = new YMLFile("", false, dsc_vo_validator)
-  protected valid_flag_fieldnames = ["network", "chownvolumes"] // only these fields will be read in from config.flags
+  protected valid_flag_fieldnames = ["network", "chown-file-volume"] // only these fields will be read in from config.flags
   protected working_directory: string = ""
   protected command: string = ""
   protected synchronous: boolean = true
