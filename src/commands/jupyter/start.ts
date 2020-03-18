@@ -1,9 +1,11 @@
 import {flags} from '@oclif/command'
 import {JUPYTER_JOB_NAME} from '../../lib/constants'
+import {JSTools} from '../../lib/js-tools'
 import {StackCommand} from '../../lib/commands/stack-command'
+import {ShellCommand} from '../../lib/shell-command'
 import {ValidatedOutput} from '../../lib/validated-output'
 import {jobNameLabeltoID, jobStart, ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../../lib/functions/run-functions"
-import {printResultState} from '../../lib/functions/misc-functions'
+import {printResultState, slowstartJupyterApp} from '../../lib/functions/misc-functions'
 
 export default class Start extends StackCommand {
   static description = 'Start Jupyter server for a stack.'
@@ -39,29 +41,38 @@ export default class Start extends StackCommand {
     // -- check jupyter container is already running ---------------------------
     var result: ValidatedOutput
     const jupiter_id = jobNameLabeltoID(runtime_options.runner, JUPYTER_JOB_NAME, stack_path, "running");
-    if(jupiter_id !== false) {
-      result = new ValidatedOutput(false, [], [`Jupiter is already running.\n   ID: ${jupiter_id}`])
+    if(jupiter_id !== false)
+      return printResultState(
+        new ValidatedOutput(false).pushError(`Jupiter is already running.\n   ID: ${jupiter_id}`)
+      )
+
+    // -- set job options ------------------------------------------------------
+    const jupyter_command = `${this.settings.get('jupyter_command')} --port=${flags.port}${(argv.length > 0) ? " " : ""}${argv.join(" ")}`
+    var job_options:JobOptions = {
+      "stack-path":   stack_path,
+      "config-files": flags["config-files"],
+      "build-mode":   "no-rebuild",
+      "command":      jupyter_command,
+      "host-root":    flags["project-root"] || "",
+      "cwd":          process.cwd(),
+      "file-access":  "bind",
+      "synchronous":  flags.sync,
+      "ports":        [{hostPort: flags.port, containerPort: flags.port}],
+      "labels":       [{key:"name", "value": JUPYTER_JOB_NAME}],
+      "remove":       false
     }
-    else {
-      // -- set job options ------------------------------------------------------
-      const jupyter_command = `${this.settings.get('jupyter_command')} --port=${flags.port}${(argv.length > 0) ? " " : ""}${argv.join(" ")}`
-      var job_options:JobOptions = {
-        "stack-path":   stack_path,
-        "config-files": flags["config-files"],
-        "build-mode":   "no-rebuild",
-        "command":      jupyter_command,
-        "host-root":    flags["project-root"] || "",
-        "cwd":          process.cwd(),
-        "file-access":  "bind",
-        "synchronous":  flags.sync,
-        "ports":        [{hostPort: flags.port, containerPort: flags.port}],
-        "labels":       [{key:"name", "value": JUPYTER_JOB_NAME}],
-        "remove":       false
-      }
-      // -- start job and extract job id -----------------------------------------
-      var result = jobStart(runtime_options, job_options, output_options)
-    }
-    printResultState(result)
+    // -- start job and extract job id -----------------------------------------
+    var result = jobStart(runtime_options, job_options, output_options)
+    if(!result.success) return printResultState(result)
+    const job_id = result.data
+    // -- start jupyter app if path is defined ---------------------------------
+    if(this.settings.get('jupyter_app'))
+      await slowstartJupyterApp(
+        runtime_options.runner,
+        new ShellCommand(flags.explicit, false),
+        job_id,
+        this.settings.get('jupyter_app')
+      );
   }
 
 }
