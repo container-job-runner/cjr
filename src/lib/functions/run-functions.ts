@@ -74,7 +74,8 @@ export type RsyncOptions = {
   direction: "to-volume"|"to-host",                                             // specifies direction of sync
   mode: "update"|"overwrite"|"mirror",                                          // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
   verbose?: boolean,                                                            // if true rsync will by run with -v flag
-  files?: {include: string, exclude: string}                                    //rsync include-from and rsync exclude-from
+  files?: {include: string, exclude: string},                                   //rsync include-from and rsync exclude-from
+  chown?: string                                                                //string that specifies the username or id to use with command chown
 }
 
 // -- used by function bundleProject and bundleProjectSettings
@@ -399,11 +400,11 @@ export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: st
 // -----------------------------------------------------------------------------
 export function createAndMountFileVolume(container_runtime: ContainerRuntime, configuration: StackConfiguration, hostRoot: string, verbose: boolean=false)
 {
-  // -- create volume ----------------------------------------------------
+  // -- create volume ----------------------------------------------------------
   var result = container_runtime.runner.volumeCreate({});
   if(!result.success) return result
   const volume_id = result.data
-  // -- sync to volume ---------------------------------------------------
+  // -- sync to volume ---------------------------------------------------------
   const copy_options: RsyncOptions = {
     "host-path": hostRoot,
     volume: volume_id,
@@ -412,9 +413,16 @@ export function createAndMountFileVolume(container_runtime: ContainerRuntime, co
     verbose: verbose,
     files: configuration.getRsyncUploadSettings()
   }
+  // -- check if runtime is docker and chownvolume flags is active -------------
+  if( (configuration.getFlags()?.['chown-file-volume'] === true) )  {
+      // -- get user id & set chown property -----------------------------------
+      const id_result = (new ShellCommand(false, false)).output('id', {u:{}}, [], {}, 'trim')
+      if(id_result.success && id_result.data) copy_options.chown = id_result.data
+  }
+
   result = syncHostDirAndVolume(container_runtime, copy_options)
   if(!result.success) return result
-  // -- mount volume to job ----------------------------------------------
+  // -- mount volume to job ----------------------------------------------------
   mountFileVolume(configuration, hostRoot, volume_id)
   return new ValidatedOutput(true)
 }
@@ -444,16 +452,18 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
 {
   if(!copy_options["host-path"]) return new ValidatedOutput(true)
   if(!copy_options["volume"]) return new ValidatedOutput(true)
+  // -- ensure rsync container is built ----------------------------------------
+  const result = container_runtime.builder.build(rsync_constants.stack_path, [])
+  if(!result.success) return result
   // -- create configuration for rsync job -------------------------------------
   const rsync_configuration = rsyncJobConfiguration(container_runtime.runner, copy_options)
-  // -- mount any rsync include or exclude files -------------------------------
+  // -- set rsync flags --------------------------------------------------------
   const rsync_flags:Dictionary = {a: {}}
-  addrsyncIncludeExclude(
+  addrsyncIncludeExclude( // -- mount any rsync include or exclude files -------
       rsync_configuration,
       rsync_flags,
       copy_options.files || {include: "", exclude: ""}
   )
-  // -- run rsync job ----------------------------------------------------------
   switch(copy_options.mode)
   {
     case "update":
@@ -466,15 +476,19 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
       break
   }
   if(copy_options?.verbose) rsync_flags.v = {}
-  const manual_copy_command = 'sh'
-  const rsync_command = rsyncCommandString(
+  // -- set rsync command ------------------------------------------------------
+  const rsync_base_command = rsyncCommandString(
     rsync_constants.source_dir,
     rsync_constants.dest_dir,
     rsync_flags
   )
-  rsync_configuration.setCommand((manual_copy) ? manual_copy_command : rsync_command)
-  const result = container_runtime.builder.build(rsync_constants.stack_path, [])
-  if(!result.success) return result
+  if(manual_copy)
+    rsync_configuration.setCommand('sh')
+  else if(copy_options['chown'])
+    rsync_configuration.setCommand(`${rsync_base_command} && chown -R ${copy_options['chown']}:${copy_options['chown']} ${rsync_constants.dest_dir}`)
+  else
+    rsync_configuration.setCommand(rsync_base_command)
+  // -- start rsync job --------------------------------------------------------
   return container_runtime.runner.jobStart(
     rsync_constants.stack_path,
     rsync_configuration,
