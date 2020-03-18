@@ -117,4 +117,9 @@ export class JSTools
     return lines
   }
 
+  static async sleep(milliseconds:number)
+  {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
+  }
+
 }
