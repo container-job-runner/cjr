@@ -67,6 +67,7 @@ export default class Run extends StackCommand {
     // -- start job and extract job id -----------------------------------------
     var result = jobStart(c_runtime, job_options, output_options)
     if(!result.success) return printResultState(result)
+    // -- print id -------------------------------------------------------------
     const job_id = result.data
     if(job_id !== "" && flags.async && !flags.silent)
       console.log(job_id)
