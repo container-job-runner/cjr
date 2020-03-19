@@ -453,8 +453,10 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
   if(!copy_options["host-path"]) return new ValidatedOutput(true)
   if(!copy_options["volume"]) return new ValidatedOutput(true)
   // -- ensure rsync container is built ----------------------------------------
-  const result = container_runtime.builder.build(rsync_constants.stack_path, [])
-  if(!result.success) return result
+  if(!container_runtime.builder.isBuilt(rsync_constants.stack_path)) {
+    const result = container_runtime.builder.build(rsync_constants.stack_path, [])
+    if(!result.success) return result
+  }
   // -- create configuration for rsync job -------------------------------------
   const rsync_configuration = rsyncJobConfiguration(container_runtime.runner, copy_options)
   // -- set rsync flags --------------------------------------------------------
