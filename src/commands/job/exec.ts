@@ -16,6 +16,7 @@ export default class Shell extends StackCommand {
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
     verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
+    silent: flags.boolean({default: false, description: 'no output is printed'}),
     explicit: flags.boolean({default: false}),
     "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -58,6 +59,14 @@ export default class Shell extends StackCommand {
       silent:   false,
       explicit: flags.explicit
     }
-    printResultState(jobExec(c_runtime, id_str, job_options, output_options))
+    const result = jobExec(c_runtime, id_str, job_options, output_options)
+    if(!result.success) printResultState(result)
+    // -- print id -------------------------------------------------------------
+    const job_id = result.data
+    if(job_id !== "" && flags.async && !flags.silent)
+      console.log(job_id)
+    if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway_print_job_id'))
+      console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
+
   }
 }
