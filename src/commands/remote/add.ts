@@ -29,7 +29,6 @@ export default class Add extends RemoteCommand {
       return printResultState(
         new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.NAME_EXISTS(name)])
       )
-    return
     // -- create new entry -----------------------------------------------------
     var new_entry:Resource = {
       type: (flags.type as 'cjr'),
