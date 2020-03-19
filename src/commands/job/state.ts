@@ -21,7 +21,7 @@ export default class State extends StackCommand {
     const runner = this.newRunner(flags.explicit)
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     const result = matchingJobInfo(runner, [args.id], stack_paths)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return console.log('non-existent')
     const job_info = result.data
     console.log(job_info[0].status)
   }
