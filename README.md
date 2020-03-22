@@ -229,19 +229,19 @@ If this option is specified then cjr will automatically set the --remote-name fl
 
 We describe the settings that can be viewed and modified using `cjr config:list`, `cjr config:set` and `cjr config:get`  
 
-- **auto_project_root**: *boolean* - if true then cjr will automatically look for .cjr/project-settings directories with project-root: "auto" and set the --project-root flag to this directory.
+- **auto_project_root**: *boolean* - if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory.
 - **interactive**: *boolean* - if true then certain cli commands will prompt the user with interactive menus.
-- **stacks_dir**: *string* - specifid the path to a folder that contains cjr stacks.
-- **alway_print_job_id**: *boolean* - if true cjr $ command will always print the user id even if --async flag is not selected.
-- **autocopy_sync_job**: *boolean* - if true then cjr will automatically run job:copy at the end of all synchronous jobs.
-- **run_shortcuts_file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below .
+- **stacks_dir**: *string* - the default path to a folder that contains cjr stacks.
+- **alway_print_job_id**: *boolean* - if true, then cjr $ command will always print the user id even if --async flag is not selected.
+- **autocopy_sync_job**: *boolean* - if true, then cjr will automatically run job:copy at the end of all synchronous jobs.
+- **run_shortcuts_file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below.
 - **build_cmd**: *"podman"|"docker"* - container environment used to build images.
 - **run_cmd**: *"podman"|"docker"* - container environment used to run images.
 - **image_tag**: *string* tag that cli uses when building all its images.
 - **job_list_fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message". For example:
 `cjr config:set job_list_fields 'id, stackName, command, statusString'`
-- **container_default_shell**: *string* default shell that should be started for job:shell command
-- **selinux**: *boolean* - if true then the :Z option will be applied to all bind mounts
+- **container_default_shell**: *string* default shell that should be started for job:shell commands (e.g. sh, bash, zsh).
+- **selinux**: *boolean* - if true then the :Z option will be applied to all bind mounts.
 - **jupyter_command**: *string* - command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook.
 
 The run_shortcuts_file option allows you to define custom shortcuts for the `cjr $` command when called it's called with a single argument. For example you can map `cjr $ script.sh` to `cjr $ bash script.sh`. The yml file must correspond to an object with string keys and values. For example
