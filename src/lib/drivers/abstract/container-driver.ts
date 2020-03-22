@@ -20,11 +20,11 @@ export abstract class ContainerDriver
     return path.basename(stack_path).split(':').shift() || ""
   }
 
-  imageName(stack_path: string)
+  imageName(stack_path: string, prefix: string="")
   {
     if(path.isAbsolute(stack_path)) { // default behavior for local files
       const path_hash = crypto.createHash('md5').update(path.dirname(stack_path)).digest('hex')
-      return `${path_hash}-${this.stackName(stack_path)}:${this.tag}`
+      return `${(prefix) ? `${prefix}-` : ''}${path_hash}-${this.stackName(stack_path)}:${this.tag}`
     }
     return stack_path // default behavior for remote images
   }
