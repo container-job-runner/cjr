@@ -1,6 +1,7 @@
 import {BuildDriver} from '../drivers/abstract/build-driver'
 import {ValidatedOutput} from '../validated-output'
 import {ErrorStrings} from '../error-strings'
+import {StackConfiguration} from '../config/stacks/abstract/stack-configuration'
 
 // -----------------------------------------------------------------------------
 // BUILDANDLOAD Calls function onSuccess if stack is build and successuffly
@@ -18,32 +19,50 @@ import {ErrorStrings} from '../error-strings'
 // -----------------------------------------------------------------------------
 export function buildAndLoad(builder: BuildDriver, build_mode: "no-rebuild"|"build"|"build-nocache", stack_path: string, overloaded_config_paths: Array<string>)
 {
-  var result = new ValidatedOutput(false, [], ['Internal Error - Invalid Build Mode'])
+  var result = builder.loadConfiguration(stack_path, overloaded_config_paths)
+  if(!result.success) return result
+  const configuration = result.data
+
   if(build_mode === "no-rebuild")
-    result = buildIfNonExistant(builder, stack_path, overloaded_config_paths)
+    result = buildIfNonExistant(builder, stack_path, configuration)
   else if(build_mode == "build")
-    result = builder.build(stack_path, overloaded_config_paths)
+    result = builder.build(stack_path, configuration)
   else if(build_mode == "build-nocache")
-    result = builder.build(stack_path, overloaded_config_paths, true)
+    result = builder.build(stack_path, configuration, true)
+  else
+    return new ValidatedOutput(false).pushError('Internal Error - Invalid Build Mode')
 
   if(!result.success) return result
-  return builder.loadConfiguration(stack_path, overloaded_config_paths)
+  return new ValidatedOutput(true, configuration)
 }
 
-export function buildIfNonExistant(builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>=[])
+export function buildIfNonExistant(builder: BuildDriver, stack_path: string, configuration: StackConfiguration)
 {
-  if(builder.isBuilt(stack_path))
+  if(builder.isBuilt(stack_path, configuration))
   {
     return new ValidatedOutput(true);
   }
   else
   {
-    const result = builder.build(stack_path, overloaded_config_paths)
+    const result = builder.build(stack_path, configuration)
     if(result.success == true)
     {
-        result.success = builder.isBuilt(stack_path)
+        result.success = builder.isBuilt(stack_path, configuration)
         if(result.success == false) result.pushError(ErrorStrings.BUILD.FAILED_AUTOBUILD)
     }
     return result;
+  }
+}
+
+export function removeImage(builder: BuildDriver, stack_path: string, all_configurations: boolean, overloaded_config_paths: Array<string>=[])
+{
+  if(all_configurations === true)
+    return builder.removeImage(stack_path)
+  else
+  {
+    var result = builder.loadConfiguration(stack_path, overloaded_config_paths)
+    if(!result.success) return result
+    const configuration = result.data
+    return builder.removeImage(stack_path, configuration)
   }
 }
