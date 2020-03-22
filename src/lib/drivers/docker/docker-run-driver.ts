@@ -52,7 +52,11 @@ export class DockerRunDriver extends RunDriver
     var result = this.run_schema_validator(job_options)
     if(!result.success) return result.pushError(this.ERRORSTRINGS.INVALID_JOB)
     // -- create container -----------------------------------------------------
-    result = this.create(stack_path, configuration.getCommand(), job_options)
+    result = this.create(
+      this.imageName(stack_path, configuration.buildHash()),
+      configuration.getCommand(),
+      job_options
+    )
     if(!result.success) return result
     const container_id = result.data;
     if(callbacks?.postCreate) callbacks.postCreate(container_id)
@@ -67,10 +71,10 @@ export class DockerRunDriver extends RunDriver
     return result
   }
 
-  protected create(stack_path: string, command_string: string, run_options={})
+  protected create(image_name: string, command_string: string, run_options={})
   {
     const command = `${this.base_command} create`;
-    const args  = [this.imageName(stack_path), command_string]
+    const args  = [image_name, command_string]
     const flags = this.runFlags(run_options)
     var result = this.shell.output(command, flags, args, {}, "trim")
     if(result.data === "") return new ValidatedOutput(false, [], [this.ERRORSTRINGS.EMPTY_CREATE_ID])
@@ -225,9 +229,9 @@ export class DockerRunDriver extends RunDriver
     return this.shell.output(command, flags, args, {}, "trim")
   }
 
-  imageName(stack_path: string)
+  imageName(stack_path: string, prefix: string="")
   {
-    return super.imageName(stack_path).toLowerCase() // Docker only accepts lowercase image names
+    return super.imageName(stack_path, prefix).toLowerCase() // Docker only accepts lowercase image names
   }
 
   protected runFlags(run_object: Dictionary) // TODO: CONSOLIDATE ALL FUNCTIONS THAT DID NOT REQUIRE OVERLOADING
