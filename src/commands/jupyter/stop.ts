@@ -10,7 +10,7 @@ export default class Stop extends StackCommand {
   static args = []
   static flags = {
     stack: flags.string({env: 'STACK'}),
-    hostRoot: flags.string({env: 'HOSTROOT'}),
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
@@ -18,10 +18,9 @@ export default class Stop extends StackCommand {
   async run()
   {
     const {argv, flags} = this.parse(Stop)
-    this.augmentFlagsWithProjectSettings(flags, {stack:true})
+    this.augmentFlagsWithProjectSettings(flags, {stack:true, "stacks-dir": false})
     const runner  = this.newRunner(flags.explicit)
-    const stack_path = this.fullStackPath(flags.stack as string)
-    const image_name = runner.imageName(stack_path)
+    const stack_path = this.fullStackPath((flags.stack as string), flags["stacks-dir"] || "")
     const jupyter_id = jobNameLabeltoID(runner, JUPYTER_JOB_NAME, stack_path, "running");
 
     if(jupyter_id === false)
