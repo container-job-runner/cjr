@@ -49,6 +49,8 @@ export abstract class StackConfiguration
     return this.yml_file.validatedWrite(file_path, this.raw_object)
   }
 
+  abstract buildHash(): string;  // unique id to identify configuration for building
+  abstract runHash(): string;  // unique id to identify configuration for running
   // interactive components that may be called by CLI to modify existing configuration
   abstract setCommand(value: string): void;
   abstract setWorkingDir(value: string): void;

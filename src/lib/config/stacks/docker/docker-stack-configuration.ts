@@ -1,3 +1,4 @@
+import * as crypto from 'crypto'
 import * as fs from 'fs'
 import * as path from 'path'
 import {ValidatedOutput} from '../../../validated-output'
@@ -147,6 +148,16 @@ export class DockerStackConfiguration extends StackConfiguration
 
   getFlags() {
     return JSTools.oSubset(this.raw_object?.flags || {}, this.valid_flag_fieldnames)
+  }
+
+  buildHash() { // hash used to uniquely configuration for building
+    return crypto.createHash('md5')
+      .update(JSON.stringify(this.buildObject())).digest('hex').substring(0,5)
+  }
+
+  runHash() { // hash used to uniquely configuration for running
+    return crypto.createHash('md5')
+      .update(JSON.stringify(this.runObject())).digest('hex').substring(0,5)
   }
 
   // output objects for run-drivers or build-drivers
