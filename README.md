@@ -269,7 +269,7 @@ $ npm install -g cjr
 $ cjr COMMAND
 running command...
 $ cjr (-v|--version|version)
-cjr/0.2.0 linux-x64 node-v12.13.1
+cjr/0.2.0 linux-x64 node-v12.16.1
 $ cjr --help [COMMAND]
 USAGE
   $ cjr COMMAND
