@@ -352,6 +352,10 @@ export class DockerRunDriver extends RunDriver
     if(run_object?.flags?.network) { // used for sharing DISPLAY variable
       flags["network"] = run_object.flags.network
     }
+    if(run_object?.flags?.['mac-address'])
+    {
+      flags["mac-address"] = run_object?.flags?.['mac-address']
+    }
   }
 
   protected addMountFlags(flags: Dictionary, run_object: Dictionary)
