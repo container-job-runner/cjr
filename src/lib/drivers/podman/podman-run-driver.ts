@@ -83,6 +83,14 @@ export class PodmanRunDriver extends DockerRunDriver
     if(run_object?.flags?.["security-opt"]) { // used for binding X11 directory
       flags["security-opt"] = run_object.flags["security-opt"]
     }
+    if(run_object?.flags?.['mac-address'])
+    {
+      flags["mac-address"] = run_object?.flags?.['mac-address']
+    }
+    if(run_object?.flags?.['net'])
+    {
+      flags["net"] = run_object?.flags?.['net']
+    }
     return flags
   }
 
