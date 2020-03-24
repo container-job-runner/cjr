@@ -363,14 +363,18 @@ export class DockerRunDriver extends RunDriver
     if(run_object?.mounts?.length > 0)
     {
       // -- standard mounts use --mount flag -----------------------------------
-      const standard_mounts = (this.selinux) ? run_object.mounts.filter((mount:Dictionary) => mount.type != "bind") : run_object.mounts
+      const standard_mounts = (this.selinux) ?
+        run_object.mounts.filter( (mount:Dictionary) => ((mount.type != "bind") || (mount.type == "bind" && mount?.selinux === false)) ) :
+        run_object.mounts.filter( (mount:Dictionary) => ((mount.type != "bind") || (mount.type == "bind" && mount?.selinux !== true)) ) ;
       if (standard_mounts.length > 0)
         flags["mount"] = {
           escape: false,
           value: standard_mounts.map(this.mountObjectToFlagStr)
         }
       // -- selinux mounts require --volume flag -------------------------------
-      const selinux_mounts  = (this.selinux) ? run_object.mounts.filter((mount:Dictionary) => mount.type == "bind") : []
+      const selinux_mounts  = (this.selinux) ?
+        run_object.mounts.filter( (mount:Dictionary) => (mount.type == "bind" && mount?.selinux !== false) ) :
+        run_object.mounts.filter( (mount:Dictionary) => (mount.type == "bind" && mount?.selinux === true)  ) ;
       if(selinux_mounts.length > 0)
         flags["volume"] = {
           escape: false,

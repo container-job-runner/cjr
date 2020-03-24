@@ -148,6 +148,9 @@ export const docker_stack_configuration_schema = {
         },
         "readonly": {
           "type": "boolean"
+        },
+        "selinux": {
+          "type": "boolean"
         }
       },
       "required": [
