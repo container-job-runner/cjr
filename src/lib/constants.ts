@@ -21,6 +21,7 @@ export const cli_bundle_dir_name  = "bundle"  // temporarily stores data between
 // name of optional project settings file that is loaded relative to project project_root
 export const project_settings_folder = `.${cli_name}`
 export const project_settings_file   = "project-settings.yml"
+export const projectSettingsDirPath  = (project_root: string) => path.join(project_root, project_settings_folder)
 export const projectSettingsYMLPath  = (project_root: string) => path.join(project_root, project_settings_folder, project_settings_file)
 
 // name of optional id file in settings folder

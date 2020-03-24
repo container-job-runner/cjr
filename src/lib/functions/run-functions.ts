@@ -13,7 +13,7 @@ import {YMLFile} from '../fileio/yml-file'
 import {ValidatedOutput} from '../validated-output'
 import {printResultState} from './misc-functions'
 import {ShellCommand} from '../shell-command'
-import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, project_settings_folder, projectSettingsYMLPath, job_info_label, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths} from '../constants'
+import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, job_info_label, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths} from '../constants'
 import {buildAndLoad} from '../functions/build-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
 import {PodmanStackConfiguration} from '../config/stacks/podman/podman-stack-configuration'
@@ -235,7 +235,7 @@ export function jobExec(container_runtime:ContainerRuntime, job_id: string, shel
 
 export function bundleProject(container_runtime: ContainerRuntime, options: ProjectBundleOptions)
 {
-  const settings_dir = path.join(options["bundle-path"], project_settings_folder)   // directory that stores project settings yml & stack
+  const settings_dir = projectSettingsDirPath(options["bundle-path"])   // directory that stores project settings yml & stack
   // -- ensure directory structure ---------------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.COPYING_FILES, {verbose: options?.verbose || false, silent: false, explicit: false})
   fs.copySync(options["project-root"], options["bundle-path"])
@@ -759,7 +759,7 @@ return response.id;
 // == PROJECT ID FUNCTIONS =====================================================
 
 // -----------------------------------------------------------------------------
-// ENSUREPROJECTID: ensures that there is a file in the project_settings_folder
+// ENSUREPROJECTID: ensures that there is a file in the project settings folder
 // that contains the project id.
 // -- Parameters ---------------------------------------------------------------
 // hostRoot  - project host root
@@ -770,8 +770,7 @@ export function ensureProjectId(hostRoot: string)
   if(!hostRoot) return new ValidatedOutput(false)
   var result = getProjectId(hostRoot)
   if(result.success) return result
-  const proj_settings_abspath = path.join(hostRoot, project_settings_folder)
-  const file = new JSONFile(proj_settings_abspath, true)
+  const file = new JSONFile(projectSettingsDirPath(hostRoot), true)
   const id = `${path.basename(hostRoot)}-${new Date().getTime()}`
   file.write(project_idfile, id)
   return getProjectId(hostRoot)
@@ -786,7 +785,7 @@ export function ensureProjectId(hostRoot: string)
 export function getProjectId(hostRoot: string)
 {
   if(!hostRoot) return new ValidatedOutput(false)
-  const proj_settings_abspath = path.join(hostRoot, project_settings_folder)
+  const proj_settings_abspath = projectSettingsDirPath(hostRoot)
   const file = new JSONFile(proj_settings_abspath, false)
   const result = file.read(project_idfile)
   if(result.success && result.data == "") // -- check if data is empty -----
