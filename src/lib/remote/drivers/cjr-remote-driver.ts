@@ -69,7 +69,7 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- execute ssh command --------------------------------------------------
     return this.ssh_shell.exec(
       'cjr job:attach',
-      this.cliFlagsToShellFlags(flags, this.transferrable_flags['job:list']),
+      this.cliFlagsToShellFlags(flags, this.transferrable_flags['job:attach']),
       (args.id) ? [args.id] : [],
       this.interactive_ssh_options
     )
