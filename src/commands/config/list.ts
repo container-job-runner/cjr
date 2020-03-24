@@ -21,9 +21,9 @@ export default class List extends StackCommand {
     else // -- standard output -------------------------------------------------
     {
       this.log(chalk`\n-- {bold CLI Settings} -----------------------------\n`)
-      for(var key in raw_data) {
-        console.log(chalk`   {italic ${key}}: {green ${raw_data[key]}}`)
-      }
+      Object.keys(raw_data).sort().map((key:string) => {
+          console.log(chalk`   {italic ${key}}: {green ${raw_data[key]}}`)
+      })
       this.log(chalk`\n-- {bold CLI Data Path:} contains temporary data ----\n\n   ${this.config.dataDir}`)
       this.log(chalk`\n-- {bold CLI Config Path:} contains settings files -----\n\n   ${this.config.configDir}`, '\n')
     }
