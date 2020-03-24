@@ -12,7 +12,8 @@ export default class Exec extends RemoteCommand {
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    async: flags.boolean({default: false}),
+    async: flags.boolean({exclusive: ['sync']}),
+    sync: flags.boolean({exclusive: ['async']}),
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
@@ -65,6 +66,7 @@ export default class Exec extends RemoteCommand {
       runner:  this.newRunner(flags.explicit, flags.verbose)
     }
     // -- set job options ------------------------------------------------------
+    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job_default_run_mode') == 'sync'))) ? true : false
     const command = run_shortcut.apply(argv.splice(1)).join(" ")
     const job_options:JobOptions = {
       "stack-path":   stack_path,
@@ -73,7 +75,7 @@ export default class Exec extends RemoteCommand {
       "command":      command,
       "cwd":          flags["working-directory"],
       "file-access":  "volume",
-      "synchronous":  !flags["async"],
+      "synchronous":  synchronous,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),

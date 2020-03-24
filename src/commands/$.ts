@@ -13,7 +13,8 @@ export default class Run extends StackCommand {
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
-    async: flags.boolean({default: false}),
+    async: flags.boolean({exclusive: ['sync']}),
+    sync: flags.boolean({exclusive: ['async']}),
     verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
     silent: flags.boolean({default: false, description: 'no output is printed'}),
     port: flags.string({default: [], multiple: true}),
@@ -50,7 +51,8 @@ export default class Run extends StackCommand {
       runner:  this.newRunner(flags.explicit, flags.silent)
     }
     // -- set job options ------------------------------------------------------
-    var job_options:JobOptions = {
+    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job_default_run_mode') == 'sync'))) ? true : false
+    const job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
       "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
@@ -58,7 +60,7 @@ export default class Run extends StackCommand {
       "host-root":    flags["project-root"] || "",
       "cwd":          flags['working-directory'],
       "file-access":  (flags['file-access'] as "volume"|"bind"),
-      "synchronous":  !flags.async,
+      "synchronous":  synchronous,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
