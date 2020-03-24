@@ -58,7 +58,7 @@ export abstract class StackConfiguration
   abstract setRemoveOnExit(value: boolean): void;
   abstract setRsyncUploadSettings(value: {include: string, exclude: string}): void;
   abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;
-  abstract addBind(hostPath: string, containerPath: string): boolean;
+  abstract addBind(hostPath: string, containerPath: string, options?:Dictionary): boolean;
   abstract addVolume(volumeName: string, containerPath: string): boolean;
   abstract addPort(hostPort: number, containerPort: number): boolean;
   abstract addLabel(field: string, value: string): boolean;

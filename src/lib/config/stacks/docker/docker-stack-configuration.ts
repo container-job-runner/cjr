@@ -23,6 +23,7 @@ export class DockerStackConfiguration extends StackConfiguration
   protected command: string = ""
   protected synchronous: boolean = true
   protected remove_on_exit: boolean = false
+  verify_host_bind_path:boolean = true;
 
   setRawObject(value: Dictionary, parent_path: string) {
     var result = super.setRawObject(value, parent_path)
@@ -64,12 +65,15 @@ export class DockerStackConfiguration extends StackConfiguration
     this.raw_object.files.rsync["download-exclude-from"] = value.exclude
   }
 
-  addBind(hostPath: string, containerPath: string, verify_host_path: boolean=true)
+  addBind(hostPath: string, containerPath: string, options?: Dictionary)
   {
       // verify host path Exists before adding
-      if(verify_host_path && !fs.existsSync(hostPath)) return false
+      if(this.verify_host_bind_path && !fs.existsSync(hostPath)) return false
       if(!(this.raw_object?.mounts)) this.raw_object.mounts = [];
-      this.raw_object.mounts.push({type: "bind", hostPath: hostPath, containerPath: containerPath})
+      this.raw_object.mounts.push({
+        ...{type: "bind", hostPath: hostPath, containerPath: containerPath},
+        ...JSTools.oSubset(options || {}, ["consistency", "readonly", "selinux"])
+      })
       return true;
   }
 
