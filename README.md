@@ -99,6 +99,7 @@ There are three type of supported mounts: binds, volumes, and tempfs.
 3. *containerPath* - path on container where host path will be mounted to
 4. *readonly* (Optional) - `true` or `false`
 5. *consistency* [Mac Only] (Optional) - can be either `consistent` or `delegated` or `cached`
+6. *selinux* (Optional) - `true` or `false`. if true, then :z will be added to mount. If false :z will never be added to mount (even if settings selinux is set to true)
 
 Example
 ```yaml
