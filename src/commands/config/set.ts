@@ -55,13 +55,17 @@ export default class Set extends StackCommand {
     }),
     "jupyter_app": flags.string({
       description: 'absolute path to cjr electron jupyter app'
+    }),
+    "job_default_run_mode": flags.string({
+      options: ['sync', 'async'],
+      description: 'determines if new jobs run sync or async by default.'
     })
   }
   static strict = true;
 
   async run() {
     const {args, flags} = this.parse(Set)
-    Object.keys(flags).map((key:string) => {
+    Object.keys(flags).sort().map((key:string) => {
       const value = (flags as Dictionary)[key]
       const result = this.settings.set(key, value)
       if(result.success) this.log(chalk`{italic ${key}} -> {green ${value}}`)
