@@ -630,7 +630,7 @@ export function enableX11(configuration: StackConfiguration, explicit:boolean = 
       shell.output("xhost +localhost", {}, []);
       break;
     case "linux": // == LINUX ==================================================
-      configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
+      configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND, {selinux: false})
       configuration.addRunEnvironmentVariable("DISPLAY", `$DISPLAY`)
   }
 
