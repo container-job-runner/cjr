@@ -64,7 +64,7 @@ export default class Init extends ProjectSettingsCommand {
     const project_stack_config = new DockerStackConfiguration()
     project_stack_config.setRsyncUploadSettings({
       include: `../.${cli_name}-upload-include`,
-      exclude: `../.${cli_name}-upload-ignore`
+      exclude: `../.${cli_name}-upload-exclude`
     })
     project_stack_config.setRsyncDownloadSettings({
       include: `../.${cli_name}-download-include`,
@@ -75,7 +75,18 @@ export default class Init extends ProjectSettingsCommand {
     // -- add .git .gitignore and .cjr to ignore file --------------------------
     const author = new TextFile(project_root)
     author.add_extension = false;
-    author.write(`.${cli_name}-upload-ignore`, ".cjr\n.git\n.gitignore")
+    author.write(
+      `.${cli_name}-upload-ignore`,
+      [
+        '.cjr',
+        '.cjr-upload-include',
+        '.cjr-upload-exclude',
+        '.cjr-download-include',
+        '.cjr-download-exclude',
+        '.git',
+        '.gitignore'
+      ].join("\n")
+    )
   }
 
   projectStacksTemplate(project_settings: ProjectSettings, project_root: string)
