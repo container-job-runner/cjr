@@ -43,7 +43,8 @@ export async function initX11(interactive: boolean, explicit: boolean)
     const x11_config_path = path.join(os.homedir(), 'Library/Preferences/org.macosforge.xquartz.X11.plist')
     if(!fs.existsSync(x11_config_path)) return new ValidatedOutput(false)
     var result = shell.output(`plutil -extract nolisten_tcp xml1 -o - ${x11_config_path}`) // note extract as xml1 instead of json since json exits in error
-    if(!result.success) return ValidatedOutput(false)
+    if(!result.success) return new ValidatedOutput(false)
+    var response: { flag: any; } & { flag: any; } = {flag: false}
     if((new RegExp('<true/>')).test(result.data))
     {
       if(interactive) {
