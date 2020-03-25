@@ -136,18 +136,37 @@ export class DockerStackConfiguration extends StackConfiguration
     return this.raw_object?.files?.containerRoot || DefaultContainerRoot
   }
 
-  getRsyncUploadSettings() {
-    return {
+  getRsyncUploadSettings(filter_nonexisting: boolean)
+  {
+    const upload_settings = {
       include: this.raw_object?.files?.rsync?.["upload-include-from"] || "",
       exclude: this.raw_object?.files?.rsync?.["upload-exclude-from"] || ""
     }
+    if(!filter_nonexisting) return upload_settings;
+    // set nonexisting paths to empty string
+    type K = keyof typeof upload_settings;
+    (Object.keys(upload_settings) as Array<K>).map(
+      (key:K) => {
+        if(!FileTools.existsFile(upload_settings[key]))
+          upload_settings[key] = ""
+      })
+    return upload_settings
   }
 
-  getRsyncDownloadSettings() {
-    return {
+  getRsyncDownloadSettings(filter_nonexisting: boolean) {
+    const download_settings = {
       include: this.raw_object?.files?.rsync?.["download-include-from"] || "",
       exclude: this.raw_object?.files?.rsync?.["download-exclude-from"] || ""
     }
+    if(!filter_nonexisting) return download_settings;
+    // set nonexisting paths to empty string
+    type K = keyof typeof download_settings;
+    (Object.keys(download_settings) as Array<K>).map(
+      (key:K) => {
+        if(!FileTools.existsFile(download_settings[key]))
+          download_settings[key] = ""
+      })
+    return download_settings
   }
 
   getFlags() {

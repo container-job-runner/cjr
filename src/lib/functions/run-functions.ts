@@ -198,7 +198,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
       direction: "to-host",
       mode: copy_options.mode,
       verbose: copy_options.verbose,
-      files: configuration.getRsyncDownloadSettings()
+      files: configuration.getRsyncDownloadSettings(true)
     }
     result = syncHostDirAndVolume(container_runtime, rsync_options, copy_options?.manual || false)
     if(!result.success) return printResultState(result)
@@ -291,15 +291,15 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
   // -- prepare configuration for bundling -------------------------------------
   const copy_ops:Array<{source: string, destination: string}> = []
   const rsync_settings = {
-    upload: configuration.getRsyncUploadSettings(),
-    download: configuration.getRsyncDownloadSettings()
+    upload: configuration.getRsyncUploadSettings(true),
+    download: configuration.getRsyncDownloadSettings(true)
   }
   // --> 1. remove binds
   result = configuration.removeExternalBinds(options["stack-path"])
   printResultState(result) // print any warnings
   // --> 2. adjust rsync file paths
   const bundleRsyncFile = (direction:"upload"|"download", file:"include"|"exclude") => {
-    if(rsync_settings?.[direction]?.[file] && fs.existsSync(rsync_settings?.[direction]?.[file] || "")) {
+    if(rsync_settings?.[direction]?.[file] && FileTools.existsFile(rsync_settings?.[direction]?.[file] || "")) {
       const new_file_path = stack_bundle_rsync_file_paths[direction][file]
       copy_ops.push({
         source: rsync_settings[direction][file],
@@ -411,7 +411,7 @@ export function createAndMountFileVolume(container_runtime: ContainerRuntime, co
     direction: "to-volume",
     mode: "mirror",
     verbose: verbose,
-    files: configuration.getRsyncUploadSettings()
+    files: configuration.getRsyncUploadSettings(true)
   }
   // -- check if runtime is docker and chownvolume flags is active -------------
   if( (configuration.getFlags()?.['chown-file-volume'] === true) )  {
