@@ -24,7 +24,8 @@ export class DockerBuildDriver extends BuildDriver
       "MISSING_STACKDIR": (dir: string) => chalk`{bold Nonexistant Stack Directory or Image.}\n  {italic path:} ${dir}`,
       "YML_ERROR": (path: string, error: string) => chalk`{bold Unable to Parse YML.}\n  {italic  path:} ${path}\n  {italic error:} ${error}`,
       "INVALID_NAME": (path: string) => chalk`{bold Invalid Stack Name} - stack names may contain only lowercase and uppercase letters, digits, underscores, periods and dashes.\n  {italic  path:} ${path}`,
-      "FAILED_TO_EXTRACT_IMAGE_NAME": chalk`{bold Failed to load tar} - could not extract image name`
+      "FAILED_TO_EXTRACT_IMAGE_NAME": chalk`{bold Failed to load tar} - could not extract image name`,
+      "FAILED_TO_BUILD": chalk`{bold Image Build Failed} - stack configuration likely contains errors`
     }
 
     protected WARNINGSTRINGS = {
@@ -101,14 +102,15 @@ export class DockerBuildDriver extends BuildDriver
           const load_result = this.shell.output(command,flags, [], {cwd: stack_path})
           if(!load_result.success) return load_result
           // -- extract name and retag -----------------------------------------
-          const image_name = load_result.data?.split(/:(.+)/)?.[1]?.trim() // split on first ":"
-          if(!image_name) return new ValidatedOutput(false, [], [this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME])
+          const image_name = load_result.data?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"
+          if(!image_name) return (new ValidatedOutput(false)).pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
           result = this.shell.exec(`${this.base_command} image tag`, {}, [image_name, this.imageName(stack_path, configuration.buildHash())])
       }
       else if(stack_type === 'remote') // retag remote stack -----------------------
       {
         result = this.shell.exec(`${this.base_command} image tag`, {}, [stack_path, this.imageName(stack_path, configuration.buildHash())])
       }
+      if(!result.success) result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
       return result;
     }
 
