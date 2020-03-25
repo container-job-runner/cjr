@@ -75,7 +75,7 @@ export class ShellCommand
 
     // Launches a syncronous command in a shell and returns output string
 
-    output(command: string, flags: object, args: Array<string>, options:Dictionary = {}, post_process="")
+    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}, post_process="")
     {
       const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer'}})
       if(!result.success) return result
