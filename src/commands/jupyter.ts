@@ -4,6 +4,7 @@ import {StackCommand} from '../lib/commands/stack-command'
 import {} from "../lib/functions/jupyter-functions"
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 import {startJupyterInProject, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp} from '../lib/functions/jupyter-functions'
+import {OutputOptions, ContainerRuntime} from '../lib/functions/run-functions'
 import {ValidatedOutput} from '../lib/validated-output'
 
 export default class Run extends StackCommand {
