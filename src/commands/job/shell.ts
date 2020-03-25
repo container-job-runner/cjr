@@ -1,7 +1,7 @@
 import {flags} from '@oclif/command'
 import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 import {jobExec, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions} from '../../lib/functions/run-functions'
-import {printResultState} from '../../lib/functions/misc-functions'
+import {printResultState, initX11} from '../../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
   static description = 'Start an interactive shell to view the files created or modified by a job'
@@ -31,6 +31,8 @@ export default class Shell extends StackCommand {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
+    // -- check x11 user settings ----------------------------------------------
+    if(flags['x11']) initX11(this.settings.get('interactive'), flags.explicit)
     // -- get job id -----------------------------------------------------------
     const id_str = argv[0] || await promptUserForJobId(c_runtime.runner, flags["visible-stacks"], "", !this.settings.get('interactive')) || ""
     // -- set job options ------------------------------------------------------

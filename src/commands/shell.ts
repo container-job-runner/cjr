@@ -1,7 +1,7 @@
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
 import {jobStart, jobToImage, ContainerRuntime, OutputOptions, JobOptions} from "../lib/functions/run-functions"
-import {printResultState} from '../lib/functions/misc-functions'
+import {printResultState, initX11} from '../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
@@ -36,6 +36,8 @@ export default class Shell extends StackCommand {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
+    // -- check x11 user settings ----------------------------------------------
+    if(flags['x11']) initX11(this.settings.get('interactive'), flags.explicit)
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,

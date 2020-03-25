@@ -3,7 +3,7 @@ import {Dictionary, StackCommand} from '../lib/commands/stack-command'
 import {RemoteCommand} from '../lib/remote/commands/remote-command'
 import {ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
 import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
-import {printResultState} from '../lib/functions/misc-functions'
+import {printResultState, initX11} from '../lib/functions/misc-functions'
 
 export default class Run extends RemoteCommand {
   static description = 'Run a command as a new job on a remote resource.'
@@ -60,6 +60,8 @@ export default class Run extends RemoteCommand {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.silent)
     }
+    // -- check x11 user settings ----------------------------------------------
+    if(flags['x11']) initX11(this.settings.get('interactive'), flags.explicit)
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,
