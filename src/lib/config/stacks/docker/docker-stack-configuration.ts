@@ -54,15 +54,15 @@ export class DockerStackConfiguration extends StackConfiguration
   setRsyncUploadSettings(value: {include: string, exclude: string}) {
     if(this.raw_object?.files == undefined) this.raw_object.files = {}
     if(this.raw_object?.files.rsync == undefined) this.raw_object.files.rsync = {}
-    this.raw_object.files.rsync["upload-include-from"] = value.include
-    this.raw_object.files.rsync["upload-exclude-from"] = value.exclude
+    if(value.include) this.raw_object.files.rsync["upload-include-from"] = value.include
+    if(value.exclude) this.raw_object.files.rsync["upload-exclude-from"] = value.exclude
   }
 
   setRsyncDownloadSettings(value: {include: string, exclude: string}) {
     if(this.raw_object?.files == undefined) this.raw_object.files = {}
     if(this.raw_object?.files.rsync == undefined) this.raw_object.files.rsync = {}
-    this.raw_object.files.rsync["download-include-from"] = value.include
-    this.raw_object.files.rsync["download-exclude-from"] = value.exclude
+    if(value.include) this.raw_object.files.rsync["download-include-from"] = value.include
+    if(value.exclude) this.raw_object.files.rsync["download-exclude-from"] = value.exclude
   }
 
   addBind(hostPath: string, containerPath: string, options?: Dictionary)
