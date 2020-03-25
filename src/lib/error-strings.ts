@@ -29,6 +29,10 @@ export const ErrorStrings = {
   },
   STACK: {
     NO_STACK_SPECIFIED: (stack_name:string, stack_path: string) => ` Removing image for stack ${stack_name} (${stack_path})`
+  },
+  JUPYTER: {
+    RUNNING: (id:string) => `Jupiter is already running.\n   ID: ${id}`,
+    NOTRUNNING: `Jupiter is not running.`
   }
 }
 

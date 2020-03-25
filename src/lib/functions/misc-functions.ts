@@ -26,45 +26,6 @@ export function printResultState(result: ValidatedOutput)
   result.error.forEach( (e:string) => console.log(chalk`{bold.red ERROR}: ${e}`))
 }
 
-// Extract jupyter url from container, sets value to variable JURL and runs command
-export async function startJupyterApp(runner: RunDriver, shell: ShellCommand, jupyter_id: string, app_path: string)
-{
-  // -- get output from jupyter ----------------------------------------------
-  const result = runner.jobExec(jupyter_id, ['jupyter', 'notebook', 'list'], {}, 'output')
-  if(!result.success) return result
-  const raw_output = (result.data as string).trim().split("\n").pop() // get last non-empty line of output
-  if(!raw_output) return new ValidatedOutput(false)
-  // -- extract url ----------------------------------------------------------
-  const re = /http:\/\/\d+\.\d+\.\d+\.\d+\S*/ // matches http://X.X.X.X
-  if(!re.test(result.data)) return new ValidatedOutput(false)
-  const url = raw_output.match(re)?.[0] || ""
-  if(!url) return new ValidatedOutput(false)
-  // -- start app ------------------------------------------------------------
-  const platform = os.platform()
-  var command: string = ""
-  if(platform == "darwin")
-  {
-    command = `export JURL=${ShellCommand.bashEscape(url)} && open ${app_path}`
-  }
-  else
-  {
-    command = `export JURL=${ShellCommand.bashEscape(url)} && ${app_path}`
-  }
-  return shell.execAsync(command)
-}
-
-// start jupyter after time delay and retry if unsuccessful
-export async function slowstartJupyterApp(runner: RunDriver, shell: ShellCommand, jupyter_id: string, app_path: string, max_tries:number=5, timeout:number = 2000)
-{
-  var result = new ValidatedOutput(false)
-  for(var i = 0; i < max_tries; i ++) {
-    await JSTools.sleep(timeout)
-    var result = await startJupyterApp(runner, shell, jupyter_id, app_path)
-    if(result.success) break
-  }
-  return result
-}
-
 // -----------------------------------------------------------------------------
 // XPrepate: ensures any x11 is ready to run. Only affects mac
 // ensures xquartz is running

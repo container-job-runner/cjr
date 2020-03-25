@@ -1,6 +1,7 @@
 import * as path from 'path'
 import * as os from 'os'
 import * as chalk from 'chalk'
+import * as crypto from 'crypto'
 
 //cli names
 export const cli_name = "cjr"
@@ -89,7 +90,11 @@ export const stack_bundle_rsync_file_paths = {
 export const DefaultContainerRoot = "/"                                         // Note: though this choice may lead to collisions, it always works docker cp which does not create subfolders.
 
 // Jupyter options
-export const JUPYTER_JOB_NAME = "JUPYTER"
+export const JUPYTER_JOB_NAME = (identifier: {"job-id"?: string,"project-root"?: string}) => {
+  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "";
+  const job_str  = (identifier['job-id']) ? `:${identifier['job-id']}` : "";
+  return `JUPYTER${job_str}${path_str}`;
+}
 
 // X11 options
 export const X11_POSIX_BIND = "/tmp/.X11-unix"
