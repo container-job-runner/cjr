@@ -4,9 +4,10 @@ import {ShellCommand} from '../shell-command'
 import {ErrorStrings} from '../error-strings'
 import {ValidatedOutput} from '../validated-output'
 import {JUPYTER_JOB_NAME} from '../constants'
-import {jobNameLabeltoID, jobStart, jobExec} from './run-functions'
+import {jobNameLabeltoID, jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions} from './run-functions'
+import {RunDriver} from '../drivers/abstract/run-driver'
 
-export export type JupyterOptions = {
+export type JupyterOptions = {
   "stack-path": string,
   "config-files"?: Array<string>,
   "project-root"?: string,
@@ -28,7 +29,7 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
       "stack-path":   jup_options["stack-path"],
-      "config-files": jup_options["config-files"],
+      "config-files": jup_options["config-files"] || [],
       "build-mode":   "no-rebuild",
       "command":      jupyterCommand(jup_options),
       "host-root":    jup_options["project-root"] || "",
@@ -55,7 +56,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
     "stack-path":   jup_options["stack-path"],
-    "config-files": jup_options["config-files"],
+    "config-files": jup_options["config-files"] || [],
     "build-mode":   "no-rebuild",
     "command":      jupyterCommand(jup_options),
     "cwd":          jup_options["project-root"] || "",
@@ -109,7 +110,7 @@ export async function getJupyterUrl(container_runtime: ContainerRuntime, stack_p
 // -- starts the Jupyter Electron app  -----------------------------------------
 export function startJupyterApp(url: string, app_path: string, explicit: boolean = false)
 {
-  if(!app_path) return ValidatedOutput(false)
+  if(!app_path) return new ValidatedOutput(false)
   const platform = os.platform()
   var command: string = ""
   if(platform == "darwin")
