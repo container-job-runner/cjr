@@ -1,8 +1,11 @@
 import * as chalk from 'chalk'
 import * as os from 'os'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as inquirer from 'inquirer'
 
 import {ValidatedOutput} from '../validated-output'
-import {ErrorStrings} from '../error-strings'
+import {ErrorStrings, WarningStrings} from '../error-strings'
 import {JSTools} from '../js-tools'
 import {ShellCommand} from '../shell-command'
 import {RunDriver} from '../drivers/abstract/run-driver'
@@ -60,6 +63,49 @@ export async function slowstartJupyterApp(runner: RunDriver, shell: ShellCommand
     if(result.success) break
   }
   return result
+}
+
+// -----------------------------------------------------------------------------
+// XPrepate: ensures any x11 is ready to run. Only affects mac
+// ensures xquartz is running
+// ensures network connections are set
+// -- Parameters ---------------------------------------------------------------
+// -----------------------------------------------------------------------------
+export async function initX11(interactive: boolean, explicit: boolean)
+{
+  const platform = os.platform()
+  const shell = new ShellCommand(explicit, false)
+
+  if(platform == "darwin") // -- OSX -------------------------------------------
+  {
+    // 1. check if x11 settings plist file exists
+    const x11_config_path = path.join(os.homedir(), 'Library/Preferences/org.macosforge.xquartz.X11.plist')
+    if(!fs.existsSync(x11_config_path)) return new ValidatedOutput(false)
+    var result = shell.output(`plutil -extract nolisten_tcp xml1 -o - ${x11_config_path}`) // note extract as xml1 instead of json since json exits in error
+    if(!result.success) return ValidatedOutput(false)
+    if((new RegExp('<true/>')).test(result.data))
+    {
+      if(interactive) {
+        printResultState(new ValidatedOutput(true).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
+        var response = await inquirer.prompt([
+          {
+            name: "flag",
+            message: `Should cjr automatically change this setting?`,
+            type: "confirm",
+          }
+        ])
+        if(!response.flag) return new ValidatedOutput(false)
+      }
+      // change setting
+      if(!interactive || response?.flag == true)
+        shell.output(`plutil -replace nolisten_tcp -bool NO ${x11_config_path}`)
+    }
+    // 2. start x11 if it's not already running
+    var result = shell.output('xset', {q: {}})
+    if(!result.success) return new ValidatedOutput(false)
+  }
+
+  return new ValidatedOutput(true)
 }
 
 // -----------------------------------------------------------------------------

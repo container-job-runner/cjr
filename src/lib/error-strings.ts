@@ -45,6 +45,7 @@ export const WarningStrings = {
     FLAGUNAVALIABLE: chalk`{bold X11 flag ignored} - the X11 flag is not supported on your operating system.`,
     MISSINGDIR: (dir_path: string) => chalk`{bold missing X11 directory} - the directory "${dir_path}" is not present. Is X running?`,
     MACMISSINGSOCKET: (dir_path: string) => chalk`{bold missing X11 socket} - no socket found in directory "${dir_path}". Is XQuartz running?`,
+    XQUARTZ_NOREMOTECONNECTION: chalk`{bold Your XQuartz settings block network connections}. You can change this manually by selecting "allow connections from network clients" in XQuartz > Preferences > Security`
   },
   JOBCOPY:{
     NO_VOLUME : (id:string) => chalk`{bold No Copy Required:} job ${id} has no associated volume.`,
