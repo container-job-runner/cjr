@@ -561,8 +561,8 @@ export class CJRRemoteDriver extends RemoteDriver
     const rsync_flags:Dictionary = {a:{}, delete:{}}
     if(options.verbose) rsync_flags.v = {}
     // note: always add include before exclude
-    if(upload_settings.include) rsync_flags['include-from'] = upload_settings.include
-    if(upload_settings.exclude) rsync_flags['exclude-from'] = upload_settings.exclude
+    if(upload_settings.include && fs.existsSync(upload_settings.include)) rsync_flags['include-from'] = upload_settings.include
+    if(upload_settings.exclude && fs.existsSync(upload_settings.exclude)) rsync_flags['exclude-from'] = upload_settings.exclude
     result = this.ssh_shell.rsync(
       FileTools.addTrailingSeparator(options["local-project-root"], 'posix'), // upload contents
       options["remote-project-root"],
