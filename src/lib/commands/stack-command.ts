@@ -54,9 +54,6 @@ export abstract class StackCommand extends Command
     // -- merge flags if load was successful -----------------------------------
     if(result.success) {
       var mergeable_fields:Array<ps_fields> = Object.keys(flag_props) as Array<ps_fields>
-      // do not load project configFiles if user manually specifies another stack (See github issue #38).
-      if(flags.stack && !this.equivStackPaths(flags.stack, (project_settings.get("stack") as string) || ""))
-        mergeable_fields = mergeable_fields.filter((e:string) => e != 'config-files')
 
       // merge empty fields
       JSTools.rMergeOnEmpty(
