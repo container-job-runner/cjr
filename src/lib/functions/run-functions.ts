@@ -299,7 +299,7 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
   printResultState(result) // print any warnings
   // --> 2. adjust rsync file paths
   const bundleRsyncFile = (direction:"upload"|"download", file:"include"|"exclude") => {
-    if(rsync_settings?.[direction]?.[file]) {
+    if(rsync_settings?.[direction]?.[file] && fs.existsSync(rsync_settings?.[direction]?.[file] || "")) {
       const new_file_path = stack_bundle_rsync_file_paths[direction][file]
       copy_ops.push({
         source: rsync_settings[direction][file],
