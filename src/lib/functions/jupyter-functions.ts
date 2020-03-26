@@ -98,13 +98,13 @@ export async function getJupyterUrl(container_runtime: ContainerRuntime, stack_p
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
   if(jupyter_job_id === false) return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOTRUNNING)
-  var result = new ValidatedOutput(false)
+  var result = new ValidatedOutput(true)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
     result = await parseNotebookListCommand(container_runtime.runner, jupyter_job_id)
     if(result.success) break
   }
-  return result
+  return result.pushError(ErrorStrings.JUPYTER.NOURL)
 }
 
 // -- starts the Jupyter Electron app  -----------------------------------------
