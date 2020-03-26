@@ -628,7 +628,10 @@ export class CJRRemoteDriver extends RemoteDriver
     if(mode == "$") cjr_flags['file-access'] = job_options["file-access"]
     if(mode == "$" && remote_params['remote-project-root']) cjr_flags['project-root'] = remote_params['remote-project-root']
     if(job_options['x11']) cjr_flags["x11"] = {}
-    if(job_options['synchronous'] === false) cjr_flags['async'] = {}
+
+    if(job_options['synchronous']) cjr_flags['--sync'] = {}
+    else cjr_flags['--async'] = {}
+
     if(job_options['host-root']) {
       const remote_wd = containerWorkingDir(job_options['cwd'], job_options['host-root'], path.posix.dirname(remote_params['remote-project-root']))
       if(remote_wd) cjr_flags['working-directory'] = remote_wd
