@@ -25,7 +25,7 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
   const jupyter_job_name = JUPYTER_JOB_NAME({"project-root" : jup_options['project-root'] || ""})
   const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
   if(jupyter_job_id !== false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id))
+    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
       "stack-path":   jup_options["stack-path"],
@@ -52,7 +52,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : job_id})
   const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
   if(jupyter_job_id !== false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id))
+    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
     "stack-path":   jup_options["stack-path"],
@@ -98,13 +98,13 @@ export async function getJupyterUrl(container_runtime: ContainerRuntime, stack_p
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
   if(jupyter_job_id === false) return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOTRUNNING)
-  var result = new ValidatedOutput(true)
+  var result = new ValidatedOutput(false).pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
     result = await parseNotebookListCommand(container_runtime.runner, jupyter_job_id)
     if(result.success) break
   }
-  return result.pushError(ErrorStrings.JUPYTER.NOURL)
+  return result
 }
 
 // -- starts the Jupyter Electron app  -----------------------------------------
