@@ -11,7 +11,8 @@ export default class Shell extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    async: flags.boolean({default: false}),
+    async: flags.boolean({exclusive: ['sync']}),
+    sync: flags.boolean({exclusive: ['async']}),
     x11: flags.boolean({default: false}),
     port: flags.string({default: [], multiple: true}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
@@ -43,6 +44,7 @@ export default class Shell extends StackCommand {
     const id_str = argv[0]
     const command = run_shortcut.apply(argv.splice(1)).join(" ")
     // -- set job options ------------------------------------------------------
+    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job_default_run_mode') == 'sync'))) ? true : false
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
@@ -50,7 +52,7 @@ export default class Shell extends StackCommand {
       "command":      command,
       "cwd":          flags["working-directory"],
       "file-access":  "volume",
-      "synchronous":  !flags["async"],
+      "synchronous":  synchronous,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
