@@ -29,8 +29,8 @@ export class ValidatedOutput
     absorb(vo:ValidatedOutput)
     {
       this.success = this.success && vo.success
-      this.error.concat(vo.error)
-      this.warning.concat(vo.warning)
+      this.error.push(...vo.error)
+      this.warning.push(...vo.warning)
       return this
     }
 }
