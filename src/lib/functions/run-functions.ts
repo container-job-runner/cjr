@@ -25,8 +25,10 @@ import {ProjectSettings} from '../config/project-settings/project-settings'
 export type Dictionary = {[key: string]: any}
 
 // -- options for core function startJob ---------------------------------------
-export type ports = Array<{hostPort:number, containerPort: number}>
-export type labels = Array<{key:string, value: string}>
+export type port   = {hostPort:number, containerPort: number}
+export type label  = {key:string, value: string}
+export type ports  = Array<port>
+export type labels = Array<label>
 export type buildmodes = "no-rebuild"|"build"|"build-nocache"
 
 export type JobOptions = {
@@ -132,7 +134,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
     result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
     if(!result.success) return result
   }
-  setRelativeWorkDir(configuration, job_options["host-root"], job_options["cwd"])
+  setRelativeWorkDir(configuration, job_options["host-root"] || "", job_options["cwd"])
 
   // -- 2.2 update configuration: apply options --------------------------------
   if(job_options?.ports)
