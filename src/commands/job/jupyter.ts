@@ -12,7 +12,8 @@ export default class Run extends StackCommand {
   static args = [{name: 'id', required: true}, {name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
     stack: flags.string({env: 'STACK'}),
-    port: flags.integer({default: 8888, exclusive: ['stop', 'list', 'app']}),
+    port: flags.string({default: "8888"}),
+    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     x11: flags.boolean({default: false}),
@@ -55,9 +56,10 @@ export default class Run extends StackCommand {
           "stack-path": stack_path,
           "config-files": flags['config-files'],
           "project-root": project_root,
-          "port": flags['port'],
+          "ports": this.parsePortFlag([flags.port]),
           "command": this.settings.get('jupyter_command'),
           "args": argv.slice(2),
+          "labels": this.parseLabelFlag(flags['label']),
           "sync": false,
           "x11": flags.x11
         });

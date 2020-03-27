@@ -17,7 +17,7 @@ export default class Run extends StackCommand {
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     explicit: flags.boolean({default: false}),
-    port: flags.integer({default: 8888, exclusive: ['stop', 'list', 'app']}),
+    port: flags.string({default: "8888"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = false;
@@ -53,9 +53,10 @@ export default class Run extends StackCommand {
           "stack-path": stack_path,
           "config-files": flags['config-files'],
           "project-root": project_root,
-          "port": flags['port'],
+          "ports": this.parsePortFlag([flags.port]),
           "command": this.settings.get('jupyter_command'),
           "args": argv.slice(1),
+          "labels": [],
           "sync": false,
           "x11": flags.x11
         });

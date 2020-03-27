@@ -4,14 +4,15 @@ import {ShellCommand} from '../shell-command'
 import {ErrorStrings} from '../error-strings'
 import {ValidatedOutput} from '../validated-output'
 import {JUPYTER_JOB_NAME} from '../constants'
-import {jobNameLabeltoID, jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions} from './run-functions'
+import {jobNameLabeltoID, jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels} from './run-functions'
 import {RunDriver} from '../drivers/abstract/run-driver'
 
 export type JupyterOptions = {
   "stack-path": string,
   "config-files"?: Array<string>,
   "project-root"?: string,
-  "port": number,
+  "ports": ports,
+  "labels": labels,
   "command": string,
   "args": Array<string>,
   "sync"?: boolean,
@@ -37,8 +38,8 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
       "file-access":  "bind",
       "synchronous":  jup_options['sync'] || false,
       "x11":          jup_options['x11'] || false,
-      "ports":        [{hostPort: jup_options.port, containerPort: jup_options.port}],
-      "labels":       [{key:"name", "value": jupyter_job_name}],
+      "ports":        jup_options['ports'],
+      "labels":       jup_options['labels'].concat([{key:"name", "value": jupyter_job_name}]),
       "remove":       true
     }
     // -- start job and extract job id -----------------------------------------
@@ -63,8 +64,8 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
     "file-access":  "volume",
     "synchronous":  jup_options['sync'] || false,
     "x11":          jup_options['x11'] || false,
-    "ports":        [{hostPort: jup_options.port, containerPort: jup_options.port}],
-    "labels":       [{key:"name", "value": jupyter_job_name}],
+    "ports":        jup_options['ports'],
+    "labels":       jup_options['labels'].concat([{key:"name", "value": jupyter_job_name}]),
     "remove":       true
   }
   // -- start job and extract job id -------------------------------------------
@@ -124,7 +125,9 @@ export function startJupyterApp(url: string, app_path: string, explicit: boolean
 
 // -- command to start jupyter
 function jupyterCommand(jup_options: JupyterOptions) {
-  return `${jup_options['command']} --port=${jup_options['port']} ${jup_options['args'].join(" ")}`
+  const port = jup_options['ports']?.[0]?.containerPort || "";
+  const has_args = jup_options['args'].length > 0;
+  return `${jup_options['command']} ${(port) ? `--port=${port}` : ""}${(has_args) ? " " : ""}${jup_options['args'].join(" ")}`;
 }
 
 // -- extracts jupyter url from container (helper)
