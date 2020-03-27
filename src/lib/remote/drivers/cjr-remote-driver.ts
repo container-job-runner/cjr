@@ -46,6 +46,7 @@ export class CJRRemoteDriver extends RemoteDriver
      'job:log'    : ['explicit', 'lines'],
      'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'silent'],
      'job:shell'  : ['explicit', 'discard'],
+     'job:jupyter': ['build-mode', 'explicit'], // only used by stop, list, url
      '$'          : ['explicit', 'async', 'verbose', 'silent', 'port', 'x11', 'message', 'label', 'autocopy', 'build-mode']
   }
   private ssh_shell: SshShellCommand
@@ -433,6 +434,35 @@ export class CJRRemoteDriver extends RemoteDriver
 
   }
 
+  // -- Jupyter commands -------------------------------------------------------
+
+  jobJupyterStop(resource: Dictionary, id: string) {
+    return this.jobJupyterGeneric(resource, id, 'stop', 'exec');
+  }
+
+  jobJupyterList(resource: Dictionary, id: string) {
+    return this.jobJupyterGeneric(resource, id, 'list', 'exec')
+  }
+
+  jobJupyterUrl(resource: Dictionary, id: string) {
+    return this.jobJupyterGeneric(resource, id, 'url', 'output')
+  }
+
+  private jobJupyterGeneric(resource: Dictionary, id: string, command: 'stop'|'list'|'url', mode:'output'|'exec')
+  {
+    // -- set resource ---------------------------------------------------------
+    var result = this.ssh_shell.setResource(resource)
+    if(!result.success) return result
+    // -- execute ssh command --------------------------------------------------
+    const cjr_cmd   = 'cjr job:jupyter'
+    const cjr_flags = (this.output_options.explicit) ? {explicit: {}} : {}
+    const cjr_args  = [id, command]
+    if(mode === 'output')
+      return this.ssh_shell.output(cjr_cmd, cjr_flags, cjr_args, this.interactive_ssh_options)
+    else
+      return this.ssh_shell.exec(cjr_cmd, cjr_flags, cjr_args, this.interactive_ssh_options)
+  }
+
   // -- Helper Functions -------------------------------------------------------
 
   private cliFlagsToShellFlags(flags: Dictionary, fields: Array<string>)
@@ -608,7 +638,7 @@ export class CJRRemoteDriver extends RemoteDriver
     return result
   }
 
-  private CJRJobStart(job_options: JobOptions, remote_params:RemoteJobParams, mode:"$"|"job:shell"|"job:exec")
+  private CJRJobStart(job_options: JobOptions, remote_params:RemoteJobParams, mode:"$"|"job:shell"|"job:exec"|"job:jupyter")
   {
     // -- set args -------------------------------------------------------------
     var cjr_args:Array<string> = []
@@ -618,6 +648,8 @@ export class CJRRemoteDriver extends RemoteDriver
       cjr_args = [remote_params['previous-job-id'] || "", job_options['command']]
     else if(mode === "job:shell")
       cjr_args = [remote_params['previous-job-id'] || ""]
+    else if(mode === "job:jupyter")
+      cjr_args = [remote_params['previous-job-id'] || "", 'start', job_options['command']]
     // -- set flags ------------------------------------------------------------
     const cjr_flags:Dictionary = {
       'stack':        remote_params["remote-stack-path"],
@@ -627,18 +659,19 @@ export class CJRRemoteDriver extends RemoteDriver
     if(mode == "$") cjr_flags['keep-record'] = {} // ensure both bind and volume jobs are not deleted (to allow user to copy them back)
     if(mode == "$") cjr_flags['file-access'] = job_options["file-access"]
     if(mode == "$" && remote_params['remote-project-root']) cjr_flags['project-root'] = remote_params['remote-project-root']
+    if(mode == "$" || mode == "job:exec") {
+      if(job_options['synchronous']) cjr_flags['sync'] = {}
+      else cjr_flags['async'] = {}
+    }
+    if(mode === '$' && remote_params['auto-copy']) cjr_flags['auto-copy'] = {}
     if(job_options['x11']) cjr_flags["x11"] = {}
-
-    if(job_options['synchronous']) cjr_flags['--sync'] = {}
-    else cjr_flags['--async'] = {}
-
     if(job_options['host-root']) {
       const remote_wd = containerWorkingDir(job_options['cwd'], job_options['host-root'], path.posix.dirname(remote_params['remote-project-root']))
       if(remote_wd) cjr_flags['working-directory'] = remote_wd
     }
-    if(mode === '$' && remote_params['auto-copy']) cjr_flags['auto-copy'] = {}
+
     if(this.output_options.explicit) cjr_flags['explicit'] = {}
-    if(this.output_options.silent) cjr_flags['silent'] = {}
+    if(this.output_options.silent || mode === "job:jupyter") cjr_flags['silent'] = {}
     if(this.output_options.verbose) cjr_flags['verbose'] = {}
 
     const labels:Array<string> = job_options['labels']?.map((label:{key:string, value: string}) => `${label.key}=${label.value}`) || []

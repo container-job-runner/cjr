@@ -34,7 +34,7 @@ export default class Exec extends RemoteCommand {
     const {flags, args, argv} = this.parse(Exec)
     this.augmentFlagsWithProjectSettings(flags, {
       "stack": true,
-      "project-root": true,
+      "project-root": false,
       "config-files": false,
       "remote-name": true
     })
@@ -88,7 +88,7 @@ export default class Exec extends RemoteCommand {
       {
         id: id,
         mode: 'job:exec',
-        "host-project-root": (flags["project-root"] as string),
+        "host-project-root": flags["project-root"] || "",
         "stack-upload-mode": (flags["stack-upload-mode"] as "cached"|"uncached")
       })
     printResultState(result)

@@ -14,7 +14,7 @@ export type RemoteDeleteOptions = {
 export type RemoteExecOptions = {
   "id": string,                   // id of job that user wants to shell/exec into
   "host-project-root": string,         // current project root (used only for setting cwd in remote container)
-  "mode": "job:exec"|"job:shell"
+  "mode": "job:exec"|"job:shell"|"job:jupyter"
   "stack-upload-mode": "cached"|"uncached"
 }
 
@@ -48,6 +48,10 @@ export abstract class RemoteDriver
 
   abstract jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
   abstract jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
+
+  abstract jobJupyterStop(resource: Dictionary, id: string):ValidatedOutput
+  abstract jobJupyterList(resource: Dictionary, id: string):ValidatedOutput
+  abstract jobJupyterUrl(resource: Dictionary, id: string):ValidatedOutput
 
   abstract connect(resource: Dictionary): ValidatedOutput
   abstract disconnect(resource: Dictionary): ValidatedOutput
