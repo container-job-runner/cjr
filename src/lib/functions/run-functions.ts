@@ -132,8 +132,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
     result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
     if(!result.success) return result
   }
-  if(job_options["host-root"])
-    setRelativeWorkDir(configuration, job_options["host-root"], job_options["cwd"])
+  setRelativeWorkDir(configuration, job_options["host-root"], job_options["cwd"])
 
   // -- 2.2 update configuration: apply options --------------------------------
   if(job_options?.ports)
@@ -573,7 +572,7 @@ export function rsyncCommandString(source: string, destination: string, flags: D
 // -----------------------------------------------------------------------------
 export function setRelativeWorkDir(configuration: StackConfiguration, hostRoot: string, hostDir: string = process.cwd())
 {
-  if(!hostRoot) return
+  if(!hostRoot) return configuration.setWorkingDir(configuration.getContainerRoot()) // should only be set if containerRoot is set
   const ced = containerWorkingDir(hostDir, hostRoot, configuration.getContainerRoot())
   if(ced) configuration.setWorkingDir(ced)
 }
