@@ -4,7 +4,7 @@ import {StackCommand} from '../../lib/commands/stack-command'
 import {} from "../../lib/functions/jupyter-functions"
 import {printResultState, initX11} from '../../lib/functions/misc-functions'
 import {startJupyterInJob, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp} from '../../lib/functions/jupyter-functions'
-import {OutputOptions, ContainerRuntime} from '../../lib/functions/run-functions'
+import {OutputOptions, ContainerRuntime, matchingJobIds} from '../../lib/functions/run-functions'
 import {ValidatedOutput} from '../../lib/validated-output'
 
 export default class Run extends StackCommand {
@@ -21,7 +21,7 @@ export default class Run extends StackCommand {
     explicit: flags.boolean({default: false}),
     silent: flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."})  
+    "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."})
   }
   static strict = false;
 
@@ -46,9 +46,13 @@ export default class Run extends StackCommand {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
+    // -- extract full id ------------------------------------------------------
+    var result = matchingJobIds(container_runtime.runner, [args['id']], [""])
+    if(!result.success) return printResultState(result)
+    const job_id = result.data.pop() || ""
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) initX11(this.settings.get('interactive'), flags.explicit)
-
+    // -- read settings --------------------------------------------------------
     var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";
     const jupyter_app = this.settings.get('jupyter_app');
@@ -56,7 +60,7 @@ export default class Run extends StackCommand {
     {
       result = startJupyterInJob(
         container_runtime,
-        args['id'],
+        job_id,
         output_options,
         {
           "stack-path": stack_path,
@@ -72,21 +76,21 @@ export default class Run extends StackCommand {
     }
     if(args['command'] === 'stop') // -- stop jupyter --------------------------
     {
-      result = stopJupyter(container_runtime, stack_path, {"job-id": args['id']});
+      result = stopJupyter(container_runtime, stack_path, {"job-id": job_id});
     }
     if(args['command'] === 'list') // -- list jupyter --------------------------
     {
-      result = listJupyter(container_runtime, stack_path, {"job-id": args['id']})
+      result = listJupyter(container_runtime, stack_path, {"job-id": job_id})
     }
     if(args['command'] === 'url' || (!flags['silent'] && args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
     {
-      const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": args['id']})
+      const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": job_id})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (!flags['silent'] && args['command'] === 'start' && jupyter_app)) // -- start electron app
     {
-      const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": args['id']})
+      const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": job_id})
       if(url_result.success) startJupyterApp(url_result.data, jupyter_app || "", flags.explicit)
       result.absorb(url_result)
     }
