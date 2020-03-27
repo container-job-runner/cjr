@@ -11,16 +11,17 @@ export default class Run extends StackCommand {
   static description = 'Start a jupiter server for modifying job data.'
   static args = [{name: 'id', required: true}, {name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
-    stack: flags.string({env: 'STACK'}),
-    port: flags.string({default: "8888"}),
-    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
-    "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
-    x11: flags.boolean({default: false}),
-    "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    stack: flags.string({env: 'STACK'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    port: flags.string({default: "8888"}),
+    x11: flags.boolean({default: false}),
+    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     explicit: flags.boolean({default: false}),
-    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
+    silent: flags.boolean({default: false}),
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
+    "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."})  
   }
   static strict = false;
 
@@ -28,7 +29,7 @@ export default class Run extends StackCommand {
   {
     const {argv, args, flags} = this.parse(Run)
     this.augmentFlagsWithProjectSettings(flags, {
-      "stack": (args?.['command'] === 'start'), // only require stack for start, 
+      "stack": (args?.['command'] === 'start'), // only require stack for start,
       "config-files": false,
       "project-root":false,
       "stacks-dir": false
@@ -77,13 +78,13 @@ export default class Run extends StackCommand {
     {
       result = listJupyter(container_runtime, stack_path, {"job-id": args['id']})
     }
-    if(args['command'] === 'url' || (args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
+    if(args['command'] === 'url' || (!flags['silent'] && args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": args['id']})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
-    if(args['command'] === 'app' || (args['command'] === 'start' && jupyter_app)) // -- start electron app
+    if(args['command'] === 'app' || (!flags['silent'] && args['command'] === 'start' && jupyter_app)) // -- start electron app
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": args['id']})
       if(url_result.success) startJupyterApp(url_result.data, jupyter_app || "", flags.explicit)

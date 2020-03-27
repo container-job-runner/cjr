@@ -11,13 +11,14 @@ export default class Run extends StackCommand {
   static description = 'Start a jupiter server'
   static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
-    stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
-    x11: flags.boolean({default: false}),
-    "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    stack: flags.string({env: 'STACK'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    explicit: flags.boolean({default: false}),
+    "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    x11: flags.boolean({default: false}),
     port: flags.string({default: "8888"}),
+    explicit: flags.boolean({default: false}),
+    silent: flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
   static strict = false;
@@ -74,13 +75,13 @@ export default class Run extends StackCommand {
     {
       result = listJupyter(container_runtime, stack_path, {"project-root": project_root})
     }
-    if(args['command'] === 'url' || (args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
+    if(args['command'] === 'url' || (!flags['silent'] && args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
-    if(args['command'] === 'app' || (args['command'] === 'start' && jupyter_app)) // -- start electron app
+    if(args['command'] === 'app' || (!flags['silent'] && args['command'] === 'start' && jupyter_app)) // -- start electron app
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
       if(url_result.success) startJupyterApp(url_result.data, jupyter_app || "", flags.explicit)
