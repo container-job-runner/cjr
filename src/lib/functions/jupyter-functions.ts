@@ -136,7 +136,7 @@ function parseNotebookListCommand(runner: RunDriver, jupyter_id: string)
   const raw_output = (result.data as string).trim().split("\n").pop() // get last non-empty line of output
   if(!raw_output) return new ValidatedOutput(false)
   // -- extract url ------------------------------------------------------------
-  const re = /http:\/\/\d+\.\d+\.\d+\.\d+\S*/ // matches http://X.X.X.X
+  const re = /http:\/\/\S+:+\S*/ // matches http://X:X
   if(!re.test(result.data)) return new ValidatedOutput(false)
   const url = raw_output.match(re)?.[0] || ""
   if(!url) return new ValidatedOutput(false)
