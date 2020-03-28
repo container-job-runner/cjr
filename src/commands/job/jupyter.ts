@@ -51,7 +51,7 @@ export default class Run extends StackCommand {
     if(!result.success) return printResultState(result)
     const job_id = result.data.pop() || ""
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- read settings --------------------------------------------------------
     var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";

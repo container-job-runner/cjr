@@ -45,7 +45,7 @@ export default class Run extends StackCommand {
       runner:  this.newRunner(flags.explicit)
     }
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
 
     var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";

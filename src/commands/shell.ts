@@ -37,7 +37,7 @@ export default class Shell extends StackCommand {
       runner:  this.newRunner(flags.explicit)
     }
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,
