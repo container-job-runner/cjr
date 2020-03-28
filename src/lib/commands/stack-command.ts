@@ -54,8 +54,6 @@ export abstract class StackCommand extends Command
     // -- merge flags if load was successful -----------------------------------
     if(result.success) {
       var mergeable_fields:Array<ps_fields> = Object.keys(flag_props) as Array<ps_fields>
-
-      // merge empty fields
       JSTools.rMergeOnEmpty(
         flags,
         project_settings.getMultiple(mergeable_fields))
