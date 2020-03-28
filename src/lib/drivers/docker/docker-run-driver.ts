@@ -145,9 +145,10 @@ export class DockerRunDriver extends RunDriver
     return this.shell.exec(command, flags, args, {stdio: "pipe"})
   }
 
-  jobInfo(stack_paths: Array<string>, job_status: string = "") // Note: this allows for empty stack path [""] In which case it returns all running containers on host
+  jobInfo(stack_paths: Array<string>, job_status: string = "") // Note:if stack_paths=[] or stack_paths=[""] then function returns all running jobs on host
   {
     const ids:Array<Dictionary> = []
+    if(stack_paths.length == 0) stack_paths = [""]
     stack_paths.map((stack_path:string) =>
     {
       const command = `${this.base_command} ps`;
