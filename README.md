@@ -14,12 +14,6 @@ cjr is a tool for running jobs in linux containers
 * [CLI config settings](#cli-config-settings)
 * [Usage](#usage)
 * [Commands](#commands)
-* [Usage](#usage-1)
-* [Commands](#commands-1)
-* [Usage](#usage-2)
-* [Commands](#commands-2)
-* [Usage](#usage-3)
-* [Commands](#commands-3)
 <!-- tocstop -->
 
 
