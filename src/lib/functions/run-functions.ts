@@ -339,7 +339,7 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
 // == JOB INFO FUNCTIONS =======================================================
 
 // returns all running job ids
-export function allJobIds(runner: RunDriver, stack_paths: Array<string>=[""], status:string = "")
+export function allJobIds(runner: RunDriver, stack_paths: Array<string>=[], status:string = "")
 {
   return runner.jobInfo(stack_paths, status).map((x:Dictionary) => x.id)
 }
