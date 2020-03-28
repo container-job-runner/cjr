@@ -231,20 +231,22 @@ If this option is specified then cjr will automatically set the --remote-name fl
 
 We describe the settings that can be viewed and modified using `cjr config:list`, `cjr config:set` and `cjr config:get`  
 
-- **auto_project_root**: *boolean* - if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory.
-- **interactive**: *boolean* - if true then certain cli commands will prompt the user with interactive menus.
-- **stacks_dir**: *string* - the default path to a folder that contains cjr stacks.
 - **alway_print_job_id**: *boolean* - if true, then cjr $ command will always print the user id even if --async flag is not selected.
+- **auto_project_root**: *boolean* - if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory.
 - **autocopy_sync_job**: *boolean* - if true, then cjr will automatically run job:copy at the end of all synchronous jobs.
-- **run_shortcuts_file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below.
 - **build_cmd**: *"podman"|"docker"* - container environment used to build images.
-- **run_cmd**: *"podman"|"docker"* - container environment used to run images.
+- **container_default_shell**: *string* default shell that should be started for job:shell commands (e.g. sh, bash, zsh).
 - **image_tag**: *string* tag that cli uses when building all its images.
+- **interactive**: *boolean* - if true then certain cli commands will prompt the user with interactive menus.
+- **job_default_run_mode**: *"async"|"sync"*  determines if new jobs run sync or async by default.
 - **job_list_fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message". For example:
 `cjr config:set job_list_fields 'id, stackName, command, statusString'`
-- **container_default_shell**: *string* default shell that should be started for job:shell commands (e.g. sh, bash, zsh).
-- **selinux**: *boolean* - if true then the :Z option will be applied to all bind mounts.
+- **jupyter_app**: *string* - absolute path to optional cjr electron jupyter app. leave blank to disable.
 - **jupyter_command**: *string* - command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook.
+- **run_cmd**: *"podman"|"docker"* - container environment used to run images.
+- **run_shortcuts_file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below.
+- **selinux**: *boolean* - if true then the :Z option will be applied to all bind mounts.
+- **stacks_dir**: *string* - the default path to a folder that contains cjr stacks.
 
 The run_shortcuts_file option allows you to define custom shortcuts for the `cjr $` command when called it's called with a single argument. For example you can map `cjr $ script.sh` to `cjr $ bash script.sh`. The yml file must correspond to an object with string keys and values. For example
 ```yaml
@@ -461,32 +463,7 @@ OPTIONS
   --run_cmd=podman|docker                            container environment used to run images
 
   --run_shortcuts_file=run_shortcuts_file            location of a yml file that can be used to specify run shortcuts
-                                                     for `cjr cjr
-=======
-
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/gitbucket/gitbucket/blob/master/LICENSE)
-
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-
-cjr is a tool for running jobs in linux containers
-
-<!-- toc -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g cjr
-$ cjr COMMAND
-running command...
-$ cjr (-v|--version|version)
-cjr/0.2.0 linux-x64 node-v12.16.1
-$ cjr --help [COMMAND]
-USAGE
-  $ cjr COMMAND
-...
-```
-<!-- usagestop -->
-# Commands
- command; To disable set value to ''
+                                                     for `cjr $ command; To disable set value to ''
 
   --selinux=true|false                               if true, then the :Z option will be applied to all bind mounts.
 
