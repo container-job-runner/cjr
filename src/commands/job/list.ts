@@ -9,7 +9,7 @@ export default class List extends StackCommand {
     json: flags.boolean({default: false}),
     all: flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "visible-stacks": flags.string({default: [], multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
     verbose: flags.boolean({default: false})
