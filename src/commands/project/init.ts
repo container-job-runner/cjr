@@ -76,7 +76,7 @@ export default class Init extends ProjectSettingsCommand {
     const author = new TextFile(project_root)
     author.add_extension = false;
     author.write(
-      `.${cli_name}-upload-ignore`,
+      `.${cli_name}-upload-exclude`,
       [
         '.cjr',
         '.cjr-upload-include',
