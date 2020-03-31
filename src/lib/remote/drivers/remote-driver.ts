@@ -51,7 +51,7 @@ export abstract class RemoteDriver
 
   abstract jobJupyterStop(resource: Dictionary, id: string):ValidatedOutput
   abstract jobJupyterList(resource: Dictionary, id: string):ValidatedOutput
-  abstract jobJupyterUrl(resource: Dictionary, id: string):ValidatedOutput
+  abstract jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary):ValidatedOutput
 
   abstract connect(resource: Dictionary): ValidatedOutput
   abstract disconnect(resource: Dictionary): ValidatedOutput
