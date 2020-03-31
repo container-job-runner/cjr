@@ -444,8 +444,11 @@ export class CJRRemoteDriver extends RemoteDriver
     return this.jobJupyterGeneric(resource, id, 'list', 'exec')
   }
 
-  jobJupyterUrl(resource: Dictionary, id: string) {
-    return this.jobJupyterGeneric(resource, id, 'url', 'output')
+  jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary = {remoteip: true}) {
+    var result = this.jobJupyterGeneric(resource, id, 'url', 'output')
+    if(result.success && options?.remoteip && resource.address)
+      result.data = result.data?.replace(/(?<=http:\/\/)\S+(?=:)/, resource.address)
+    return result
   }
 
   private jobJupyterGeneric(resource: Dictionary, id: string, command: 'stop'|'list'|'url', mode:'output'|'exec')
