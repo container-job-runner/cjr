@@ -240,6 +240,7 @@ export class DockerRunDriver extends RunDriver
     var flags = {};
     if(this.run_schema_validator(run_object).success) //verify docker-run schema
     {
+      this.addEntrypointFlags(flags, run_object)
       this.addFormatFlags(flags, run_object)
       this.addRemovalFlags(flags, run_object)
       this.addInteractiveFlags(flags, run_object)
@@ -346,6 +347,14 @@ export class DockerRunDriver extends RunDriver
     keys?.map((key:string) => {
       if(valid_keys.includes(key)) flags[key] = run_object?.resources[key]
     })
+  }
+
+  protected addEntrypointFlags(flags: Dictionary, run_object: Dictionary)
+  {
+    if(run_object?.entrypoint)
+    {
+      flags["entrypoint"] = run_object['entrypoint']
+    }
   }
 
   protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)

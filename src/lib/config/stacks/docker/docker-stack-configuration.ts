@@ -21,6 +21,7 @@ export class DockerStackConfiguration extends StackConfiguration
   protected valid_flag_fieldnames = ["network", "chown-file-volume", "mac-address"] // only these fields will be read in from config.flags
   protected working_directory: string = ""
   protected command: string = ""
+  protected entrypoint: string = ""
   protected synchronous: boolean = true
   protected remove_on_exit: boolean = false
   verify_host_bind_path:boolean = true;
@@ -41,6 +42,10 @@ export class DockerStackConfiguration extends StackConfiguration
 
   setCommand(value: string){
     this.command = value
+  }
+
+  setEntrypoint(value: string){
+    this.entrypoint = value
   }
 
   setSyncronous(value: boolean){
@@ -207,6 +212,7 @@ export class DockerStackConfiguration extends StackConfiguration
     run_object.interactive = true // set all jobs to interactive so we can user docker attach
     run_object.detached = !this.synchronous
     run_object.remove = this.remove_on_exit
+    if(this.entrypoint) run_object.entrypoint = this.entrypoint
     return run_object
   }
 

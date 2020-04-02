@@ -14,6 +14,7 @@ export const docker_run_schema = {
     "environment": {"$ref": "docker-configuration-schema.json#/definitions/args"},
     "resources": {"$ref": "docker-configuration-schema.json#/definitions/resources"},
     "wd": {"type": "string"},
+    "entrypoint": {"type": "string"},
     "detached": {"type": "boolean"},
     "interactive": {"type": "boolean"},
     "remove": {"type": "boolean"},

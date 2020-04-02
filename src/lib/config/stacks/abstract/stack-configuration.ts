@@ -53,6 +53,7 @@ export abstract class StackConfiguration
   abstract runHash(): string;  // unique id to identify configuration for running
   // interactive components that may be called by CLI to modify existing configuration
   abstract setCommand(value: string): void;
+  abstract setEntrypoint(value: string): void;
   abstract setWorkingDir(value: string): void;
   abstract setSyncronous(value: boolean): void;
   abstract setRemoveOnExit(value: boolean): void;
