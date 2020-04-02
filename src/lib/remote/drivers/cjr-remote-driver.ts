@@ -253,6 +253,7 @@ export class CJRRemoteDriver extends RemoteDriver
     const job_id = matching_ids[0]
     const remote_project_id = result.data[job_id]?.[this.label_names['project-id']]
     const remote_project_root = result.data[job_id]?.[this.label_names['project-root']]
+    const parent_remote_job_dir = result.data[job_id]?.[this.label_names['remote-job-dir']] // exec stacks will be placed inside of the remote_job_dir of their parent job if stack-upload-mode is uncached
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- ensure project has ID ------------------------------------------------
     if(exec_options['host-project-root']) result = ensureProjectId(exec_options['host-project-root'])
@@ -264,7 +265,8 @@ export class CJRRemoteDriver extends RemoteDriver
     result = this.getStackUploadDirectories(resource, {
       'stack-upload-mode':  exec_options['stack-upload-mode'],
       'local-stack-name':   container_runtime.builder.stackName(job_options['stack-path']),
-      'project-id':         local_project_id
+      'project-id':         local_project_id,
+      'parent-remote-job-dir' : parent_remote_job_dir
     })
     if(!result.success) return this.stopMultiplexMasterAndReturn(result);
     const remote_stack_path = result.data
@@ -793,7 +795,7 @@ export class CJRRemoteDriver extends RemoteDriver
     })
   }
 
-  private getStackUploadDirectories(resource: Resource, params:{'stack-upload-mode': 'cached'|'uncached', 'local-stack-name': string, 'project-id':string})
+  private getStackUploadDirectories(resource: Resource, params:{'stack-upload-mode': 'cached'|'uncached', 'local-stack-name': string, 'project-id':string, 'parent-remote-job-dir'?:string})
   {
     const namedStack = (stack_dir:string) => path.posix.join(stack_dir, params['local-stack-name'])
     const remote_storage_dir = remoteStoragePath(resource['storage-dir'])
@@ -810,7 +812,10 @@ export class CJRRemoteDriver extends RemoteDriver
     else if(params["stack-upload-mode"] == "uncached")
     {
       // -- create new tmp directory -------------------------------------------
-      result = this.mkTempDir(remote_storage_dir, ['files'], false)
+      if(params['parent-remote-job-dir'])
+        result = this.mkTempDir(path.posix.join(params['parent-remote-job-dir'], '.exec-stacks'), [], false) // used by exec, shell, jupyter
+      else
+        result = this.mkTempDir(remote_storage_dir, ['files'], false)
       if(!result.success) return result
       return new ValidatedOutput(true, result.data) // store stack directly in tmp directory
     }
