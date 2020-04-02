@@ -56,7 +56,7 @@ export default class Shell extends StackCommand {
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
-      "remove":       false
+      "remove":       true
     }
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
