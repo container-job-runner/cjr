@@ -33,6 +33,7 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
       "config-files": jup_options["config-files"] || [],
       "build-mode":   "no-rebuild",
       "command":      jupyterCommand(jup_options),
+      //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line socket based driver is developed
       "host-root":    jup_options["project-root"] || "",
       "cwd":          jup_options["project-root"] || "",
       "file-access":  "bind",
@@ -60,6 +61,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
     "config-files": jup_options["config-files"] || [],
     "build-mode":   "no-rebuild",
     "command":      jupyterCommand(jup_options),
+    //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line once socket based driver is developed
     "cwd":          jup_options["project-root"] || "",
     "file-access":  "volume",
     "synchronous":  jup_options['sync'] || false,
