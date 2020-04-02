@@ -36,6 +36,7 @@ export type JobOptions = {
     "config-files": Array<string>,                                              // any additional configuration files for stack
     "build-mode": buildmodes,                                                   // specifies how to build stack before run
     "command": string,                                                          // command for job
+    "entrypoint"?: string,                                                      // optional entrypoint override
     "host-root"?: string,                                                       // project host root
     "file-access": "volume"|"bind",                                             // specifies how project files are accessed by container
     "file-volume-id"?: string,                                                  // if this field is specified, this volume will be mounted at container Root (instead of a new volume being created)
@@ -144,6 +145,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   if(job_options?.labels) job_options["labels"].map(
     (flag:{key:string, value: string}) => configuration.addLabel(flag.key, flag.value)
   )
+  if(job_options?.entrypoint) configuration.setEntrypoint(job_options.entrypoint)
   configuration.setCommand((job_options["x11"]) ? prependXAuth(job_options["command"], output_options.explicit) : job_options["command"])
   configuration.setSyncronous(job_options["synchronous"])
   configuration.setRemoveOnExit(job_options["remove"])
