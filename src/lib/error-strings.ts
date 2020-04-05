@@ -34,6 +34,11 @@ export const ErrorStrings = {
     RUNNING: (id:string) => `Jupyter is already running.\n   ID: ${id}`,
     NOTRUNNING: `Jupyter is not running.`,
     NOURL: `Failed to obtain a url for the Jupyter server.`
+  },
+  THEIA: {
+    RUNNING: (id:string) => `Theia is already running.\n   ID: ${id}`,
+    NOTRUNNING: `Theia is not running.`,
+    NOURL: `Failed to obtain a url for the Theia.`
   }
 }
 

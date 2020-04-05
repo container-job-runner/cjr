@@ -96,5 +96,11 @@ export const JUPYTER_JOB_NAME = (identifier: {"job-id"?: string,"project-root"?:
   return `JUPYTER${job_str}${path_str}`;
 }
 
+// Theia options
+export const THEIA_JOB_NAME = (identifier: {"project-root"?: string}) => {
+  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "";
+  return `THEIA${path_str}`;
+}
+
 // X11 options
 export const X11_POSIX_BIND = "/tmp/.X11-unix"
