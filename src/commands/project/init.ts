@@ -13,10 +13,16 @@ import {DockerStackConfiguration} from '../../lib/config/stacks/docker/docker-st
 import {TextFile} from '../../lib/fileio/text-file'
 
 export default class Init extends ProjectSettingsCommand {
-  static description = 'Set project settings'
+  static description = 'Initialize cjr directory'
   static args = []
   static flags = {
-    template: flags.string({default: 'default', options: ['empty', 'default', 'project-stacks']})
+    template: flags.string({default: 'default', options: ['empty', 'default', 'project-stacks']}),
+    "stack": flags.string({env: 'STACK', description: "default stack for project"}),
+    "project-root-auto": flags.boolean({}),
+    "remote-name": flags.string({env: 'REMOTENAME', description: "default remote resource for project"}),
+    "config-files": flags.string({multiple: true, description: "additional overriding configuration files for project stack"}),
+    "stacks-dir": flags.string({description: "override default stack directory for project"}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
   }
   static strict = false;
 
@@ -44,6 +50,14 @@ export default class Init extends ProjectSettingsCommand {
           this.projectStacksTemplate(project_settings, project_root)
           break
       }
+      // -- add any user specified settings ------------------------------------
+      const fields:Array<ps_fields> = ['stack', 'remote-name', 'stacks-dir', 'visible-stacks']
+      project_settings.set((JSTools.oSubset(flags, fields) as ps_props))
+      if(flags['project-root-auto'])
+        project_settings.set({'project-root': 'auto'})
+      if(flags['config-files'].length > 0)
+        project_settings.set({'config-files': project_settings.get('config-files').concat(flags['config-files'])})
+      // -- write files --------------------------------------------------------
       const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
       if(!result.success) return printResultState(result)
       console.log(`Initialized cjr project in ${projectSettingsDirPath(project_root)}`)
