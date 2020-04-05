@@ -98,13 +98,15 @@ export class DockerRunDriver extends RunDriver
     return new ValidatedOutput(true, this.shell.exec(command, flags, args))
   }
 
-  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={}, mode:"print"|"output")
+  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={}, mode:"print"|"output"|"json")
   {
     var command = `${this.base_command} exec`;
     var args = [id].concat(exec_command)
     const flags = this.execFlags(exec_options)
     if(mode == "print")
       return new ValidatedOutput(true, this.shell.exec(command, flags, args))
+    else if(mode == "json")
+      return this.shell.output(command, flags, args, {}, 'json')
     else
       return this.shell.output(command, flags, args)
   }

@@ -15,7 +15,7 @@ export abstract class RunDriver extends ContainerDriver
   abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput;
   abstract jobLog(id: string) : ValidatedOutput;
   abstract jobAttach(id: string) : ValidatedOutput;
-  abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary,  mode:"print"|"output") : ValidatedOutput;
+  abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary,  mode:"print"|"output"|"json") : ValidatedOutput;
   abstract jobToImage(id: string, image_name: string): ValidatedOutput
   abstract jobStop(ids: Array<string>) : ValidatedOutput;
   abstract jobDelete(ids: Array<string>) : ValidatedOutput;
