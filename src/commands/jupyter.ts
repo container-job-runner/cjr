@@ -49,7 +49,7 @@ export default class Run extends StackCommand {
 
     var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";
-    const jupyter_app = this.settings.get('jupyter_app');
+    const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start jupyter ------------------------
     {
       result = startJupyterInProject(
@@ -75,16 +75,16 @@ export default class Run extends StackCommand {
     {
       result = listJupyter(container_runtime, stack_path, {"project-root": project_root})
     }
-    if(args['command'] === 'url' || (!flags['silent'] && args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
+    if(args['command'] === 'url' || (!flags['silent'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
-    if(args['command'] === 'app' || (!flags['silent'] && args['command'] === 'start' && jupyter_app)) // -- start electron app
+    if(args['command'] === 'app' || (!flags['silent'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
-      if(url_result.success) startJupyterApp(url_result.data, jupyter_app || "", flags.explicit)
+      if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }
     printResultState(result)

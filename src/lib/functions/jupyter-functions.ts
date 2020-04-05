@@ -115,11 +115,17 @@ export function startJupyterApp(url: string, app_path: string, explicit: boolean
 {
   if(!app_path) return new ValidatedOutput(false)
   const platform = os.platform()
-  var command: string = ""
+  var app_cmd: string = ""
   if(platform == "darwin")
-    command = `export JURL=${ShellCommand.bashEscape(url)} && open ${app_path}`
+    app_cmd = `open ${app_path}`
   else
-    command = `export JURL=${ShellCommand.bashEscape(url)} && ${app_path}`
+    app_cmd = app_path
+
+  const command = [
+        `export URL=${ShellCommand.bashEscape(url)}`,
+        `export ICON=jupyter`,
+        app_cmd
+    ].join('&&');
   return (new ShellCommand(explicit, false)).execAsync(command)
 }
 
