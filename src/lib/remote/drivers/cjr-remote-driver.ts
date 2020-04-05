@@ -42,7 +42,7 @@ export class CJRRemoteDriver extends RemoteDriver
      'job:copy'   : ['explicit', 'verbose', 'all'],
      'job:delete' : ['explicit', 'silent'],
      'job:labels' : ['all', 'all-completed', 'all-running', 'silent'],
-     'job:list'   : ['explicit', 'verbose', 'json', 'all'],
+     'job:ls'   : ['explicit', 'verbose', 'json', 'all'],
      'job:log'    : ['explicit', 'lines'],
      'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'silent'],
      'job:shell'  : ['explicit', 'discard'],
@@ -216,8 +216,8 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!result.success) return result
     // -- execute ssh command --------------------------------------------------
     return this.ssh_shell.exec(
-      'cjr job:list',
-      this.cliFlagsToShellFlags(flags, this.transferrable_flags['job:list']),
+      'cjr job:ls',
+      this.cliFlagsToShellFlags(flags, this.transferrable_flags['job:ls']),
       [],
       this.interactive_ssh_options
     )
@@ -408,7 +408,7 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!result.success) return result
     // -- execute ssh command --------------------------------------------------
     var result = this.ssh_shell.output(
-      'cjr job:list', {json: {}}, [],
+      'cjr job:ls', {json: {}}, [],
       this.interactive_ssh_options,
       'json'
     )
@@ -423,7 +423,7 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!result.success) return result
     // -- execute ssh command --------------------------------------------------
     result = this.ssh_shell.output(
-      'cjr job:list',
+      'cjr job:ls',
       {json:{}},
       [],
       this.interactive_ssh_options,
