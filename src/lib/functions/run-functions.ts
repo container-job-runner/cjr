@@ -144,7 +144,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
       configuration.addPort(p.hostPort, p.containerPort))
   if(job_options?.x11) enableX11(configuration, output_options.explicit)
   if(job_options?.environment) Object.keys(job_options['environment']).map((key:string) =>
-    configuration.addRunEnvironmentVariable(key, job_options['environment'][key] || "")
+    configuration.addRunEnvironmentVariable(key, job_options['environment']?.[key] || "")
   )
   if(job_options?.labels) job_options["labels"].map(
     (flag:{key:string, value: string}) => configuration.addLabel(flag.key, flag.value)
