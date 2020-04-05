@@ -5,8 +5,8 @@ import {ProjectSettingsCommand, Dictionary} from '../../lib/commands/project-set
 import {loadProjectSettings} from "../../lib/functions/run-functions"
 import {printResultState} from '../../lib/functions/misc-functions'
 
-export default class Settings extends ProjectSettingsCommand {
-  static description = 'View project settings'
+export default class ls extends ProjectSettingsCommand {
+  static description = 'list project settings'
   static args = []
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
@@ -16,7 +16,7 @@ export default class Settings extends ProjectSettingsCommand {
 
   async run()
   {
-    const {flags} = this.parse(Settings)
+    const {flags} = this.parse(ls)
     this.augmentFlagsWithProjectSettings(flags, {"project-root":true})
     const project_root: string = (flags["project-root"] as string)
     const {result, project_settings} = loadProjectSettings(project_root)
