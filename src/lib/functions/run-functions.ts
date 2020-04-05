@@ -43,6 +43,7 @@ export type JobOptions = {
     "synchronous": boolean,                                                     // specifies whether job is run sync or async
     "x11"?: boolean,                                                            // if true binds x11 dirs and passes xauth info to container
     "ports"?: ports,                                                            // specfies ports that should be bound for job
+    "environment"?: Dictionary,
     "labels"?: labels,                                                          // specifies labels for job
     "cwd": string                                                               // current directory where user called cli (normally should be process.cwd())
     "remove": boolean,                                                          // if true job should be discarded once it completes
@@ -142,6 +143,9 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
     job_options["ports"].map((p:{hostPort:number, containerPort: number}) =>
       configuration.addPort(p.hostPort, p.containerPort))
   if(job_options?.x11) enableX11(configuration, output_options.explicit)
+  if(job_options?.environment) Object.keys(job_options['environment']).map((key:string) =>
+    configuration.addRunEnvironmentVariable(key, job_options['environment'][key] || "")
+  )
   if(job_options?.labels) job_options["labels"].map(
     (flag:{key:string, value: string}) => configuration.addLabel(flag.key, flag.value)
   )
