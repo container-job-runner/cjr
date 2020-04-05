@@ -55,7 +55,7 @@ export default class Init extends ProjectSettingsCommand {
       project_settings.set((JSTools.oSubset(flags, fields) as ps_props))
       if(flags['project-root-auto'])
         project_settings.set({'project-root': 'auto'})
-      if(flags['config-files'].length > 0)
+      if(flags['config-files']?.length > 0)
         project_settings.set({'config-files': ((project_settings.get('config-files') || []) as Array<string>).concat(flags['config-files'])})
       // -- write files --------------------------------------------------------
       const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
