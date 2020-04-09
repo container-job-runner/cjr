@@ -1,7 +1,7 @@
 import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
 import {Dictionary, StackCommand} from '../lib/commands/stack-command'
-import {jobStart, jobCopy, ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
+import {jobStart, jobCopy, matchingJobInfo, ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
 import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 
@@ -78,7 +78,7 @@ export default class Run extends StackCommand {
     if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway_print_job_id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
     // -- autocopy results -----------------------------------------------------
-    if(this.shouldAutocopy(flags)) {
+    if(this.shouldAutocopy(flags, c_runtime, job_id, stack_path)) {
       // -- set copy options ---------------------------------------------------
       const copy_options:CopyOptions = {
         "ids": [job_id],
@@ -90,8 +90,13 @@ export default class Run extends StackCommand {
     }
   }
 
-  shouldAutocopy(flags: Dictionary)
+  shouldAutocopy(flags: Dictionary, container_runtime: ContainerRuntime, job_id: string, stack_path: string)
   {
+    // -- check that job has stopped -------------------------------------------
+    const result = matchingJobInfo(container_runtime.runner, [job_id], [stack_path])
+    if(!result.success) return false
+    if(result.data?.[0]?.status != 'exited') return false
+    // -- check flag status ----------------------------------------------------
     if(!flags["project-root"]) return false
     if(flags["file-access"] === 'bind') return false
     if(flags["autocopy"]) return true
