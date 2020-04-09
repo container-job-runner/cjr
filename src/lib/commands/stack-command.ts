@@ -32,7 +32,7 @@ export abstract class StackCommand extends Command
   fullStackPath(stack_name: string, stacks_path: string = "")
   {
     if(!stack_name) return ""
-    if(!stacks_path) stacks_path = this.settings.get("stacks_dir");
+    if(!stacks_path) stacks_path = this.settings.get("stacks-dir");
     if(fs.existsSync(stack_name)) return path.resolve(stack_name)
     const local_stack_path = path.join(stacks_path, stack_name)
     if(fs.existsSync(local_stack_path)) return local_stack_path

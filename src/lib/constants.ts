@@ -47,7 +47,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       // cli-props
       "auto-project-root": true,
       interactive: true,
-      stacks_dir: path.join(settings_dir, "stacks"),
+      "stacks-dir": path.join(settings_dir, "stacks"),
       alway_print_job_id: false,
       autocopy_sync_job: true,
       job_default_run_mode: "sync",

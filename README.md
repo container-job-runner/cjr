@@ -221,7 +221,7 @@ Absolute or relative paths to overriding configuration files that should be auto
 
 ### `stacks-dir` (optional)
 
-If this option is specified then the default stacks directory (`cjr config:get stacks_dir`) will be overridden whenever cjr is called from within the project root folder.
+If this option is specified then the default stacks directory (i.e. the stacks-dir parameter from `cjr config:ls`) will be overridden whenever cjr is called from within the project root folder.
 
 ### `remote-name` (optional)
 
@@ -246,7 +246,7 @@ We describe the settings that can be viewed and modified using `cjr config:list`
 - **run_cmd**: *"podman"|"docker"* - container environment used to run images.
 - **run_shortcuts_file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below.
 - **selinux**: *boolean* - if true then the :Z option will be applied to all bind mounts.
-- **stacks_dir**: *string* - the default path to a folder that contains cjr stacks.
+- **stacks-dir**: *string* - the default path to a folder that contains cjr stacks.
 
 The run_shortcuts_file option allows you to define custom shortcuts for the `cjr $` command when called it's called with a single argument. For example you can map `cjr $ script.sh` to `cjr $ bash script.sh`. The yml file must correspond to an object with string keys and values. For example
 ```yaml

@@ -17,7 +17,7 @@ export default class List extends StackCommand {
   {
     const {argv, flags} = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": false})
-    const stacks_path = flags["stacks-dir"] || this.settings.get("stacks_dir")
+    const stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
     fs.ensureDirSync(stacks_path)
     console.log(chalk`{bold PATH}    ${stacks_path}`)
     process.stdout.write(chalk`{bold STACKS}  `)

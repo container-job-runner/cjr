@@ -26,7 +26,7 @@ export default class Set extends StackCommand {
       options: ["true", "false"],
       description: "if true, then the :Z option will be applied to all bind mounts."
     }),
-    "stacks_dir": flags.string({
+    "stacks-dir": flags.string({
       description: "the default path to a folder that contains cjr stacks."
     }),
     "run_shortcuts_file": flags.string({

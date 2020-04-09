@@ -23,7 +23,7 @@ export default class Pull extends StackCommand {
     const shell = new ShellCommand(flags.explicit, false)
     var result: ValidatedOutput
     // -- get stacks directory and name of git repo ----------------------------
-    const local_stacks_path = flags["stacks-dir"] || this.settings.get("stacks_dir")
+    const local_stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
     fs.ensureDirSync(local_stacks_path)
     const repo_name = args.url.split("/").pop().replace(/.git$/, "")
     const stack_abs_path = path.join(local_stacks_path, repo_name)
