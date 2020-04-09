@@ -6,7 +6,7 @@ import * as chalk from 'chalk'
 export default class Set extends StackCommand {
   static description = 'Set a CLI parameter.'
   static flags = {
-    "auto_project_root": flags.string({
+    "auto-project-root": flags.string({
       options: ["true", "false"],
       description: 'if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory'
     }),

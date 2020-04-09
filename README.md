@@ -203,8 +203,8 @@ Whenever cjr is called from inside of the project root that contains the .cjr/pr
 
 ### `project-root` (optional)
 
-If this option is specified then the field must be set to "auto". If the CJR setting *auto_project_root* is set to true using
-`cjr config:set auto_project_root true`
+If this option is specified then the field must be set to "auto". If the CJR setting *auto-project-root* is set to true using
+`cjr config:set auto-project-root true`
 then the cjr will automatically pick up the project-root if it is called from anywhere within the project root folder.
 
 ### `stack` (optional)
@@ -232,7 +232,7 @@ If this option is specified then cjr will automatically set the --remote-name fl
 We describe the settings that can be viewed and modified using `cjr config:list`, `cjr config:set` and `cjr config:get`  
 
 - **alway_print_job_id**: *boolean* - if true, then cjr $ command will always print the user id even if --async flag is not selected.
-- **auto_project_root**: *boolean* - if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory.
+- **auto-project-root**: *boolean* - if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory.
 - **autocopy_sync_job**: *boolean* - if true, then cjr will automatically run job:copy at the end of all synchronous jobs.
 - **build_cmd**: *"podman"|"docker"* - container environment used to build images.
 - **container_default_shell**: *string* default shell that should be started for job:shell commands (e.g. sh, bash, zsh).

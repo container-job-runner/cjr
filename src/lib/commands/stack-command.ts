@@ -46,7 +46,7 @@ export abstract class StackCommand extends Command
     // -- load settings and augment flags  -------------------------------------
     var result = new ValidatedOutput(false)
     var project_settings:ProjectSettings = new ProjectSettings()
-    if(!flags?.['project-root'] && this.settings.get('auto_project_root')){
+    if(!flags?.['project-root'] && this.settings.get('auto-project-root')){
       ;( {result, project_settings} = scanForSettingsDirectory(process.cwd()) )
     } else if(flags?.['project-root']){
       ;( {result, project_settings} = loadProjectSettings(flags['project-root']) )
