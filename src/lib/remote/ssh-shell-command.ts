@@ -27,6 +27,7 @@ export class SshShellCommand
     resource: Dictionary = {}
     multiplex: boolean = true
     cli_data_dir: string
+    tags = {tunnel: 'tunnel_'} // tags used for multiplex master socket when creating tunnel
 
     constructor(explicit: boolean, silent: boolean, cli_data_dir: string)
     {
@@ -150,7 +151,7 @@ export class SshShellCommand
       if(this.resource.key) flags.i = {value: this.resource.key, noequals: true}
       const args = [`${this.resource.username}@${this.resource.address}`]
       const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
-      return (this.multiplexExists(options))
+      return this.multiplexExists(options)
     }
 
     multiplexStop(options:Dictionary={}) // stop the multiplex master
@@ -176,5 +177,28 @@ export class SshShellCommand
       return path.join(this.cli_data_dir, remote_sshsocket_dirname, `${options?.tag || ""}${this.resource.username}@${this.resource.address}:22`)
     }
 
+    // === Tunnel Functions ====================================================
+
+    tunnelStart(options:{remotePort: string, localHostname: string, localPort: string, x11: boolean})
+    {
+      const multiplex_options = {tag: this.tags.tunnel, x11: options?.x11 || false}
+      if(!this.tunnelStop()) return false // -- stop any existing tunnel
+      if(!this.multiplexStart(multiplex_options)) return false
+      const command = 'ssh'
+      const flags = {
+        O: {value: 'forward', noequals: true},
+        L: {value: `${options.remotePort}:${options.localHostname}:${options.localPort}`, noequals: true},
+        S: {value: this.multiplexSocketPath(multiplex_options), noequals: true}
+      }
+      const args = [`${this.resource.username}@${this.resource.address}`]
+      const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
+      return this.multiplexExists(multiplex_options)
+    }
+
+    tunnelStop()
+    {
+      const multiplex_options = {tag: this.tags.tunnel}
+      return this.multiplexStop(multiplex_options)
+    }
 
 }
