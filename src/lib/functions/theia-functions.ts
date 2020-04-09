@@ -1,3 +1,4 @@
+import * as path from 'path'
 import * as os from 'os'
 import {JSTools} from '../js-tools'
 import {ShellCommand} from '../shell-command'
@@ -102,7 +103,8 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
 // -- command to start theia server --------------------------------------------
 function theiaCommand(builder: BuildDriver, theia_options: TheiaOptions) {
   const result = builder.loadConfiguration(theia_options['stack-path'], theia_options['config-files'] || [])
-  const project_dir = (result.success) ? (result.data?.getContainerRoot() || "") : ""
+  const container_root = (result.success) ? (result.data?.getContainerRoot() || "") : ""
+  const project_dir = (container_root && theia_options['project-root']) ? path.posix.join(container_root, path.basename(theia_options['project-root'])) : container_root
   return `theia --hostname $${ENV.url} --port $${ENV.port} ${project_dir}`;
 }
 
