@@ -50,7 +50,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       "stacks-dir": path.join(settings_dir, "stacks"),
       "alway-print-job-id": false,
       "autocopy-sync-job": true,
-      job_default_run_mode: "sync",
+      "job-default-run-mode": "sync",
       run_shortcuts_file: "",
       build_cmd: cmd,
       run_cmd: cmd,

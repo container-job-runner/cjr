@@ -66,7 +66,7 @@ export default class Exec extends RemoteCommand {
       runner:  this.newRunner(flags.explicit, flags.verbose)
     }
     // -- set job options ------------------------------------------------------
-    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job_default_run_mode') == 'sync'))) ? true : false
+    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))) ? true : false
     const command = run_shortcut.apply(argv.splice(1)).join(" ")
     const job_options:JobOptions = {
       "stack-path":   stack_path,

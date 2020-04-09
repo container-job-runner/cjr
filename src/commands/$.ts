@@ -53,7 +53,7 @@ export default class Run extends StackCommand {
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- set job options ------------------------------------------------------
-    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job_default_run_mode') == 'sync'))) ? true : false
+    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))) ? true : false
     const job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],

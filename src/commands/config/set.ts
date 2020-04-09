@@ -56,7 +56,7 @@ export default class Set extends StackCommand {
     "webapp": flags.string({
       description: 'absolute path to cjr electron WebApp.'
     }),
-    "job_default_run_mode": flags.string({
+    "job-default-run-mode": flags.string({
       options: ['sync', 'async'],
       description: 'determines if new jobs run sync or async by default.'
     })
