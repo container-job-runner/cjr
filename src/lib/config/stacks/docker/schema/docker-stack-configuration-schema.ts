@@ -34,6 +34,9 @@ export const docker_stack_configuration_schema = {
         "no-cache": {
           "type": "boolean"
         },
+        "pull": {
+          "type": "boolean"
+        },
         "args": {"$ref": "#/definitions/args"}
       }
     },
