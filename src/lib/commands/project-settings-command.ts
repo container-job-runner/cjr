@@ -33,7 +33,7 @@ export abstract class ProjectSettingsCommand extends StackCommand
     printProjectSettings(project_settings: ProjectSettings, project_root: string)
     {
       const raw_settings:Dictionary = project_settings.getMultiple(["project-root", "stack", "config-files", "stacks-dir", "remote-name", "visible-stacks"])
-      console.log(chalk`\n   {bold Project Settings}: ${project_root}\n`)
+      console.log(chalk`\n   {bold Project}: ${project_root}\n`)
       Object.keys(raw_settings).map((key:string) => {
         const value = raw_settings[key]
         let value_str = value
