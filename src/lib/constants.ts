@@ -59,7 +59,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       // container props
       "container-default-shell": "bash",
       selinux: false,
-      jupyter_command: "jupyter lab",
+      "jupyter-command": "jupyter lab",
       webapp: "",
   }
 }

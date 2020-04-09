@@ -241,12 +241,12 @@ We describe the settings that can be viewed and modified using `cjr config:list`
 - **job-default-run-mode**: *"async"|"sync"*  determines if new jobs run sync or async by default.
 - **job-ls-fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message". For example:
 `cjr config:set --job-ls-fields='id, stackName, command, statusString'`
-- **jupyter_app**: *string* - absolute path to optional cjr electron jupyter app. leave blank to disable.
-- **jupyter_command**: *string* - command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook.
+- **jupyter-command**: *string* - command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook.
 - **run-cmd**: *"podman"|"docker"* - container environment used to run images.
 - **run-shortcuts-file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below.
 - **selinux**: *boolean* - if true then the :Z option will be applied to all bind mounts.
 - **stacks-dir**: *string* - the default path to a folder that contains cjr stacks.
+- **webapp**: *string* - absolute path to optional cjr electron WebApp. leave blank to disable.
 
 The run-shortcuts-file option allows you to define custom shortcuts for the `cjr $` command when called it's called with a single argument. For example you can map `cjr $ script.sh` to `cjr $ bash script.sh`. The yml file must correspond to an object with string keys and values. For example
 ```yaml

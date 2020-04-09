@@ -67,7 +67,7 @@ export default class Run extends StackCommand {
           "config-files": flags['config-files'],
           "project-root": project_root,
           "ports": this.parsePortFlag([flags.port]),
-          "command": this.settings.get('jupyter_command'),
+          "command": this.settings.get('jupyter-command'),
           "args": argv.slice(2),
           "labels": this.parseLabelFlag(flags['label']),
           "sync": false,

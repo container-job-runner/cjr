@@ -50,8 +50,8 @@ export default class Set extends StackCommand {
     "container-default-shell": flags.string({
       description: 'default shell that should be started for job:shell commands (e.g. sh, bash, zsh).'
     }),
-    "jupyter_command": flags.string({
-      description: 'command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook'
+    "jupyter-command": flags.string({
+      description: 'command that should be run to start Jupyter (e.g. "jupyter lab" or "jupyter notebook").'
     }),
     "webapp": flags.string({
       description: 'absolute path to cjr electron WebApp.'
