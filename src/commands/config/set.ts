@@ -14,7 +14,7 @@ export default class Set extends StackCommand {
       options: ["true", "false"],
       description: "if true, then certain cli commands will prompt the user with interactive menus."
     }),
-    "alway_print_job_id": flags.string({
+    "alway-print-job-id": flags.string({
       options: ["true", "false"],
       description: "if true, then cjr $ command will always print the user id even if --async flag is not selected."
     }),

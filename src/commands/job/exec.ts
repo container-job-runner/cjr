@@ -70,7 +70,7 @@ export default class Shell extends StackCommand {
     const job_id = result.data
     if(job_id !== "" && flags.async && !flags.silent)
       console.log(job_id)
-    if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway_print_job_id'))
+    if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
 
   }
