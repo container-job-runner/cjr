@@ -52,8 +52,8 @@ export const defaultCLISettings = (settings_dir:string) =>
       "autocopy-sync-job": true,
       "job-default-run-mode": "sync",
       "run-shortcuts-file": "",
-      build_cmd: cmd,
-      run_cmd: cmd,
+      "build-cmd": cmd,
+      "run-cmd": cmd,
       image_tag: cli_name,
       job_list_fields: 'id, stackName, command, statusString',
       // container props

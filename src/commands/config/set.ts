@@ -32,11 +32,11 @@ export default class Set extends StackCommand {
     "run-shortcuts-file": flags.string({
       description: "location of a yml file that can be used to specify run shortcuts for `cjr $` command; To disable set value to ''"
     }),
-    "build_cmd": flags.string({
+    "build-cmd": flags.string({
       options: ['podman', 'docker'],
       description: "container environment used to build images"
     }),
-    "run_cmd": flags.string({
+    "run-cmd": flags.string({
       options: ['podman', 'docker'],
       description: "container environment used to run images"
     }),

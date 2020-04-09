@@ -125,7 +125,7 @@ export abstract class StackCommand extends Command
 
   newBuilder(explicit: boolean = false, silent: boolean = false)
   {
-    const build_cmd = this.settings.get('build_cmd');
+    const build_cmd = this.settings.get('build-cmd');
     const tag = this.settings.get('image_tag');
     const shell = new ShellCommand(explicit, silent)
 
@@ -152,7 +152,7 @@ export abstract class StackCommand extends Command
 
   newRunner(explicit: boolean = false, silent: boolean = false)
   {
-    const run_cmd = this.settings.get('run_cmd');
+    const run_cmd = this.settings.get('run-cmd');
     const shell = new ShellCommand(explicit, silent)
     const options = {
       tag: this.settings.get('image_tag'),
