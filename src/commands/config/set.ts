@@ -53,8 +53,8 @@ export default class Set extends StackCommand {
     "jupyter_command": flags.string({
       description: 'command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook'
     }),
-    "jupyter_app": flags.string({
-      description: 'absolute path to cjr electron jupyter app'
+    "webapp": flags.string({
+      description: 'absolute path to cjr electron WebApp.'
     }),
     "job_default_run_mode": flags.string({
       options: ['sync', 'async'],
