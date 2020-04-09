@@ -18,7 +18,7 @@ export default class Set extends StackCommand {
       options: ["true", "false"],
       description: "if true, then cjr $ command will always print the user id even if --async flag is not selected."
     }),
-    "autocopy_sync_job": flags.string({
+    "autocopy-sync-job": flags.string({
       options: ["true", "false"],
       description: "if true, then cjr will automatically run job:copy at the end of all synchronous jobs."
     }),
