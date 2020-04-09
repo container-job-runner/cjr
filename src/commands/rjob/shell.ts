@@ -16,7 +16,7 @@ export default class Shell extends RemoteCommand {
     x11: flags.boolean({default: false}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     "stack-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
-    "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
+    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "protocol": flags.string({exclusive: ['stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying stack-upload-mode, build-mode'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
@@ -60,7 +60,7 @@ export default class Shell extends RemoteCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
+      "build-options":this.parseBuildModeFlag(flags["build-mode"]),
       "command":      this.settings.get("container-default-shell"), // NOTE: NO EFFECT for cjr driver (command is overridden by remote cjr)
       "cwd":          flags["working-directory"],
       "file-access":  "volume",

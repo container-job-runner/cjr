@@ -5,10 +5,12 @@ import {ErrorStrings} from '../error-strings'
 import {ValidatedOutput} from '../validated-output'
 import {JUPYTER_JOB_NAME} from '../constants'
 import {jobNameLabeltoID, jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels} from './run-functions'
+import {BuildOptions} from './build-functions'
 import {RunDriver} from '../drivers/abstract/run-driver'
 
 export type JupyterOptions = {
   "stack-path": string,
+  "build-options"?: BuildOptions,
   "config-files"?: Array<string>,
   "project-root"?: string,
   "ports": ports,
@@ -31,7 +33,7 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
   const job_options:JobOptions = {
       "stack-path":   jup_options["stack-path"],
       "config-files": jup_options["config-files"] || [],
-      "build-mode":   "no-rebuild",
+      "build-options":jup_options["build-options"] || {'reuse-image': true},
       "command":      jupyterCommand(jup_options),
       //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line socket based driver is developed
       "host-root":    jup_options["project-root"] || "",
@@ -59,7 +61,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
   const job_options:JobOptions = {
     "stack-path":   jup_options["stack-path"],
     "config-files": jup_options["config-files"] || [],
-    "build-mode":   "no-rebuild",
+    "build-options":jup_options["build-options"] || {'reuse-image': true},
     "command":      jupyterCommand(jup_options),
     //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line once socket based driver is developed
     "cwd":          jup_options["project-root"] || "",

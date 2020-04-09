@@ -12,7 +12,7 @@ export default class Exec extends RemoteCommand {
     stack: flags.string({env: 'STACK'}),
     port: flags.integer({default: 8888, exclusive: ['stop', 'list', 'app']}),
     "stack-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
-    "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
+    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "protocol": flags.string({exclusive: ['stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying stack-upload-mode, and build-mode'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     x11: flags.boolean({default: false}),
@@ -63,7 +63,7 @@ export default class Exec extends RemoteCommand {
       const job_options:JobOptions = {
         "stack-path":   stack_path,
         "config-files": flags["config-files"],
-        "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
+        "build-options":this.parseBuildModeFlag(flags["build-mode"]),
         "command":      argv.splice(2).join(" "),
         "cwd":          "",
         "file-access":  "volume",

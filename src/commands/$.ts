@@ -23,7 +23,7 @@ export default class Run extends StackCommand {
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     autocopy: flags.boolean({default: false, exclusive: ["async"], description: "automatically copy files back to the projec root on exit"}),
     "file-access": flags.string({default: "volume", options: ["volume", "bind"], description: "how files are accessed from the container. Options are: volume and bind."}),
-    "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
+    "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
@@ -57,7 +57,7 @@ export default class Run extends StackCommand {
     const job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
+      "build-options": this.parseBuildModeFlag(flags["build-mode"]),
       "command":      run_shortcut.apply(argv).join(" "),
       "host-root":    flags["project-root"] || "",
       "cwd":          flags['working-directory'],
@@ -73,7 +73,7 @@ export default class Run extends StackCommand {
     if(!result.success) return printResultState(result)
     // -- print id -------------------------------------------------------------
     const job_id = result.data
-    if(job_id !== "" && flags.async && !flags.silent)
+    if(job_id !== "" && flags.async && !flags.silent && !flags.verbose)
       console.log(job_id)
     if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)

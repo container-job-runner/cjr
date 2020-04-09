@@ -11,6 +11,7 @@ import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions
 import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label, stack_bundle_rsync_file_paths} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
+import {BuildOptions} from '../../functions/build-functions'
 import {printResultState} from '../../functions/misc-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
 import {Resource} from "../../remote/config/resource-configuration"
@@ -580,7 +581,7 @@ export class CJRRemoteDriver extends RemoteDriver
       "stack-path":   options['local-stack-path'],
       "config-files": options['local-config-files'],
       "bundle-path":  temp_stack_path,
-      "build-mode":   'no-build',
+      "build-options":{never: true},
       "config-files-only": true
     }
     result = bundleStack(container_runtime, bundle_options)
@@ -690,7 +691,7 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- set flags ------------------------------------------------------------
     const cjr_flags:Dictionary = {
       'stack':        remote_params["remote-stack-path"],
-      'build-mode':   job_options["build-mode"],
+      'build-mode':   this.buildOptionsToBuildModeFlag(job_options["build-options"]),
       'no-autoload':  {}
     }
     if(mode == "$") cjr_flags['keep-record'] = {} // ensure both bind and volume jobs are not deleted (to allow user to copy them back)
@@ -730,6 +731,16 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- execute ssh command --------------------------------------------------
     const ssh_options:Dictionary = {interactive: true}
     return this.ssh_shell.exec(cjr_command, {},[], {ssh: ssh_options})
+  }
+
+  private buildOptionsToBuildModeFlag(build_options: BuildOptions)
+  {
+    var flag
+    if(build_options['reuse-image']) flag = 'reuse-image'
+    else if(build_options['no-cache']) flag = 'no-cache'
+    else flag = 'cached'
+    if(build_options['pull']) flag += ",pull"
+    return flag
   }
 
   // gets labels for all remote jobs whose id matches with the job_id string

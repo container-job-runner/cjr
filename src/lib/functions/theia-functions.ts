@@ -6,10 +6,12 @@ import {ErrorStrings} from '../error-strings'
 import {ValidatedOutput} from '../validated-output'
 import {THEIA_JOB_NAME} from '../constants'
 import {jobNameLabeltoID, jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels} from './run-functions'
+import {BuildOptions} from './build-functions'
 import {BuildDriver} from '../drivers/abstract/build-driver'
 
 export type TheiaOptions = {
   "stack-path": string,
+  "build-options"?: BuildOptions,
   "config-files"?: Array<string>,
   "project-root"?: string,
   "ports": ports,
@@ -39,7 +41,7 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
   const job_options:JobOptions = {
       "stack-path":   theia_options["stack-path"],
       "config-files": theia_options["config-files"] || [],
-      "build-mode":   "no-rebuild",
+      "build-options":theia_options["build-options"] || {'reuse-image': true},
       "command":      theiaCommand(container_runtime.builder, theia_options),
       "environment":  theiaEnvironment(theia_options),
       //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line socket based driver is developed

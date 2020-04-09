@@ -21,8 +21,8 @@ export default class Run extends StackCommand {
     explicit: flags.boolean({default: false}),
     silent: flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "build-mode":  flags.string({default: "no-rebuild", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."})
-  }
+    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
+    }
   static strict = false;
 
   async run()
@@ -71,7 +71,8 @@ export default class Run extends StackCommand {
           "args": argv.slice(2),
           "labels": this.parseLabelFlag(flags['label']),
           "sync": false,
-          "x11": flags.x11
+          "x11": flags.x11,
+          "build-options": this.parseBuildModeFlag(flags["build-mode"])
         });
     }
     if(args['command'] === 'stop') // -- stop jupyter --------------------------

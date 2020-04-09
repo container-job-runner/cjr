@@ -17,6 +17,7 @@ import {JSTools} from '../js-tools'
 import {missingFlagError} from '../constants'
 import {ValidatedOutput} from '../validated-output'
 import {loadProjectSettings, scanForSettingsDirectory} from '../functions/run-functions'
+import {BuildOptions} from '../functions/build-functions'
 import {ProjectSettings, ps_fields} from '../config/project-settings/project-settings'
 
 // -- types --------------------------------------------------------------------
@@ -121,6 +122,34 @@ export abstract class StackCommand extends Command
       }
     })
     return ports
+  }
+
+  // ---------------------------------------------------------------------------
+  // PARSEBUILDMODEFLAG parses a string that represents the build mode. string
+  // should be of the form:
+  //  reuse-image
+  //  cached         or     cached, pull
+  //  uncached       or     uncached, pull
+  // -- Parameters -------------------------------------------------------------
+  // build_mode_str: string  - user specified flag value
+  // -- Returns ----------------------------------------------------------------
+  //  BuildOptions - object that can be used by build-functions
+  // ---------------------------------------------------------------------------
+  protected parseBuildModeFlag(build_mode_str: string)
+  {
+    const build_options:BuildOptions = {}
+    const options = build_mode_str.split(',').map((s:string) => s.trim())
+    if(options?.[0] == 'reuse-image')
+      build_options['reuse-image'] = true;
+    else if(options?.[0] == 'cached')
+      build_options['no-cache'] = false;
+    else if(options?.[0] == 'no-cache')
+        build_options['no-cache'] = true;
+
+    if(options?.[1] == 'pull')
+      build_options['pull'] = true
+
+    return build_options;
   }
 
   newBuilder(explicit: boolean = false, silent: boolean = false)

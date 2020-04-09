@@ -20,7 +20,7 @@ export default class Shell extends StackCommand {
     verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
     silent: flags.boolean({default: false, description: 'no output is printed'}),
     explicit: flags.boolean({default: false}),
-    "build-mode":  flags.string({default: "build", options: ["no-rebuild", "build", "build-nocache"], description: "specify how to build stack. Options are: no-rebuild, build, and build-nocache."}),
+    "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
@@ -48,7 +48,7 @@ export default class Shell extends StackCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   (flags["build-mode"] as "no-rebuild"|"build"|"build-nocache"),
+      "build-options":this.parseBuildModeFlag(flags["build-mode"]),
       "command":      command,
       "cwd":          flags["working-directory"],
       "file-access":  "volume",

@@ -11,8 +11,9 @@ export default class Build extends StackCommand {
     stack: flags.string({env: 'STACK', multiple: true}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
-    silent:   flags.boolean({default: false}),
-    "no-cache":  flags.boolean({default: false}),
+    silent: flags.boolean({default: false}),
+    "no-cache": flags.boolean({default: false}),
+    "pull": flags.boolean({default: false}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"})
   }
   static strict = false;
@@ -27,7 +28,7 @@ export default class Build extends StackCommand {
       printResultState(
         buildAndLoad(
           builder,
-          (flags["no-cache"]) ? "build-nocache" : "build",
+          {"no-cache": flags['no-cache'], "pull": flags['pull']},
           this.fullStackPath(stack_name, flags["stacks-dir"]),
           flags['config-files']
         )

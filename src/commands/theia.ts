@@ -19,7 +19,8 @@ export default class Run extends StackCommand {
     port: flags.string({default: "8888"}),
     explicit: flags.boolean({default: false}),
     silent: flags.boolean({default: false}),
-    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
+    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
+    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
   }
   static strict = false;
 
@@ -57,6 +58,7 @@ export default class Run extends StackCommand {
         output_options,
         {
           "stack-path": stack_path,
+          "build-options":this.parseBuildModeFlag(flags["build-mode"]),
           "config-files": flags['config-files'],
           "project-root": project_root,
           "ports": this.parsePortFlag([flags.port]),

@@ -103,9 +103,11 @@ export abstract class RemoteCommand extends StackCommand
       if(file_upload === 0) flags['file-upload-mode'] = "cached"
       else if(file_upload === 1) flags['file-upload-mode'] = "uncached"
       // -- build-mode ---------------------------------------------------------
-      if(build === 0) flags['build-mode'] = "no-rebuild"
-      else if(build === 1) flags['build-mode'] = "build"
-      else if(build === 2) flags['build-mode'] = "build-nocache"
+      if(build === 0) flags['build-mode'] = "reuse-image"
+      else if(build === 1) flags['build-mode'] = "cached"
+      else if(build === 2) flags['build-mode'] = "cached,pull"
+      else if(build === 3) flags['build-mode'] = "no-cache"
+      else if(build === 4) flags['build-mode'] = "no-cache,pull"
       // -- build-mode ---------------------------------------------------------
       if(file_access === 0) flags['file-access'] = "bind"
       else if(file_access === 1) flags['file-access'] = "volume"

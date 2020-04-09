@@ -38,7 +38,7 @@ export default class Stash extends StackCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-mode":   "no-rebuild",
+      "build-options":   {'reuse-image': true},
       "command":      "exit",
       "host-root":    flags["project-root"] || "",
       "cwd":          process.cwd(),
