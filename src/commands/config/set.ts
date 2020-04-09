@@ -29,7 +29,7 @@ export default class Set extends StackCommand {
     "stacks-dir": flags.string({
       description: "the default path to a folder that contains cjr stacks."
     }),
-    "run_shortcuts_file": flags.string({
+    "run-shortcuts-file": flags.string({
       description: "location of a yml file that can be used to specify run shortcuts for `cjr $` command; To disable set value to ''"
     }),
     "build_cmd": flags.string({

@@ -42,7 +42,7 @@ export default class Exec extends RemoteCommand {
     const stack_path = this.fullStackPath((flags.stack as string), flags["stacks-dir"] || "")
     // -- initialize run shortcuts ---------------------------------------------
     const run_shortcut = new RunShortcuts()
-    const rs_result = run_shortcut.loadFromFile(this.settings.get('run_shortcuts_file'))
+    const rs_result = run_shortcut.loadFromFile(this.settings.get('run-shortcuts-file'))
     if(!rs_result.success) printResultState(rs_result)
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)

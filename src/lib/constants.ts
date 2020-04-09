@@ -51,7 +51,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       "alway-print-job-id": false,
       "autocopy-sync-job": true,
       "job-default-run-mode": "sync",
-      run_shortcuts_file: "",
+      "run-shortcuts-file": "",
       build_cmd: cmd,
       run_cmd: cmd,
       image_tag: cli_name,
