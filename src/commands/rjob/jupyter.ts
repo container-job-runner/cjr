@@ -56,7 +56,7 @@ export default class Exec extends RemoteCommand {
       runner:  this.newRunner(flags.explicit, flags.verbose)
     }
 
-    const jupyter_app = this.settings.get('jupyter_app');
+    const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start jupyter ------------------------
     {
       // -- set job options ------------------------------------------------------
@@ -88,16 +88,16 @@ export default class Exec extends RemoteCommand {
     {
       driver.jobJupyterList(resource, args.id)
     }
-    if(args['command'] === 'url' || (args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
+    if(args['command'] === 'url' || (args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
-    if(args['command'] === 'app' || (args['command'] === 'start' && jupyter_app)) // -- start electron app
+    if(args['command'] === 'app' || (args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
-      if(url_result.success) startJupyterApp(url_result.data, jupyter_app || "", flags.explicit)
+      if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }
     printResultState(result)
