@@ -1,11 +1,11 @@
 import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
-import {} from "../lib/functions/jupyter-functions"
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 import {startTheiaInProject, stopTheia, getTheiaUrl, startTheiaApp} from '../lib/functions/theia-functions'
 import {OutputOptions, ContainerRuntime} from '../lib/functions/run-functions'
 import {ValidatedOutput} from '../lib/validated-output'
+import {JSTools} from '../lib/js-tools'
 
 export default class Run extends StackCommand {
     static description = 'Start a Theia IDE.'
@@ -66,6 +66,7 @@ export default class Run extends StackCommand {
           "sync": false,
           "x11": flags.x11
         });
+        await JSTools.sleep(4000) // wait for server to start
     }
     if(args['command'] === 'stop') // -- stop theia --------------------------
     {
