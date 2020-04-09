@@ -54,8 +54,8 @@ export const defaultCLISettings = (settings_dir:string) =>
       "run-shortcuts-file": "",
       "build-cmd": cmd,
       "run-cmd": cmd,
-      image_tag: cli_name,
-      job_list_fields: 'id, stackName, command, statusString',
+      "image-tag": cli_name,
+      "job-ls-fields": 'id, stackName, command, statusString',
       // container props
       container_default_shell: "bash",
       selinux: false,

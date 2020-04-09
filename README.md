@@ -236,11 +236,11 @@ We describe the settings that can be viewed and modified using `cjr config:list`
 - **autocopy-sync-job**: *boolean* - if true, then cjr will automatically run job:copy at the end of all synchronous jobs.
 - **build-cmd**: *"podman"|"docker"* - container environment used to build images.
 - **container_default_shell**: *string* default shell that should be started for job:shell commands (e.g. sh, bash, zsh).
-- **image_tag**: *string* tag that cli uses when building all its images.
+- **image-tag**: *string* tag that cli uses when building all its images.
 - **interactive**: *boolean* - if true then certain cli commands will prompt the user with interactive menus.
 - **job-default-run-mode**: *"async"|"sync"*  determines if new jobs run sync or async by default.
-- **job_list_fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message". For example:
-`cjr config:set job_list_fields 'id, stackName, command, statusString'`
+- **job-ls-fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message". For example:
+`cjr config:set --job-ls-fields='id, stackName, command, statusString'`
 - **jupyter_app**: *string* - absolute path to optional cjr electron jupyter app. leave blank to disable.
 - **jupyter_command**: *string* - command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook.
 - **run-cmd**: *"podman"|"docker"* - container environment used to run images.

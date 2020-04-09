@@ -40,11 +40,11 @@ export default class Set extends StackCommand {
       options: ['podman', 'docker'],
       description: "container environment used to run images"
     }),
-    "image_tag": flags.string({
+    "image-tag": flags.string({
       options: ['podman', 'docker'],
       description: "tag that cli uses when building all its images"
     }),
-    "job_list_fields": flags.string({
+    "job-ls-fields": flags.string({
       description: 'specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message"'
     }),
     "container_default_shell": flags.string({

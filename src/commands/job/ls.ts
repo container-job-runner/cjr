@@ -94,7 +94,7 @@ export default class List extends StackCommand {
       }
 
       const valid_fields = Object.keys(field_params);
-      const user_fields:Array<TableFields> = (this.settings.get('job_list_fields').split(/\s*,\s*/).filter((field:string) => valid_fields.includes(field)) as Array<TableFields>);
+      const user_fields:Array<TableFields> = (this.settings.get('job-ls-fields').split(/\s*,\s*/).filter((field:string) => valid_fields.includes(field)) as Array<TableFields>);
 
       table_parameters = {
         column_headers: [],
