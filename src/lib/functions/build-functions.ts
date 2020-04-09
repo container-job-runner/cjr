@@ -3,6 +3,13 @@ import {ValidatedOutput} from '../validated-output'
 import {ErrorStrings} from '../error-strings'
 import {StackConfiguration} from '../config/stacks/abstract/stack-configuration'
 
+export type BuildOptions = {
+  'never'?: boolean,          // image will never be build
+  'reuse-image'?: boolean,     // will not build if image with proper name already exists
+  'no-cache'?: boolean,       // if true will build image without cache
+  'pull'?:  boolean           // if true will pull all linked images
+}
+
 // -----------------------------------------------------------------------------
 // BUILDANDLOAD Calls function onSuccess if stack is build and successuffly
 //  loaded. The following arguments are passed to onSuccess
@@ -17,26 +24,23 @@ import {StackConfiguration} from '../config/stacks/abstract/stack-configuration'
 // stack_path - absolute path to stack folder
 // overloaded_config_paths - absolute paths to any overloading configuration files
 // -----------------------------------------------------------------------------
-export function buildAndLoad(builder: BuildDriver, build_mode: "no-rebuild"|"build"|"build-nocache", stack_path: string, overloaded_config_paths: Array<string>)
+export function buildAndLoad(builder: BuildDriver, build_options: BuildOptions, stack_path: string, overloaded_config_paths: Array<string>)
 {
   var result = builder.loadConfiguration(stack_path, overloaded_config_paths)
   if(!result.success) return result
   const configuration = result.data
-
-  if(build_mode === "no-rebuild")
-    result = buildIfNonExistant(builder, stack_path, configuration)
-  else if(build_mode == "build")
-    result = builder.build(stack_path, configuration)
-  else if(build_mode == "build-nocache")
-    result = builder.build(stack_path, configuration, true)
+  if(build_options?.['never']) // simply return configuration
+    return new ValidatedOutput(true, configuration)
+  else if(build_options?.['reuse-image']) // build if image is missing
+    result = buildIfMissing(builder, stack_path, configuration, build_options)
   else
-    return new ValidatedOutput(false).pushError('Internal Error - Invalid Build Mode')
+    result = builder.build(stack_path, configuration, build_options)
 
   if(!result.success) return result
   return new ValidatedOutput(true, configuration)
 }
 
-export function buildIfNonExistant(builder: BuildDriver, stack_path: string, configuration: StackConfiguration)
+export function buildIfMissing(builder: BuildDriver, stack_path: string, configuration: StackConfiguration, build_options: BuildOptions)
 {
   if(builder.isBuilt(stack_path, configuration))
   {
@@ -44,7 +48,7 @@ export function buildIfNonExistant(builder: BuildDriver, stack_path: string, con
   }
   else
   {
-    const result = builder.build(stack_path, configuration)
+    const result = builder.build(stack_path, configuration, build_options)
     if(result.success == true)
     {
         result.success = builder.isBuilt(stack_path, configuration)
