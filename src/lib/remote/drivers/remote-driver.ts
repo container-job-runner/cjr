@@ -18,6 +18,13 @@ export type RemoteExecOptions = {
   "stack-upload-mode": "cached"|"uncached"
 }
 
+export type RemoteJupyterOptions = {
+  "id": string,                   // id of job that user wants to shell/exec into
+  "host-project-root": string,         // current project root (used only for setting cwd in remote container)
+  "stack-upload-mode": "cached"|"uncached"
+  "tunnel": boolean
+}
+
 export type RemoteStartOptions = {
   "auto-copy": boolean,
   "file-upload-mode": "cached"|"uncached"
@@ -49,6 +56,7 @@ export abstract class RemoteDriver
   abstract jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
   abstract jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
 
+  abstract jobJupyterStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, rjup_options: RemoteJupyterOptions):ValidatedOutput
   abstract jobJupyterStop(resource: Dictionary, id: string):ValidatedOutput
   abstract jobJupyterList(resource: Dictionary, id: string):ValidatedOutput
   abstract jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary):ValidatedOutput

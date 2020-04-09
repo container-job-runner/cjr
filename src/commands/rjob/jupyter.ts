@@ -16,6 +16,7 @@ export default class Exec extends RemoteCommand {
     "protocol": flags.string({exclusive: ['stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying stack-upload-mode, and build-mode'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     x11: flags.boolean({default: false}),
+    "tunnel": flags.boolean({default: false}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -72,9 +73,9 @@ export default class Exec extends RemoteCommand {
         "labels":       [],
         "remove":       false
       }
-      result = driver.jobExec(resource, container_runtime, job_options, {
+      result = driver.jobJupyterStart(resource, container_runtime, job_options, {
         id: args['id'],
-        mode: 'job:jupyter',
+        tunnel: flags['tunnel'],
         "host-project-root": flags["project-root"] || "",
         "stack-upload-mode": (flags["stack-upload-mode"] as "cached"|"uncached")
       })
@@ -89,13 +90,13 @@ export default class Exec extends RemoteCommand {
     }
     if(args['command'] === 'url' || (args['command'] === 'start' && !jupyter_app)) // -- list jupyter url
     {
-      const url_result = driver.jobJupyterUrl(resource, args.id)
+      const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (args['command'] === 'start' && jupyter_app)) // -- start electron app
     {
-      const url_result = driver.jobJupyterUrl(resource, args.id)
+      const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
       if(url_result.success) startJupyterApp(url_result.data, jupyter_app || "", flags.explicit)
       result.absorb(url_result)
     }

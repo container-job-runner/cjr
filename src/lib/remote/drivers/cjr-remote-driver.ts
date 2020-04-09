@@ -7,7 +7,7 @@ import {SshShellCommand} from "../ssh-shell-command"
 import {FileTools} from "../../fileio/file-tools"
 import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 import {BuildDriver} from "../../drivers/abstract/build-driver"
-import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions} from "./remote-driver"
+import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions, RemoteJupyterOptions} from "./remote-driver"
 import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label, stack_bundle_rsync_file_paths} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
@@ -54,6 +54,7 @@ export class CJRRemoteDriver extends RemoteDriver
   private remoteStackName = (remote_job_dir: string, stack_name: string) => `${path.posix.basename(remote_job_dir)}-${stack_name}`
   private remoteStackPath = (remote_job_dir: string, stack_name: string) => path.posix.join(remote_job_dir, this.remoteStackName(remote_job_dir, stack_name))
   private multiplex_options: MultiplexOptions = {"autodisconnect": true, "autoconnect": true, "restart-existing-connection": true}
+  private tunnel_local_hostname = '127.0.0.1'
 
   constructor(ssh_shell: SshShellCommand, output_options: OutputOptions, storage_directory: string, multiplex_options: MultiplexOptions = {})
   {
@@ -438,7 +439,36 @@ export class CJRRemoteDriver extends RemoteDriver
 
   // -- Jupyter commands -------------------------------------------------------
 
+  jobJupyterStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, rjup_options: RemoteJupyterOptions)
+  {
+    const port:string = `${job_options?.ports?.[0]?.hostPort || ""}`
+    if(!port) return (new ValidatedOutput(false)).pushError('Internal Error: empty port')
+
+    var result = this.jobExec(resource, container_runtime, job_options, {
+      "id": rjup_options['id'],
+      "mode": 'job:jupyter',
+      "host-project-root": rjup_options["host-project-root"],
+      "stack-upload-mode": rjup_options["stack-upload-mode"]
+    })
+
+    if(result.success && rjup_options['tunnel']) {
+      const success = this.ssh_shell.tunnelStart({
+        remotePort: port,
+        localPort: port,
+        localHostname: this.tunnel_local_hostname,
+        x11: job_options['x11'] || false
+      })
+      if(!success) result.pushError('Failed to start tunnel')
+    }
+    return result
+  }
+
   jobJupyterStop(resource: Dictionary, id: string) {
+    // -- set resource ---------------------------------------------------------
+    var result = this.ssh_shell.setResource(resource)
+    if(!result.success) return result
+
+    this.ssh_shell.tunnelStop();
     return this.jobJupyterGeneric(resource, id, 'stop', 'exec');
   }
 
@@ -446,10 +476,12 @@ export class CJRRemoteDriver extends RemoteDriver
     return this.jobJupyterGeneric(resource, id, 'list', 'exec')
   }
 
-  jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary = {remoteip: true}) {
+  jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary = {mode: 'remote'}) {
     var result = this.jobJupyterGeneric(resource, id, 'url', 'output')
-    if(result.success && options?.remoteip && resource.address)
+    if(result.success && options?.mode == 'remote' && resource.address)
       result.data = result.data?.replace(/(?<=http:\/\/)\S+(?=:)/, resource.address)
+    if(result.success && options?.mode == 'tunnel')
+      result.data = result.data?.replace(/(?<=http:\/\/)\S+(?=:)/, this.tunnel_local_hostname)
     return result
   }
 
