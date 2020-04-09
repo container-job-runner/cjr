@@ -90,7 +90,10 @@ export class DockerBuildDriver extends BuildDriver
             "t": this.imageName(stack_path, configuration.buildHash()),
             "f": path.join(build_object.dockerfile || 'Dockerfile')
           }
-          if(build_object["no_cache"] || nocache) flags["no-cache"] = {}
+          if(build_object["no_cache"] || nocache) {
+            flags["no-cache"] = {}
+            flags["pull"] = {}
+          }
           this.argFlags(flags, build_object)
           result = this.shell.exec(command, flags, args, {cwd: stack_path})
       }
