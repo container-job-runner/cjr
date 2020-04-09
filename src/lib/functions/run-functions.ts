@@ -14,7 +14,7 @@ import {ValidatedOutput} from '../validated-output'
 import {printResultState} from './misc-functions'
 import {ShellCommand} from '../shell-command'
 import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, job_info_label, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths} from '../constants'
-import {buildAndLoad} from '../functions/build-functions'
+import {buildAndLoad, BuildOptions} from '../functions/build-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
 import {PodmanStackConfiguration} from '../config/stacks/podman/podman-stack-configuration'
 import {JSTools} from '../js-tools'
@@ -34,7 +34,7 @@ export type buildmodes = "no-rebuild"|"build"|"build-nocache"
 export type JobOptions = {
     "stack-path": string,                                                       // stack that should be used to run job
     "config-files": Array<string>,                                              // any additional configuration files for stack
-    "build-mode": buildmodes,                                                   // specifies how to build stack before run
+    "build-options": BuildOptions,                                              // specifies how to build stack before run
     "command": string,                                                          // command for job
     "entrypoint"?: string,                                                      // optional entrypoint override
     "host-root"?: string,                                                       // project host root
@@ -90,7 +90,7 @@ export type ProjectBundleOptions =
   "config-files": Array<string>,
   "bundle-path":  string
   "stacks-dir"?:  string,
-  "build-mode"?:  "no-rebuild"|"build"|"build-nocache"|"no-build",
+  "build-options"?: BuildOptions,
   "verbose"?:     boolean
 }
 
@@ -101,7 +101,7 @@ export type StackBundleOptions =
   "config-files":         Array<string>,
   "bundle-path":          string,
   "config-files-only"?:   boolean, // if selected only configuration files are bundled
-  "build-mode"?:          "no-rebuild"|"build"|"build-nocache"|"no-build",
+  "build-options"?:       BuildOptions,
   "verbose"?:             boolean
 }
 
@@ -120,7 +120,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   printStatusHeader(StatusStrings.JOBSTART.BUILD, output_options)
   var result = buildAndLoad(
     container_runtime.builder,
-    job_options["build-mode"],
+    job_options["build-options"],
     job_options["stack-path"],
     job_options["config-files"]
   )
@@ -276,7 +276,7 @@ export function bundleProjectSettings(container_runtime: ContainerRuntime, optio
       "stack-path": stack_path,
       "config-files": options["config-files"],
       "bundle-path": path.join(bundle_stacks_dir, path.basename(stack_path)),
-      "build-mode": "build",
+      "build-options": options["build-options"] || {},
       "verbose": options.verbose || false
       })
     if(!bundle_result.success) result.pushWarning(WarningStrings.BUNDLE.FAILED_BUNDLE_STACK(stack_path))
@@ -288,11 +288,7 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
 {
   // -- ensure that stack can be loaded ----------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.STACK_BUILD(options['stack-path']), {verbose: options?.verbose || false, silent: false, explicit: false})
-  var result:ValidatedOutput
-  if(options['build-mode'] === "no-build")
-    result = container_runtime.builder.loadConfiguration(options['stack-path'], options['config-files'])
-  else
-    result = buildAndLoad(container_runtime.builder, options['build-mode'] || "build", options["stack-path"], options["config-files"])
+  var result = buildAndLoad(container_runtime.builder, options['build-options'] || {}, options["stack-path"], options["config-files"])
   if(!result.success) return result
   const configuration:StackConfiguration = result.data
   // -- prepare configuration for bundling -------------------------------------
