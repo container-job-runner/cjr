@@ -125,7 +125,7 @@ export function startJupyterApp(url: string, app_path: string, explicit: boolean
         `export URL=${ShellCommand.bashEscape(url)}`,
         `export ICON=jupyter`,
         app_cmd
-    ].join('&&');
+    ].join(' && ');
   return (new ShellCommand(explicit, false)).execAsync(command)
 }
 
