@@ -75,7 +75,7 @@ export class DockerBuildDriver extends BuildDriver
       return (result.success && !JSTools.isEmpty(result.data)) ? true : false
     }
 
-    build(stack_path: string, configuration:DockerStackConfiguration, nocache?:boolean)
+    build(stack_path: string, configuration:DockerStackConfiguration, nocache?:boolean, pull?:boolean)
     {
       var result = this.validate(stack_path)
       if(!result.success) return result
@@ -90,15 +90,17 @@ export class DockerBuildDriver extends BuildDriver
             "t": this.imageName(stack_path, configuration.buildHash()),
             "f": path.join(build_object.dockerfile || 'Dockerfile')
           }
-          if(build_object["no_cache"] || nocache) {
+          if(build_object["no_cache"] || nocache)
             flags["no-cache"] = {}
+          if(build_object["pull"] || pull)
             flags["pull"] = {}
-          }
           this.argFlags(flags, build_object)
           result = this.shell.exec(command, flags, args, {cwd: stack_path})
       }
       else if(stack_type === 'local-tar') // build local stack -------------------------
       {
+        if(!this.isBuilt(stack_path, configuration) || nocache == true) // since tars may be large, only load tar if nocache option is selected
+        {
           // -- load tar file --------------------------------------------------
           const command = `${this.base_command} load`;
           const flags = {input: 'image.tar.gz', q: {}}
@@ -108,6 +110,7 @@ export class DockerBuildDriver extends BuildDriver
           const image_name = load_result.data?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"
           if(!image_name) return (new ValidatedOutput(false)).pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
           result = this.shell.exec(`${this.base_command} image tag`, {}, [image_name, this.imageName(stack_path, configuration.buildHash())])
+        }
       }
       else if(stack_type === 'remote') // retag remote stack -----------------------
       {
