@@ -73,7 +73,7 @@ export async function getTheiaUrl(container_runtime: ContainerRuntime, stack_pat
   const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), stack_path, "running");
   if(theia_job_id === false)
     return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOTRUNNING)
-  const result = container_runtime.runner.jobExec(theia_job_id, ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`], {interactive:true}, 'json')
+  const result = container_runtime.runner.jobExec(theia_job_id, ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`], {}, 'json')
   if(!result.success) return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOURL)
   return new ValidatedOutput(true, `http://${result.data.url}:${result.data.port}`);
 }
@@ -93,7 +93,7 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
         `export URL=${ShellCommand.bashEscape(url)}`,
         `export ICON=theia`,
         app_cmd
-    ].join('&&');
+    ].join(' && ');
   return (new ShellCommand(explicit, false)).execAsync(command)
 }
 
@@ -103,7 +103,7 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
 function theiaCommand(builder: BuildDriver, theia_options: TheiaOptions) {
   const result = builder.loadConfiguration(theia_options['stack-path'], theia_options['config-files'] || [])
   const project_dir = (result.success) ? (result.data?.getContainerRoot() || "") : ""
-  return `theia --hostname $${ENV.url} --port $${ENV.port} ${project_dir} || bash`;
+  return `theia --hostname $${ENV.url} --port $${ENV.port} ${project_dir}`;
 }
 
 // -- environment variables for THEIA ------------------------------------------
