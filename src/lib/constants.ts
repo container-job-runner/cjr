@@ -57,7 +57,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       "image-tag": cli_name,
       "job-ls-fields": 'id, stackName, command, statusString',
       // container props
-      container_default_shell: "bash",
+      "container-default-shell": "bash",
       selinux: false,
       jupyter_command: "jupyter lab",
       webapp: "",

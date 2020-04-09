@@ -47,7 +47,7 @@ export default class Set extends StackCommand {
     "job-ls-fields": flags.string({
       description: 'specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message"'
     }),
-    "container_default_shell": flags.string({
+    "container-default-shell": flags.string({
       description: 'default shell that should be started for job:shell commands (e.g. sh, bash, zsh).'
     }),
     "jupyter_command": flags.string({

@@ -235,7 +235,7 @@ We describe the settings that can be viewed and modified using `cjr config:list`
 - **auto-project-root**: *boolean* - if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory.
 - **autocopy-sync-job**: *boolean* - if true, then cjr will automatically run job:copy at the end of all synchronous jobs.
 - **build-cmd**: *"podman"|"docker"* - container environment used to build images.
-- **container_default_shell**: *string* default shell that should be started for job:shell commands (e.g. sh, bash, zsh).
+- **container-default-shell**: *string* default shell that should be started for job:shell commands (e.g. sh, bash, zsh).
 - **image-tag**: *string* tag that cli uses when building all its images.
 - **interactive**: *boolean* - if true then certain cli commands will prompt the user with interactive menus.
 - **job-default-run-mode**: *"async"|"sync"*  determines if new jobs run sync or async by default.
