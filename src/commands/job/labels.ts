@@ -32,12 +32,12 @@ export default class Labels extends StackCommand {
     if(flags.all) // -- select all jobs ----------------------------------------
       job_info = runner.jobInfo(stack_paths)
     else if(flags["all-completed"]) // -- select all completed jobs ------------
-      job_info = runner.jobInfo(stack_paths, "exited")
+      job_info = runner.jobInfo(stack_paths, ["exited"])
     else if(flags["all-running"])
-      job_info = runner.jobInfo(stack_paths, "running")
+      job_info = runner.jobInfo(stack_paths, ["running"])
     else  // -- stop only jobs specified by user -------------------------------
     {
-      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, "", !this.settings.get('interactive')) || "")
+      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, [], !this.settings.get('interactive')) || "")
       if(ids === "") return // exit if user selects empty
       var result = matchingJobInfo(runner, JSTools.arrayWrap(ids), stack_paths)
       if(result.success) job_info = result.data

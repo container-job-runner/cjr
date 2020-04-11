@@ -20,7 +20,7 @@ export default class Attach extends StackCommand {
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner = this.newRunner(flags.explicit)
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
-    var id = argv[0] || await promptUserForJobId(runner, stack_paths, "running", !this.settings.get('interactive')) || ""
+    var id = argv[0] || await promptUserForJobId(runner, stack_paths, ["running"], !this.settings.get('interactive')) || ""
     if(id === "") return // exit if user selects empty
     // match with existing container ids
     var result = matchingJobIds(runner, [id], stack_paths)

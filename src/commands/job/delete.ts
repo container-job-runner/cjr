@@ -24,18 +24,18 @@ export default class Delete extends StackCommand {
   {
     const {argv, flags} = this.parse(Delete)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner  = this.newRunner(flags.explicit)
+    const runner = this.newRunner(flags.explicit)
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var job_info:Array<Dictionary> = []
     if(flags.all) // -- delete all jobs ----------------------------------------
       job_info = runner.jobInfo(stack_paths)
     else if(flags["all-completed"]) // -- delete all jobs ----------------------
-      job_info = runner.jobInfo(stack_paths, "exited")
+      job_info = runner.jobInfo(stack_paths, ["exited"])
     else if(flags["all-running"])
-      job_info = runner.jobInfo(stack_paths, "running")
+      job_info = runner.jobInfo(stack_paths, ["running"])
     else  // -- stop only jobs specified by user -------------------------------
     {
-      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, "", !this.settings.get('interactive')) || "")
+      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, [], !this.settings.get('interactive')) || "")
       if(ids === "") return // exit if user selects empty
       const result = matchingJobInfo(runner, JSTools.arrayWrap(ids), stack_paths)
       if(result.success) job_info = result.data

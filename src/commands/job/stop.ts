@@ -27,14 +27,14 @@ export default class Stop extends StackCommand {
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var ids_to_stop:Array<string> = []
     if(flags.all) // -- stop all running jobs ----------------------------------
-      ids_to_stop = allJobIds(runner, stack_paths, "running")
+      ids_to_stop = allJobIds(runner, stack_paths, ["running"])
     else if(flags["all-completed"]) // -- delete all jobs ----------------------
-      ids_to_stop = allJobIds(runner, stack_paths, "exited")
+      ids_to_stop = allJobIds(runner, stack_paths, ["exited"])
     else if(flags["all-running"])
-      ids_to_stop = allJobIds(runner, stack_paths, "running")
+      ids_to_stop = allJobIds(runner, stack_paths, ["running"])
     else  // -- stop only jobs specified by user -------------------------------
     {
-      const id = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, "running", !this.settings.get('interactive')) || "")
+      const id = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, ["running"], !this.settings.get('interactive')) || "")
       if(id === "") return // exit if user selects empty
       const result = matchingJobIds(runner, JSTools.arrayWrap(id), stack_paths)
       if(result.success) ids_to_stop = result.data

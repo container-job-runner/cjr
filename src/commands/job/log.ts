@@ -22,7 +22,7 @@ export default class Log extends StackCommand {
     const runner = this.newRunner(flags.explicit)
     // get id and stack_path
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
-    var id = argv[0] || await promptUserForJobId(runner, stack_paths, "", !this.settings.get('interactive')) || ""
+    var id = argv[0] || await promptUserForJobId(runner, stack_paths, [], !this.settings.get('interactive')) || ""
     if(id === "") return // exit if user selects empty
     // match with existing container ids
     var result = matchingJobIds(runner, [id], stack_paths)

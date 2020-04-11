@@ -34,7 +34,7 @@ export default class Shell extends StackCommand {
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- get job id -----------------------------------------------------------
-    const id_str = argv[0] || await promptUserForJobId(c_runtime.runner, flags["visible-stacks"], "", !this.settings.get('interactive')) || ""
+    const id_str = argv[0] || await promptUserForJobId(c_runtime.runner, flags["visible-stacks"], [], !this.settings.get('interactive')) || ""
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,

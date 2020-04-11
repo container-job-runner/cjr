@@ -30,7 +30,7 @@ export default class Copy extends StackCommand {
       runner:  this.newRunner(flags.explicit)
     }
     // -- get job ids ----------------------------------------------------------
-    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_paths, "", !this.settings.get('interactive')) || [])
+    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_paths, [], !this.settings.get('interactive')) || [])
     // -- set copy options -----------------------------------------------------
     const copy_options:CopyOptions = {
       "ids": ids,
