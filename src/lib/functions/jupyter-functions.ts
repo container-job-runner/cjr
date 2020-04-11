@@ -106,7 +106,7 @@ export async function getJupyterUrl(container_runtime: ContainerRuntime, stack_p
   var result = new ValidatedOutput(false).pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
-    result = await parseNotebookListCommand(container_runtime.runner, jupyter_job_id)
+    result = parseNotebookListCommand(container_runtime.runner, jupyter_job_id)
     if(result.success) break
   }
   return result
