@@ -16,7 +16,7 @@ export default class Run extends StackCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     x11: flags.boolean({default: false}),
-    port: flags.string({default: "8888"}),
+    port: flags.string({default: "7013"}),
     explicit: flags.boolean({default: false}),
     silent: flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),

@@ -15,7 +15,7 @@ export default class Run extends StackCommand {
     stack: flags.string({env: 'STACK'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    port: flags.string({default: "8888"}),
+    port: flags.string({default: "7019"}),
     x11: flags.boolean({default: false}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     explicit: flags.boolean({default: false}),
