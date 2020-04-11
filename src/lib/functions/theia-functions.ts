@@ -88,7 +88,7 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
   var app_cmd: string = ""
   const platform = os.platform()
   if(platform == "darwin")
-    app_cmd = `open ${app_path}`
+    app_cmd = `open -n ${app_path}`
   else
     app_cmd = app_path
 

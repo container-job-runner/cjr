@@ -119,7 +119,7 @@ export function startJupyterApp(url: string, app_path: string, explicit: boolean
   const platform = os.platform()
   var app_cmd: string = ""
   if(platform == "darwin")
-    app_cmd = `open ${app_path}`
+    app_cmd = `open -n ${app_path}`
   else
     app_cmd = app_path
 
