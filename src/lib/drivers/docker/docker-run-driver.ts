@@ -147,24 +147,34 @@ export class DockerRunDriver extends RunDriver
     return this.shell.exec(command, flags, args, {stdio: "pipe"})
   }
 
-  jobInfo(stack_paths: Array<string>, job_status: string = "") // Note:if stack_paths=[] or stack_paths=[""] then function returns all running jobs on host
+  //JOBINFO returns information about running jobs that match a given stack_path AND running state.
+  // PARAMETERS
+  // stack_paths: Array<string> - any jobs with this stack will be returned. if stack_paths=[] or stack_paths=[""]
+  //                              then jobs with any stack will be returned.
+  // job_states: Array<string> - the state of returned jobs will match with any of the values specified in this array. If
+  //                             job_states=[] or job_states=[""] then jobs with any state will be returned.
+  jobInfo(stack_paths: Array<string>, job_states: Array<string> = [])
   {
     const ids:Array<Dictionary> = []
     if(stack_paths.length == 0) stack_paths = [""]
-    stack_paths.map((stack_path:string) =>
+    if(job_states.length == 0) job_states = [""]
+    stack_paths.map((stack_path:string) => // loop through stacks
     {
-      const command = `${this.base_command} ps`;
-      const args: Array<string> = []
-      const flags: Dictionary = {
-        "a" : {},
-        "no-trunc": {},
-        "filter": [`label=runner=${cli_name}`]
-      };
-      if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
-      if(job_status) flags["filter"].push(`status=${job_status}`)
-      this.addFormatFlags(flags, {format: "json"})
-      const result = this.shell.output(command, flags, args, {}, this.json_output_format)
-      if(result.success) ids.push( ...this.extractJobInfo(result.data))
+      job_states.map((job_state: string) =>  // loop through states
+      {
+        const command = `${this.base_command} ps`;
+        const args: Array<string> = []
+        const flags: Dictionary = {
+          "a" : {},
+          "no-trunc": {},
+          "filter": [`label=runner=${cli_name}`]
+        };
+        if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
+        if(job_state) flags["filter"].push(`status=${job_state}`)
+        this.addFormatFlags(flags, {format: "json"})
+        const result = this.shell.output(command, flags, args, {}, this.json_output_format)
+        if(result.success) ids.push( ...this.extractJobInfo(result.data))
+      })
     })
     return ids
   }
