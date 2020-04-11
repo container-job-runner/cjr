@@ -5,7 +5,7 @@ import {buildAndLoad} from '../../lib/functions/build-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Build extends StackCommand {
-  static description = 'Build the images for any number of stacks.'
+  static description = 'Manually build images for one or more stacks.'
   static args = [{name: 'stack'}]
   static flags = {
     stack: flags.string({env: 'STACK', multiple: true}),

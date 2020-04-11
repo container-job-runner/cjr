@@ -8,7 +8,7 @@ import {OutputOptions, ContainerRuntime, matchingJobIds} from '../../lib/functio
 import {ValidatedOutput} from '../../lib/validated-output'
 
 export default class Run extends StackCommand {
-  static description = 'Start a jupiter server for modifying job data.'
+  static description = 'Start a jupiter server for viewing or modifying job\'s files or outputs.'
   static args = [{name: 'id', required: true}, {name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),

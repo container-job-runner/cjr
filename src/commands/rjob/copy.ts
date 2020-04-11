@@ -5,7 +5,7 @@ import {OutputOptions, CopyOptions} from '../../lib/functions/run-functions'
 import {JSTools} from '../../lib/js-tools'
 
 export default class Copy extends RemoteCommand {
-  static description = 'Copy job data back into the host directories. Works with both running and completed jobs.'
+  static description = 'Copy remote job files back into the host directories. Works with both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag

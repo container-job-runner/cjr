@@ -9,7 +9,7 @@ import {ValidatedOutput} from '../../lib/validated-output'
 import {ProjectSettings, ps_fields, ps_props} from '../../lib/config/project-settings/project-settings'
 
 export default class Delete extends ProjectSettingsCommand {
-  static description = 'Set project settings'
+  static description = 'Delete any project settings.'
   static args = []
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),

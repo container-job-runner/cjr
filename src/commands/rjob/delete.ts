@@ -6,7 +6,7 @@ import {OutputOptions} from '../../lib/functions/run-functions'
 import {RemoteDeleteOptions} from '../../lib/remote/drivers/remote-driver'
 
 export default class Delete extends RemoteCommand {
-  static description = 'Delete a job and its associated data (including image). This command works on both running and completed jobs'
+  static description = 'Delete a job and its associated data including the image; works on both running and completed jobs'
   static args = [{name: 'id'}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag

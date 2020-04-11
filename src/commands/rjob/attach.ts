@@ -3,7 +3,7 @@ import {RemoteCommand} from '../../lib/remote/commands/remote-command'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Attach extends RemoteCommand {
-  static description = 'Attach back to a running job.'
+  static description = 'Attach to a running remote job.'
   static args = [{name: 'id', required: false}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag

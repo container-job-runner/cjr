@@ -6,7 +6,7 @@ import {loadProjectSettings} from "../../lib/functions/run-functions"
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class ls extends ProjectSettingsCommand {
-  static description = 'list project settings'
+  static description = 'List all project settings.'
   static args = []
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),

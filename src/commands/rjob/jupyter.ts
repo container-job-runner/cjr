@@ -5,7 +5,7 @@ import {startJupyterApp} from "../../lib/functions/jupyter-functions"
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Exec extends RemoteCommand {
-  static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
+  static description = 'Start a jupiter server for viewing or modifying job\'s files or outputs'
   static args = [{name: 'id', required: true}, {name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}),

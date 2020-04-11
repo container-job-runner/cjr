@@ -12,7 +12,7 @@ import {FileTools} from '../lib/fileio/file-tools'
 import {YMLFile} from '../lib/fileio/yml-file'
 
 export default class Bundle extends StackCommand {
-  static description = 'bundle a stack and its project files for sharing.'
+  static description = 'Bundle a stack or project into a zip or tar for sharing.'
   static args = [{name: 'save_dir', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK'}),

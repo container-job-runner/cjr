@@ -6,7 +6,7 @@ import {printResultState} from '../../lib/functions/misc-functions'
 import {file_volume_label} from '../../lib/constants'
 
 export default class Delete extends StackCommand {
-  static description = 'Delete a job and its associated data. This command works on both running and completed jobs'
+  static description = 'Delete a job and its associated data; works on both running and completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
     all: flags.boolean({default: false}),

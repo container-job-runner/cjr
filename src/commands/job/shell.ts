@@ -4,7 +4,7 @@ import {jobExec, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions
 import {printResultState, initX11} from '../../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
-  static description = 'Start an interactive shell to view the files created or modified by a job'
+  static description = 'Start an interactive shell to view or modify a job\'s files or outputs.'
   static args = [{name: 'id', required: false}]
   static flags = {
     stack: flags.string({env: 'STACK'}),

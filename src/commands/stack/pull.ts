@@ -8,7 +8,7 @@ import {FileTools} from '../../lib/fileio/file-tools'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Pull extends StackCommand {
-  static description = 'pulls a stack using git directly into the stack folder.'
+  static description = 'Clones or pulls a stack using git directly into the stack folder.'
   static args = [{name: 'url', required: true}]
   static flags = {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),

@@ -6,7 +6,7 @@ import {RunShortcuts} from "../../lib/config/run-shortcuts/run-shortcuts"
 import {printResultState, initX11} from '../../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
-  static description = 'Start an interactive shell to view the files created or modified by a job'
+  static description = 'Start a new job using files from a completd or currently running job.'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK'}),

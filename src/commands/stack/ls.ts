@@ -6,7 +6,7 @@ import {FileTools} from '../../lib/fileio/file-tools'
 import {StackCommand} from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
-  static description = 'List all stacks present in the stacks path.'
+  static description = 'List all the stacks in the stacks directory.'
   static args = []
   static flags = {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"})

@@ -3,7 +3,7 @@ import {printVerticalTable, printHorizontalTable} from '../../lib/functions/misc
 import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
-  static description = 'List all running jobs, or all running jobs for a stack.'
+  static description = 'List all running and completed jobs.'
   static args = []
   static flags = {
     json: flags.boolean({default: false}),

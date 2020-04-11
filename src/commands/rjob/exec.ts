@@ -5,7 +5,7 @@ import {RunShortcuts} from "../../lib/config/run-shortcuts/run-shortcuts"
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Exec extends RemoteCommand {
-  static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
+  static description = 'Start a new remote job using files from a completd or currently running remote job'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}),

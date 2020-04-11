@@ -5,7 +5,7 @@ import {jobCopy, promptUserForJobId, CopyOptions, ContainerRuntime} from "../../
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Copy extends StackCommand {
-  static description = 'Copy job data back into the host directories. Works with both running and completed jobs.'
+  static description = 'Copy job files back into the host directories; works on both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {
     "copy-path": flags.string({description: "overides job default copy path"}),

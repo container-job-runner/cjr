@@ -6,7 +6,7 @@ import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 
 export default class Run extends RemoteCommand {
-  static description = 'Run a command as a new job on a remote resource.'
+  static description = 'Start a job that runs a shell command on a remote resource.'
   static args  = []
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag

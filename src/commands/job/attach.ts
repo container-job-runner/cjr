@@ -4,7 +4,7 @@ import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functi
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Attach extends StackCommand {
-  static description = 'Attach back to a running job.'
+  static description = 'Attach to a running job.'
   static args = [{name: 'id', required: false}]
   static flags = {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),

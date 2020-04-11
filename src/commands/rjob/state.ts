@@ -4,7 +4,7 @@ import {matchingJobInfo} from '../../lib/functions/run-functions'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class State extends RemoteCommand {
-  static description = 'get the current state of a single job'
+  static description = 'Get the current state of a job.'
   static args = [{name: 'id', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK'})

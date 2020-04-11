@@ -9,7 +9,7 @@ import {ValidatedOutput} from '../../lib/validated-output'
 import {ProjectSettings, ps_fields, ps_props} from '../../lib/config/project-settings/project-settings'
 
 export default class Set extends ProjectSettingsCommand {
-  static description = 'Set project settings'
+  static description = 'Set one or multiple project settings.'
   static args = []
   static flags = {
     "stack": flags.string({env: 'STACK', description: "default stack for project"}),

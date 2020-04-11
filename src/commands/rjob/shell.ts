@@ -4,7 +4,7 @@ import {OutputOptions, ContainerRuntime, JobOptions} from '../../lib/functions/r
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Shell extends RemoteCommand {
-  static description = 'Start a shell inside a result. After exiting the changes will be stored as a new result'
+  static description = 'Start an interactive shell to view or modify a remote job\'s files or outputs.'
   static args = [{name: 'id', required: false}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}),

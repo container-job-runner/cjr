@@ -4,7 +4,7 @@ import {cli_settings_yml_name} from '../../lib/constants'
 import * as chalk from 'chalk'
 
 export default class List extends StackCommand {
-  static description = 'List all CLI parameters and data directories.'
+  static description = 'List all cli parameters and data directories.'
   static flags = {
     json: flags.boolean({default: false}),
   }

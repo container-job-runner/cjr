@@ -6,7 +6,7 @@ import {printResultState} from '../../lib/functions/misc-functions'
 import {removeImage} from '../../lib/functions/build-functions'
 
 export default class RMI extends StackCommand {
-  static description = 'Delete an image for any number of stacks.'
+  static description = 'Delete an image one or more stacks.'
   static args = [{name:'stack'}]
   static flags = {
     stack: flags.string({env: 'STACK', multiple: true}),

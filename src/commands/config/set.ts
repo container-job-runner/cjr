@@ -4,7 +4,7 @@ import {printResultState} from '../../lib/functions/misc-functions'
 import * as chalk from 'chalk'
 
 export default class Set extends StackCommand {
-  static description = 'Set a CLI parameter.'
+  static description = 'Set one or multiple cli parameters.'
   static flags = {
     "auto-project-root": flags.string({
       options: ["true", "false"],

@@ -6,7 +6,7 @@ import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 
 export default class Run extends StackCommand {
-  static description = 'Run a command as a new job.'
+  static description = 'Start a job that runs a shell command.'
   static args = [{name: 'command', required: true}]
   static flags = {
     stack: flags.string({env: 'STACK'}),

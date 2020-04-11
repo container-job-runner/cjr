@@ -3,11 +3,10 @@ import {RemoteCommand} from '../../lib/remote/commands/remote-command'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class List extends RemoteCommand {
-  static description = 'List all running jobs for a stack.'
+  static description = 'List all running and completed remote jobs.'
   static args = []
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
-    //stack: flags.string({env: 'STACK'}),      TEMPORARILY DISABLED
     hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
     verbose: flags.boolean({default: false}),
