@@ -8,6 +8,7 @@ export default class List extends StackCommand {
   static flags = {
     json: flags.boolean({default: false}),
     all: flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
+    "show-stashes": flags.boolean({default: false, description: "show stashes"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({default: [], multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -124,10 +125,11 @@ export default class List extends StackCommand {
         data:   jobs.filter((j:Dictionary) => (j.status === "exited" && j?.labels?.jobtype !== "stash")).map((e:Dictionary) => toArray(e)),
     }})
 
-    printTable({ ...table_parameters, ...{
-        title:  "Stashes",
-        data:   jobs.filter((j:Dictionary) => (j?.labels?.jobtype === "stash")).map((e:Dictionary) => toArray(e)),
-    }})
+    if(flags['show-stashes'] || flags['all'])
+      printTable({ ...table_parameters, ...{
+          title:  "Stashes",
+          data:   jobs.filter((j:Dictionary) => (j?.labels?.jobtype === "stash")).map((e:Dictionary) => toArray(e)),
+      }})
 
   }
 
