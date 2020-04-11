@@ -11,7 +11,7 @@ export default class Exec extends RemoteCommand {
     "remote-name": flags.string({env: 'REMOTENAME'}),
     stack: flags.string({env: 'STACK'}),
     port: flags.integer({default: 8888, exclusive: ['stop', 'list', 'app']}),
-    "stack-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
+    "stack-upload-mode": flags.string({default: "cached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "protocol": flags.string({exclusive: ['stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying stack-upload-mode, and build-mode'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
