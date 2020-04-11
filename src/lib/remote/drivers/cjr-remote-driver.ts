@@ -44,7 +44,7 @@ export class CJRRemoteDriver extends RemoteDriver
      'job:delete' : ['explicit', 'silent'],
      'job:labels' : ['all', 'all-completed', 'all-running', 'silent'],
      'job:ls'   : ['explicit', 'verbose', 'json', 'all'],
-     'job:log'    : ['explicit', 'lines'],
+     'job:log'    : ['explicit', 'lines', 'all'],
      'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'silent'],
      'job:shell'  : ['explicit', 'discard'],
      'job:jupyter': ['build-mode', 'explicit'], // only used by stop, list, url
