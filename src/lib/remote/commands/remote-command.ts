@@ -71,7 +71,7 @@ export abstract class RemoteCommand extends StackCommand
       const keyfile_copy_path = path.join(this.localKeyDir(), name)
       fs.ensureDir(this.localKeyDir())
       fs.copyFileSync(path.resolve(key_path), keyfile_copy_path)
-      fs.chmod(keyfile_copy_path, 600)
+      fs.chmodSync(keyfile_copy_path, '600')
       return keyfile_copy_path
     }
 
