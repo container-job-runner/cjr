@@ -17,7 +17,7 @@ export default class Shell extends StackCommand {
     port: flags.string({default: [], multiple: true}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
-    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
+    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id', exclusive: ['quiet']}),
     "quiet":flags.boolean({default: false, char: 'q'}),
     explicit: flags.boolean({default: false}),
     "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
@@ -35,8 +35,8 @@ export default class Shell extends StackCommand {
     const run_shortcut = new RunShortcuts()
     // -- set container runtime options ----------------------------------------
     const c_runtime:ContainerRuntime = {
-      builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.verbose)
+      builder: this.newBuilder(flags.explicit, (flags.quiet) ? true : !flags.verbose),
+      runner:  this.newRunner(flags.explicit, (flags.quiet) ? true : false)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
@@ -60,17 +60,18 @@ export default class Shell extends StackCommand {
     }
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
-      verbose:  false,
-      silent:   false,
+      verbose:  flags.verbose,
+      silent:   flags.quiet,
       explicit: flags.explicit
     }
     const result = jobExec(c_runtime, id_str, job_options, output_options)
     if(!result.success) printResultState(result)
     // -- print id -------------------------------------------------------------
     const job_id = result.data
-    if(job_id !== "" && flags.async && !flags.quiet)
+    const print_condition = (job_id !== "") && !flags.quiet && !flags.verbose
+    if(print_condition && flags.async)
       console.log(job_id)
-    if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway-print-job-id'))
+    if(print_condition && !flags.async && this.settings.get('alway-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
 
   }
