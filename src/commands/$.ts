@@ -73,9 +73,10 @@ export default class Run extends StackCommand {
     if(!result.success) return printResultState(result)
     // -- print id -------------------------------------------------------------
     const job_id = result.data
-    if(job_id !== "" && flags.async && !flags.quiet && !flags.verbose)
+    const print_condition = (job_id !== "") && !flags.quiet && !flags.verbose
+    if(print_condition && flags.async)
       console.log(job_id)
-    if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway-print-job-id'))
+    if(print_condition && !flags.async && this.settings.get('alway-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
     // -- autocopy results -----------------------------------------------------
     if(this.shouldAutocopy(flags, c_runtime, job_id, stack_path)) {
