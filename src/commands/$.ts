@@ -11,6 +11,7 @@ export default class Run extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
+    "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
@@ -34,6 +35,7 @@ export default class Run extends StackCommand {
   async run()
   {
     const {argv, flags} = this.parse(Run)
+    this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack || "", flags["stacks-dir"] || "")
     const run_shortcut = new RunShortcuts()

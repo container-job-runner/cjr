@@ -12,6 +12,7 @@ export default class Run extends RemoteCommand {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
+    "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     explicit: flags.boolean({default: false}),
     async: flags.boolean({default: false}),
@@ -34,6 +35,7 @@ export default class Run extends RemoteCommand {
 
   async run() {
     const {flags, args, argv} = this.parse(Run)
+    this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "remote-name": true})
     this.applyProtocolFlag(flags)
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")

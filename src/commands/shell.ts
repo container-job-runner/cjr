@@ -9,6 +9,7 @@ export default class Shell extends StackCommand {
   static flags = {
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
+    "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
     explicit: flags.boolean({default: false}),
@@ -25,6 +26,7 @@ export default class Shell extends StackCommand {
   async run()
   {
     const {argv, flags} = this.parse(Shell)
+    this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set output options ---------------------------------------------------

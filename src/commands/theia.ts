@@ -12,6 +12,7 @@ export default class Run extends StackCommand {
   static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),
+    "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     stack: flags.string({env: 'STACK'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
@@ -27,6 +28,7 @@ export default class Run extends StackCommand {
   async run()
   {
     const {args, argv, flags} = this.parse(Run)
+    this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {
       "stack": (args?.['command'] === 'start'),
       "config-files": false,

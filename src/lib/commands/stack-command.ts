@@ -40,6 +40,12 @@ export abstract class StackCommand extends Command
     return stack_name
   }
 
+  augmentFlagsWithHere(flags:Dictionary)
+  {
+    if(flags['here'] && !flags['project-root'])
+      flags['project-root'] = process.cwd()
+  }
+
   augmentFlagsWithProjectSettings(flags:Dictionary, flag_props: {[key in ps_fields]+?: boolean}) // overload parse command to allow for auto setting of stack flag
   {
     // -- exit if no-autoload flag is enabled ----------------------------------
