@@ -24,7 +24,8 @@ export default class Exec extends RemoteCommand {
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
-    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
+    verbose: flags.boolean({default: false, description: '', exclusive: ['quiet']}),
+    "quiet":flags.boolean({default: false, char: 'q'}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
@@ -51,7 +52,7 @@ export default class Exec extends RemoteCommand {
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
-      silent:   false,
+      silent:   flags.quiet,
       explicit: flags.explicit
     }
     // -- get resource & driver ------------------------------------------------
