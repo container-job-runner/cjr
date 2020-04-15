@@ -17,6 +17,7 @@ export default class Set extends ProjectSettingsCommand {
     "config-files": flags.string({multiple: true, description: "additional overriding configuration files for project stack"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "quiet": flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
 
@@ -31,7 +32,7 @@ export default class Set extends ProjectSettingsCommand {
     if(flags['project-root-auto']) project_settings.set({'project-root': 'auto'})
     const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
     if(!result.success) return printResultState(result)
-    else this.printProjectSettings(project_settings, project_root)
+    else if(!flags.quiet) this.printProjectSettings(project_settings, project_root)
   }
 
 }
