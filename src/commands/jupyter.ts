@@ -18,7 +18,7 @@ export default class Run extends StackCommand {
     x11: flags.boolean({default: false}),
     port: flags.string({default: "7013"}),
     explicit: flags.boolean({default: false}),
-    silent: flags.boolean({default: false}),
+    "quiet": flags.boolean({default: false, char: 'q'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
   }
@@ -77,13 +77,13 @@ export default class Run extends StackCommand {
     {
       result = listJupyter(container_runtime, stack_path, {"project-root": project_root})
     }
-    if(args['command'] === 'url' || (!flags['silent'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
+    if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
-    if(args['command'] === 'app' || (!flags['silent'] && args['command'] === 'start' && webapp_path)) // -- start electron app
+    if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
       if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)

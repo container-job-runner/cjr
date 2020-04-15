@@ -16,7 +16,7 @@ export default class Run extends RemoteCommand {
     explicit: flags.boolean({default: false}),
     async: flags.boolean({default: false}),
     verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
-    silent: flags.boolean({default: false, description: 'no output is printed'}),
+    "quiet": flags.boolean({default: false, char: 'q', exclusive: ['verbose']}),
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
@@ -48,7 +48,7 @@ export default class Run extends RemoteCommand {
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
-      silent:   flags.silent,
+      silent:   flags.quiet,
       explicit: flags.explicit
     }
     // -- get resource & driver ------------------------------------------------
@@ -58,7 +58,7 @@ export default class Run extends RemoteCommand {
     // -- set container runtime options ----------------------------------------
     const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.silent)
+      runner:  this.newRunner(flags.explicit, flags.quiet)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)

@@ -12,7 +12,7 @@ export default class Stop extends RemoteCommand {
     all: flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
-    silent: flags.boolean({default: false})
+    "quiet": flags.boolean({default: false, char: 'q'})
   }
   static strict = true;
 

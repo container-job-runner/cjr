@@ -14,7 +14,7 @@ export default class Copy extends RemoteCommand {
     manual: flags.boolean({default: false, description: "opens an interactive bash shell which allows the user can manually copy individual files"}),
     force: flags.boolean({default: false, description: 'force copy into any directory even if it differs from original project root'}),
     explicit: flags.boolean({default: false}),
-    silent: flags.boolean({default: false}),
+    quiet: flags.boolean({default: false, char: 'q'}),
     verbose: flags.boolean({default: false, description: 'shows upload progress'})
   }
   static strict = true;
@@ -30,7 +30,7 @@ export default class Copy extends RemoteCommand {
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
-      silent:   flags.silent,
+      silent:   flags.quiet,
       explicit: flags.explicit
     }
     // -- get resource & driver ------------------------------------------------

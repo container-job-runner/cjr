@@ -15,7 +15,7 @@ export default class Stop extends StackCommand {
     "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
-    silent: flags.boolean({default: false})
+    "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
 
@@ -41,7 +41,7 @@ export default class Stop extends StackCommand {
       printResultState(result)
     }
     // -- stop jobs ------------------------------------------------------------
-    if(!flags.silent) ids_to_stop.map((x:string) => console.log(` Stopping ${x}`))
+    if(!flags.quiet) ids_to_stop.map((x:string) => console.log(` Stopping ${x}`))
     runner.jobStop(ids_to_stop)
   }
 

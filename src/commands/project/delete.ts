@@ -19,6 +19,7 @@ export default class Delete extends ProjectSettingsCommand {
     "config-files": flags.boolean({description: "remove any additional overriding configuration files for project stack"}),
     "stacks-dir": flags.boolean({description: "remove any overriding default stack directory for project"}),
     "visible-stacks": flags.boolean({description: "if specified only these stacks will be affected by this command"}),
+    "quiet": flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
 
@@ -39,7 +40,7 @@ export default class Delete extends ProjectSettingsCommand {
     if(flags['project-root-auto']) project_settings.remove('project-root')
     const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
     if(!result.success) return printResultState(result)
-    else this.printProjectSettings(project_settings, project_root)
+    else if(!flags.quiet) this.printProjectSettings(project_settings, project_root)
   }
 
 }

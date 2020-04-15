@@ -16,7 +16,7 @@ export default class Run extends StackCommand {
     async: flags.boolean({exclusive: ['sync']}),
     sync: flags.boolean({exclusive: ['async']}),
     verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
-    silent: flags.boolean({default: false, description: 'no output is printed'}),
+    "quiet": flags.boolean({default: false, char: 'q', exclusive: ['verbose']}),
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
@@ -42,13 +42,13 @@ export default class Run extends StackCommand {
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
-      silent:   flags.silent,
+      silent:   flags.quiet,
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
     const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.silent)
+      runner:  this.newRunner(flags.explicit, flags.quiet)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
@@ -73,7 +73,7 @@ export default class Run extends StackCommand {
     if(!result.success) return printResultState(result)
     // -- print id -------------------------------------------------------------
     const job_id = result.data
-    if(job_id !== "" && flags.async && !flags.silent && !flags.verbose)
+    if(job_id !== "" && flags.async && !flags.quiet && !flags.verbose)
       console.log(job_id)
     if(job_id != "" && !flags.async && !flags.verbose && this.settings.get('alway-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)

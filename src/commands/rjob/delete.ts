@@ -16,7 +16,7 @@ export default class Delete extends RemoteCommand {
     "delete-images": flags.boolean({default: true}),
     "delete-files": flags.boolean({default: true}),
     explicit: flags.boolean({default: false}),
-    silent: flags.boolean({default: false})
+    quiet: flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
 
@@ -31,7 +31,7 @@ export default class Delete extends RemoteCommand {
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  false,
-      silent:   flags.silent,
+      silent:   flags.quiet,
       explicit: flags.explicit
     }
     // -- get resource & driver ------------------------------------------------

@@ -16,7 +16,7 @@ export default class Delete extends StackCommand {
     "visible-stacks": flags.string({default: [], multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
-    silent: flags.boolean({default: false})
+    "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
 
@@ -44,7 +44,7 @@ export default class Delete extends StackCommand {
     // -- delete jobs ----------------------------------------------------------
     const job_ids = job_info.map((job:Dictionary) => job.id)
     const volume_ids = job_info.map((job:Dictionary) => job?.labels?.[file_volume_label] || "").filter((s:string) => s !== "")
-    if(!flags.silent) job_ids.map((x:string) => console.log(` Deleting ${x}`))
+    if(!flags.quiet) job_ids.map((x:string) => console.log(` Deleting ${x}`))
     runner.jobDelete(job_ids)
     runner.volumeDelete(volume_ids)
   }

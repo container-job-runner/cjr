@@ -12,7 +12,7 @@ export default class Stash extends StackCommand {
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     message: flags.string({description: "optional message to describes the job"}),
     explicit: flags.boolean({default: false}),
-    silent: flags.boolean({default: false}), // if selected will not print out job id
+    "quiet": flags.boolean({default: false, char: 'q'}), // if selected will not print out job id
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"})
   }
@@ -26,7 +26,7 @@ export default class Stash extends StackCommand {
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  false,
-      silent:   flags.silent,
+      silent:   flags.quiet,
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
@@ -51,7 +51,7 @@ export default class Stash extends StackCommand {
     var result = jobStart(c_runtime, job_options, output_options)
     if(!result.success) return printResultState(result)
     const job_id = result.data
-    if(job_id != "" && !flags.silent && this.settings.get('alway-print-job-id'))
+    if(job_id != "" && !flags.quiet && this.settings.get('alway-print-job-id'))
       console.log(job_id)
   }
 
