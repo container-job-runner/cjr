@@ -20,7 +20,8 @@ export default class Exec extends RemoteCommand {
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id'}),
+    verbose: flags.boolean({default: false, char: 'v', description: 'shows output from all stages of job', exclusive: ['quiet']}),
+    quiet: flags.boolean({default: false, char: 'q'}),
     explicit: flags.boolean({default: false})
   }
   static strict = false;
@@ -88,13 +89,13 @@ export default class Exec extends RemoteCommand {
     {
       driver.jobJupyterList(resource, args.id)
     }
-    if(args['command'] === 'url' || (args['command'] === 'start' && !webapp_path)) // -- list jupyter url
+    if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
-    if(args['command'] === 'app' || (args['command'] === 'start' && webapp_path)) // -- start electron app
+    if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
       if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)

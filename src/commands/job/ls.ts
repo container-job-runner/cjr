@@ -13,7 +13,7 @@ export default class List extends StackCommand {
     "visible-stacks": flags.string({default: [], multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false})
+    verbose: flags.boolean({default: false, char: 'v', description: "shows all job properties."})
   }
   static strict = true;
 

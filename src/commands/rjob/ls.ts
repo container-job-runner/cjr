@@ -9,7 +9,7 @@ export default class List extends RemoteCommand {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
     hostRoot: flags.string({env: 'HOSTROOT'}),
     explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false}),
+    verbose: flags.boolean({default: false, char: 'v', description: "shows all job properties."}),
     json: flags.boolean({default: false}),
     all: flags.boolean({default: false}) //if true shows jobs from all cjr stacks, regardless of whether stack is set
   }

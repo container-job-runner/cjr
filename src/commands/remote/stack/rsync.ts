@@ -15,7 +15,7 @@ export default class Rsync extends RemoteCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false})
+    verbose: flags.boolean({default: false, char: 'v', description: "shows rsync output."})
   }
   static strict = false;
 

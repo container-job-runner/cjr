@@ -17,6 +17,7 @@ export default class Run extends StackCommand {
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     x11: flags.boolean({default: false}),
     port: flags.string({default: "7013"}),
+    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     explicit: flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -36,7 +37,7 @@ export default class Run extends StackCommand {
     const stack_path = this.fullStackPath(flags.stack || "", flags["stacks-dir"] || "")
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
-      verbose:  false,
+      verbose:  flags.verbose,
       silent:   false,
       explicit: flags.explicit
     }

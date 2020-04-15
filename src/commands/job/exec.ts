@@ -17,7 +17,7 @@ export default class Shell extends StackCommand {
     port: flags.string({default: [], multiple: true}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
-    verbose: flags.boolean({default: false, description: 'prints output from stack build output and id', exclusive: ['quiet']}),
+    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet":flags.boolean({default: false, char: 'q'}),
     explicit: flags.boolean({default: false}),
     "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),

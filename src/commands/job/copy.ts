@@ -15,7 +15,8 @@ export default class Copy extends StackCommand {
     "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false})
+    verbose: flags.boolean({default: false, char: 'v', description: 'shows output from rsync', exclusive: ['quiet']}),
+    "quiet":flags.boolean({default: false, char: 'q'}),
   }
   static strict = true;
 
@@ -26,8 +27,8 @@ export default class Copy extends StackCommand {
     var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // -- set container runtime options ----------------------------------------
     const runtime_options:ContainerRuntime = {
-      builder: this.newBuilder(flags.explicit),
-      runner:  this.newRunner(flags.explicit)
+      builder: this.newBuilder(flags.explicit, flags.quiet),
+      runner:  this.newRunner(flags.explicit, flags.quiet)
     }
     // -- get job ids ----------------------------------------------------------
     var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_paths, [], !this.settings.get('interactive')) || [])

@@ -10,6 +10,7 @@ export default class Shell extends StackCommand {
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
     explicit: flags.boolean({default: false}),
     save: flags.string({description: "saves new image that contains modifications"}),
     port: flags.string({default: [], multiple: true}),
@@ -28,7 +29,7 @@ export default class Shell extends StackCommand {
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
-      verbose:  false,
+      verbose:  flags.verbose,
       silent:   false,
       explicit: flags.explicit
     }

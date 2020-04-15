@@ -11,6 +11,7 @@ export default class Shell extends RemoteCommand {
     stack: flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
+    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
     explicit: flags.boolean({default: false}),
     port: flags.string({default: [], multiple: true}),
     x11: flags.boolean({default: false}),
@@ -41,7 +42,7 @@ export default class Shell extends RemoteCommand {
     if(!result.success) return printResultState(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
-      verbose:  false,
+      verbose:  flags.verbose,
       silent:   false,
       explicit: flags.explicit
     }

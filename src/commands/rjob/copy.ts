@@ -15,7 +15,7 @@ export default class Copy extends RemoteCommand {
     force: flags.boolean({default: false, description: 'force copy into any directory even if it differs from original project root'}),
     explicit: flags.boolean({default: false}),
     quiet: flags.boolean({default: false, char: 'q'}),
-    verbose: flags.boolean({default: false, description: 'shows upload progress'})
+    verbose: flags.boolean({default: false, char: 'v', description: 'shows output from rsync'})
   }
   static strict = true;
 

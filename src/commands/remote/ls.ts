@@ -6,7 +6,9 @@ import {Resource} from '../../lib/remote/config/resource-configuration'
 export default class List extends RemoteCommand {
   static description = 'List all remote resources.'
   static args   = []
-  static flags  = {verbose: flags.boolean({default: false})}
+  static flags  = {
+    verbose: flags.boolean({default: false, char: 'v', description: "show all properties for each remote resource."})
+  }
   static strict = true;
 
   async run() {
