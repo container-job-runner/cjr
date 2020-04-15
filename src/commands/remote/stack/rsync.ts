@@ -54,7 +54,7 @@ export default class Rsync extends RemoteCommand {
 
   getRemoteStackDir(ssh_shell: SshShellCommand)
   {
-    var result = ssh_shell.output('cjr config:list', {json: {}}, [], {}, 'json')
+    var result = ssh_shell.output('cjr config:ls', {json: {}}, [], {}, 'json')
     if(!result.success) return result
     const remote_stacks_dir:string = result.data?.['stacks-dir'] || ""
     if(!remote_stacks_dir) return new ValidatedOutput(false).pushError('Empty remote stack dir.')
