@@ -41,14 +41,14 @@ export class CJRRemoteDriver extends RemoteDriver
   private transferrable_flags = { // displays the flags that will be passed to remote cjr commands. All other flags are ignored
      'job:attach' : ['explicit'],
      'job:copy'   : ['explicit', 'verbose', 'all'],
-     'job:delete' : ['explicit', 'silent'],
-     'job:labels' : ['all', 'all-completed', 'all-running', 'silent'],
+     'job:delete' : ['explicit', 'quiet'],
+     'job:labels' : ['all', 'all-completed', 'all-running'],
      'job:ls'   : ['explicit', 'verbose', 'json', 'all'],
      'job:log'    : ['explicit', 'lines', 'all'],
-     'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'silent'],
+     'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'quiet'],
      'job:shell'  : ['explicit', 'discard'],
      'job:jupyter': ['build-mode', 'explicit'], // only used by stop, list, url
-     '$'          : ['explicit', 'async', 'verbose', 'silent', 'port', 'x11', 'message', 'label', 'autocopy', 'build-mode']
+     '$'          : ['explicit', 'async', 'verbose', 'quiet', 'port', 'x11', 'message', 'label', 'autocopy', 'build-mode']
   }
   private ssh_shell: SshShellCommand
   private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': 'hostRoot', 'stack-path': 'stack'}
@@ -128,7 +128,7 @@ export class CJRRemoteDriver extends RemoteDriver
       if(copy_options['manual']) copy_flags['manual'] = {}
       if(this.output_options.verbose) copy_flags['verbose'] = {}
       if(this.output_options.explicit) copy_flags['explicit'] = {}
-      if(this.output_options.silent) copy_flags['silent'] = {}
+      if(this.output_options.silent) copy_flags['quiet'] = {}
       const exec_result = this.ssh_shell.exec(
         'cjr job:copy',
         copy_flags,
@@ -178,7 +178,7 @@ export class CJRRemoteDriver extends RemoteDriver
 
     const cjr_flags:Dictionary = {}
     if(this.output_options.explicit) cjr_flags['explicit'] = {}
-    if(this.output_options.silent) cjr_flags['silent'] = {}
+    if(this.output_options.silent) cjr_flags['quiet'] = {}
     // -- 3. run cjr:delete ----------------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.JOBS, this.output_options.verbose)
     const job_ids = Object.keys(job_labels)
@@ -709,7 +709,7 @@ export class CJRRemoteDriver extends RemoteDriver
     }
 
     if(this.output_options.explicit) cjr_flags['explicit'] = {}
-    if(this.output_options.silent || mode === "job:jupyter") cjr_flags['silent'] = {}
+    if(this.output_options.silent || mode === "job:jupyter") cjr_flags['quiet'] = {}
     if(this.output_options.verbose) cjr_flags['verbose'] = {}
 
     const labels:Array<string> = job_options['labels']?.map((label:{key:string, value: string}) => `${label.key}=${label.value}`) || []
