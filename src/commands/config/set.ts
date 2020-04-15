@@ -59,7 +59,8 @@ export default class Set extends StackCommand {
     "job-default-run-mode": flags.string({
       options: ['sync', 'async'],
       description: 'determines if new jobs run sync or async by default.'
-    })
+    }),
+    "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = true;
 
@@ -68,7 +69,8 @@ export default class Set extends StackCommand {
     Object.keys(flags).sort().map((key:string) => {
       const value = (flags as Dictionary)[key]
       const result = this.settings.set(key, value)
-      if(result.success) this.log(chalk`{italic ${key}} -> {green ${value}}`)
+      if(result.success && !flags['quiet'])
+        this.log(chalk`{italic ${key}} -> {green ${value}}`)
       else printResultState(result)
     })
   }
