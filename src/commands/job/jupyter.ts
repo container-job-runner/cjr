@@ -4,7 +4,7 @@ import {StackCommand} from '../../lib/commands/stack-command'
 import {} from "../../lib/functions/jupyter-functions"
 import {printResultState, initX11} from '../../lib/functions/misc-functions'
 import {startJupyterInJob, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp} from '../../lib/functions/jupyter-functions'
-import {OutputOptions, ContainerRuntime, matchingJobIds} from '../../lib/functions/run-functions'
+import {OutputOptions, ContainerRuntime, matchingJobIds, nextAvailablePort} from '../../lib/functions/run-functions'
 import {ValidatedOutput} from '../../lib/validated-output'
 
 export default class Run extends StackCommand {
@@ -15,7 +15,7 @@ export default class Run extends StackCommand {
     stack: flags.string({env: 'STACK'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    port: flags.string({default: "7019"}),
+    port: flags.string({default: "auto"}),
     x11: flags.boolean({default: false}),
     label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     explicit: flags.boolean({default: false}),
@@ -52,6 +52,9 @@ export default class Run extends StackCommand {
     const job_id = result.data.pop() || ""
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    // -- select port ----------------------------------------------------------
+    if(flags['port'] == 'auto')
+      flags['port'] = `${nextAvailablePort(container_runtime.runner, 7019)}`
     // -- read settings --------------------------------------------------------
     var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";

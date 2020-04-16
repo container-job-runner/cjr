@@ -1,10 +1,9 @@
 import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
-import {} from "../lib/functions/jupyter-functions"
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 import {startJupyterInProject, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp} from '../lib/functions/jupyter-functions'
-import {OutputOptions, ContainerRuntime} from '../lib/functions/run-functions'
+import {OutputOptions, ContainerRuntime, nextAvailablePort} from '../lib/functions/run-functions'
 import {ValidatedOutput} from '../lib/validated-output'
 
 export default class Run extends StackCommand {
@@ -17,7 +16,7 @@ export default class Run extends StackCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     x11: flags.boolean({default: false}),
-    port: flags.string({default: "7013"}),
+    port: flags.string({default: "auto"}),
     verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     explicit: flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
@@ -50,6 +49,9 @@ export default class Run extends StackCommand {
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+        // -- select port ----------------------------------------------------------
+    if(flags['port'] == 'auto')
+      flags['port'] = `${nextAvailablePort(container_runtime.runner, 7013)}`
 
     var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";

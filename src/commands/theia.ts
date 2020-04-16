@@ -3,7 +3,7 @@ import {flags} from '@oclif/command'
 import {StackCommand} from '../lib/commands/stack-command'
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 import {startTheiaInProject, stopTheia, getTheiaUrl, startTheiaApp} from '../lib/functions/theia-functions'
-import {OutputOptions, ContainerRuntime} from '../lib/functions/run-functions'
+import {OutputOptions, ContainerRuntime, nextAvailablePort} from '../lib/functions/run-functions'
 import {ValidatedOutput} from '../lib/validated-output'
 import {JSTools} from '../lib/js-tools'
 
@@ -17,7 +17,7 @@ export default class Run extends StackCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     x11: flags.boolean({default: false}),
-    port: flags.string({default: "7001"}),
+    port: flags.string({default: "auto"}),
     explicit: flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -49,6 +49,9 @@ export default class Run extends StackCommand {
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    // -- select port ----------------------------------------------------------
+    if(flags['port'] == 'auto')
+      flags['port'] = `${nextAvailablePort(container_runtime.runner, 7001)}`
 
     var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";
