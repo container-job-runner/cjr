@@ -31,13 +31,27 @@ export const ErrorStrings = {
     NO_STACK_SPECIFIED: (stack_name:string, stack_path: string) => ` Removing image for stack ${stack_name} (${stack_path})`
   },
   JUPYTER: {
-    RUNNING: (id:string) => `Jupyter is already running.\n   ID: ${id}`,
-    NOTRUNNING: `Jupyter is not running.`,
+    RUNNING: (id:string, identifier:{"job-id"?: string,"project-root"?: string}) => {
+      if(identifier?.['project-root'])
+        return chalk`Jupyter is already running in project directory "{green ${identifier['project-root']}}".`;
+      if(identifier?.['job-id'])
+        return chalk`Jupyter is already running in job {italic ${identifier['job-id']}}.`;
+      else
+        return chalk`Jupyter is already running.`;
+    },
+    NOT_RUNNING: (identifier:{"job-id"?: string,"project-root"?: string}) => {
+      if(identifier?.['project-root'])
+        return chalk`Jupyter is not running in project directory "{green ${identifier['project-root']}}".`;
+      if(identifier?.['job-id'])
+        return chalk`Jupyter is not running in job {italic ${identifier['job-id']}}.`;
+      else
+        return chalk`Jupyter is not running.`;
+    },
     NOURL: `Failed to obtain a url for the Jupyter server.`
   },
   THEIA: {
-    RUNNING: (id:string) => `Theia is already running.\n   ID: ${id}`,
-    NOTRUNNING: `Theia is not running.`,
+    RUNNING: (id:string, project_root: string) => chalk`Theia is already running in project directory "{green ${project_root}}".`,
+    NOT_RUNNING: (project_root: string) => chalk`Theia is not running in project directory "{green ${project_root}}".`,
     NOURL: `Failed to obtain a url for the Theia.`
   }
 }

@@ -28,7 +28,7 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
   const jupyter_job_name = JUPYTER_JOB_NAME({"project-root" : jup_options['project-root'] || ""})
   const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
   if(jupyter_job_id !== false)
-    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id))
+    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'project-root': jup_options['project-root'] || ""}))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
       "stack-path":   jup_options["stack-path"],
@@ -56,7 +56,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : job_id})
   const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
   if(jupyter_job_id !== false)
-    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id))
+    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': job_id}))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
     "stack-path":   jup_options["stack-path"],
@@ -83,7 +83,7 @@ export function stopJupyter(container_runtime: ContainerRuntime, stack_path: str
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
   if(jupyter_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOTRUNNING)
+    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return container_runtime.runner.jobStop([jupyter_job_id])
 }
@@ -92,7 +92,7 @@ export function listJupyter(container_runtime: ContainerRuntime, stack_path: str
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
   if(jupyter_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOTRUNNING)
+    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return container_runtime.runner.jobExec(jupyter_job_id, ['jupyter', 'notebook', 'list'], {}, 'print')
 }
@@ -102,7 +102,7 @@ export function listJupyter(container_runtime: ContainerRuntime, stack_path: str
 export async function getJupyterUrl(container_runtime: ContainerRuntime, stack_path: string, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000)
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
-  if(jupyter_job_id === false) return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOTRUNNING)
+  if(jupyter_job_id === false) return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   var result = new ValidatedOutput(false).pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)

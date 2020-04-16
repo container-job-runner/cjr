@@ -36,7 +36,7 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
   const theia_job_id   = jobNameLabeltoID(container_runtime.runner, theia_job_name, theia_options['stack-path'], "running");
   if(theia_job_id !== false)
-    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id))
+    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id, theia_options['project-root'] || ""))
   // -- start new theia job ----------------------------------------------------
   const job_options:JobOptions = {
       "stack-path":   theia_options["stack-path"],
@@ -65,7 +65,7 @@ export function stopTheia(container_runtime: ContainerRuntime, stack_path: strin
 {
   const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), stack_path, "running");
   if(theia_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOTRUNNING)
+    return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   else
     return container_runtime.runner.jobStop([theia_job_id])
 }
@@ -75,7 +75,7 @@ export async function getTheiaUrl(container_runtime: ContainerRuntime, stack_pat
 {
   const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), stack_path, "running");
   if(theia_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOTRUNNING)
+    return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   const result = container_runtime.runner.jobExec(theia_job_id, ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`], {}, 'json')
   if(!result.success) return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOURL)
   return new ValidatedOutput(true, `http://${result.data.url}:${result.data.port}`);
