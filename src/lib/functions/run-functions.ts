@@ -386,6 +386,21 @@ export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: st
   return (index == -1) ? false : job_info[index].id
 }
 
+export function nextAvailablePort(runner: RunDriver, port:number=1024)
+{
+  const job_info = runner.jobInfo([], []) // get all jobs
+  // -- extract port and order ascending ---------------------------------------
+  const ports:Array<number> = []
+  job_info.map((job:Dictionary) => ports.push( ... (job?.hostPortBindings || [])))
+  const ord_ports = [... new Set(ports)].sort()
+  // -- return next available port ---------------------------------------------
+  for(var i = 0; i <= ord_ports.length; i ++)  {
+    if(ord_ports[i] == port) port++ // port is already used. increment
+    if(ord_ports[i] > port) return port //port is free
+  }
+  return port
+}
+
 // == FILE VOLUME FUNCTIONS ====================================================
 
 // -----------------------------------------------------------------------------
