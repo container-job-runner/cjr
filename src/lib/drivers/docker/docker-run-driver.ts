@@ -155,7 +155,7 @@ export class DockerRunDriver extends RunDriver
   //                             job_states=[] or job_states=[""] then jobs with any state will be returned.
   jobInfo(stack_paths: Array<string>, job_states: Array<string> = [])
   {
-    const ids:Array<Dictionary> = []
+    const info:Array<Dictionary> = []
     if(stack_paths.length == 0) stack_paths = [""]
     if(job_states.length == 0) job_states = [""]
     stack_paths.map((stack_path:string) => // loop through stacks
@@ -173,35 +173,44 @@ export class DockerRunDriver extends RunDriver
         if(job_state) flags["filter"].push(`status=${job_state}`)
         this.addFormatFlags(flags, {format: "json"})
         const result = this.shell.output(command, flags, args, {}, this.json_output_format)
-        if(result.success) ids.push( ...this.extractJobInfo(result.data))
+        if(result.success) info.push( ...this.extractJobInfo(result.data))
       })
     })
-    return ids
+    return info
+
   }
 
   protected extractJobInfo(raw_ps_data: Array<Dictionary>)
   {
-    // NOTE: docker ps does not correctly format labels with --format {{json}}
+    // NOTE: docker ps does not correctly format labels with --format {{json .}}
     // This Function calls docker inspect to extract properly formatted labels
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
     const result = this.shell.output(
       `${this.base_command} inspect`,
-      {format: '{{json .Id}}:{{json .Config.Labels}}'},
-      ids
+      {format: '{{"{\\\"ID\\\":"}}{{json .Id}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Labels\\\":"}}{{json .Config.Labels}}{{"}"}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ}
+      ids,
+      {},
+      'line_json'
     )
     if(!result.success) return []
-    const raw_output = result.data
-    const label_data:Dictionary = {}
-    raw_output.split("\n").map((raw_line:string) => {
-      const split_index = raw_line.search(':')
-      if(split_index > 1) {
-          try {
-            const id = JSON.parse(raw_line.substring(0, split_index))
-            const raw_label = raw_line.substring(split_index+1)
-            label_data[id] = JSON.parse(raw_label)
-          } catch (e) {}
-      }
-    })
+    // -- function for extracting port information for inspect
+    const extractBoundPorts = (d:Dictionary) => {
+      const bound_ports:Array<number> = []
+      Object.keys(d).map((k:string) => {
+        const host_port = d[k]?.pop()?.HostPort; // assumes form {"PORTKEY": [{hostPort: "NUMBER"}], "PORTKEY": [{hostPort: "NUMBER"}]}
+        if(host_port && !isNaN(parseInt(host_port))) bound_ports.push(parseInt(host_port))
+      })
+      return bound_ports
+    }
+    // -- extract label & port data -----------------------------------------------
+    const inspect_data:Dictionary = {}
+    result.data.map((info:Dictionary) => {
+      if(info.ID)
+        inspect_data[info.ID] = {
+          'Labels': info?.['Labels'] || {},
+          'PortBindings': extractBoundPorts(info?.['PortBindings'] || {})
+        }
+    });
 
     // converts statusMessage to one of three states
     const shortStatus = (x: String) => {
@@ -216,8 +225,9 @@ export class DockerRunDriver extends RunDriver
         names: x.Names,
         command: x.Command,
         status: shortStatus(x.Status),
-        stack: label_data?.[x.ID]?.stack || "",
-        labels: label_data?.[x.ID] || {},
+        stack: inspect_data?.[x.ID]?.Labels.stack || "",
+        labels: inspect_data?.[x.ID]?.Labels || {},
+        hostPortBindings: inspect_data?.[x.ID]?.PortBindings || [],
         statusString: x.Status
       }
     })
