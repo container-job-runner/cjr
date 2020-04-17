@@ -3,7 +3,7 @@ import {ValidatedOutput} from "../../validated-output"
 import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 
 // - types ---------------------------------------------------------------------
-type Dictionary = {[key: string]: any}
+export type Dictionary = {[key: string]: any}
 
 export abstract class BuildDriver extends ContainerDriver
 {
