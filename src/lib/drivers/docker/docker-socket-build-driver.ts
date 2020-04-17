@@ -9,7 +9,7 @@ export class DockerSocketBuildDriver extends BuildDriver
 {
   protected socket:string
 
-  constructor(shell: ShellCommand, options: {tag: string, selinux: boolean, socket: string})
+  constructor(shell: ShellCommand, options: {tag: string, socket: string})
   {
     super(shell, options.tag)
     this.socket = options.socket

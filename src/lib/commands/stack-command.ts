@@ -165,9 +165,10 @@ export abstract class StackCommand extends Command
 
   newBuilder(explicit: boolean = false, silent: boolean = false)
   {
+    const shell = new ShellCommand(explicit, silent)
     const build_cmd = this.settings.get('build-cmd');
     const tag = this.settings.get('image-tag');
-    const shell = new ShellCommand(explicit, silent)
+    const socket:string = this.settings.get('socket-path')
 
     switch(build_cmd)
     {
@@ -177,7 +178,7 @@ export abstract class StackCommand extends Command
         }
         case "docker-socket":
         {
-          return new DockerSocketBuildDriver(shell, tag);
+          return new DockerSocketBuildDriver(shell, {tag: tag, socket: socket});
         }
         case "podman":
         {
@@ -185,7 +186,7 @@ export abstract class StackCommand extends Command
         }
         case "podman-socket":
         {
-          return new PodmanSocketBuildDriver(shell, tag);
+          return new PodmanSocketBuildDriver(shell, {tag: tag, socket: socket});
         }
         case "buildah":
         {
