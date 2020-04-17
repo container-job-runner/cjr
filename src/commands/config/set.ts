@@ -60,13 +60,17 @@ export default class Set extends StackCommand {
       options: ['sync', 'async'],
       description: 'determines if new jobs run sync or async by default.'
     }),
+    "socket-endpoint": flags.string({
+      options: ['sync', 'async'],
+      description: 'location of container runtime socket'
+    }),
     "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = true;
 
   async run() {
     const {args, flags} = this.parse(Set)
-    Object.keys(flags).sort().map((key:string) => {
+    Object.keys(flags).filter((key:string) => key != "quiet").sort().map((key:string) => {
       const value = (flags as Dictionary)[key]
       const result = this.settings.set(key, value)
       if(result.success && !flags['quiet'])

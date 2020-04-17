@@ -9,9 +9,13 @@ import * as chalk from 'chalk'
 import {Settings} from '../settings'
 import {DockerBuildDriver} from '../drivers/docker/docker-build-driver'
 import {PodmanBuildDriver} from '../drivers/podman/podman-build-driver'
+import {DockerSocketBuildDriver} from '../drivers/docker/docker-socket-build-driver'
+import {PodmanSocketBuildDriver} from '../drivers/podman/podman-socket-build-driver'
 import {BuildahBuildDriver} from '../drivers/buildah/buildah-build-driver'
 import {DockerRunDriver} from '../drivers/docker/docker-run-driver'
 import {PodmanRunDriver} from '../drivers/podman/podman-run-driver'
+import {DockerSocketRunDriver} from '../drivers/docker/docker-socket-run-driver'
+import {PodmanSocketRunDriver} from '../drivers/podman/podman-socket-run-driver'
 import {ShellCommand} from '../shell-command'
 import {JSTools} from '../js-tools'
 import {missingFlagError} from '../constants'
@@ -19,6 +23,7 @@ import {ValidatedOutput} from '../validated-output'
 import {loadProjectSettings, scanForSettingsDirectory} from '../functions/run-functions'
 import {BuildOptions} from '../functions/build-functions'
 import {ProjectSettings, ps_fields} from '../config/project-settings/project-settings'
+import { triggerAsyncId } from 'async_hooks'
 
 // -- types --------------------------------------------------------------------
 export type Dictionary = {[key: string]: any}
@@ -168,15 +173,23 @@ export abstract class StackCommand extends Command
     {
         case "docker":
         {
-            return new DockerBuildDriver(shell, tag);
+          return new DockerBuildDriver(shell, tag);
+        }
+        case "docker-socket":
+        {
+          return new DockerSocketBuildDriver(shell, tag);
         }
         case "podman":
         {
-            return new PodmanBuildDriver(shell, tag);
+          return new PodmanBuildDriver(shell, tag);
+        }
+        case "podman-socket":
+        {
+          return new PodmanSocketBuildDriver(shell, tag);
         }
         case "buildah":
         {
-            return new BuildahBuildDriver(shell, tag);
+          return new BuildahBuildDriver(shell, tag);
         }
         default:
         {
@@ -189,20 +202,27 @@ export abstract class StackCommand extends Command
   {
     const run_cmd = this.settings.get('run-cmd');
     const shell = new ShellCommand(explicit, silent)
-    const options = {
-      tag: this.settings.get('image-tag'),
-      selinux: this.settings.get('selinux')
-    }
+    const tag:string = this.settings.get('image-tag')
+    const selinux:boolean = this.settings.get('selinux')
+    const socket:string = this.settings.get('runtime-socket')
 
     switch(run_cmd)
     {
         case "docker":
         {
-          return new DockerRunDriver(shell, options);
+          return new DockerRunDriver(shell, {tag: tag, selinux: selinux});
+        }
+        case "docker-socket":
+        {
+          return new DockerSocketRunDriver(shell, {tag: tag, selinux: selinux, socket: socket});
         }
         case "podman":
         {
-          return new PodmanRunDriver(shell, options);
+          return new PodmanRunDriver(shell, {tag: tag, selinux: selinux});
+        }
+        case "podman-socket":
+        {
+          return new PodmanSocketRunDriver(shell, {tag: tag, selinux: selinux, socket: socket});
         }
         default:
         {

@@ -33,14 +33,17 @@ export const projectIDPath  = (hostRoot: string) => path.join(hostRoot, project_
 export const defaultCLISettings = (settings_dir:string) =>
 {
   let cmd
+  let socket
   switch(os.platform())
   {
     case "darwin":
     case "win32":
       cmd = "docker"
+      socket = "/var/run/docker.sock"
       break
     default:
       cmd = "podman"
+      socket = "$XDG_RUNTIME_DIR/podman/podman.sock"
   }
 
   return {
@@ -55,6 +58,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       "build-cmd": cmd,
       "run-cmd": cmd,
       "image-tag": cli_name,
+      "socket-endpoint": socket,
       "job-ls-fields": 'id, stackName, command, statusString',
       // container props
       "container-default-shell": "bash",
