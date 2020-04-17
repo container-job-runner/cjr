@@ -60,7 +60,7 @@ export default class Set extends StackCommand {
       options: ['sync', 'async'],
       description: 'determines if new jobs run sync or async by default.'
     }),
-    "socket-endpoint": flags.string({
+    "socket-path": flags.string({
       options: ['sync', 'async'],
       description: 'location of container runtime socket'
     }),

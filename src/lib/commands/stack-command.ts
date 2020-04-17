@@ -200,11 +200,11 @@ export abstract class StackCommand extends Command
 
   newRunner(explicit: boolean = false, silent: boolean = false)
   {
-    const run_cmd = this.settings.get('run-cmd');
     const shell = new ShellCommand(explicit, silent)
+    const run_cmd = this.settings.get('run-cmd');
     const tag:string = this.settings.get('image-tag')
     const selinux:boolean = this.settings.get('selinux')
-    const socket:string = this.settings.get('runtime-socket')
+    const socket:string = this.settings.get('socket-path')
 
     switch(run_cmd)
     {

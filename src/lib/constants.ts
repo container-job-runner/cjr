@@ -58,7 +58,7 @@ export const defaultCLISettings = (settings_dir:string) =>
       "build-cmd": cmd,
       "run-cmd": cmd,
       "image-tag": cli_name,
-      "socket-endpoint": socket,
+      "socket-path": socket,
       "job-ls-fields": 'id, stackName, command, statusString',
       // container props
       "container-default-shell": "bash",
