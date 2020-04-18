@@ -1,20 +1,24 @@
 // =============================================================================
-// ShellCMD: A class for launching sync and async commands
-// Description: All class functions have identical calling sequence
-//  command: string       - base commands
-//  args: array<string>   - strings of arguments
-//  flags: object         - keys are flag names and entries must have structure
-//                            {value: string or [], shorthand: boolean, santitize ? boolean}
-//                          if shorthand = true flag coorespond to
-//                              -key=value or -key=value[1] -key=value[3]
-//                          if shorhand = false then
-//                              --key=value or -key=value[0] -key=value[1] ...
+// ShellCommand: A class for launching sync and async shell commands
+//  -- Functions ---------------------------------------------------------------
+//  exec - executes a sync command with stdio set to 'inherit'.
+//  execSync - async version of exec
+//  output - executes sync command with stdio set to 'pipe' and returns output
+//  commandString - returns a command string for command, flags, and args array
+//  bashEscape - escapes string for bash
+//  -- Example -----------------------------------------------------------------
+// shell.exec('echo', {}, ['$PATH']) // echo '$PATH' (escapes $PATH)
+// shell.exec('ls', {l:{}}, []) // ls -l
+// shell.exec('command', {flag: {value: 'val', escape: false}}) // command --flag=val
+// shell.exec('command', {flag: ['val']}) // command --flag='val'
+// shell.exec('command', {flag: ['val1','val2']}) // command --flag='val1' --flag='val2'
+// shell.exec('command', {flag: {value: 'val1', noequals: true}})  // command --flag 'val1'
 // =============================================================================
 
 import * as chalk from 'chalk'
-import {spawn, spawnSync} from 'child_process'
-import {ValidatedOutput} from './validated-output'
-import {JSTools} from './js-tools'
+import { spawn, spawnSync } from 'child_process'
+import { ValidatedOutput } from './validated-output'
+import { JSTools } from './js-tools'
 type Dictionary = {[key: string]: any}
 
 export class ShellCommand
@@ -37,36 +41,32 @@ export class ShellCommand
       this.silent = silent;
     }
 
-    // Launches a syncronous command. Defaults to in a shell, which either stdio inherit
-    // EXAMPLES:
-    // shell.exec('echo', {}, ['$PATH']) // echo '$PATH' (escapes $PATH)
-    // shell.exec('ls', {l:{}}, []) // ls -l
-    // shell.exec('command', {flag: {value: 'val', escape: false}}) // command --flag=val
-    // shell.exec('command', {flag: ['val']}) // command --flag='val'
-    // shell.exec('command', {flag: ['val1','val2']}) // command --flag='val1' --flag='val2'
-    // shell.exec('command', {flag: {value: 'balls', noequals: true}})  // command --flag 'val1'
-
-    exec(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {})
+    // Sync command with stdio set to 'inherit' or 'ignore'. Returns ValidatedOutput containing child process
+    exec(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}): ValidatedOutput
     {
       const command_string = this.commandString(command, flags, args, options)
       const default_options:Dictionary = {stdio : 'inherit', shell: '/bin/bash'}
+
       if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
       this.printCommand(command_string)
+
       const child_process = spawnSync(command_string, [], JSTools.oSubset({... default_options, ...options}, this.spawn_options))
       const result = new ValidatedOutput(true, child_process)
-      // -- check if exit-code is non zero -------------------------------------
-      if(child_process.status != 0) {
+      if(child_process.status != 0) { // -- check if exit-code is non zero
         result.pushError(child_process?.stderr?.toString('ascii'))
       }
       return result
     }
 
-    execAsync(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {})
+    // Async request with stdio set to 'inherit' or 'ignore'.
+    execAsync(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {})
     {
       const command_string = this.commandString(command, flags, args, options)
       const default_options:Dictionary = {stdio : 'pipe', shell: '/bin/bash'}
+
       if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
       this.printCommand(command_string)
+
       return new ValidatedOutput(
         true,
         spawn(command_string, [], JSTools.oSubset({... default_options, ...options}, this.spawn_options))
@@ -74,7 +74,6 @@ export class ShellCommand
     }
 
     // Launches a syncronous command in a shell and returns output string
-
     output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}, post_process="")
     {
       const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer'}})
@@ -96,7 +95,7 @@ export class ShellCommand
       }
     }
 
-    commandString(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary={})
+    commandString(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {})
     {
       // HELPER: wraps variable in array
       const arrayWrap = (x:any) => (JSTools.isArray(x)) ? x : [x]
@@ -154,7 +153,7 @@ export class ShellCommand
     }
 
     // trims any whitespace from output
-    private trimOutput(stdout:string)
+    private trimOutput(stdout: string)
     {
       return new ValidatedOutput(true, stdout.trim())
     }
@@ -170,14 +169,14 @@ export class ShellCommand
     // == Bash Escape Functions ================================================
 
     // turns argv array into a properly escaped command string
-    static bashEscapeArgs(argv: Array<string>)
+    static bashEscapeArgs(argv: Array<string>) : Array<string>
     {
       return argv.map((a:string) => this.bashEscape(a))
     }
 
     // wraps a string in single quotes for bash, multiple times:
     // Based on shell-escape (https://www.npmjs.com/package/shell-escape)
-    static bashEscape(value: string, iterations: number = 1)
+    static bashEscape(value: string, iterations: number = 1) : string
     {
       for(var i = 0; i < iterations; i ++) {
         value = `'${value.replace(/'/g, "'\\''")}'`
