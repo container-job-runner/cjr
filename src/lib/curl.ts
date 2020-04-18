@@ -11,8 +11,10 @@
 //  })
 // =============================================================================
 
+import * as url from 'url'
 import * as querystring from 'querystring'
-import {ShellCommand} from './shell-command'
+import { ShellCommand } from './shell-command'
+import { ValidatedOutput } from './validated-output'
 
 // -- types --------------------------------------------------------------------
 type method_types = "GET"|"POST"|"DELETE"|"PUT"|"PATCH"
@@ -23,6 +25,12 @@ type CurlOptions = {
   "method"?: method_types,
   "header"?: string,
   "data"?: string|Array<string>
+}
+type RequestOptions = {
+  "encoding": "json"|"url",
+  "url": string,
+  "unix-socket"?: string,
+  "data"?: any
 }
 
 export class Curl
@@ -39,11 +47,12 @@ export class Curl
   }
 
   // Generic function that wraps curl
-  curl(options: CurlOptions, post_process="")
+  curl(options: CurlOptions, post_process = ""):ValidatedOutput
   {
     const command = 'curl'
     const args = [options['url']]
     const flags:Dictionary = {}
+
     if(options['unix-socket'])
       flags['unix-socket'] = {value: options['unix-socket'], noequals: true}
     if(options['header'])
@@ -52,29 +61,34 @@ export class Curl
       flags['d'] = {value: options['data'], noequals: true}
     if(options['method'])
       flags['X'] = {value: options['method'], noequals: true}
-    return this.shell.output(command, flags, args, {}, post_process)
+
+      return this.shell.output(command, flags, args, {}, post_process)
   }
 
   // Shorthand for url or JSON Post Rest
-  request(method:method_types, options: {"encoding": "json"|"url", "url": string, "unix-socket"?: string, "data"?: any}, post_process="")
+  request(method:method_types, options: RequestOptions, post_process = ""):ValidatedOutput
   {
     if(options.encoding == "json") // -- json request --------------------------
-      return this.curl({
-        "url": `${this.base_url}${options['url']}`,
-        "unix-socket": options?.["unix-socket"] || "",
-        "header": 'Content-Type: application/json',
-        "method": method,
-        "data": JSON.stringify(options['data'])
-      },
-      post_process || this.default_post_process)
+      return this.curl(
+        this.curlOptions(options, 'Content-Type: application/json', JSON.stringify),
+        post_process || this.default_post_process
+      )
     else if(options.encoding == "url") // -- url request ------------------------
-      return this.curl({
-        "url": `${this.base_url}${options['url']}`,
+      return this.curl(
+        this.curlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify),
+        post_process || this.default_post_process
+      )
+    return new ValidatedOutput(false)
+  }
+
+  private curlOptions(options: RequestOptions, header: string, dataToStr:(data: any) => string):CurlOptions
+  {
+    return {
+        "url": url.resolve(this.base_url, options['url']),
         "unix-socket": options?.["unix-socket"] || "",
         "method": method,
         "data": querystring.stringify(options['data'])
-      },
-      post_process || this.default_post_process)
+      }
   }
 
 }
