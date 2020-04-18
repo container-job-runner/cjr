@@ -58,8 +58,8 @@ export class ShellCommand
       return result
     }
 
-    // Async request with stdio set to 'inherit' or 'ignore'.
-    execAsync(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {})
+    // Async request with stdio set to 'inherit' or 'ignore'. Returns ValidatedOutput containing child process
+    execAsync(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}) : ValidatedOutput
     {
       const command_string = this.commandString(command, flags, args, options)
       const default_options:Dictionary = {stdio : 'pipe', shell: '/bin/bash'}
@@ -73,10 +73,10 @@ export class ShellCommand
       )
     }
 
-    // Launches a syncronous command in a shell and returns output string
-    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}, post_process="")
+    // Launches a syncronous command in a shell and returns output
+    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}, post_process="") : ValidatedOutput
     {
-      const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer'}})
+      const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer', shell: '/bin/bash'}})
       if(!result.success) return result
 
       // process stdout --------------------------------------------------------
@@ -95,7 +95,7 @@ export class ShellCommand
       }
     }
 
-    commandString(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {})
+    commandString(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {}) : string
     {
       // HELPER: wraps variable in array
       const arrayWrap = (x:any) => (JSTools.isArray(x)) ? x : [x]
@@ -124,7 +124,7 @@ export class ShellCommand
     // == Start Output PostProcess Functions ===================================
 
     // checks if output is json and returns json data or returns failed result
-    private parseJSON(stdout:string)
+    private parseJSON(stdout:string) : ValidatedOutput
     {
       try
       {
@@ -137,7 +137,7 @@ export class ShellCommand
     }
 
     // checks if each line of the output is json and returns an array of json data or returns failed result
-    private parseLineJSON(stdout:string)
+    private parseLineJSON(stdout:string) : ValidatedOutput
     {
       try
       {
@@ -153,14 +153,14 @@ export class ShellCommand
     }
 
     // trims any whitespace from output
-    private trimOutput(stdout: string)
+    private trimOutput(stdout: string) : ValidatedOutput
     {
       return new ValidatedOutput(true, stdout.trim())
     }
 
     // == Console Log Functions ================================================
 
-    private printCommand(command: string)
+    private printCommand(command: string) : void
     {
       if(this.explicit && !this.silent)
         console.log(` ${command}`)
