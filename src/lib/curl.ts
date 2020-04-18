@@ -2,9 +2,14 @@
 // Curl: A class for executing sync curl requests
 //  -- Functions ---------------------------------------------------------------
 //  curl - generic wrapper for curl (supports only limited flags)
-//  request - simplified calling function
+//  post - simplified making POST request
+//  get - simplified making GET request
 //  -- Example -----------------------------------------------------------------
-//  curl.request('POST', {
+//  curl.get({
+//    url: "example/endpoint"
+//    data: {a: 1, b: 2}
+//  })
+//  curl.post({
 //    url: "example/endpoint"
 //    encoding: "json"
 //    data: {a: 1, b: 2}
@@ -56,7 +61,7 @@ export class Curl
     if(options['unix-socket'])
       flags['unix-socket'] = {value: options['unix-socket'], noequals: true}
     if(options['header'])
-      flags['H'] = options['header']
+      flags['H'] = {value: options['header'], noequals: true}
     if(options['data'])
       flags['d'] = {value: options['data'], noequals: true}
     if(options['method'])
@@ -65,29 +70,49 @@ export class Curl
       return this.shell.output(command, flags, args, {}, post_process)
   }
 
-  // Shorthand for url or JSON Post Rest
-  request(method:method_types, options: RequestOptions, post_process = ""):ValidatedOutput
+  // Shorthand for GET request with url or JSON data
+  get(options: RequestOptions, post_process = ""):ValidatedOutput
+  {
+    const has_data  = options?.['data'] != undefined;
+    const dataToStr = (has_data && options['encoding'] == "json") ?
+      (s:string) => querystring.stringify({json: JSON.stringify(s)}) :
+      querystring.stringify;
+
+    return this.curl(
+        {
+          "url": `${url.resolve(this.base_url, options['url'])}?${(has_data) ? dataToStr(options['data']) : ""}`,
+          "unix-socket": options?.["unix-socket"] || "",
+          "header": 'Content-Type: application/x-www-form-urlencoded',
+          "method": 'GET'
+        },
+        post_process || this.default_post_process
+      )
+  }
+
+  // Shorthand for url or JSON get
+  post(options: RequestOptions, post_process = ""):ValidatedOutput
   {
     if(options.encoding == "json") // -- json request --------------------------
       return this.curl(
-        this.curlOptions(options, 'Content-Type: application/json', JSON.stringify),
+        this.postCurlOptions(options, 'Content-Type: application/json', JSON.stringify),
         post_process || this.default_post_process
       )
     else if(options.encoding == "url") // -- url request ------------------------
       return this.curl(
-        this.curlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify),
+        this.postCurlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify),
         post_process || this.default_post_process
       )
-    return new ValidatedOutput(false)
+    return new ValidatedOutput(false).pushError('Invalid encoding.')
   }
 
-  private curlOptions(options: RequestOptions, header: string, dataToStr:(data: any) => string):CurlOptions
+  private postCurlOptions(options: RequestOptions, header: string, dataToStr:(data: any) => string):CurlOptions
   {
     return {
         "url": url.resolve(this.base_url, options['url']),
         "unix-socket": options?.["unix-socket"] || "",
-        "method": method,
-        "data": querystring.stringify(options['data'])
+        "header": header,
+        "method": 'POST',
+        "data": dataToStr(options['data'])
       }
   }
 
