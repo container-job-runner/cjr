@@ -57,6 +57,7 @@ export class PodmanRunDriver extends DockerRunDriver
       if(x.match(/^Exited/)) return "exited"
       if(x.match(/^Created/)) return "created"
       if(x.match(/^Up/)) return "running"
+      return "unknown"
     }
 
     return raw_ps_data.map((x:Dictionary) => {

@@ -39,7 +39,7 @@ export abstract class RunDriver extends ContainerDriver
   // -- Returns ----------------------------------------------------------------
   // Array<JobInfo> - information from job
   // ---------------------------------------------------------------------------
-  abstract jobInfo(stack_paths: Array<string>, job_states: Array<string>) : Array<Dictionary>;
+  abstract jobInfo(stack_paths: Array<string>, job_states: Array<JobState>) : Array<Dictionary>;
   abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput;
   abstract jobLog(id: string) : ValidatedOutput;
   abstract jobAttach(id: string) : ValidatedOutput;

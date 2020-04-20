@@ -4,14 +4,14 @@
 
 import * as path from 'path'
 import * as chalk from 'chalk'
-import {cli_name} from '../../constants'
-import {ValidatedOutput} from '../../validated-output'
-import {PathTools} from '../../fileio/path-tools'
-import {RunDriver, Dictionary} from '../abstract/run-driver'
-import {ShellCommand} from "../../shell-command"
-import {dr_vo_validator} from './schema/docker-run-schema'
-import {de_vo_validator} from './schema/docker-exec-schema'
-import {DockerStackConfiguration} from '../../config/stacks/docker/docker-stack-configuration'
+import { cli_name } from '../../constants'
+import { ValidatedOutput } from '../../validated-output'
+import { PathTools } from '../../fileio/path-tools'
+import { RunDriver, Dictionary, JobState, JobPortInfo, JobInfo } from '../abstract/run-driver'
+import { ShellCommand } from "../../shell-command"
+import { dr_vo_validator } from './schema/docker-run-schema'
+import { de_vo_validator } from './schema/docker-exec-schema'
+import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 
 export class DockerRunDriver extends RunDriver
 {
@@ -153,31 +153,35 @@ export class DockerRunDriver extends RunDriver
   //                              then jobs with any stack will be returned.
   // job_states: Array<string> - the state of returned jobs will match with any of the values specified in this array. If
   //                             job_states=[] or job_states=[""] then jobs with any state will be returned.
-  jobInfo(stack_paths: Array<string>, job_states: Array<string> = [])
+  jobInfo(stack_paths: Array<string>, job_states: Array<JobState> = [])
   {
     const info:Array<Dictionary> = []
     if(stack_paths.length == 0) stack_paths = [""]
-    if(job_states.length == 0) job_states = [""]
     stack_paths.map((stack_path:string) => // loop through stacks
     {
-      job_states.map((job_state: string) =>  // loop through states
-      {
-        const command = `${this.base_command} ps`;
-        const args: Array<string> = []
-        const flags: Dictionary = {
-          "a" : {},
-          "no-trunc": {},
-          "filter": [`label=runner=${cli_name}`]
-        };
-        if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
-        if(job_state) flags["filter"].push(`status=${job_state}`)
-        this.addFormatFlags(flags, {format: "json"})
-        const result = this.shell.output(command, flags, args, {}, this.json_output_format)
-        if(result.success) info.push( ...this.extractJobInfo(result.data))
-      })
+      if(job_states.length == 0)
+        info.push( ...this.jobInfoCall(stack_path))
+      else
+        job_states.map((job_state: JobState) => info.push( ...this.jobInfoCall(stack_path, job_state)))
     })
     return info
+  }
 
+  protected jobInfoCall(stack_path: string, job_state?: JobState)
+  {
+    const command = `${this.base_command} ps`;
+      const args: Array<string> = []
+      const flags: Dictionary = {
+        "a" : {},
+        "no-trunc": {},
+        "filter": [`label=runner=${cli_name}`]
+      };
+      if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
+      if(job_state) flags["filter"].push(`status=${job_state}`)
+      this.addFormatFlags(flags, {format: "json"})
+      const result = this.shell.output(command, flags, args, {}, this.json_output_format)
+      if(result.success) return this.extractJobInfo(result.data)
+      else return []
   }
 
   protected extractJobInfo(raw_ps_data: Array<Dictionary>)

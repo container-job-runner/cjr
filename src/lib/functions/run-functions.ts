@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as os from 'os'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
-import {RunDriver} from '../drivers/abstract/run-driver'
+import {RunDriver, JobState} from '../drivers/abstract/run-driver'
 import {BuildDriver} from '../drivers/abstract/build-driver'
 import {StackConfiguration} from '../config/stacks/abstract/stack-configuration'
 import {PathTools} from '../fileio/path-tools'
@@ -341,13 +341,13 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
 // == JOB INFO FUNCTIONS =======================================================
 
 // returns all running job ids
-export function allJobIds(runner: RunDriver, stack_paths: Array<string>=[], states:Array<string> = [])
+export function allJobIds(runner: RunDriver, stack_paths: Array<string>=[], states:Array<JobState> = [])
 {
   return runner.jobInfo(stack_paths, states).map((x:Dictionary) => x.id)
 }
 
 // returns array of jobs ids for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<string> = [])
+export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = [])
 {
   const result = matchingJobInfo(runner, ids, stack_paths, states)
   if(result.success) result.data = result.data.map((x:Dictionary) => x.id)
@@ -355,7 +355,7 @@ export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_path
 }
 
 // returns array of jobs info objects for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<string> = [])
+export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = [])
 {
   ids = ids.filter((id:string) => id !== "") // remove empty ids
   if(ids.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
@@ -379,7 +379,7 @@ function filterJobInfoByID(job_info: Array<Dictionary>, regex: RegExp)
 }
 
 // determines if job with given name exists. Refactor with resultNameId
-export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: string, state:string)
+export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: string, state:JobState)
 {
   const job_info = runner.jobInfo([stack_path], [state])
   const index    = job_info.map((x:Dictionary) => x?.labels?.name).indexOf(name)
@@ -747,7 +747,7 @@ export function loadProjectSettings(project_root: string):{result: ValidatedOutp
 
 // == Interactive Functions ====================================================
 
-export async function promptUserForJobId(runner: RunDriver, stack_path: Array<string>, states:Array<string>=[], silent: boolean = false)
+export async function promptUserForJobId(runner: RunDriver, stack_path: Array<string>, states:Array<JobState>=[], silent: boolean = false)
 {
   if(silent) return false;
   const job_info = runner.jobInfo(stack_path, states)
