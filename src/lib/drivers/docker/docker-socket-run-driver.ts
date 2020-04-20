@@ -14,6 +14,7 @@ import { cli_name } from '../../constants'
 export class DockerSocketRunDriver extends RunDriver
 {
   protected curl: Curl
+  protected base_command: string = "docker"
 
   protected ERRORSTRINGS = {
     BAD_RESPONSE: chalk`{bold Bad API Response.} Is Docker running?`,
@@ -76,7 +77,10 @@ export class DockerSocketRunDriver extends RunDriver
 
   jobAttach(id: string) : ValidatedOutput
   {
-    return new ValidatedOutput(true)
+    return new ValidatedOutput(
+      true,
+      this.shell.exec(`${this.base_command} attach`, {}, [id])
+    )
   }
 
   jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, mode:"print"|"output"|"json") : ValidatedOutput
