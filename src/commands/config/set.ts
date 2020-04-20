@@ -45,7 +45,7 @@ export default class Set extends StackCommand {
       description: "tag that cli uses when building all its images"
     }),
     "job-ls-fields": flags.string({
-      description: 'specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message"'
+      description: 'specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "status", "command", "message"'
     }),
     "container-default-shell": flags.string({
       description: 'default shell that should be started for job:shell commands (e.g. sh, bash, zsh).'

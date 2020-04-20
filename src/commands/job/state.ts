@@ -23,7 +23,7 @@ export default class State extends StackCommand {
     const result = matchingJobInfo(runner, [args.id], stack_paths)
     if(!result.success) return console.log('non-existent')
     const job_info = result.data
-    console.log(job_info[0].status)
+    console.log(job_info[0].state)
   }
 
 }

@@ -42,13 +42,13 @@ export default class List extends StackCommand {
           text_widths:    [8, 102],
           silent_clip:    [true, true]
       }
-      toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.statusString, e?.labels?.message || ""]
+      toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.status, e?.labels?.message || ""]
       printTable = printHorizontalTable
     }
     else // -- Standard Output -------------------------------------------------
     {
 
-      type TableFields = "id"|"stack"|"stackName"|"command"|"statusString"|"message";
+      type TableFields = "id"|"stack"|"stackName"|"command"|"status"|"message";
       const field_params = {
         id: {
           "column_header":  "ID",
@@ -78,12 +78,12 @@ export default class List extends StackCommand {
           "silent_clip":    false,
           "getter": (d:Dictionary) => d.command
         },
-        statusString: {
+        status: {
           "column_header":  "STATUS",
           "column_width":   35,
           "text_width":     30,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => d.statusString
+          "getter": (d:Dictionary) => d.status
         },
         message: {
           "column_header":  "MESSAGE",
@@ -117,12 +117,12 @@ export default class List extends StackCommand {
 
     printTable({ ...table_parameters, ...{
         title:  "Running Jobs",
-        data:   jobs.filter((j:Dictionary) => (j.status === "running")).map((e:Dictionary) => toArray(e))
+        data:   jobs.filter((j:Dictionary) => (j.state === "running")).map((e:Dictionary) => toArray(e))
     }})
 
     printTable({ ...table_parameters, ...{
         title:  "Completed Jobs",
-        data:   jobs.filter((j:Dictionary) => (j.status === "exited" && j?.labels?.jobtype !== "stash")).map((e:Dictionary) => toArray(e)),
+        data:   jobs.filter((j:Dictionary) => (j.state === "exited" && j?.labels?.jobtype !== "stash")).map((e:Dictionary) => toArray(e)),
     }})
 
     if(flags['show-stashes'] || flags['all'])

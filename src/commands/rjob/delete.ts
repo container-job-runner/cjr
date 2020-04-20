@@ -40,13 +40,13 @@ export default class Delete extends RemoteCommand {
     var driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- get job ids ----------------------------------------------------------
     var ids: Array<string> = []
-    var status_filter:undefined|string = undefined
-    if(flags.all) status_filter = ""
-    else if(flags['all-running']) status_filter = "running"
-    else if(flags['all-completed']) status_filter = "exited"
+    var state_filter:undefined|string = undefined
+    if(flags.all) state_filter = ""
+    else if(flags['all-running']) state_filter = "running"
+    else if(flags['all-completed']) state_filter = "exited"
 
-    if(status_filter != undefined) { // filter existing jobs on resource -------
-      result = driver.jobInfo(resource, status_filter)
+    if(state_filter != undefined) { // filter existing jobs on resource -------
+      result = driver.jobInfo(resource, state_filter)
       if(!result.success) return printResultState(result)
       ids = result.data.map((x:Dictionary) => x.id)
     }

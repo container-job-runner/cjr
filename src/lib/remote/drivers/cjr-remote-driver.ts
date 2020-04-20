@@ -418,7 +418,7 @@ export class CJRRemoteDriver extends RemoteDriver
     return await promptUserForId(result.data)
   }
 
-  jobInfo(resource: Dictionary, status?: string)
+  jobInfo(resource: Dictionary, state?: string)
   {
     // -- set resource ---------------------------------------------------------
     var result = this.ssh_shell.setResource(resource)
@@ -433,7 +433,7 @@ export class CJRRemoteDriver extends RemoteDriver
     )
     if(!result.success) return result
     // -- filter jobs ----------------------------------------------------------
-    if(status) result.data = result.data.filter((job:Dictionary) => (job.status === status))
+    if(state) result.data = result.data.filter((job:Dictionary) => (job.state === state))
     return result
 
   }

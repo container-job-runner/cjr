@@ -63,7 +63,7 @@ export abstract class RemoteDriver
 
   abstract connect(resource: Dictionary): ValidatedOutput
   abstract disconnect(resource: Dictionary): ValidatedOutput
-  abstract jobInfo(resource: Dictionary, status: string): ValidatedOutput;
+  abstract jobInfo(resource: Dictionary, state: string): ValidatedOutput;
   abstract async promptUserForJobId(resource: Dictionary, interactive: boolean): Promise<string>
 
 }

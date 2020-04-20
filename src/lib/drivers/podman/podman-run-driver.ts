@@ -52,8 +52,8 @@ export class PodmanRunDriver extends DockerRunDriver
         if(id) inspect_data[id] = {PortBindings: extractBoundPorts(info?.['HostConfig']['PortBindings'] || {})}
     });
 
-    // converts statusMessage to one of three states
-    const shortStatus = (x: String) => {
+    // converts status to one of three states
+    const state = (x: String) => {
       if(x.match(/^Exited/)) return "exited"
       if(x.match(/^Created/)) return "created"
       if(x.match(/^Up/)) return "running"
@@ -64,11 +64,11 @@ export class PodmanRunDriver extends DockerRunDriver
         id: x.ID,
         names: x.Names,
         command: x.Command,
-        status: shortStatus(x.Status),
+        state: state(x.Status),
         stack: x?.Labels?.stack || "",
         labels: x?.Labels || {},
         hostPortBindings: inspect_data?.[x.ID]?.PortBindings || [],
-        statusString: x.Status
+        status: x.Status
       }
     })
   }

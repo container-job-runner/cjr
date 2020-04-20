@@ -766,7 +766,7 @@ export async function promptUserForId(id_info: Array<Dictionary>)
   pageSize: Math.min(id_info.length + 1, 30),
   choices: id_info.map((j:Dictionary) => {
     return {
-      name: chalk`{italic ID}: ${JSTools.clipAndPad(j.id, 12, 15, true)} {italic COMMAND}: ${JSTools.clipAndPad(j.command, 20, 25, false)} {italic STATUS}: ${j.statusString}`,
+      name: chalk`{italic ID}: ${JSTools.clipAndPad(j.id, 12, 15, true)} {italic COMMAND}: ${JSTools.clipAndPad(j.command, 20, 25, false)} {italic STATUS}: ${j.status}`,
       value: j.id
     }
   }).concat({name: "Exit", value: ""}),

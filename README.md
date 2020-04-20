@@ -239,8 +239,8 @@ We describe the settings that can be viewed and modified using `cjr config:list`
 - **image-tag**: *string* tag that cli uses when building all its images.
 - **interactive**: *boolean* - if true then certain cli commands will prompt the user with interactive menus.
 - **job-default-run-mode**: *"async"|"sync"*  determines if new jobs run sync or async by default.
-- **job-ls-fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "statusString", "command", "message". For example:
-`cjr config:set --job-ls-fields='id, stackName, command, statusString'`
+- **job-ls-fields**: *string* specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "status", "command", "message". For example:
+`cjr config:set --job-ls-fields='id, stackName, command, status'`
 - **jupyter-command**: *string* - command that should be run to start Jupyter. This allows you to choose between Jupyter lab or Jupyter notebook.
 - **run-cmd**: *"podman"|"docker"* - container environment used to run images.
 - **run-shortcuts-file**: *string* - location of a yml file that can be used to specify run shortcuts for `cjr $` command. See file format description below.
@@ -273,7 +273,7 @@ $ npm install -g cjr
 $ cjr COMMAND
 running command...
 $ cjr (-v|--version|version)
-cjr/0.2.0 linux-x64 node-v12.16.1
+cjr/0.2.1 linux-x64 node-v12.16.1
 $ cjr --help [COMMAND]
 USAGE
   $ cjr COMMAND

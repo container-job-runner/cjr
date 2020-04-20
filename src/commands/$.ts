@@ -98,7 +98,7 @@ export default class Run extends StackCommand {
     // -- check that job has stopped -------------------------------------------
     const result = matchingJobInfo(container_runtime.runner, [job_id], [stack_path])
     if(!result.success) return false
-    if(result.data?.[0]?.status != 'exited') return false
+    if(result.data?.[0]?.state != 'exited') return false
     // -- check flag status ----------------------------------------------------
     if(!flags["project-root"]) return false
     if(flags["file-access"] === 'bind') return false

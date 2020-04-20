@@ -213,10 +213,11 @@ export class DockerRunDriver extends RunDriver
     });
 
     // converts statusMessage to one of three states
-    const shortStatus = (x: String) => {
+    const state = (x: String) => {
       if(x.match(/^Exited/)) return "exited"
       if(x.match(/^Created/)) return "created"
       if(x.match(/^Up/)) return "running"
+      return "unknown"
     }
 
     return raw_ps_data.map((x:Dictionary) => {
@@ -224,11 +225,11 @@ export class DockerRunDriver extends RunDriver
         id: x.ID,
         names: x.Names,
         command: x.Command,
-        status: shortStatus(x.Status),
+        state: state(x.Status),
         stack: inspect_data?.[x.ID]?.Labels.stack || "",
         labels: inspect_data?.[x.ID]?.Labels || {},
         hostPortBindings: inspect_data?.[x.ID]?.PortBindings || [],
-        statusString: x.Status
+        status: x.Status
       }
     })
   }
