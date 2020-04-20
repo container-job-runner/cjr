@@ -27,13 +27,14 @@ type Dictionary = {[key: string]: any}
 type CurlOptions = {
   "url": string,
   "unix-socket"?: string,
+  "output-response-header"?: boolean,
   "method"?: method_types,
   "header"?: string,
   "data"?: string|Array<string>
 }
 type RequestOptions = {
-  "encoding": "json"|"url",
   "url": string,
+  "encoding"?: "json"|"url",
   "unix-socket"?: string,
   "data"?: any
 }
@@ -42,13 +43,17 @@ export class Curl
 {
   private shell:ShellCommand              // executes curl shell command
   private base_url: string                // base url that will be prepended to url provide
-  private default_post_process: string    // default post-processing to use for request command
+  private unix_socket: string             // unix socket that should be used for get and post requests
 
-  constructor(shell:ShellCommand, options?: {'base-url'?:string, 'post-process'?: string})
+  private ERRORSTRINGS = {
+    INVALID_JSON: "Curl response contained invalud json."
+  }
+
+  constructor(shell:ShellCommand, options?: {'base-url'?:string, 'unix-socket'?:string})
   {
     this.shell = shell;
     this.base_url = options?.['base-url'] || ""
-    this.default_post_process = options?.['post-process'] || ""
+    this.unix_socket = options?.['unix-socket'] || ""
   }
 
   // Generic function that wraps curl
@@ -66,54 +71,90 @@ export class Curl
       flags['d'] = {value: options['data'], noequals: true}
     if(options['method'])
       flags['X'] = {value: options['method'], noequals: true}
+    if(options['output-response-header'])
+      flags['i'] = {}
 
       return this.shell.output(command, flags, args, {}, post_process)
   }
 
   // Shorthand for GET request with url or JSON data
-  get(options: RequestOptions, post_process = ""):ValidatedOutput
+  get(options: RequestOptions):ValidatedOutput
   {
     const has_data  = options?.['data'] != undefined;
     const dataToStr = (has_data && options['encoding'] == "json") ?
       (s:string) => querystring.stringify({json: JSON.stringify(s)}) :
       querystring.stringify;
 
-    return this.curl(
+    const result = this.curl(
         {
           "url": `${url.resolve(this.base_url, options['url'])}?${(has_data) ? dataToStr(options['data']) : ""}`,
-          "unix-socket": options?.["unix-socket"] || "",
+          "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
+          "output-response-header": true,
           "header": 'Content-Type: application/x-www-form-urlencoded',
           "method": 'GET'
         },
-        post_process || this.default_post_process
       )
+    return this.processCurlOutput(result)
   }
 
   // Shorthand for url or JSON get
-  post(options: RequestOptions, post_process = ""):ValidatedOutput
+  post(options: RequestOptions):ValidatedOutput
   {
+    let result: ValidatedOutput
     if(options.encoding == "json") // -- json request --------------------------
-      return this.curl(
-        this.postCurlOptions(options, 'Content-Type: application/json', JSON.stringify),
-        post_process || this.default_post_process
+      result = this.curl(
+        this.postCurlOptions(options, 'Content-Type: application/json', JSON.stringify)
       )
-    else if(options.encoding == "url") // -- url request ------------------------
-      return this.curl(
-        this.postCurlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify),
-        post_process || this.default_post_process
+    else // -- url request ------------------------------------------------------
+      result = this.curl(
+        this.postCurlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify)
       )
-    return new ValidatedOutput(false).pushError('Invalid encoding.')
+    return this.processCurlOutput(result)
   }
 
   private postCurlOptions(options: RequestOptions, header: string, dataToStr:(data: any) => string):CurlOptions
   {
     return {
         "url": url.resolve(this.base_url, options['url']),
-        "unix-socket": options?.["unix-socket"] || "",
+        "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
         "header": header,
         "method": 'POST',
+        "output-response-header": true,
         "data": dataToStr(options['data'])
       }
+  }
+
+  private processCurlOutput(result:ValidatedOutput) : ValidatedOutput
+  {
+    if(!result.success) return result
+    const raw_output:string = result.data
+
+    // -- extract header and body -- Note: only supports headers with no blank lines
+    const header:string = (/^HTTP\/\d.\d[\s\S]*(?=\r\n\r\n)/).exec(raw_output)?.pop() || "" // matches HTTP\d.d ... \n\n
+    const body:string = raw_output.slice(header.length)
+    // -- extract response code and content type
+    const response_code:number = parseInt(/(?<=^HTTP\/\d.\d )\d+/.exec(header)?.pop() || "") // matches X in ^HTTP\d.d X
+    const content_type:string = /(?<=Content-Type:\s)\S+/.exec(header)?.pop() || "" // matches X in \nContent-Type: X
+
+    const output:Dictionary = {
+      "header": {
+        "code": response_code,
+        "type": content_type
+      }
+    }
+
+    if(content_type == 'application/json') {
+      try {
+        output.response = JSON.parse(body)
+      }
+      catch(e) {
+        return (new ValidatedOutput(false).pushError(this.ERRORSTRINGS.INVALID_JSON))
+      }
+    }
+    else
+      output.response = body
+
+    return new ValidatedOutput(true, output)
   }
 
 }
