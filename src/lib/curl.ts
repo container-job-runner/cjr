@@ -130,7 +130,7 @@ export class Curl
     const raw_output:string = result.data
 
     // -- extract header and body -- Note: only supports headers with no blank lines
-    const header:string = (/^HTTP\/\d.\d[\s\S]*(?=\r\n\r\n)/).exec(raw_output)?.pop() || "" // matches HTTP\d.d ... \n\n
+    const header:string = (/^HTTP\/\d.\d[\s\S]*(?=\r\n\r\n)/).exec(raw_output)?.pop() || "" // matches HTTP\d.d ... \r\n\r\n
     const body:string = raw_output.slice(header.length)
     // -- extract response code and content type
     const response_code:number = parseInt(/(?<=^HTTP\/\d.\d )\d+/.exec(header)?.pop() || "") // matches X in ^HTTP\d.d X
