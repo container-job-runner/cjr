@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as os from 'os'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
-import {RunDriver, JobState} from '../drivers/abstract/run-driver'
+import {RunDriver, JobState, JobInfo, JobPortInfo} from '../drivers/abstract/run-driver'
 import {BuildDriver} from '../drivers/abstract/build-driver'
 import {StackConfiguration} from '../config/stacks/abstract/stack-configuration'
 import {PathTools} from '../fileio/path-tools'
@@ -391,7 +391,10 @@ export function nextAvailablePort(runner: RunDriver, port:number=1024)
   const job_info = runner.jobInfo([], []) // get all jobs
   // -- extract port and order ascending ---------------------------------------
   const ports:Array<number> = []
-  job_info.map((job:Dictionary) => ports.push( ... (job?.hostPortBindings || [])))
+  job_info.map( (job_info:JobInfo) => ports.push(
+      ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
+    )
+  )
   const ord_ports = [... new Set(ports)].sort()
   // -- return next available port ---------------------------------------------
   for(var i = 0; i <= ord_ports.length; i ++)  {

@@ -2,10 +2,11 @@
 // Podman-Run-Driver: Controls Podman For Running containers
 // ===========================================================================
 
-import {ShellCommand} from "../../shell-command"
-import {DockerRunDriver} from '../docker/docker-run-driver'
-import {pr_vo_validator} from './schema/podman-run-schema'
-import {PodmanStackConfiguration} from '../../config/stacks/podman/podman-stack-configuration'
+import { ShellCommand } from "../../shell-command"
+import { JobInfo, JobPortInfo } from '../abstract/run-driver'
+import { DockerRunDriver }  from '../docker/docker-run-driver'
+import { pr_vo_validator } from './schema/podman-run-schema'
+import { PodmanStackConfiguration } from '../../config/stacks/podman/podman-stack-configuration'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -23,7 +24,7 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
-  protected extractJobInfo(raw_ps_data: Array<Dictionary>)
+  protected extractJobInfo(raw_ps_data: Array<Dictionary>) : Array<JobInfo>
   {
     // NOTE: podman ps has a bad format for determining open ports.
     // This Function calls podman inspect to extract port information
@@ -37,19 +38,22 @@ export class PodmanRunDriver extends DockerRunDriver
     )
     if(!result.success) return []
     // -- function for extracting port information for inspect
-    const extractBoundPorts = (d:Dictionary) => {
-      const bound_ports:Array<number> = []
-      Object.keys(d).map((k:string) => {
-        const host_port = d[k]?.pop()?.HostPort; // assumes form {"PORTKEY": [{hostPort: "NUMBER"}], "PORTKEY": [{hostPort: "NUMBER"}]}
-        if(host_port && !isNaN(parseInt(host_port))) bound_ports.push(parseInt(host_port))
+    const extractBoundPorts = (PortBindings:Dictionary) => { // entries are of the form {"PORT/tcp"|"PORT/udp": [{HostPort: string, HostIp: String}], "PORTKEY": [{hostPort: "NUMBER"}]}
+      const port_info: Array<JobPortInfo> = [];
+      Object.keys(PortBindings).map((k:string) => { // key is of the form "PORT/tcp"|"PORT/udp
+        const container_port = parseInt(/^\d*/.exec(k)?.pop() || "");
+        const host_port = parseInt(PortBindings[k]?.[0]?.HostPort || "");
+        const host_ip = PortBindings[k]?.[0]?.HostIp || "";
+        if(!isNaN(container_port) && !isNaN(host_port))
+          port_info.push({hostPort: host_port, containerPort: container_port, hostIp: host_ip})
       })
-      return bound_ports
+      return port_info
     }
     // -- extract label & port data -----------------------------------------------
     const inspect_data:Dictionary = {}
       result.data.map((info:Dictionary) => {
         const id = info?.['Id'];
-        if(id) inspect_data[id] = {PortBindings: extractBoundPorts(info?.['HostConfig']['PortBindings'] || {})}
+        if(id) inspect_data[id] = {Ports: extractBoundPorts(info?.['HostConfig']['PortBindings'] || {})}
     });
 
     // converts status to one of three states
@@ -68,7 +72,7 @@ export class PodmanRunDriver extends DockerRunDriver
         state: state(x.Status),
         stack: x?.Labels?.stack || "",
         labels: x?.Labels || {},
-        hostPortBindings: inspect_data?.[x.ID]?.PortBindings || [],
+        ports: inspect_data?.[x.ID]?.Ports || [],
         status: x.Status
       }
     })
