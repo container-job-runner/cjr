@@ -61,9 +61,9 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
-export function stopTheia(container_runtime: ContainerRuntime, stack_path: string, identifier: {"project-root"?: string})
+export function stopTheia(container_runtime: ContainerRuntime, identifier: {"project-root"?: string})
 {
-  const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), stack_path, "running");
+  const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), "", "running");
   if(theia_job_id === false)
     return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   else
@@ -71,9 +71,9 @@ export function stopTheia(container_runtime: ContainerRuntime, stack_path: strin
 }
 
 // -- extract the url for a theia server  --------------------------------------
-export async function getTheiaUrl(container_runtime: ContainerRuntime, stack_path: string, identifier: {"project-root"?: string})
+export async function getTheiaUrl(container_runtime: ContainerRuntime, identifier: {"project-root"?: string})
 {
-  const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), stack_path, "running");
+  const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), "", "running");
   if(theia_job_id === false)
     return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   const result = container_runtime.runner.jobExec(theia_job_id, ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`], {}, 'json')

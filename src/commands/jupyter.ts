@@ -76,21 +76,21 @@ export default class Run extends StackCommand {
     }
     if(args['command'] === 'stop') // -- stop jupyter --------------------------
     {
-      result = stopJupyter(container_runtime, stack_path, {"project-root": project_root});
+      result = stopJupyter(container_runtime, {"project-root": project_root});
     }
     if(args['command'] === 'list') // -- list jupyter --------------------------
     {
-      result = listJupyter(container_runtime, stack_path, {"project-root": project_root})
+      result = listJupyter(container_runtime, {"project-root": project_root})
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
-      const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
+      const url_result = await getJupyterUrl(container_runtime, {"project-root": project_root})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
-      const url_result = await getJupyterUrl(container_runtime, stack_path, {"project-root": project_root})
+      const url_result = await getJupyterUrl(container_runtime, {"project-root": project_root})
       if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }

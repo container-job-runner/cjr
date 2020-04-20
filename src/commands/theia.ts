@@ -77,17 +77,17 @@ export default class Run extends StackCommand {
     }
     if(args['command'] === 'stop') // -- stop theia --------------------------
     {
-      result = stopTheia(container_runtime, stack_path, {"project-root": project_root});
+      result = stopTheia(container_runtime, {"project-root": project_root});
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list theia url
     {
-      const url_result = await getTheiaUrl(container_runtime, stack_path, {"project-root": project_root})
+      const url_result = await getTheiaUrl(container_runtime, {"project-root": project_root})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
-      const url_result = await getTheiaUrl(container_runtime, stack_path, {"project-root": project_root})
+      const url_result = await getTheiaUrl(container_runtime, {"project-root": project_root})
       if(url_result.success) startTheiaApp(url_result.data, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }

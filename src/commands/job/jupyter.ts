@@ -80,21 +80,21 @@ export default class Run extends StackCommand {
     }
     if(args['command'] === 'stop') // -- stop jupyter --------------------------
     {
-      result = stopJupyter(container_runtime, stack_path, {"job-id": job_id});
+      result = stopJupyter(container_runtime, {"job-id": job_id});
     }
     if(args['command'] === 'list') // -- list jupyter --------------------------
     {
-      result = listJupyter(container_runtime, stack_path, {"job-id": job_id})
+      result = listJupyter(container_runtime, {"job-id": job_id})
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
-      const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": job_id})
+      const url_result = await getJupyterUrl(container_runtime, {"job-id": job_id})
       if(url_result.success) console.log(url_result.data)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
-      const url_result = await getJupyterUrl(container_runtime, stack_path, {"job-id": job_id})
+      const url_result = await getJupyterUrl(container_runtime, {"job-id": job_id})
       if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }

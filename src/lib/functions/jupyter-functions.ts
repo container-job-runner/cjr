@@ -79,18 +79,18 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
-export function stopJupyter(container_runtime: ContainerRuntime, stack_path: string, identifier: {"job-id"?: string,"project-root"?: string})
+export function stopJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string})
 {
-  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
+  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
   if(jupyter_job_id === false)
     return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return container_runtime.runner.jobStop([jupyter_job_id])
 }
 
-export function listJupyter(container_runtime: ContainerRuntime, stack_path: string, identifier: {"job-id"?: string,"project-root"?: string})
+export function listJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string})
 {
-  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
+  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
   if(jupyter_job_id === false)
     return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
@@ -99,9 +99,9 @@ export function listJupyter(container_runtime: ContainerRuntime, stack_path: str
 
 // -- extract the url for a jupyter notebook  ----------------------------------
 // function can send repeated requests if the first one fails
-export async function getJupyterUrl(container_runtime: ContainerRuntime, stack_path: string, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000)
+export async function getJupyterUrl(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000)
 {
-  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), stack_path, "running");
+  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
   if(jupyter_job_id === false) return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   var result = new ValidatedOutput(false).pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
