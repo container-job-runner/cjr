@@ -59,16 +59,18 @@ export class ProjectSettings
   // -- Returns ----------------------------------------------------------------
   // ValidatedOutput - lists any errors during load
   // ---------------------------------------------------------------------------
-  loadFromFile(file_path: string)
+  loadFromFile(file_path: string) : ValidatedOutput<undefined>
   {
     // -- exit if no hostRoot is specified -------------------------------------
-    if(!file_path) return new ValidatedOutput(true, {});
+    if(!file_path) return new ValidatedOutput(true, undefined);
     // -- exit if no settings file exists --------------------------------------
-    if(!fs.existsSync(file_path)) return new ValidatedOutput(false, {});
+    if(!fs.existsSync(file_path)) return new ValidatedOutput(false, undefined);
     // -- exit if settings file is invalid -------------------------------------
     const read_result = this.yml_file.validatedRead(file_path)
     if(read_result.success == false) {
-      return new ValidatedOutput(false, [], [], [WarningStrings.PROJECTSETTINGS.INVALID_YML(file_path)])
+      return new ValidatedOutput(false, undefined).pushWarning(
+        WarningStrings.PROJECTSETTINGS.INVALID_YML(file_path)
+      )
     }
 
     //  -- set project settings variable -----------------------------------------
@@ -100,9 +102,9 @@ export class ProjectSettings
   }
 
   // -- HELPER: ensures overwriting project-config files exist and have absolute paths ---
-  private configFilesToAbsPath(props: ps_props, file_path: string)
+  private configFilesToAbsPath(props: ps_props, file_path: string) : ValidatedOutput<undefined>
   {
-    const result = new ValidatedOutput(true)
+    const result = new ValidatedOutput(true, undefined)
     if(!props?.["config-files"]) return result
     // conver config files to absolue
     props["config-files"] = this.pathsToExistingAbs(
@@ -116,9 +118,9 @@ export class ProjectSettings
   }
 
   // -- HELPER: ensures project-settings stacks-dir is absolute ----------------
-  private stacksDirToAbsPath(props: ps_props, file_path: string)
+  private stacksDirToAbsPath(props: ps_props, file_path: string) : ValidatedOutput<undefined>
   {
-    const result = new ValidatedOutput(true)
+    const result = new ValidatedOutput(true, undefined)
     if(!props?.["stacks-dir"]) return result
 
     const stacks_dir_ar = this.pathsToExistingAbs(
