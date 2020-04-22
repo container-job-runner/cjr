@@ -25,7 +25,7 @@ export default class Rsync extends RemoteCommand {
     this.augmentFlagsWithProjectSettings(flags, {"remote-name": false, "stacks-dir": false})
     // -- validate id ----------------------------------------------------------
     const name = args["remote-name"] || flags["remote-name"] || ""
-    var result = this.validResourceName(name)
+    var result:ValidatedOutput<any> = this.validResourceName(name)
     if(!result.success) return printResultState(result)
     // -- get resource & ssh_shell ---------------------------------------------
     const resource = this.resource_configuration.getResource(name)
@@ -35,7 +35,7 @@ export default class Rsync extends RemoteCommand {
     if(!result.success) return printResultState(result)
     // -- get local stack dir --------------------------------------------------
     const local_stacks_dir:string = flags['stacks-dir'] || this.settings.get('stacks-dir')
-    if(!local_stacks_dir) return printResultState(new ValidatedOutput(false).pushError('Empty local stack dir'))
+    if(!local_stacks_dir) return printResultState(new ValidatedOutput(false, undefined).pushError('Empty local stack dir'))
     // -- get remote stack_dir -------------------------------------------------
     result = this.getRemoteStackDir(ssh_shell)
     if(!result.success) printResultState(result)
@@ -57,7 +57,7 @@ export default class Rsync extends RemoteCommand {
     var result = ssh_shell.output('cjr config:ls', {json: {}}, [], {}, 'json')
     if(!result.success) return result
     const remote_stacks_dir:string = result.data?.['stacks-dir'] || ""
-    if(!remote_stacks_dir) return new ValidatedOutput(false).pushError('Empty remote stack dir.')
+    if(!remote_stacks_dir) return new ValidatedOutput(false, undefined).pushError('Empty remote stack dir.')
     return new ValidatedOutput(true, remote_stacks_dir)
   }
 

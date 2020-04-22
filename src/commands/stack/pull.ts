@@ -21,7 +21,7 @@ export default class Pull extends StackCommand {
     const {args, flags} = this.parse(Pull)
     this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": true})
     const shell = new ShellCommand(flags.explicit, false)
-    var result: ValidatedOutput
+    var result: ValidatedOutput<any>
     // -- get stacks directory and name of git repo ----------------------------
     const local_stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
     fs.ensureDirSync(local_stacks_path)

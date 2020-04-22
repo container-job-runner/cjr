@@ -47,7 +47,7 @@ export default class Run extends StackCommand {
       runner:  this.newRunner(flags.explicit)
     }
     // -- extract full id ------------------------------------------------------
-    var result = matchingJobIds(container_runtime.runner, [args['id']], [""])
+    var result:ValidatedOutput<any> = matchingJobIds(container_runtime.runner, [args['id']], [""])
     if(!result.success) return printResultState(result)
     const job_id = result.data.pop() || ""
     // -- check x11 user settings ----------------------------------------------
@@ -56,7 +56,7 @@ export default class Run extends StackCommand {
     if(flags['port'] == 'auto')
       flags['port'] = `${nextAvailablePort(container_runtime.runner, 7019)}`
     // -- read settings --------------------------------------------------------
-    var result = new ValidatedOutput(true)
+    result = new ValidatedOutput<String>(true, "")
     const project_root = flags['project-root'] || "";
     const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start jupyter ------------------------

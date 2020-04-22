@@ -4,6 +4,7 @@ import {JSTools} from '../../lib/js-tools'
 import {printResultState} from '../../lib/functions/misc-functions'
 import {OutputOptions} from '../../lib/functions/run-functions'
 import {RemoteDeleteOptions} from '../../lib/remote/drivers/remote-driver'
+import { ValidatedOutput } from '../../lib/validated-output'
 
 export default class Delete extends RemoteCommand {
   static description = 'Delete a job and its associated data including the image; works on both running and completed jobs'
@@ -26,7 +27,7 @@ export default class Delete extends RemoteCommand {
     this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)
-    var result = this.validResourceName(name)
+    var result:ValidatedOutput<any> = this.validResourceName(name)
     if(!result.success) return printResultState(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {

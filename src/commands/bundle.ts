@@ -10,6 +10,7 @@ import {bundleStack, bundleProjectSettings, bundleProject, ContainerRuntime, Pro
 import {ShellCommand} from '../lib/shell-command'
 import {FileTools} from '../lib/fileio/file-tools'
 import {YMLFile} from '../lib/fileio/yml-file'
+import { ValidatedOutput } from '../lib/validated-output'
 
 export default class Bundle extends StackCommand {
   static description = 'Bundle a stack or project into a zip or tar for sharing.'
@@ -40,7 +41,7 @@ export default class Bundle extends StackCommand {
       runner:  this.newRunner(flags.explicit, true)
     }
     // -- create tmp dir for bundle --------------------------------------------
-    var result = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name))
+    var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name))
     if(!result.success) return printResultState(result)
     const tmp_dir = result.data
     // -- set copy options -----------------------------------------------------
