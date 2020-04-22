@@ -22,9 +22,9 @@ import { ShellCommand } from './shell-command'
 import { ValidatedOutput } from './validated-output'
 
 // -- types --------------------------------------------------------------------
-type method_types = "GET"|"POST"|"DELETE"|"PUT"|"PATCH"
 type Dictionary = {[key: string]: any}
-type CurlOptions = {
+export type method_types = "GET"|"POST"|"DELETE"|"PUT"|"PATCH"
+export type CurlOptions = {
   "url": string,
   "unix-socket"?: string,
   "output-response-header"?: boolean,
@@ -32,11 +32,18 @@ type CurlOptions = {
   "header"?: string,
   "data"?: string|Array<string>
 }
-type RequestOptions = {
+export type RequestOptions = {
   "url": string,
   "encoding"?: "json"|"url",
   "unix-socket"?: string,
   "data"?: any
+}
+export type RequestOutput = {
+  "header": {
+    "code": number,
+    "type": string
+  },
+  "body": any
 }
 
 export class Curl
@@ -57,7 +64,7 @@ export class Curl
   }
 
   // Generic function that wraps curl
-  curl(options: CurlOptions, post_process = ""):ValidatedOutput
+  curl(options: CurlOptions, post_process = ""):ValidatedOutput<string>
   {
     const command = 'curl'
     const args = [options['url']]
@@ -78,7 +85,7 @@ export class Curl
   }
 
   // Shorthand for GET request with url or JSON data
-  get(options: RequestOptions):ValidatedOutput
+  get(options: RequestOptions):ValidatedOutput<RequestOutput>
   {
     const has_data  = options?.['data'] != undefined;
     const dataToStr = (has_data && options['encoding'] == "json") ?
@@ -98,18 +105,18 @@ export class Curl
   }
 
   // Shorthand for url or JSON get
-  post(options: RequestOptions):ValidatedOutput
+  post(options: RequestOptions):ValidatedOutput<RequestOutput>
   {
-    let result: ValidatedOutput
+    let c_result: ValidatedOutput<string>
     if(options.encoding == "json") // -- json request --------------------------
-      result = this.curl(
+      c_result = this.curl(
         this.postCurlOptions(options, 'Content-Type: application/json', JSON.stringify)
       )
     else // -- url request ------------------------------------------------------
-      result = this.curl(
+      c_result = this.curl(
         this.postCurlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify)
       )
-    return this.processCurlOutput(result)
+    return this.processCurlOutput(c_result)
   }
 
   private postCurlOptions(options: RequestOptions, header: string, dataToStr:(data: any) => string):CurlOptions
@@ -124,9 +131,11 @@ export class Curl
       }
   }
 
-  private processCurlOutput(result:ValidatedOutput) : ValidatedOutput
+  private processCurlOutput(result:ValidatedOutput<string>) : ValidatedOutput<RequestOutput>
   {
-    if(!result.success) return result
+    const blank_output = new ValidatedOutput(false, {header: {code: NaN, type: ""}, body: ""})
+
+    if(!result.success) return blank_output
     const raw_output:string = result.data
 
     // -- extract header and body -- Note: only supports headers with no blank lines
@@ -136,23 +145,24 @@ export class Curl
     const response_code:number = parseInt(/(?<=^HTTP\/\d.\d )\d+/.exec(header)?.pop() || "") // matches X in ^HTTP\d.d X
     const content_type:string = /(?<=Content-Type:\s)\S+/.exec(header)?.pop() || "" // matches X in \nContent-Type: X
 
-    const output:Dictionary = {
+    const output:RequestOutput = {
       "header": {
         "code": response_code,
         "type": content_type
-      }
+      },
+      "body": ""
     }
 
     if(content_type == 'application/json') {
       try {
-        output.response = JSON.parse(body)
+        output.body = JSON.parse(body)
       }
       catch(e) {
-        return (new ValidatedOutput(false).pushError(this.ERRORSTRINGS.INVALID_JSON))
+        return blank_output.pushError(this.ERRORSTRINGS.INVALID_JSON)
       }
     }
     else
-      output.response = body
+      output.body = body
 
     return new ValidatedOutput(true, output)
   }
