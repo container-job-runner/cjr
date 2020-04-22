@@ -19,6 +19,7 @@ import {JSTools} from '../js-tools'
 import {FileTools} from '../fileio/file-tools'
 import {ShellCommand} from '../shell-command'
 import {remote_sshsocket_dirname} from './constants'
+import { SpawnSyncReturns } from 'child_process'
 type Dictionary = {[key: string]: any}
 
 export class SshShellCommand
@@ -35,9 +36,9 @@ export class SshShellCommand
       this.shell = new ShellCommand(explicit, silent)
     }
 
-    setResource(resource: Dictionary)
+    setResource(resource: Dictionary) : ValidatedOutput<undefined>
     {
-      const result = new ValidatedOutput(true)
+      const result = new ValidatedOutput(true, undefined)
       const base_message = "Internal Error: sshShellCommand invalid remote resource "
       if(!JSTools.isString(resource?.username) || !resource.username)
         result.pushError(`${base_message} (bad username).`)
@@ -49,21 +50,21 @@ export class SshShellCommand
       return result
     }
 
-    commandString(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {})
+    commandString(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {}) : string
     {
       const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
       return this.shell.commandString('ssh', ssh_flags, ssh_args)
     }
 
     // set post_process format to trim by default
-    output(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {}, post_process="trim")
+    output(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {}, post_process="trim") : ValidatedOutput<string>
     {
       const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
       return this.shell.output('ssh', ssh_flags, ssh_args, options, post_process)
     }
 
     // set post_process format to trim by default
-    exec(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {})
+    exec(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {}) : ValidatedOutput<SpawnSyncReturns<Buffer>>
     {
       const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
       return this.shell.exec('ssh', ssh_flags, ssh_args, options)
@@ -93,9 +94,9 @@ export class SshShellCommand
 
     // === File Transfer Functions  ============================================
 
-    scp(local_path: string, remote_path: string, direction: "push"|"pull", options: Dictionary = {}, multiplex_options:Dictionary={})
+    scp(local_path: string, remote_path: string, direction: "push"|"pull", options: Dictionary = {}, multiplex_options:Dictionary={}) : ValidatedOutput<SpawnSyncReturns<Buffer>>|ValidatedOutput<undefined>
     {
-      if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, [], ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
+      if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, undefined, ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
       const use_multiplex = (this.multiplex && this.multiplexExists(multiplex_options))
       // -- set flags ----------------------------------------------------------
       var flags:Dictionary = {r: {}, p: {}}
@@ -111,9 +112,9 @@ export class SshShellCommand
       return this.shell.exec("scp", flags, args, options)
     }
 
-    rsync(local_path: string, remote_path: string, direction: "push"|"pull", flags: Dictionary, options: Dictionary = {}, multiplex_options:Dictionary={})
+    rsync(local_path: string, remote_path: string, direction: "push"|"pull", flags: Dictionary, options: Dictionary = {}, multiplex_options:Dictionary={}) : ValidatedOutput<SpawnSyncReturns<Buffer>>|ValidatedOutput<undefined>
     {
-      if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, [], ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
+      if(!["push", "pull"].includes(direction)) return new ValidatedOutput(false, undefined, ['Internal Error: SshShellCommand.scp() was passed an invalid direction string']);
       const use_multiplex = (this.multiplex && this.multiplexExists(multiplex_options))
       // -- set flags ----------------------------------------------------------
       if(!use_multiplex && this.resource.key) // no resource needed if socket exists
@@ -130,7 +131,7 @@ export class SshShellCommand
 
     // === Multiplex Commands ==================================================
 
-    multiplexStart(options:Dictionary={}) // start the multiplex master
+    multiplexStart(options:Dictionary={}) : boolean // start the multiplex master
     {
       if(this.multiplexExists(options)) return true
       fs.ensureDirSync(path.dirname(this.multiplexSocketPath(options)))
@@ -154,7 +155,7 @@ export class SshShellCommand
       return this.multiplexExists(options)
     }
 
-    multiplexStop(options:Dictionary={}) // stop the multiplex master
+    multiplexStop(options:Dictionary={}) : boolean // stop the multiplex master
     {
       if(!this.multiplexExists(options)) return true
       const command = 'ssh'
@@ -167,19 +168,19 @@ export class SshShellCommand
       return (!this.multiplexExists(options))
     }
 
-    multiplexExists(options:Dictionary={}) // returns true if multiplex socket file exists
+    multiplexExists(options:Dictionary={}) : boolean // returns true if multiplex socket file exists
     {
         return fs.existsSync(this.multiplexSocketPath(options))
     }
 
-    private multiplexSocketPath(options:Dictionary={}) // returns name of multiplex socket
+    private multiplexSocketPath(options:Dictionary={}) : string // returns name of multiplex socket
     {
       return path.join(this.cli_data_dir, remote_sshsocket_dirname, `${options?.tag || ""}${this.resource.username}@${this.resource.address}:22`)
     }
 
     // === Tunnel Functions ====================================================
 
-    tunnelStart(options:{remotePort: string, localHostname: string, localPort: string, x11: boolean})
+    tunnelStart(options:{remotePort: string, localHostname: string, localPort: string, x11: boolean}) : boolean
     {
       const multiplex_options = {tag: this.tags.tunnel, x11: options?.x11 || false}
       if(!this.tunnelStop()) return false // -- stop any existing tunnel
@@ -195,7 +196,7 @@ export class SshShellCommand
       return this.multiplexExists(multiplex_options)
     }
 
-    tunnelStop()
+    tunnelStop() : boolean
     {
       const multiplex_options = {tag: this.tags.tunnel}
       return this.multiplexStop(multiplex_options)
