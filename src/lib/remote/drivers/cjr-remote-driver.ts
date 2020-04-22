@@ -81,11 +81,11 @@ export class CJRRemoteDriver extends RemoteDriver
   jobCopy(resource: Resource, copy_options:CopyOptions)
   {
     // -- validate parameters --------------------------------------------------
-    if(copy_options.ids.length == 0) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.EMPTY_ID)
+    if(copy_options.ids.length == 0) return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.REMOTEJOB.EMPTY_ID)
     // -- do not copy if there is no local hostRoot set ------------------------
-    if(!copy_options['host-path']) return (new ValidatedOutput(false)).pushError(ErrorStrings.REMOTEJOB.COPY.EMPTY_LOCAL_HOSTROOT)
+    if(!copy_options['host-path']) return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.REMOTEJOB.COPY.EMPTY_LOCAL_HOSTROOT)
     // -- start ssh master -----------------------------------------------------
-    var result = this.initConnection(resource)
+    var result:ValidatedOutput<any> = this.initConnection(resource)
     if(!result.success) return result
     // == read json job data ===================================================
     this.printStatus(StatusStrings.REMOTEJOB.COPY.READING_JOBINFO, this.output_options.verbose)
@@ -97,7 +97,7 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
 
     // == map over each matching job ===========================================
-    result = new ValidatedOutput(true)
+    result = new ValidatedOutput(true, undefined)
     matching_ids.map((job_id:string) => {
       // -- extract job information --------------------------------------------
       const job_labels = all_job_labels[job_id]
@@ -159,9 +159,9 @@ export class CJRRemoteDriver extends RemoteDriver
   {
     // -- validate parameters -----------------------------------------------
     if(delete_options['ids'].length == 0)
-      return new ValidatedOutput(true).pushWarning(ErrorStrings.REMOTEJOB.EMPTY_ID)
+      return new ValidatedOutput(true, undefined).pushWarning(ErrorStrings.REMOTEJOB.EMPTY_ID)
     // -- start ssh master -----------------------------------------------------
-    var result = this.initConnection(resource)
+    var result:ValidatedOutput<any> = this.initConnection(resource)
     if(!result.success) return result
     // -- 1. read job info and extract job stacks & job directories ------------
     this.printStatus(StatusStrings.REMOTEJOB.DELETE.READING_JOBINFO, this.output_options.verbose)
@@ -244,7 +244,7 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- validate parameters --------------------------------------------------
     if(!exec_options.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
     // -- start ssh master -----------------------------------------------------
-    var result = this.initConnection(resource, {x11: job_options?.x11 || false})
+    var result:ValidatedOutput<any> = this.initConnection(resource, {x11: job_options?.x11 || false})
     if(!result.success) return result
     // -- read json job data to extract projectid ------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.SHELL.READING_JOBINFO, this.output_options.verbose)
@@ -304,14 +304,14 @@ export class CJRRemoteDriver extends RemoteDriver
   {
     const host_root = job_options['host-root'] || ""
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
+    var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
     if(!result.success) return result
     // -- ensure project has ID ------------------------------------------------
     if(host_root) result = ensureProjectId(host_root)
     if(!result.success) return result;
     const project_id:string = (host_root) ? result.data : "EMPTY" // USE ID EMPTY FOR JOBS WITH NO HOST ROOT
     // -- start ssh master -----------------------------------------------------
-    var result = this.initConnection(resource, {x11: job_options?.x11 || false})
+    result = this.initConnection(resource, {x11: job_options?.x11 || false})
     if(!result.success) return result
     // -- set and create remote directories for job ----------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.CREATING_DIRECTORIES, this.output_options.verbose)
@@ -406,10 +406,10 @@ export class CJRRemoteDriver extends RemoteDriver
   {
     if(!interactive) return ""
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
+    var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
     if(!result.success) return result
     // -- execute ssh command --------------------------------------------------
-    var result = this.ssh_shell.output(
+    result = this.ssh_shell.output(
       'cjr job:ls', {json: {}}, [],
       this.interactive_ssh_options,
       'json'
@@ -421,7 +421,7 @@ export class CJRRemoteDriver extends RemoteDriver
   jobInfo(resource: Dictionary, state?: string)
   {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
+    var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
     if(!result.success) return result
     // -- execute ssh command --------------------------------------------------
     result = this.ssh_shell.output(
@@ -443,9 +443,9 @@ export class CJRRemoteDriver extends RemoteDriver
   jobJupyterStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, rjup_options: RemoteJupyterOptions)
   {
     const port:string = `${job_options?.ports?.[0]?.hostPort || ""}`
-    if(!port) return (new ValidatedOutput(false)).pushError('Internal Error: empty port')
+    if(!port) return (new ValidatedOutput(false, undefined)).pushError('Internal Error: empty port')
 
-    var result = this.jobExec(resource, container_runtime, job_options, {
+    var result:ValidatedOutput<any> = this.jobExec(resource, container_runtime, job_options, {
       "id": rjup_options['id'],
       "mode": 'job:jupyter',
       "host-project-root": rjup_options["host-project-root"],
@@ -478,7 +478,7 @@ export class CJRRemoteDriver extends RemoteDriver
   }
 
   jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary = {mode: 'remote'}) {
-    var result = this.jobJupyterGeneric(resource, id, 'url', 'output')
+    var result:ValidatedOutput<any> = this.jobJupyterGeneric(resource, id, 'url', 'output')
     if(result.success && options?.mode == 'remote' && resource.address)
       result.data = result.data?.replace(/(?<=http:\/\/)\S+(?=:)/, resource.address)
     if(result.success && options?.mode == 'tunnel')
@@ -566,12 +566,12 @@ export class CJRRemoteDriver extends RemoteDriver
   private pushStack(container_runtime: ContainerRuntime, options: {"local-stack-path":string, "local-config-files":Array<string>, "remote-stack-path": string, verbose: boolean})
   {
     // -- 1. create local tmp directory ----------------------------------------
-    var result = FileTools.mktempDir(
+    var result:ValidatedOutput<any> = FileTools.mktempDir(
       path.join(this.storage_directory, cli_bundle_dir_name),
       this.ssh_shell.shell)
     if(!result.success) return result;
     const temp_stack_path = result.data
-    const removeTmpStackAndReturn = (result: ValidatedOutput) => {
+    const removeTmpStackAndReturn = (result: ValidatedOutput<any>) => {
       fs.remove(temp_stack_path);
       return result
     }
@@ -618,10 +618,10 @@ export class CJRRemoteDriver extends RemoteDriver
   // scp project files remote resource
   private pushProjectFiles(container_runtime: ContainerRuntime, options: {"local-project-root":string, "local-stack-path":string, "local-config-files":Array<string>, "remote-project-root": string, verbose: boolean})
   {
-    if(!options['local-project-root']) return new ValidatedOutput(true)
-    if(!options['remote-project-root']) return new ValidatedOutput(false).pushError('Internal Error: missing remote-project-root')
+    if(!options['local-project-root']) return new ValidatedOutput(true, undefined)
+    if(!options['remote-project-root']) return new ValidatedOutput(false, undefined).pushError('Internal Error: missing remote-project-root')
     // -- 1. load stack configuration ------------------------------------------
-    var result = container_runtime.builder.loadConfiguration(options['local-stack-path'], options['local-config-files'])
+    var result:ValidatedOutput<any> = container_runtime.builder.loadConfiguration(options['local-stack-path'], options['local-config-files'])
     if(!result.success) return result
     const configuration:StackConfiguration = result.data
     // -- 3. transfer stack over rsync ------------------------------------------
@@ -643,10 +643,10 @@ export class CJRRemoteDriver extends RemoteDriver
 
   private pullProjectFiles(options: {"local-project-root":string, "remote-project-root": string, "remote-stack-path": string, 'copy-mode': 'update'|'overwrite'|'mirror', verbose: boolean})
   {
-    if(!options["local-project-root"]) return new ValidatedOutput(true) // projects with no hostRoot do not require copy
+    if(!options["local-project-root"]) return new ValidatedOutput(true, undefined) // projects with no hostRoot do not require copy
 
     // -- extract rsync configuration files from remote stack ------------------
-    var result = this.pullRsyncConfig(options['remote-stack-path'], options.verbose)
+    var result:ValidatedOutput<any> = this.pullRsyncConfig(options['remote-stack-path'], options.verbose)
     if(!result.success) return result
     const rconfig: {local_tmp_dir: string, rsync_files_flag:{'include-from'?:string, 'exclude-from'?:string}} = result.data
     // -- rsync projec files ---------------------------------------------------
@@ -773,7 +773,7 @@ export class CJRRemoteDriver extends RemoteDriver
   private pullRsyncConfig(remote_stack_path: string, verbose: boolean)
   {
     // -- create a temp directory ----------------------------------------------
-    var result = FileTools.mktempDir(path.join(this.storage_directory, remote_stack_rsync_config_dirname))
+    var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.storage_directory, remote_stack_rsync_config_dirname))
     if(!result.success) return result
     const local_tmp_dir:string = result.data
     // -- rsync download include and exclude files to local --------------------
@@ -813,7 +813,7 @@ export class CJRRemoteDriver extends RemoteDriver
         path.posix.join(remote_job_dir, 'files', path.basename(params['local-project-root'])) :
         ""
 
-    var result: ValidatedOutput
+    var result: ValidatedOutput<any>
     var remote_job_dir: string
     if(params["file-upload-mode"] == "uncached")
     {
@@ -829,7 +829,7 @@ export class CJRRemoteDriver extends RemoteDriver
     }
     else
     {
-      return new ValidatedOutput(false) // invalid options where passed
+      return new ValidatedOutput(false, undefined) // invalid options where passed
     }
 
     return new ValidatedOutput(true, {
@@ -843,7 +843,7 @@ export class CJRRemoteDriver extends RemoteDriver
     const namedStack = (stack_dir:string) => path.posix.join(stack_dir, params['local-stack-name'])
     const remote_storage_dir = remoteStoragePath(resource['storage-dir'])
 
-    var result: ValidatedOutput
+    var result: ValidatedOutput<any>
     var stack_dir: string
     if(params["stack-upload-mode"] == "cached") // upload into project_id
     {
@@ -870,9 +870,9 @@ export class CJRRemoteDriver extends RemoteDriver
 
   private getUploadDirectories(resource: Resource, params:{'stack-upload-mode': 'cached'|'uncached', 'local-stack-name': string, 'local-project-root': string, 'project-id':string, 'file-upload-mode': 'cached'|'uncached'})
   {
-    if(!params['project-id']) return new ValidatedOutput(false)
+    if(!params['project-id']) return new ValidatedOutput(false, undefined)
 
-    var result: ValidatedOutput
+    var result: ValidatedOutput<any>
     result = this.getFileUploadDirectories(resource, {
       'project-id':         params['project-id'],
       'local-project-root': params['local-project-root'],
@@ -902,7 +902,7 @@ export class CJRRemoteDriver extends RemoteDriver
 
   // helper function for early exits
 
-  private stopMultiplexMasterAndReturn(x:ValidatedOutput)
+  private stopMultiplexMasterAndReturn(x:ValidatedOutput<any>)
   {
     if(this.multiplex_options.autodisconnect)
       this.ssh_shell.multiplexStop();
@@ -921,7 +921,7 @@ export class CJRRemoteDriver extends RemoteDriver
   {
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
-    else return new ValidatedOutput(this.ssh_shell.multiplexStop())
+    else return new ValidatedOutput(this.ssh_shell.multiplexStop(), undefined)
   }
 
   connect(resource: Resource, options: Dictionary = {})
@@ -932,7 +932,7 @@ export class CJRRemoteDriver extends RemoteDriver
     if(this.multiplex_options['restart-existing-connection'] && this.ssh_shell.multiplexExists()) {
       this.ssh_shell.multiplexStop()
     }
-    return new ValidatedOutput(this.ssh_shell.multiplexStart(options))
+    return new ValidatedOutput(this.ssh_shell.multiplexStart(options), undefined)
   }
 
 }

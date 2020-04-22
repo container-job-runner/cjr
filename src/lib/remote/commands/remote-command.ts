@@ -40,10 +40,10 @@ export abstract class RemoteCommand extends StackCommand
       }
     }
 
-    validResourceName(name: string)
+    validResourceName(name: string) : ValidatedOutput<string>
     {
       if(!this.resource_configuration.isResource(name))
-        return new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NAME_NON_EXISTANT(name)])
+        return new ValidatedOutput(false, "").pushError(ErrorStrings.REMOTE_RESOURCE.NAME_NON_EXISTANT(name))
       return new ValidatedOutput(true, name)
     }
 

@@ -42,28 +42,28 @@ export abstract class RemoteDriver
     this.output_options = output_options
   }
 
-  abstract jobAttach(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
+  abstract jobAttach(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
 
-  abstract jobCopy(resource: Dictionary, copy_options:CopyOptions): ValidatedOutput;
-  abstract jobDelete(resource: Dictionary, delete_options:RemoteDeleteOptions): ValidatedOutput;
+  abstract jobCopy(resource: Dictionary, copy_options:CopyOptions): ValidatedOutput<any>;
+  abstract jobDelete(resource: Dictionary, delete_options:RemoteDeleteOptions): ValidatedOutput<any>;
 
-  abstract jobList(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
-  abstract jobLog(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
+  abstract jobList(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
+  abstract jobLog(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
 
-  abstract jobExec(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, exec_options: RemoteExecOptions): ValidatedOutput;
-  abstract jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, remote_options:RemoteStartOptions): ValidatedOutput;
+  abstract jobExec(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, exec_options: RemoteExecOptions): ValidatedOutput<any>;
+  abstract jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, remote_options:RemoteStartOptions): ValidatedOutput<any>;
 
-  abstract jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
-  abstract jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput;
+  abstract jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
+  abstract jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
 
-  abstract jobJupyterStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, rjup_options: RemoteJupyterOptions):ValidatedOutput
-  abstract jobJupyterStop(resource: Dictionary, id: string):ValidatedOutput
-  abstract jobJupyterList(resource: Dictionary, id: string):ValidatedOutput
-  abstract jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary):ValidatedOutput
+  abstract jobJupyterStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, rjup_options: RemoteJupyterOptions):ValidatedOutput<any>
+  abstract jobJupyterStop(resource: Dictionary, id: string):ValidatedOutput<any>
+  abstract jobJupyterList(resource: Dictionary, id: string):ValidatedOutput<any>
+  abstract jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary):ValidatedOutput<any>
 
-  abstract connect(resource: Dictionary): ValidatedOutput
-  abstract disconnect(resource: Dictionary): ValidatedOutput
-  abstract jobInfo(resource: Dictionary, state: string): ValidatedOutput;
+  abstract connect(resource: Dictionary): ValidatedOutput<any>
+  abstract disconnect(resource: Dictionary): ValidatedOutput<any>
+  abstract jobInfo(resource: Dictionary, state: string): ValidatedOutput<any>;
   abstract async promptUserForJobId(resource: Dictionary, interactive: boolean): Promise<string>
 
 }
