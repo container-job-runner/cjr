@@ -24,22 +24,30 @@ export type JobInfo = {
   labels:  {[key: string]: string},
   ports:   Array<JobPortInfo>
 }
+export type SearchFilter = {
+  stack_paths?: Array<string>,
+  job_states?: Array<JobState>
+}
 
 export abstract class RunDriver extends ContainerDriver
 {
   // ---------------------------------------------------------------------------
   // JOBINFO - returns information on running and completed jobs
   // -- Parameters -------------------------------------------------------------
-  // 1. stack_paths: Array<string> - jobInfo only returns jobs whose stack_path
-  //    matches with one of the values in this array. If stack_paths then jobs
-  //    will not be filtered by stack_path.
-  // 2. job_states: Array<string> - jobInfo only returns jobs whose state matches
-  //    with one of the values in this array. if job_states=[] then jobs will
-  //    not be filtered by job_state.
+  // 1. filter: function only returns jobs that match with filter. If filter is
+  //    note provided then all jobs are returned.
+  //    -> "stack-paths": Array<string>
+  //       jobInfo only returns jobs whose stack_pathmatches with one of the
+  //       values in this array. If stack_paths then jobs will not be filtered
+  //       by stack_path.
+  //    -> "job-states": Array<JobState>
+  //       jobInfo only returns jobs whose state matches with one of the values
+  //       in this array. if job_states=[] then jobs will not be filtered by
+  //       job_state.
   // -- Returns ----------------------------------------------------------------
-  // Array<JobInfo> - information from job
+  // ValidatedOutput<Array<JobInfo>> - information about matching job
   // ---------------------------------------------------------------------------
-  abstract jobInfo(stack_paths: Array<string>, job_states: Array<JobState>) : Array<JobInfo>;
+  abstract jobInfo(filter?: SearchFilter) : ValidatedOutput<Array<JobInfo>>;
   abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput<string>;
   abstract jobLog(id: string) : ValidatedOutput<undefined>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
