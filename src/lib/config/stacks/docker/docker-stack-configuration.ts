@@ -224,7 +224,7 @@ export class DockerStackConfiguration extends StackConfiguration
   removeExternalBinds(parent_path: string)
   {
     // copy existing configuration
-    const result = new ValidatedOutput(true);
+    const result = new ValidatedOutput<undefined>(true, undefined);
     if(!this.raw_object?.mounts) return result
 
     this.raw_object.mounts = this.raw_object.mounts.filter((m:Dictionary) => {
@@ -276,7 +276,7 @@ export class DockerStackConfiguration extends StackConfiguration
     }
   }
 
-  private validateBindMounts(result: ValidatedOutput, parent_path: string)
+  private validateBindMounts(result: ValidatedOutput<any>, parent_path: string)
   {
     this.raw_object?.mounts?.map((b:Dictionary) => {
       if(b.type === "bind" && !FileTools.existsDir(b.hostPath))
