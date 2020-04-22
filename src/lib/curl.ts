@@ -64,7 +64,7 @@ export class Curl
   }
 
   // Generic function that wraps curl
-  curl(options: CurlOptions, post_process = ""):ValidatedOutput<string>
+  curl(options: CurlOptions):ValidatedOutput<string>
   {
     const command = 'curl'
     const args = [options['url']]
@@ -81,7 +81,7 @@ export class Curl
     if(options['output-response-header'])
       flags['i'] = {}
 
-      return this.shell.output(command, flags, args, {}, post_process)
+      return this.shell.output(command, flags, args, {})
   }
 
   // Shorthand for GET request with url or JSON data

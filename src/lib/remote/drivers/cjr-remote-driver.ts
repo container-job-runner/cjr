@@ -12,7 +12,7 @@ import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label, stac
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
 import {BuildOptions} from '../../functions/build-functions'
-import {printResultState} from '../../functions/misc-functions'
+import {printResultState, parseJSON} from '../../functions/misc-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
 import {Resource} from "../../remote/config/resource-configuration"
 
@@ -409,10 +409,11 @@ export class CJRRemoteDriver extends RemoteDriver
     var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
     if(!result.success) return result
     // -- execute ssh command --------------------------------------------------
-    result = this.ssh_shell.output(
-      'cjr job:ls', {json: {}}, [],
-      this.interactive_ssh_options,
-      'json'
+    result = parseJSON(
+      this.ssh_shell.output(
+        'cjr job:ls', {json: {}}, [],
+        this.interactive_ssh_options,
+      )
     )
     if(!result.success) return result;
     return await promptUserForId(result.data)
@@ -424,12 +425,13 @@ export class CJRRemoteDriver extends RemoteDriver
     var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
     if(!result.success) return result
     // -- execute ssh command --------------------------------------------------
-    result = this.ssh_shell.output(
-      'cjr job:ls',
-      {json:{}},
-      [],
-      this.interactive_ssh_options,
-      'json'
+    result = parseJSON(
+      this.ssh_shell.output(
+        'cjr job:ls',
+        {json:{}},
+        [],
+        this.interactive_ssh_options
+      )
     )
     if(!result.success) return result
     // -- filter jobs ----------------------------------------------------------
@@ -751,12 +753,8 @@ export class CJRRemoteDriver extends RemoteDriver
   private getJobLabels(job_ids:Array<string> = [])
   {
     // -- read job data and extract job directories ----------------------------
-    var result = this.ssh_shell.output(
-      'cjr job:labels',
-      {json: {}},
-      job_ids,
-      {},
-      'json'
+    var result = parseJSON(
+      this.ssh_shell.output('cjr job:labels', {json: {}}, job_ids, {})
     )
     if(!result.success) // exit if json did not pass validation
       return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.LABEL.INVALID_JSON])

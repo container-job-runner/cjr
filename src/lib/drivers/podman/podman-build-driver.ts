@@ -1,5 +1,6 @@
 import {DockerBuildDriver} from '../docker/docker-build-driver'
 import {PodmanStackConfiguration} from '../../config/stacks/podman/podman-stack-configuration'
+import { parseJSON } from '../../functions/misc-functions'
 
 // - types ---------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -17,7 +18,7 @@ export class PodmanBuildDriver extends DockerBuildDriver
         filter: `reference=${this.imageName(stack_path, configuration.buildHash())}`
       }
       this.addJSONFormatFlag(flags);
-      var result = this.shell.output(command, flags, args, {}, this.json_output_format)
+      var result = parseJSON(this.shell.output(command, flags, args, {}))
       if(!result.success) return false
       // extra logic since podman images --reference=name:tag is equivalent to docker images --reference=*name:tag
       return result.data.some((image_data:Dictionary) =>

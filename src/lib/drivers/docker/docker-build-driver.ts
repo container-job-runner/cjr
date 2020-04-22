@@ -9,13 +9,13 @@ import {DockerStackConfiguration} from '../../config/stacks/docker/docker-stack-
 import {FileTools} from '../../fileio/file-tools'
 import {YMLFile} from '../../fileio/yml-file'
 import {TextFile} from '../../fileio/text-file'
+import { parseLineJSON } from '../../functions/misc-functions'
 
 type StackValidateResult = {"stack-type"?: string}
 
 export class DockerBuildDriver extends BuildDriver
 {
     protected base_command = 'docker'
-    protected json_output_format = "line_json"
     protected default_config_name = "config.yml"
 
 
@@ -71,7 +71,7 @@ export class DockerBuildDriver extends BuildDriver
         filter: `reference=${this.imageName(stack_path, configuration.buildHash())}`
       }
       this.addJSONFormatFlag(flags);
-      var result = this.shell.output(command, flags, args, {}, this.json_output_format)
+      var result = parseLineJSON(this.shell.output(command, flags, args, {}))
       return (result.success && !JSTools.isEmpty(result.data)) ? true : false
     }
 

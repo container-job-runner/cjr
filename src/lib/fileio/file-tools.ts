@@ -4,6 +4,7 @@ import * as path from 'path'
 import {ValidatedOutput} from '../validated-output'
 import {ShellCommand} from '../shell-command'
 import {JSTools} from '../js-tools'
+import { trim } from '../functions/misc-functions'
 
 export class FileTools
 {
@@ -43,13 +44,13 @@ export class FileTools
     switch(os.platform())
     {
       case "darwin":
-        return shell.output('mktemp', {d: {}}, [path.join(parent_abs_path, "tmp.XXXXXXXXXX")], {}, "trim")
+        return trim(shell.output('mktemp', {d: {}}, [path.join(parent_abs_path, "tmp.XXXXXXXXXX")], {}))
       case "linux":
         const flags = {
           tmpdir: parent_abs_path,
           directory: {}
         }
-        return shell.output('mktemp', flags, [], {}, "trim")
+        return trim(shell.output('mktemp', flags, [], {}))
       default: // not thread safe
         const tmp_file_path = fs.mkdtempSync(FileTools.addTrailingSeparator(parent_abs_path)) // ensure trailing separator on path
         return new ValidatedOutput(true, tmp_file_path)

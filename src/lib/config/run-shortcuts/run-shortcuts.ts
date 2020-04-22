@@ -13,9 +13,9 @@ export class RunShortcuts
 
   loadFromFile(file_path: string)
   {
-    const result = new ValidatedOutput(true)
+    const result = new ValidatedOutput(true, undefined)
     const read_result = this.yml_file.validatedRead(file_path)
-    if(read_result.success == false)
+    if(!read_result.success)
       return result.pushWarning(WarningStrings.OPENRULES.INVALID_YML(file_path))
     this.rules = read_result.data
     return result

@@ -3,7 +3,7 @@ import {ValidatedOutput} from '../../../lib/validated-output'
 import {RemoteCommand, Dictionary} from '../../../lib/remote/commands/remote-command'
 import {FileTools} from '../../../lib/fileio/file-tools'
 import {SshShellCommand} from '../../../lib/remote/ssh-shell-command'
-import {printResultState} from '../../../lib/functions/misc-functions'
+import {printResultState, parseJSON} from '../../../lib/functions/misc-functions'
 
 export default class Rsync extends RemoteCommand {
   static description = 'rsyncs local stacks-dir with remote resource or vice-versa.'
@@ -54,7 +54,7 @@ export default class Rsync extends RemoteCommand {
 
   getRemoteStackDir(ssh_shell: SshShellCommand)
   {
-    var result = ssh_shell.output('cjr config:ls', {json: {}}, [], {}, 'json')
+    var result = parseJSON(ssh_shell.output('cjr config:ls', {json: {}}, [], {}))
     if(!result.success) return result
     const remote_stacks_dir:string = result.data?.['stacks-dir'] || ""
     if(!remote_stacks_dir) return new ValidatedOutput(false, undefined).pushError('Empty remote stack dir.')

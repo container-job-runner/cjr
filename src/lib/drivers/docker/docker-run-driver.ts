@@ -12,14 +12,15 @@ import { ShellCommand } from "../../shell-command"
 import { dr_vo_validator } from './schema/docker-run-schema'
 import { de_vo_validator } from './schema/docker-exec-schema'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
+import { trim, parseJSON, parseLineJSON } from '../../functions/misc-functions'
 
 export class DockerRunDriver extends RunDriver
 {
   protected base_command = 'docker'
-  protected json_output_format = "line_json"
   protected selinux: boolean = false
   protected run_schema_validator = dr_vo_validator
   protected exec_schema_validator = de_vo_validator
+  protected outputParser = parseLineJSON
 
   protected ERRORSTRINGS = {
     INVALID_JOB : chalk`{bold job_options object did not pass validation.}`,
@@ -76,7 +77,7 @@ export class DockerRunDriver extends RunDriver
     const command = `${this.base_command} create`;
     const args  = [image_name, command_string]
     const flags = this.runFlags(run_options)
-    var result = this.shell.output(command, flags, args, {}, "trim")
+    const result = trim(this.shell.output(command, flags, args, {}))
     if(result.data === "") result.pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
     return result
   }
@@ -108,7 +109,7 @@ export class DockerRunDriver extends RunDriver
     if(mode == "print")
       return new ValidatedOutput(true, undefined).absorb(this.shell.exec(command, flags, args))
     else if(mode == "json")
-      return this.shell.output(command, flags, args, {}, 'json')
+      return parseJSON(this.shell.output(command, flags, args, {}))
     else
       return this.shell.output(command, flags, args)
   }
@@ -183,7 +184,7 @@ export class DockerRunDriver extends RunDriver
       if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
       if(job_state) flags["filter"].push(`status=${job_state}`)
       this.addFormatFlags(flags, {format: "json"})
-      const result = this.shell.output(command, flags, args, {}, this.json_output_format)
+      const result = this.outputParser(this.shell.output(command, flags, args, {}))
       if(result.success) return this.extractJobInfo(result.data)
       else return []
   }
@@ -193,12 +194,11 @@ export class DockerRunDriver extends RunDriver
     // NOTE: docker ps does not correctly format labels with --format {{json .}}
     // This Function calls docker inspect to extract properly formatted labels
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
-    const result = this.shell.output(
+    const result = this.outputParser(this.shell.output(
       `${this.base_command} inspect`,
       {format: '{{"{\\\"ID\\\":"}}{{json .Id}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Labels\\\":"}}{{json .Config.Labels}}{{"}"}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ}
       ids,
-      {},
-      'line_json'
+      {})
     )
     if(!result.success) return []
     // -- function for extracting port information for inspect
@@ -263,7 +263,7 @@ export class DockerRunDriver extends RunDriver
     if(options?.labels?.length > 0) flags.labels = options?.labels
     if(options?.driver) flags.driver = options?.driver
     const args = (options.name) ? [options.name] : []
-    return this.shell.output(command, flags, args, {}, "trim")
+    return trim(this.shell.output(command, flags, args, {}))
   }
 
   imageName(stack_path: string, prefix: string="")

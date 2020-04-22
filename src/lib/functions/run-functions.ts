@@ -10,7 +10,7 @@ import { PathTools } from '../fileio/path-tools'
 import { FileTools } from '../fileio/file-tools'
 import { JSONFile } from '../fileio/json-file'
 import { ValidatedOutput } from '../validated-output'
-import { printResultState } from './misc-functions'
+import { printResultState, trim } from './misc-functions'
 import { ShellCommand } from '../shell-command'
 import { X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths } from '../constants'
 import { buildAndLoad, BuildOptions } from '../functions/build-functions'
@@ -439,7 +439,7 @@ export function createAndMountFileVolume(container_runtime: ContainerRuntime, co
   // -- check if runtime is docker and chownvolume flags is active -------------
   if( (configuration.getFlags()?.['chown-file-volume'] === true) )  {
       // -- get user id & set chown property -----------------------------------
-      const id_result = (new ShellCommand(false, false)).output('id', {u:{}}, [], {}, 'trim')
+      const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
       if(id_result.success && id_result.data) copy_options.chown = id_result.data
   }
 
@@ -691,7 +691,7 @@ export function prependXAuth(command: string, explicit: boolean = false)
 {
   if(os.platform() != "linux") return command
   const shell = new ShellCommand(explicit, false)
-  const shell_result = shell.output("xauth list $DISPLAY", {}, [], {}, "trim")
+  const shell_result = trim(shell.output("xauth list $DISPLAY", {}, [], {}))
   if(shell_result.success) {
     const secret = shell_result.data.split("  ").pop(); // assume format: HOST  ACCESS-CONTROL  SECRET
     const script = ['WD=$(pwd)', 'cd', 'touch ~/.Xauthority', `xauth add $DISPLAY . ${secret}`, 'cd $WD', command].join(" && ")

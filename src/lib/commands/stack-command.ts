@@ -56,7 +56,7 @@ export abstract class StackCommand extends Command
     // -- exit if no-autoload flag is enabled ----------------------------------
     if(flags?.['no-autoload']) return flags
     // -- load settings and augment flags  -------------------------------------
-    var result = new ValidatedOutput(false)
+    var result = new ValidatedOutput(false, undefined)
     var project_settings:ProjectSettings = new ProjectSettings()
     if(!flags?.['project-root'] && this.settings.get('auto-project-root')){
       ;( {result, project_settings} = scanForSettingsDirectory(process.cwd()) )

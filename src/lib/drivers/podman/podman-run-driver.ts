@@ -7,6 +7,7 @@ import { JobInfo, JobPortInfo } from '../abstract/run-driver'
 import { DockerRunDriver }  from '../docker/docker-run-driver'
 import { pr_vo_validator } from './schema/podman-run-schema'
 import { PodmanStackConfiguration } from '../../config/stacks/podman/podman-stack-configuration'
+import { parseJSON } from '../../functions/misc-functions'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -14,7 +15,7 @@ type Dictionary = {[key: string]: any}
 export class PodmanRunDriver extends DockerRunDriver
 {
   protected base_command = 'podman'
-  protected json_output_format = "json"
+  protected outputParser = parseJSON
   protected run_schema_validator  = pr_vo_validator
 
   protected addFormatFlags(flags: Dictionary, run_flags: Dictionary)
@@ -29,12 +30,8 @@ export class PodmanRunDriver extends DockerRunDriver
     // NOTE: podman ps has a bad format for determining open ports.
     // This Function calls podman inspect to extract port information
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
-    const result = this.shell.output(
-      `${this.base_command} inspect`,
-      {},
-      ids,
-      {},
-      'json'
+    const result = this.outputParser(
+      this.shell.output(`${this.base_command} inspect`, {}, ids, {})
     )
     if(!result.success) return []
     // -- function for extracting port information for inspect

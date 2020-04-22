@@ -53,12 +53,12 @@ export default class Run extends StackCommand {
     if(flags['port'] == 'auto')
       flags['port'] = `${nextAvailablePort(container_runtime.runner, 7001)}`
 
-    var result = new ValidatedOutput(true)
+    var result = new ValidatedOutput(true, undefined)
     const project_root = flags['project-root'] || "";
     const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start theia --------------------------
     {
-      result = startTheiaInProject(
+      const start_result = startTheiaInProject(
         container_runtime,
         output_options,
         {
@@ -72,12 +72,15 @@ export default class Run extends StackCommand {
           "labels": [],
           "sync": false,
           "x11": flags.x11
-        });
-        await JSTools.sleep(4000) // wait for server to start
+        }
+      );
+      result.absorb(start_result)
+      await JSTools.sleep(4000) // wait for server to start
     }
     if(args['command'] === 'stop') // -- stop theia --------------------------
     {
-      result = stopTheia(container_runtime, {"project-root": project_root});
+      const stop_result = stopTheia(container_runtime, {"project-root": project_root})
+      result.absorb(stop_result);
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list theia url
     {
