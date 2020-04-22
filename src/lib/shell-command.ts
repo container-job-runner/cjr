@@ -74,7 +74,7 @@ export class ShellCommand
     }
 
     // Launches a syncronous command in a shell and returns output
-    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}, post_process="") : ValidatedOutput<string>//|ValidatedOutput<Array<string>>
+    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}) : ValidatedOutput<string>//|ValidatedOutput<Array<string>>
     {
       const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer', shell: '/bin/bash'}})
       if(!result.success) return new ValidatedOutput(false, "")
@@ -82,17 +82,7 @@ export class ShellCommand
       // process stdout --------------------------------------------------------
       const child_process = result.data
       const stdout_str:string = child_process?.stdout?.toString('ascii') || ""
-      switch(post_process)
-      {
-        case 'json':
-          return this.parseJSON(stdout_str)
-        case 'line_json':
-          return this.parseLineJSON(stdout_str)
-        case 'trim':
-          return this.trimOutput(stdout_str)
-        default:
-          return new ValidatedOutput(true, stdout_str)
-      }
+      return new ValidatedOutput(true, stdout_str)
     }
 
     commandString(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {}) : string
@@ -119,43 +109,6 @@ export class ShellCommand
         cmdstr   += flag_arr.join(" ")
       }
       return `${cmdstr} ${(this.escape_args) ? ShellCommand.bashEscapeArgs(args).join(" ") : args.join(" ")}`;
-    }
-
-    // == Start Output PostProcess Functions ===================================
-
-    // checks if output is json and returns json data or returns failed result
-    private parseJSON(stdout:string) : ValidatedOutput<string>
-    {
-      try
-      {
-        return new ValidatedOutput(true, JSON.parse(stdout))
-      }
-      catch(e)
-      {
-        return new ValidatedOutput(false, "", [this.ErrorStrings.INVALID_JSON])
-      }
-    }
-
-    // checks if each line of the output is json and returns an array of json data or returns failed result
-    private parseLineJSON(stdout:string) : ValidatedOutput<Array<string>>
-    {
-      try
-      {
-        return new ValidatedOutput(true, stdout.split("\n")
-          .filter((e:string) => e !== "") // remove empty strings
-          .map((e:string) => JSON.parse(e)) // parse each line
-        )
-      }
-      catch(e)
-      {
-        return new ValidatedOutput(false, [""], [this.ErrorStrings.INVALID_LINEJSON])
-      }
-    }
-
-    // trims any whitespace from output
-    private trimOutput(stdout: string) : ValidatedOutput<string>
-    {
-      return new ValidatedOutput(true, stdout.trim())
     }
 
     // == Console Log Functions ================================================

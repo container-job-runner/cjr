@@ -20,6 +20,7 @@ import {FileTools} from '../fileio/file-tools'
 import {ShellCommand} from '../shell-command'
 import {remote_sshsocket_dirname} from './constants'
 import { SpawnSyncReturns } from 'child_process'
+import { trim } from '../functions/misc-functions'
 type Dictionary = {[key: string]: any}
 
 export class SshShellCommand
@@ -57,10 +58,10 @@ export class SshShellCommand
     }
 
     // set post_process format to trim by default
-    output(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {}, post_process="trim") : ValidatedOutput<string>
+    output(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {}) : ValidatedOutput<string>
     {
       const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
-      return this.shell.output('ssh', ssh_flags, ssh_args, options, post_process)
+      return trim(this.shell.output('ssh', ssh_flags, ssh_args, options))
     }
 
     // set post_process format to trim by default
