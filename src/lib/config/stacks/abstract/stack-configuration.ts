@@ -30,12 +30,12 @@ export abstract class StackConfiguration
     JSTools.rMerge(this.raw_object, other.raw_object)
   }
 
-  loadFromFile(file_path: string, mode: 'overwrite'|'merge'='overwrite')
+  loadFromFile(file_path: string, mode: 'overwrite'|'merge'='overwrite') : ValidatedOutput<undefined>
   {
     // -- exit if no hostRoot is specified -------------------------------------
-    if(!file_path) return new ValidatedOutput(true);
+    if(!file_path) return new ValidatedOutput(true, undefined);
     // -- exit if no settings file exists --------------------------------------
-    if(!fs.existsSync(file_path)) return new ValidatedOutput(false);
+    if(!fs.existsSync(file_path)) return new ValidatedOutput(false, undefined);
     // -- exit if settings file is invalid -------------------------------------
     const read_result = this.yml_file.validatedRead(file_path)
     if(!read_result.success)
@@ -44,7 +44,7 @@ export abstract class StackConfiguration
       return this.setRawObject(read_result.data, path.dirname(file_path))
   }
 
-  writeToFile(file_path: string)
+  writeToFile(file_path: string): ValidatedOutput<undefined>|ValidatedOutput<Error>
   {
     return this.yml_file.validatedWrite(file_path, this.raw_object)
   }
@@ -76,6 +76,6 @@ export abstract class StackConfiguration
   abstract runObject() : Dictionary;
   abstract buildObject() : Dictionary;
   // misc Functions
-  abstract removeExternalBinds(parent_path: string): ValidatedOutput;
-  abstract validate(value: Dictionary): ValidatedOutput;
+  abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>;
+  abstract validate(value: Dictionary): ValidatedOutput<undefined>;
 }
