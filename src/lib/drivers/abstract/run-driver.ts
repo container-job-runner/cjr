@@ -40,13 +40,13 @@ export abstract class RunDriver extends ContainerDriver
   // Array<JobInfo> - information from job
   // ---------------------------------------------------------------------------
   abstract jobInfo(stack_paths: Array<string>, job_states: Array<JobState>) : Array<JobInfo>;
-  abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput;
-  abstract jobLog(id: string) : ValidatedOutput;
-  abstract jobAttach(id: string) : ValidatedOutput;
-  abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary,  mode:"print"|"output"|"json") : ValidatedOutput;
-  abstract jobToImage(id: string, image_name: string): ValidatedOutput
-  abstract jobStop(ids: Array<string>) : ValidatedOutput;
-  abstract jobDelete(ids: Array<string>) : ValidatedOutput;
-  abstract volumeCreate(options:Dictionary): ValidatedOutput
-  abstract volumeDelete(options:Dictionary): ValidatedOutput
+  abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput<string>;
+  abstract jobLog(id: string) : ValidatedOutput<undefined>;
+  abstract jobAttach(id: string) : ValidatedOutput<undefined>;
+  abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary,  mode:"print"|"output"|"json") : ValidatedOutput<undefined>|ValidatedOutput<String>;
+  abstract jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
+  abstract jobStop(ids: Array<string>) : ValidatedOutput<undefined>
+  abstract jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
+  abstract volumeCreate(options:Dictionary): ValidatedOutput<string>
+  abstract volumeDelete(options:Dictionary): ValidatedOutput<undefined>
 }
