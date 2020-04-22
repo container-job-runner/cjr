@@ -16,7 +16,7 @@
 // =============================================================================
 
 import * as chalk from 'chalk'
-import { spawn, spawnSync } from 'child_process'
+import { spawn, spawnSync, SpawnSyncReturns, ChildProcess } from 'child_process'
 import { ValidatedOutput } from './validated-output'
 import { JSTools } from './js-tools'
 type Dictionary = {[key: string]: any}
@@ -42,7 +42,7 @@ export class ShellCommand
     }
 
     // Sync command with stdio set to 'inherit' or 'ignore'. Returns ValidatedOutput containing child process
-    exec(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}): ValidatedOutput
+    exec(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}): ValidatedOutput<SpawnSyncReturns<Buffer>>
     {
       const command_string = this.commandString(command, flags, args, options)
       const default_options:Dictionary = {stdio : 'inherit', shell: '/bin/bash'}
@@ -59,7 +59,7 @@ export class ShellCommand
     }
 
     // Async request with stdio set to 'inherit' or 'ignore'. Returns ValidatedOutput containing child process
-    execAsync(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}) : ValidatedOutput
+    execAsync(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}) : ValidatedOutput<ChildProcess>
     {
       const command_string = this.commandString(command, flags, args, options)
       const default_options:Dictionary = {stdio : 'pipe', shell: '/bin/bash'}
@@ -74,14 +74,14 @@ export class ShellCommand
     }
 
     // Launches a syncronous command in a shell and returns output
-    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}, post_process="") : ValidatedOutput
+    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}, post_process="") : ValidatedOutput<string>//|ValidatedOutput<Array<string>>
     {
       const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer', shell: '/bin/bash'}})
-      if(!result.success) return result
+      if(!result.success) return new ValidatedOutput(false, "")
 
       // process stdout --------------------------------------------------------
       const child_process = result.data
-      const stdout_str = child_process?.stdout?.toString('ascii')
+      const stdout_str:string = child_process?.stdout?.toString('ascii') || ""
       switch(post_process)
       {
         case 'json':
@@ -124,7 +124,7 @@ export class ShellCommand
     // == Start Output PostProcess Functions ===================================
 
     // checks if output is json and returns json data or returns failed result
-    private parseJSON(stdout:string) : ValidatedOutput
+    private parseJSON(stdout:string) : ValidatedOutput<string>
     {
       try
       {
@@ -132,12 +132,12 @@ export class ShellCommand
       }
       catch(e)
       {
-        return new ValidatedOutput(false, [], [this.ErrorStrings.INVALID_JSON])
+        return new ValidatedOutput(false, "", [this.ErrorStrings.INVALID_JSON])
       }
     }
 
     // checks if each line of the output is json and returns an array of json data or returns failed result
-    private parseLineJSON(stdout:string) : ValidatedOutput
+    private parseLineJSON(stdout:string) : ValidatedOutput<Array<string>>
     {
       try
       {
@@ -148,12 +148,12 @@ export class ShellCommand
       }
       catch(e)
       {
-        return new ValidatedOutput(false, [], [this.ErrorStrings.INVALID_LINEJSON])
+        return new ValidatedOutput(false, [""], [this.ErrorStrings.INVALID_LINEJSON])
       }
     }
 
     // trims any whitespace from output
-    private trimOutput(stdout: string) : ValidatedOutput
+    private trimOutput(stdout: string) : ValidatedOutput<string>
     {
       return new ValidatedOutput(true, stdout.trim())
     }
