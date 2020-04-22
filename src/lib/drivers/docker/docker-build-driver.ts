@@ -10,11 +10,14 @@ import {FileTools} from '../../fileio/file-tools'
 import {YMLFile} from '../../fileio/yml-file'
 import {TextFile} from '../../fileio/text-file'
 
+type StackValidateResult = {"stack-type"?: string}
+
 export class DockerBuildDriver extends BuildDriver
 {
     protected base_command = 'docker'
     protected json_output_format = "line_json"
     protected default_config_name = "config.yml"
+
 
     protected ERRORSTRINGS = {
       "MISSING_DOCKERFILE_OR_IMAGE": (dir: string) => chalk`{bold Stack is Missing a Dockerfile or image.tar.gz file.}\n  {italic path:} ${dir}`,
@@ -29,9 +32,9 @@ export class DockerBuildDriver extends BuildDriver
       IMAGE_NONEXISTANT: (name: string) => chalk`There is no image named ${name}.`
     }
 
-    validate(stack_path: string)
+    validate(stack_path: string) : ValidatedOutput<StackValidateResult>
     {
-      var result = new ValidatedOutput(true);
+      var result = new ValidatedOutput<StackValidateResult>(true, {});
       var stack_type
       // -- check that folder name is valid ------------------------------------
       if(FileTools.existsDir(stack_path)) // -- assume local stack -------------
@@ -57,7 +60,7 @@ export class DockerBuildDriver extends BuildDriver
           if(!pull_result.success) result.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path));
         }
       }
-      return (result.success) ? new ValidatedOutput(true, {stack_type: stack_type}) : result
+      return (result.success) ? new ValidatedOutput<StackValidateResult>(true, {"stack-type": stack_type}) : result
     }
 
     isBuilt(stack_path: string, configuration: DockerStackConfiguration)
@@ -72,12 +75,15 @@ export class DockerBuildDriver extends BuildDriver
       return (result.success && !JSTools.isEmpty(result.data)) ? true : false
     }
 
-    build(stack_path: string, configuration:DockerStackConfiguration, options?: Dictionary)
+    build(stack_path: string, configuration:DockerStackConfiguration, options?: Dictionary) : ValidatedOutput<undefined>
     {
-      var result = this.validate(stack_path)
-      if(!result.success) return result
-      const {stack_type} = result.data
+      const result = new ValidatedOutput(true, undefined)
 
+      const validated_result = this.validate(stack_path)
+      if(!validated_result.success) return result.absorb(validated_result)
+      const stack_type = validated_result.data['stack-type'] || ""
+
+      var exec_result: ValidatedOutput<any>;
       if(stack_type === 'local-dockerfile') // build local stack -------------------------
       {
         const build_object:Dictionary = configuration.buildObject()
@@ -92,28 +98,34 @@ export class DockerBuildDriver extends BuildDriver
         if(build_object["pull"] || options?.['pull'])
           flags["pull"] = {}
         this.argFlags(flags, build_object)
-        result = this.shell.exec(command, flags, args, {cwd: stack_path})
+        exec_result = this.shell.exec(command, flags, args, {cwd: stack_path})
       }
       else if(stack_type === 'local-tar') // build local stack -------------------------
       {
+        exec_result = new ValidatedOutput(true, undefined);
         if(!this.isBuilt(stack_path, configuration) || options?.['no-cache'] == true) // since tars may be large, only load tar if nocache option is selected
         {
           // -- load tar file --------------------------------------------------
           const command = `${this.base_command} load`;
           const flags = {input: 'image.tar.gz', q: {}}
           const load_result = this.shell.output(command,flags, [], {cwd: stack_path})
-          if(!load_result.success) return load_result
+          if(!load_result.success) return result.absorb(load_result)
           // -- extract name and retag -----------------------------------------
           const image_name = load_result.data?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"
-          if(!image_name) return (new ValidatedOutput(false)).pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
-          result = this.shell.exec(`${this.base_command} image tag`, {}, [image_name, this.imageName(stack_path, configuration.buildHash())])
+          if(!image_name) return (new ValidatedOutput(false, undefined)).pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
+          exec_result = this.shell.exec(`${this.base_command} image tag`, {}, [image_name, this.imageName(stack_path, configuration.buildHash())])
         }
       }
       else if(stack_type === 'remote') // retag remote stack -----------------------
       {
-        result = this.shell.exec(`${this.base_command} image tag`, {}, [stack_path, this.imageName(stack_path, configuration.buildHash())])
+        exec_result = this.shell.exec(`${this.base_command} image tag`, {}, [stack_path, this.imageName(stack_path, configuration.buildHash())])
       }
-      if(!result.success) result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
+      else
+      {
+        exec_result = new ValidatedOutput(false, undefined);
+      }
+
+      if(!exec_result.success) return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
       return result;
     }
 
@@ -126,8 +138,9 @@ export class DockerBuildDriver extends BuildDriver
       }
     }
 
-    removeImage(stack_path: string, configuration?:DockerStackConfiguration)
+    removeImage(stack_path: string, configuration?:DockerStackConfiguration) : ValidatedOutput<undefined>
     {
+      const result = (new ValidatedOutput(true, undefined))
       if(configuration === undefined) // -- delete all images associated with stack (regardless of configuration)
       {
         const image_id_cmd = this.shell.commandString(
@@ -135,44 +148,45 @@ export class DockerBuildDriver extends BuildDriver
             {q: {}, filter: `reference=*${this.imageName(stack_path, "")}`}
         )
         const command = `${this.base_command} rmi $(${image_id_cmd})`
-        return this.shell.exec(command)
+        return result.absorb(this.shell.exec(command))
       }
       else if(this.isBuilt(stack_path, configuration)) // -- only delete images associated with stack and configuration
       {
           const command = `${this.base_command} rmi`;
           const args = [this.imageName(stack_path, configuration.buildHash())]
           const flags = {}
-          return this.shell.exec(command, flags, args)
+          return result.absorb(this.shell.exec(command, flags, args))
       }
-      return new ValidatedOutput(true).pushWarning(
-        this.WARNINGSTRINGS.IMAGE_NONEXISTANT(
-          this.imageName(stack_path, configuration.buildHash())
-        ))
+      return result.pushWarning(
+          this.WARNINGSTRINGS.IMAGE_NONEXISTANT(
+            this.imageName(stack_path, configuration.buildHash())
+          )
+        )
     }
 
     // Load stack_path/config.yml and any additional config files. The settings in the last file in the array has highest priorty
     // silently ignores files if they are not present
 
-    loadConfiguration(stack_path: string, overloaded_config_paths: Array<string> = [])
+    loadConfiguration(stack_path: string, overloaded_config_paths: Array<string> = []) : ValidatedOutput<DockerStackConfiguration>
     {
       const stack_config = path.join(stack_path, this.default_config_name)
       if(path.isAbsolute(stack_config))
         overloaded_config_paths = [path.join(stack_path, this.default_config_name)].concat(overloaded_config_paths) // if stack_path is absolute (implies a local stack) then prepend stack config file. Note: create new array with = to prevent modifying overloaded_config_paths for calling function
       var configuration = this.emptyConfiguration()
       var result = overloaded_config_paths.reduce(
-        (result: ValidatedOutput, path: string) => {
+        (result: ValidatedOutput<undefined>, path: string) => {
           const sub_configuration = this.emptyConfiguration()
           const load_result = sub_configuration.loadFromFile(path)
           if(load_result) configuration.merge(sub_configuration)
           return result
         },
-        new ValidatedOutput(true)
+        new ValidatedOutput(true, undefined)
       )
 
-      return (result.success) ? new ValidatedOutput(true, configuration) : result
+      return (new ValidatedOutput(result.success, configuration))
     }
 
-    copy(stack_path: string, new_stack_path: string, configuration?: DockerStackConfiguration)
+    copy(stack_path: string, new_stack_path: string, configuration?: DockerStackConfiguration) : ValidatedOutput<undefined>
     {
       try
       {
@@ -184,18 +198,20 @@ export class DockerBuildDriver extends BuildDriver
       {
         return new ValidatedOutput(false, e, [e?.message])
       }
-      return new ValidatedOutput(true)
+      return new ValidatedOutput(true, undefined)
     }
 
-    copyConfig(stack_path: string, new_stack_path: string, configuration?: DockerStackConfiguration)
+    copyConfig(stack_path: string, new_stack_path: string, configuration?: DockerStackConfiguration) : ValidatedOutput<undefined>|ValidatedOutput<Error>
     {
       if(!path.isAbsolute(stack_path)) { // create Dockerfile for nonlocal stack
         const file = (new TextFile(new_stack_path, false))
         file.add_extension = false
-        file.write('Dockerfile', `FROM ${stack_path}`)
+        const write_result = file.write('Dockerfile', `FROM ${stack_path}`)
+        if(!write_result.success) return (new ValidatedOutput(true, undefined).absorb(write_result))
       }
       if(configuration !== undefined) // write any configurion files
         return configuration.writeToFile(path.join(new_stack_path,this.default_config_name))
+      return new ValidatedOutput(true, undefined)
     }
 
     // Special function for reducing code repetition in Podman Driver Class

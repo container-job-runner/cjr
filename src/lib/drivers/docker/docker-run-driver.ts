@@ -43,16 +43,16 @@ export class DockerRunDriver extends RunDriver
     return new DockerStackConfiguration()
   }
 
-  jobStart(stack_path: string, configuration: DockerStackConfiguration, callbacks:Dictionary={})
+  jobStart(stack_path: string, configuration: DockerStackConfiguration, callbacks:Dictionary={}) : ValidatedOutput<string>
   {
     const job_options = configuration.runObject()
     // add mandatory labels
     const mandatory_labels = {runner: cli_name}
     job_options["labels"] = { ...(job_options["labels"] || {}), ...mandatory_labels}
-    var result = this.run_schema_validator(job_options)
-    if(!result.success) return result.pushError(this.ERRORSTRINGS.INVALID_JOB)
+    if(!this.run_schema_validator(job_options).success)
+      return new ValidatedOutput(false, "").pushError(this.ERRORSTRINGS.INVALID_JOB)
     // -- create container -----------------------------------------------------
-    result = this.create(
+    const result = this.create(
       this.imageName(stack_path, configuration.buildHash()),
       configuration.getCommand(),
       job_options
@@ -65,73 +65,77 @@ export class DockerRunDriver extends RunDriver
     const args: Array<string> = [container_id]
     const flags = (!job_options.detached) ? {attach: {}, interactive: {}} : {}
     const shell_options = (!job_options.detached) ? {stdio: "inherit"} : {stdio: "pipe"}
-    result = this.shell.exec(command, flags, args, shell_options)
+    result.absorb(this.shell.exec(command, flags, args, shell_options))
     if(!result.success) return result
     if(callbacks?.postExec) callbacks.postExec(result)
     return result
   }
 
-  protected create(image_name: string, command_string: string, run_options={})
+  protected create(image_name: string, command_string: string, run_options={}) : ValidatedOutput<string>
   {
     const command = `${this.base_command} create`;
     const args  = [image_name, command_string]
     const flags = this.runFlags(run_options)
     var result = this.shell.output(command, flags, args, {}, "trim")
-    if(result.data === "") return new ValidatedOutput(false, [], [this.ERRORSTRINGS.EMPTY_CREATE_ID])
+    if(result.data === "") result.pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
     return result
   }
 
-  jobLog(id: string, lines: string="all")
+  jobLog(id: string, lines: string="all") : ValidatedOutput<undefined>
   {
     var command = `${this.base_command} logs`;
     var args = [id]
     const lines_int = parseInt(lines)
     const flags = (isNaN(lines_int)) ? {} : {tail: `${lines_int}`}
-    return new ValidatedOutput(true, this.shell.exec(command, flags, args))
+    return new ValidatedOutput(true, undefined)
+      .absorb(this.shell.exec(command, flags, args))
   }
 
-  jobAttach(id: string)
+  jobAttach(id: string) : ValidatedOutput<undefined>
   {
     var command = `${this.base_command} attach`;
     var args = [id]
     var flags = {}
-    return new ValidatedOutput(true, this.shell.exec(command, flags, args))
+    return new ValidatedOutput(true, undefined)
+      .absorb(this.shell.exec(command, flags, args))
   }
 
-  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={}, mode:"print"|"output"|"json")
+  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={}, mode:"print"|"output"|"json") : ValidatedOutput<undefined>|ValidatedOutput<string>
   {
     var command = `${this.base_command} exec`;
     var args = [id].concat(exec_command)
     const flags = this.execFlags(exec_options)
     if(mode == "print")
-      return new ValidatedOutput(true, this.shell.exec(command, flags, args))
+      return new ValidatedOutput(true, undefined).absorb(this.shell.exec(command, flags, args))
     else if(mode == "json")
       return this.shell.output(command, flags, args, {}, 'json')
     else
       return this.shell.output(command, flags, args)
   }
 
-  jobDelete(ids: Array<string>)
+  jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true, [this.stop(ids), this.remove(ids)])
+    return new ValidatedOutput(true, undefined).absorb(this.stop(ids)).absorb(this.remove(ids))
   }
 
-  jobStop(ids: Array<string>)
+  jobStop(ids: Array<string>) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true, this.stop(ids))
+    return new ValidatedOutput(true, undefined).absorb(this.stop(ids))
   }
 
-  volumeDelete(ids: Array<string>)
+  volumeDelete(ids: Array<string>) : ValidatedOutput<undefined>
   {
     const command = `${this.base_command} volume rm`
-    return this.shell.exec(command, {}, ids, {stdio: "pipe"})
+    return new ValidatedOutput(true, undefined).absorb(
+      this.shell.exec(command, {}, ids, {stdio: "pipe"})
+    )
   }
 
   // protected helpers
 
   protected stop(ids: Array<string>)
   {
-    if(ids.length == 0) return;
+    if(ids.length == 0) return new ValidatedOutput(true, undefined);
     const command = `${this.base_command} stop`;
     const args = ids
     const flags = {}
@@ -140,7 +144,7 @@ export class DockerRunDriver extends RunDriver
 
   protected remove(ids: Array<string>)
   {
-    if(ids.length == 0) return;
+    if(ids.length == 0) return new ValidatedOutput(true, undefined);
     const command = `${this.base_command} rm`;
     const args = ids
     const flags = {}
@@ -241,16 +245,18 @@ export class DockerRunDriver extends RunDriver
     })
   }
 
-  jobToImage(id: string, image_name: string)
+  jobToImage(id: string, image_name: string) : ValidatedOutput<undefined>
   {
     const command = `${this.base_command} commit`
     const args  = [id, image_name]
     const flags = {}
-    return this.shell.output(command, flags, args)
+    return new ValidatedOutput(true, undefined).absorb(
+      this.shell.output(command, flags, args)
+    )
   }
 
   // options accepts following properties {lables?: Array<string>, driver?: string, name?:string}
-  volumeCreate(options:Dictionary = {})
+  volumeCreate(options:Dictionary = {}) : ValidatedOutput<string>
   {
     const command = `${this.base_command} volume create`
     var flags:Dictionary = {}
