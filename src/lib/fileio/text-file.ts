@@ -8,38 +8,38 @@ export class TextFile
   create_base_dir: boolean
   add_extension: boolean = true
   protected extension: string = "txt"
-  protected validator: (x: any) => any
+  protected validator: (x: any) => ValidatedOutput<undefined> // validates content and can append errors into ValidatedOutput
 
-  constructor(parent_dir: string = "", create_base_dir: boolean = false, validator = (x:any) => x)
+  constructor(parent_dir: string = "", create_base_dir: boolean = false, validator = (x:any) => new ValidatedOutput(true, undefined))
   {
     this.parent_dir = parent_dir
     this.validator = validator
     this.create_base_dir = create_base_dir
   }
 
-  write(name: string, data_str: any)
+  write(name: string, data_str: any) : ValidatedOutput<Error>|ValidatedOutput<undefined>
   {
     const file_path = this.filePath(name)
     const dir_name  = path.dirname(file_path)
     try
     {
       // create parent directory if create_base_dir = true and directory does not exist
-      if(this.create_base_dir && dir_name && !fs.existsSync(dir_name)) {
+      if(this.create_base_dir && dir_name && !fs.existsSync(dir_name))
         fs.mkdirSync(dir_name, {recursive: true})
-      }
       // write to file
-      return new ValidatedOutput(
-        true,
-        fs.writeFileSync(this.filePath(name), data_str)
-      )
+      fs.writeFileSync(this.filePath(name), data_str)
+      return new ValidatedOutput(true, undefined)
     }
     catch(e)
     {
-      return new ValidatedOutput(false, e)
+      if(e instanceof Error)
+        return new ValidatedOutput(false, e)
+      else
+        return new ValidatedOutput(false, undefined)
     }
   }
 
-  read(name:string)
+  read(name:string) : ValidatedOutput<any>
   {
     try {
       return new ValidatedOutput(
@@ -48,33 +48,38 @@ export class TextFile
       )
     }
     catch(e) {
-      return new ValidatedOutput(false, e)
+      return new ValidatedOutput(false, "")
     }
   }
 
-  validatedRead(name:string)
+  validatedRead(name:string) : ValidatedOutput<any>
   {
     var result = this.read(name)
-    if(result.success){
-      return this?.validator(result.data)
-    } else {
-        return result
-    }
+    if(result.success) result.absorb(this.validator(result.data))
+    return result
   }
 
-  validatedWrite(name: string, data: any)
+  validatedWrite(name: string, data: any) : ValidatedOutput<Error>|ValidatedOutput<undefined>
   {
-    var result = this?.validator(data)
-    if(result.success){
+    var result = this.validator(data)
+    if(result.success)
       return this.write(name, data)
-    } else {
-        return result
-    }
+    else
+      return result
   }
 
-  delete(name:string)
+  delete(name:string) : ValidatedOutput<Error>|ValidatedOutput<undefined>
   {
-    fs.unlinkSync(this.filePath(name))
+    try {
+      fs.unlinkSync(this.filePath(name))
+      return new ValidatedOutput(true, undefined)
+    }
+    catch (e) {
+      if(e instanceof Error)
+        return new ValidatedOutput(false, e)
+      else
+        return new ValidatedOutput(false, undefined)
+    }
   }
 
   private filePath(name: string)

@@ -9,7 +9,7 @@ export class JSONFile extends TextFile
     return super.write(name, JSON.stringify(data))
   }
 
-  read(name:string)
+  read(name:string) : ValidatedOutput<any>
   {
     const result = super.read(name)
     if(result.success)

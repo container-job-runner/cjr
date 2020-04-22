@@ -10,7 +10,7 @@ export class YMLFile extends TextFile
     return super.write(name, yaml.safeDump(data))
   }
 
-  read(name:string)
+  read(name:string) : ValidatedOutput<any>
   {
     var result = super.read(name)
     if(result.success)
