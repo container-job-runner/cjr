@@ -1,11 +1,11 @@
-export class ValidatedOutput
+export class ValidatedOutput<T>
 {
     success: boolean
-    data: any
+    data: T
     error: Array<string>
     warning: Array<string>
 
-    constructor(success: boolean, data: any = [], error: Array<string> = [], warning: Array<string> = [])
+    constructor(success: boolean, data: T, error: Array<string> = [], warning: Array<string> = [])
     {
       this.success = success;
       this.data = data;
@@ -26,7 +26,7 @@ export class ValidatedOutput
       return this
     }
 
-    absorb(vo:ValidatedOutput)
+    absorb(vo:ValidatedOutput<any>)
     {
       this.success = this.success && vo.success
       this.error.push(...vo.error)
