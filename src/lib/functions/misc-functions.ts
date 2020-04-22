@@ -9,18 +9,19 @@ import {ErrorStrings, WarningStrings} from '../error-strings'
 import {JSTools} from '../js-tools'
 import {ShellCommand} from '../shell-command'
 import {RunDriver} from '../drivers/abstract/run-driver'
+import { outputFile } from 'fs-extra'
 
 type Dictionary = {[key: string]: any}
 
-export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary)
+export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary) : ValidatedOutput<undefined>
 {
-  return (ajv_validator(raw_object)) ? new ValidatedOutput(true, raw_object) :
-    new ValidatedOutput(false, undefined,
-      [ErrorStrings.YML.INVALID(ajv_validator.errors.map( (x:any) => x.message).join("\n"))]
+  return (ajv_validator(raw_object)) ? new ValidatedOutput(true, undefined) :
+    new ValidatedOutput(false, undefined).pushError(
+      ErrorStrings.YML.INVALID(ajv_validator.errors.map( (x:any) => x.message).join("\n"))
     )
 }
 
-export function printResultState(result: ValidatedOutput)
+export function printResultState(result: ValidatedOutput<any>)
 {
   result.warning.forEach( (e:string) => console.log(chalk`{bold.yellow WARNING}: ${e}`))
   result.error.forEach( (e:string) => console.log(chalk`{bold.red ERROR}: ${e}`))
@@ -32,7 +33,7 @@ export function printResultState(result: ValidatedOutput)
 // ensures network connections are set
 // -- Parameters ---------------------------------------------------------------
 // -----------------------------------------------------------------------------
-export async function initX11(interactive: boolean, explicit: boolean)
+export async function initX11(interactive: boolean, explicit: boolean) : Promise<ValidatedOutput<undefined>>
 {
   const platform = os.platform()
   const shell = new ShellCommand(explicit, false)
@@ -41,14 +42,14 @@ export async function initX11(interactive: boolean, explicit: boolean)
   {
     // 1. check if x11 settings plist file exists
     const x11_config_path = path.join(os.homedir(), 'Library/Preferences/org.macosforge.xquartz.X11.plist')
-    if(!fs.existsSync(x11_config_path)) return new ValidatedOutput(false)
+    if(!fs.existsSync(x11_config_path)) return new ValidatedOutput(false, undefined)
     var result = shell.output(`plutil -extract nolisten_tcp xml1 -o - ${x11_config_path}`) // note extract as xml1 instead of json since json exits in error
-    if(!result.success) return new ValidatedOutput(false)
+    if(!result.success) return new ValidatedOutput(false, undefined)
     var response: { flag: any; } & { flag: any; } = {flag: false}
     if((new RegExp('<true/>')).test(result.data))
     {
       if(interactive) {
-        printResultState(new ValidatedOutput(true).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
+        printResultState(new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
         var response = await inquirer.prompt([
           {
             name: "flag",
@@ -56,7 +57,7 @@ export async function initX11(interactive: boolean, explicit: boolean)
             type: "confirm",
           }
         ])
-        if(!response.flag) return new ValidatedOutput(false)
+        if(!response.flag) return new ValidatedOutput(false, undefined)
       }
       // change setting
       if(!interactive || response?.flag == true)
@@ -64,10 +65,57 @@ export async function initX11(interactive: boolean, explicit: boolean)
     }
     // 2. start x11 if it's not already running
     var result = shell.output('xset', {q: {}})
-    if(!result.success) return new ValidatedOutput(false)
+    if(!result.success) return new ValidatedOutput(false, undefined)
   }
 
-  return new ValidatedOutput(true)
+  return new ValidatedOutput(true, undefined)
+}
+
+ // checks if ValidatedOutput contains valid json and returns parsed json data or returns failed result
+export function parseJSON(output:ValidatedOutput<string>) : ValidatedOutput<any>
+{
+  const parsed_output = new ValidatedOutput<any>(true, undefined).absorb(output);
+  if(!parsed_output.success) return parsed_output
+  try
+  {
+    parsed_output.data = JSON.parse(output.data)
+  }
+  catch(e)
+  {
+    return parsed_output.pushError(
+      chalk`{bold Invalid JSON} - shell output did not contain valid JSON.`
+    )
+  }
+  return parsed_output
+}
+
+// checks if each line of the output is json and returns an array of json data or returns failed result
+export function parseLineJSON(output:ValidatedOutput<string>) : ValidatedOutput<Array<any>>
+{
+  const parsed_output = new ValidatedOutput<Array<any>>(true, []).absorb(output);
+  if(!parsed_output.success) return parsed_output
+  try
+  {
+    parsed_output.data = output.data.split("\n")
+      .filter((e:string) => e !== "") // remove empty strings
+      .map((e:string) => JSON.parse(e)) // parse each line
+  }
+  catch(e)
+  {
+    return parsed_output.pushError(
+      chalk`{bold INVALID LINE JSON} - shell output did not contain valid Line JSON.`
+    )
+  }
+  return parsed_output
+}
+
+// trims any whitespace from output
+export function trim(output:ValidatedOutput<string>) : ValidatedOutput<string>
+{
+  const trimmed_output = new ValidatedOutput<string>(true, "").absorb(output);
+  if(!trimmed_output.success) return trimmed_output
+  trimmed_output.data = output.data.trim()
+  return trimmed_output
 }
 
 // -----------------------------------------------------------------------------

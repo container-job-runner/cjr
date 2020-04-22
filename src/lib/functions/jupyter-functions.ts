@@ -23,12 +23,12 @@ export type JupyterOptions = {
 
 // === Core functions ==========================================================
 
-export function startJupyterInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, jup_options: JupyterOptions)
+export function startJupyterInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"project-root" : jup_options['project-root'] || ""})
   const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
   if(jupyter_job_id !== false)
-    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'project-root': jup_options['project-root'] || ""}))
+    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'project-root': jup_options['project-root'] || ""}))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
       "stack-path":   jup_options["stack-path"],
@@ -51,12 +51,12 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
     return new ValidatedOutput(true, result.data) // return id of jupyter job
 }
 
-export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:string, output_options: OutputOptions, jup_options: JupyterOptions)
+export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:string, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : job_id})
   const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
   if(jupyter_job_id !== false)
-    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': job_id}))
+    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': job_id}))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
     "stack-path":   jup_options["stack-path"],
@@ -79,31 +79,31 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
-export function stopJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string})
+export function stopJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
   if(jupyter_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
+    return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return container_runtime.runner.jobStop([jupyter_job_id])
 }
 
-export function listJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string})
+export function listJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
   if(jupyter_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
+    return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return container_runtime.runner.jobExec(jupyter_job_id, ['jupyter', 'notebook', 'list'], {}, 'print')
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
 // function can send repeated requests if the first one fails
-export async function getJupyterUrl(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000)
+export async function getJupyterUrl(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
 {
   const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
-  if(jupyter_job_id === false) return (new ValidatedOutput(false)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
-  var result = new ValidatedOutput(false).pushError(ErrorStrings.JUPYTER.NOURL)
+  if(jupyter_job_id === false) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
+  var result = new ValidatedOutput(false, "").pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
     result = parseNotebookListCommand(container_runtime.runner, jupyter_job_id)
@@ -113,9 +113,9 @@ export async function getJupyterUrl(container_runtime: ContainerRuntime, identif
 }
 
 // -- starts the Jupyter Electron app  -----------------------------------------
-export function startJupyterApp(url: string, app_path: string, explicit: boolean = false)
+export function startJupyterApp(url: string, app_path: string, explicit: boolean = false) : ValidatedOutput<undefined>
 {
-  if(!app_path) return new ValidatedOutput(false)
+  if(!app_path) return new ValidatedOutput(false, undefined)
   const platform = os.platform()
   var app_cmd: string = ""
   if(platform == "darwin")
@@ -128,7 +128,8 @@ export function startJupyterApp(url: string, app_path: string, explicit: boolean
         `export ICON=jupyter`,
         app_cmd
     ].join(' && ');
-  return (new ShellCommand(explicit, false)).execAsync(command)
+  return new ValidatedOutput(true, undefined)
+    .absorb(new ShellCommand(explicit, false).execAsync(command))
 }
 
 // === Helper functions ========================================================
@@ -141,17 +142,17 @@ function jupyterCommand(jup_options: JupyterOptions) {
 }
 
 // -- extracts jupyter url from container (helper)
-function parseNotebookListCommand(runner: RunDriver, jupyter_id: string)
+function parseNotebookListCommand(runner: RunDriver, jupyter_id: string) : ValidatedOutput<string>
 {
   // -- get output from jupyter ------------------------------------------------
   const result = runner.jobExec(jupyter_id, ['jupyter', 'notebook', 'list'], {}, 'output')
   if(!result.success) return result
   const raw_output = (result.data as string).trim().split("\n").pop() // get last non-empty line of output
-  if(!raw_output) return new ValidatedOutput(false)
+  if(!raw_output) return new ValidatedOutput(false, "")
   // -- extract url ------------------------------------------------------------
   const re = /http:\/\/\S+:+\S*/ // matches http://X:X
-  if(!re.test(result.data)) return new ValidatedOutput(false)
+  if(!re.test(result.data)) return new ValidatedOutput(false, "")
   const url = raw_output.match(re)?.[0] || ""
-  if(!url) return new ValidatedOutput(false)
+  if(!url) return new ValidatedOutput(false, "")
   return new ValidatedOutput(true, url)
 }

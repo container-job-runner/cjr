@@ -3,22 +3,21 @@ import * as path from 'path'
 import * as os from 'os'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
-import {RunDriver, JobState, JobInfo, JobPortInfo} from '../drivers/abstract/run-driver'
-import {BuildDriver} from '../drivers/abstract/build-driver'
-import {StackConfiguration} from '../config/stacks/abstract/stack-configuration'
-import {PathTools} from '../fileio/path-tools'
-import {FileTools} from '../fileio/file-tools'
-import {JSONFile} from '../fileio/json-file'
-import {YMLFile} from '../fileio/yml-file'
-import {ValidatedOutput} from '../validated-output'
-import {printResultState} from './misc-functions'
-import {ShellCommand} from '../shell-command'
-import {DefaultContainerRoot, X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, job_info_label, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths} from '../constants'
-import {buildAndLoad, BuildOptions} from '../functions/build-functions'
-import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
-import {PodmanStackConfiguration} from '../config/stacks/podman/podman-stack-configuration'
-import {JSTools} from '../js-tools'
-import {ProjectSettings} from '../config/project-settings/project-settings'
+import { RunDriver, JobState, JobInfo, JobPortInfo } from '../drivers/abstract/run-driver'
+import { BuildDriver } from '../drivers/abstract/build-driver'
+import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
+import { PathTools } from '../fileio/path-tools'
+import { FileTools } from '../fileio/file-tools'
+import { JSONFile } from '../fileio/json-file'
+import { ValidatedOutput } from '../validated-output'
+import { printResultState } from './misc-functions'
+import { ShellCommand } from '../shell-command'
+import { X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths } from '../constants'
+import { buildAndLoad, BuildOptions } from '../functions/build-functions'
+import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
+import { PodmanStackConfiguration } from '../config/stacks/podman/podman-stack-configuration'
+import { JSTools } from '../js-tools'
+import { ProjectSettings } from '../config/project-settings/project-settings'
 
 // == TYPES ====================================================================
 
@@ -114,18 +113,18 @@ export type StackBundleOptions =
 // job_options: JobOptions
 // output_options: OutputOptions
 // -----------------------------------------------------------------------------
-export function jobStart(container_runtime: ContainerRuntime, job_options: JobOptions, output_options: OutputOptions={verbose: false, explicit: false, silent: false})
+export function jobStart(container_runtime: ContainerRuntime, job_options: JobOptions, output_options: OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<string>
 {
   // -- 1. build stack and load stack configuration ----------------------------
   printStatusHeader(StatusStrings.JOBSTART.BUILD, output_options)
-  var result = buildAndLoad(
+  const bl_result = buildAndLoad(
     container_runtime.builder,
     job_options["build-options"],
     job_options["stack-path"],
     job_options["config-files"]
   )
-  if(!result.success) return result
-  const configuration:StackConfiguration = result.data
+  if(!bl_result.success) return new ValidatedOutput(false, "").absorb(bl_result)
+  const configuration:StackConfiguration = bl_result.data
   // -- 2.1 update configuration: mount Files ----------------------------------
   if(job_options["host-root"] && job_options["file-access"] === "bind")
     bindHostRoot(configuration, job_options["host-root"])
@@ -133,8 +132,8 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
     mountFileVolume(configuration, job_options["host-root"], job_options["file-volume-id"])
   else if(job_options["host-root"] && job_options["file-access"] === "volume") {
     printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY, output_options)
-    result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
-    if(!result.success) return result
+    const cmv_result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
+    if(!cmv_result.success) return new ValidatedOutput(false, "").absorb(cmv_result)
   }
   setRelativeWorkDir(configuration, job_options["host-root"] || "", job_options["cwd"])
 
@@ -156,13 +155,12 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   addGenericLabels(configuration, job_options["host-root"] || "", job_options["stack-path"])
   // -- 3. start job -----------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.START, output_options)
-  var job_id = ""
-  var result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, {postCreate: (id:string) => {job_id = id}})
+  const result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, {})
   // -- print id ---------------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.JOB_ID, output_options)
-  if(output_options.verbose) console.log(job_id)
-  if(job_id === "") return new ValidatedOutput(false, [], [ErrorStrings.JOBS.FAILED_START])
-  else return new ValidatedOutput(true, job_id)
+  if(output_options.verbose) console.log(result.data)
+  if(result.data === "") result.pushError(ErrorStrings.JOBS.FAILED_START)
+  return result
 }
 
 // helper function user by startjob to print status
@@ -178,12 +176,13 @@ function printStatusHeader(message: string, output_options: OutputOptions, line_
 // container_runtime:ContainerRuntime -
 // options: CopyOptions
 // -----------------------------------------------------------------------------
-export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyOptions)
+export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyOptions) : ValidatedOutput<undefined>
 {
+  const result = new ValidatedOutput(true, undefined);
   // -- get information on all matching jobs -----------------------------------
-  var result = matchingJobInfo(container_runtime.runner, copy_options["ids"], copy_options["stack-paths"] || [""])
-  if(!result.success) return result
-  const job_info_array = result.data
+  var mb_result = matchingJobInfo(container_runtime.runner, copy_options["ids"], copy_options["stack-paths"] || [""])
+  if(!mb_result.success) return result.absorb(mb_result)
+  const job_info_array = mb_result.data
   // -- copy results from all matching jobs ------------------------------------
   job_info_array.map((job:Dictionary) => {
     // -- 1. extract label information -----------------------------------------
@@ -196,8 +195,8 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
     if(!file_volume_id) return result.pushWarning(WarningStrings.JOBCOPY.NO_VOLUME(id))
     // -- 2. load stack configuration & get download settings ------------------
     const ps_object = loadProjectSettings(host_path) // check settings in copy path (not hostRoot) in case user wants to copy into folder that is not hostRoot
-    result = container_runtime.builder.loadConfiguration(stack_path, (ps_object.project_settings.get('config-files') as Array<string>) || [])
-    const configuration:StackConfiguration = (result.success) ? result.data : container_runtime.builder.emptyConfiguration()
+    const lc_result = container_runtime.builder.loadConfiguration(stack_path, (ps_object.project_settings.get('config-files') as Array<string>) || [])
+    const configuration:StackConfiguration = (lc_result.success) ? lc_result.data : container_runtime.builder.emptyConfiguration()
     // -- 3. copy files --------------------------------------------------------
     const rsync_options: RsyncOptions = {
       "host-path": host_path,
@@ -207,23 +206,22 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
       verbose: copy_options.verbose,
       files: configuration.getRsyncDownloadSettings(true)
     }
-    result = syncHostDirAndVolume(container_runtime, rsync_options, copy_options?.manual || false)
-    if(!result.success) return printResultState(result)
+    result.absorb(syncHostDirAndVolume(container_runtime, rsync_options, copy_options?.manual || false))
   })
   return result
 }
 
-export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false})
+export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<string>
 {
   // -- get job information ----------------------------------------------------
   var result = matchingJobInfo(container_runtime.runner, [job_id], [""])
-  if(!result.success) return result
+  if(!result.success) return new ValidatedOutput(false, "").absorb(result)
   const job_info = result.data[0] // only shell into first resut
   // -- extract hostRoot and file_volume_id ------------------------------------
   const host_root = job_info?.labels?.hostRoot || ""
   const file_volume_id = job_info?.labels?.[file_volume_label] || ""
   const job_stack_path = job_info?.labels?.stack || ""
-  if(!host_root) return result.pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
+  if(!host_root) return new ValidatedOutput(true, "").pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
   //if(!file_volume_id) return result.pushWarning(WarningStrings.JOBEXEC.NO_VOLUME(job_info.id))
   // -- set job properties -----------------------------------------------------
   shell_job_options['stack-path'] = shell_job_options['stack-path'] || job_stack_path
@@ -252,7 +250,7 @@ export function bundleProject(container_runtime: ContainerRuntime, options: Proj
   return bundleProjectSettings(container_runtime, ps_options)
 }
 
-export function bundleProjectSettings(container_runtime: ContainerRuntime, options: ProjectBundleOptions)
+export function bundleProjectSettings(container_runtime: ContainerRuntime, options: ProjectBundleOptions) : ValidatedOutput<undefined>
 {
   printStatusHeader(StatusStrings.BUNDLE.PROJECT_SETTINGS, {verbose: options?.verbose || false, silent: false, explicit: false})
   var {result, project_settings} = loadProjectSettings(options["project-root"])
@@ -267,7 +265,8 @@ export function bundleProjectSettings(container_runtime: ContainerRuntime, optio
   project_settings.remove('remote-name')
   project_settings.set({stack: `./stacks/${stack_name}`})
   if(options?.["stacks-dir"]) project_settings.set({'stacks-dir': 'stacks'})
-  result = project_settings.writeToFile(path.join(options['bundle-path'], project_settings_file))
+  const wf_result = project_settings.writeToFile(path.join(options['bundle-path'], project_settings_file))
+  if(!wf_result.success) return new ValidatedOutput(false, undefined).absorb(wf_result)
   // -- copy stacks into bundle ------------------------------------------------
   const stacks = ((options?.["stacks-dir"]) ? listStackNames(options["stacks-dir"], true) : []).concat(options["stack-path"])
   const unique_stacks = [... new Set(stacks)]
@@ -284,13 +283,13 @@ export function bundleProjectSettings(container_runtime: ContainerRuntime, optio
   return result
 }
 
-export function bundleStack(container_runtime: ContainerRuntime, options: StackBundleOptions)
+export function bundleStack(container_runtime: ContainerRuntime, options: StackBundleOptions) : ValidatedOutput<undefined>
 {
   // -- ensure that stack can be loaded ----------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.STACK_BUILD(options['stack-path']), {verbose: options?.verbose || false, silent: false, explicit: false})
-  var result = buildAndLoad(container_runtime.builder, options['build-options'] || {}, options["stack-path"], options["config-files"])
-  if(!result.success) return result
-  const configuration:StackConfiguration = result.data
+  var bl_result = buildAndLoad(container_runtime.builder, options['build-options'] || {}, options["stack-path"], options["config-files"])
+  if(!bl_result.success) return new ValidatedOutput(false, undefined).absorb(bl_result)
+  const configuration:StackConfiguration = bl_result.data
   // -- prepare configuration for bundling -------------------------------------
   const copy_ops:Array<{source: string, destination: string}> = []
   const rsync_settings = {
@@ -298,8 +297,8 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
     download: configuration.getRsyncDownloadSettings(true)
   }
   // --> 1. remove binds
-  result = configuration.removeExternalBinds(options["stack-path"])
-  printResultState(result) // print any warnings
+  const reb_result = configuration.removeExternalBinds(options["stack-path"])
+  printResultState(reb_result) // print any warnings
   // --> 2. adjust rsync file paths
   const bundleRsyncFile = (direction:"upload"|"download", file:"include"|"exclude") => {
     if(rsync_settings?.[direction]?.[file] && FileTools.existsFile(rsync_settings?.[direction]?.[file] || "")) {
@@ -335,7 +334,7 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
   // --> 4. copy additional files
   copy_ops.map((e:{source:string, destination:string}) =>
     fs.copySync(e.source, e.destination, {preserveTimestamps: true}))
-  return new ValidatedOutput(true)
+  return new ValidatedOutput(true, undefined)
 }
 
 // == JOB INFO FUNCTIONS =======================================================
@@ -347,15 +346,15 @@ export function allJobIds(runner: RunDriver, stack_paths: Array<string>=[], stat
 }
 
 // returns array of jobs ids for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = [])
+export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = []) : ValidatedOutput<Array<string>>
 {
-  const result = matchingJobInfo(runner, ids, stack_paths, states)
-  if(result.success) result.data = result.data.map((x:Dictionary) => x.id)
-  return result
+  const job_result = matchingJobInfo(runner, ids, stack_paths, states)
+  if(job_result.success) return new ValidatedOutput(false, job_result.data.map((x:JobInfo):string => x.id))
+  return new ValidatedOutput(false, [])
 }
 
 // returns array of jobs info objects for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = [])
+export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = []) : ValidatedOutput<Array<JobInfo>>
 {
   ids = ids.filter((id:string) => id !== "") // remove empty ids
   if(ids.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
@@ -370,18 +369,21 @@ export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_pat
 // regex: RegExp - regular expression
 // -- Returns ------------------------------------------------------------------
 // ValidatedOutput - data contains array of Dictinary with matching job info
-function filterJobInfoByID(job_info: Array<Dictionary>, regex: RegExp)
+function filterJobInfoByID(job_info: Array<JobInfo>, regex: RegExp) : ValidatedOutput<Array<JobInfo>>
 {
-  const matching_jobs = job_info.filter((job:Dictionary) => regex.test(job.id))
+  const matching_jobs = job_info.filter((job:JobInfo) => regex.test(job.id))
   return (matching_jobs.length > 0) ?
     new ValidatedOutput(true, matching_jobs) :
     new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
 }
 
 // determines if job with given name exists. Refactor with resultNameId
-export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path: string, state:JobState)
+export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path?: string, state?:JobState)
 {
-  const job_info = runner.jobInfo([stack_path], [state])
+  const job_info = runner.jobInfo(
+    (stack_path) ? [stack_path] : [],
+    (state) ? [state] : []
+  )
   const index    = job_info.map((x:Dictionary) => x?.labels?.name).indexOf(name)
   return (index == -1) ? false : job_info[index].id
 }
@@ -419,12 +421,12 @@ export function nextAvailablePort(runner: RunDriver, port:number=1024)
 // hostRoot:string  - Project root folder
 // verbose: boolean - flag for rsync
 // -----------------------------------------------------------------------------
-export function createAndMountFileVolume(container_runtime: ContainerRuntime, configuration: StackConfiguration, hostRoot: string, verbose: boolean=false)
+export function createAndMountFileVolume(container_runtime: ContainerRuntime, configuration: StackConfiguration, hostRoot: string, verbose: boolean=false) : ValidatedOutput<undefined>
 {
   // -- create volume ----------------------------------------------------------
-  var result = container_runtime.runner.volumeCreate({});
-  if(!result.success) return result
-  const volume_id = result.data
+  const vc_result = container_runtime.runner.volumeCreate({});
+  if(!vc_result.success) return new ValidatedOutput(false, undefined).absorb(vc_result)
+  const volume_id = vc_result.data
   // -- sync to volume ---------------------------------------------------------
   const copy_options: RsyncOptions = {
     "host-path": hostRoot,
@@ -441,11 +443,11 @@ export function createAndMountFileVolume(container_runtime: ContainerRuntime, co
       if(id_result.success && id_result.data) copy_options.chown = id_result.data
   }
 
-  result = syncHostDirAndVolume(container_runtime, copy_options)
+  const result = syncHostDirAndVolume(container_runtime, copy_options)
   if(!result.success) return result
   // -- mount volume to job ----------------------------------------------------
   mountFileVolume(configuration, hostRoot, volume_id)
-  return new ValidatedOutput(true)
+  return result
 }
 
 // -----------------------------------------------------------------------------
@@ -469,10 +471,10 @@ export function mountFileVolume(configuration: StackConfiguration, hostRoot: str
 // runner: RunDriver - runner that is used to start rsync job
 // copy_options: string - options for file sync
 // -----------------------------------------------------------------------------
-export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_options:RsyncOptions, manual_copy:boolean = false)
+export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_options:RsyncOptions, manual_copy:boolean = false) : ValidatedOutput<undefined>
 {
-  if(!copy_options["host-path"]) return new ValidatedOutput(true)
-  if(!copy_options["volume"]) return new ValidatedOutput(true)
+  if(!copy_options["host-path"]) return new ValidatedOutput(true, undefined)
+  if(!copy_options["volume"]) return new ValidatedOutput(true, undefined)
   // -- create configuration for rsync job -------------------------------------
   const rsync_configuration = rsyncJobConfiguration(container_runtime.runner, copy_options)
   // -- ensure rsync container is built ----------------------------------------
@@ -512,10 +514,12 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
   else
     rsync_configuration.setCommand(rsync_base_command)
   // -- start rsync job --------------------------------------------------------
-  return container_runtime.runner.jobStart(
-    rsync_constants.stack_path,
-    rsync_configuration,
-    {verbose: false, explicit: false, silent: false}
+  return new ValidatedOutput(true, undefined).absorb(
+    container_runtime.runner.jobStart(
+      rsync_constants.stack_path,
+      rsync_configuration,
+      {verbose: false, explicit: false, silent: false}
+    )
   )
 }
 
@@ -706,10 +710,10 @@ export function prependXAuth(command: string, explicit: boolean = false)
 // ValidatedOutput - data is an object with fields:
 //    - hostRoot: hostRoot where settings directory lives
 //    - settings: settings that where loaded from file
-export function scanForSettingsDirectory(dirpath: string):{result: ValidatedOutput, project_settings: ProjectSettings}
+export function scanForSettingsDirectory(dirpath: string):{result: ValidatedOutput<undefined>, project_settings: ProjectSettings}
 {
   var dirpath_parent = dirpath
-  var result: ValidatedOutput
+  var result: ValidatedOutput<undefined>
   var project_settings:ProjectSettings = new ProjectSettings()
 
   do {
@@ -728,7 +732,7 @@ export function scanForSettingsDirectory(dirpath: string):{result: ValidatedOutp
   } while(dirpath != dirpath_parent)
 
   return {
-    result: new ValidatedOutput(false),
+    result: new ValidatedOutput(false, undefined),
     project_settings: project_settings
   }
 }
@@ -741,7 +745,7 @@ export function scanForSettingsDirectory(dirpath: string):{result: ValidatedOutp
 // result: ValidatedOutput - result from file load
 // project_settings: ProjectSettings
 // -----------------------------------------------------------------------------
-export function loadProjectSettings(project_root: string):{result: ValidatedOutput, project_settings: ProjectSettings}
+export function loadProjectSettings(project_root: string):{result: ValidatedOutput<undefined>, project_settings: ProjectSettings}
 {
   const project_settings = new ProjectSettings()
   const result = project_settings.loadFromFile(projectSettingsYMLPath(project_root))
@@ -786,9 +790,9 @@ return response.id;
 // hostRoot  - project host root
 // -----------------------------------------------------------------------------
 
-export function ensureProjectId(hostRoot: string)
+export function ensureProjectId(hostRoot: string) : ValidatedOutput<string>
 {
-  if(!hostRoot) return new ValidatedOutput(false)
+  if(!hostRoot) return new ValidatedOutput(false, "")
   var result = getProjectId(hostRoot)
   if(result.success) return result
   const file = new JSONFile(projectSettingsDirPath(hostRoot), true)
@@ -803,16 +807,16 @@ export function ensureProjectId(hostRoot: string)
 // hostRoot  - project host root
 // -----------------------------------------------------------------------------
 
-export function getProjectId(hostRoot: string)
+export function getProjectId(hostRoot: string) : ValidatedOutput<string>
 {
-  if(!hostRoot) return new ValidatedOutput(false)
+  if(!hostRoot) return new ValidatedOutput(false, "")
   const proj_settings_abspath = projectSettingsDirPath(hostRoot)
   const file = new JSONFile(proj_settings_abspath, false)
   const result = file.read(project_idfile)
   if(result.success && result.data == "") // -- check if data is empty -----
-    return new ValidatedOutput(false, [], [
+    return new ValidatedOutput(false, "").pushError(
       ErrorStrings.PROJECTIDFILE.EMPTY(path.join(proj_settings_abspath, project_idfile))
-    ])
+    )
   return result
 }
 
@@ -851,7 +855,7 @@ export function listStackNames(stacks_dir:string, absolute:boolean)
 // stack_path   (string) - name of container stack
 // remove_job   (boolean) - if true job is removed on exit
 // -----------------------------------------------------------------------------
-export async function jobToImage(runner: RunDriver, result: ValidatedOutput, image_name: string, remove_job: boolean = false, interactive: boolean = false)
+export async function jobToImage(runner: RunDriver, result: ValidatedOutput<string>, image_name: string, remove_job: boolean = false, interactive: boolean = false)
 {
   if(result.success === false) return;
   const job_id = result.data

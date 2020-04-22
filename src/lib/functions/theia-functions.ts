@@ -31,12 +31,12 @@ export type Dictionary = {[key: string]: any}
 
 // === Core functions ==========================================================
 
-export function startTheiaInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, theia_options: TheiaOptions)
+export function startTheiaInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
   const theia_job_id   = jobNameLabeltoID(container_runtime.runner, theia_job_name, theia_options['stack-path'], "running");
   if(theia_job_id !== false)
-    return (new ValidatedOutput(true)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id, theia_options['project-root'] || ""))
+    return (new ValidatedOutput(true, theia_job_id)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id, theia_options['project-root'] || ""))
   // -- start new theia job ----------------------------------------------------
   const job_options:JobOptions = {
       "stack-path":   theia_options["stack-path"],
@@ -61,30 +61,30 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
-export function stopTheia(container_runtime: ContainerRuntime, identifier: {"project-root"?: string})
+export function stopTheia(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), "", "running");
   if(theia_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
+    return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   else
     return container_runtime.runner.jobStop([theia_job_id])
 }
 
 // -- extract the url for a theia server  --------------------------------------
-export async function getTheiaUrl(container_runtime: ContainerRuntime, identifier: {"project-root"?: string})
+export async function getTheiaUrl(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
 {
   const theia_job_id = jobNameLabeltoID(container_runtime.runner, THEIA_JOB_NAME(identifier), "", "running");
   if(theia_job_id === false)
-    return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
+    return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   const result = container_runtime.runner.jobExec(theia_job_id, ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`], {}, 'json')
-  if(!result.success) return (new ValidatedOutput(false)).pushError(ErrorStrings.THEIA.NOURL)
+  if(!result.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
   return new ValidatedOutput(true, `http://${result.data.url}:${result.data.port}`);
 }
 
 // -- starts the Theia Electron app  -------------------------------------------
-export function startTheiaApp(url: string, app_path: string, explicit: boolean = false)
+export function startTheiaApp(url: string, app_path: string, explicit: boolean = false) : ValidatedOutput<undefined>
 {
-  if(!app_path) return new ValidatedOutput(false)
+  if(!app_path) return new ValidatedOutput(false, undefined)
   var app_cmd: string = ""
   const platform = os.platform()
   if(platform == "darwin")
@@ -97,7 +97,9 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
         `export ICON=theia`,
         app_cmd
     ].join(' && ');
-  return (new ShellCommand(explicit, false)).execAsync(command)
+  return new ValidatedOutput(false, undefined).absorb(
+    (new ShellCommand(explicit, false)).execAsync(command)
+  )
 }
 
 // === Helper functions ========================================================

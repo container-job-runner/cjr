@@ -24,7 +24,7 @@ export type BuildOptions = {
 // stack_path - absolute path to stack folder
 // overloaded_config_paths - absolute paths to any overloading configuration files
 // -----------------------------------------------------------------------------
-export function buildAndLoad(builder: BuildDriver, build_options: BuildOptions, stack_path: string, overloaded_config_paths: Array<string>)
+export function buildAndLoad(builder: BuildDriver, build_options: BuildOptions, stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<StackConfiguration>
 {
   var result = builder.loadConfiguration(stack_path, overloaded_config_paths)
   if(!result.success) return result
@@ -32,19 +32,22 @@ export function buildAndLoad(builder: BuildDriver, build_options: BuildOptions, 
   if(build_options?.['never']) // simply return configuration
     return new ValidatedOutput(true, configuration)
   else if(build_options?.['reuse-image']) // build if image is missing
-    result = buildIfMissing(builder, stack_path, configuration, build_options)
+    result.absorb(
+      buildIfMissing(builder, stack_path, configuration, build_options)
+    )
   else
-    result = builder.build(stack_path, configuration, build_options)
-
+    result.absorb(
+      builder.build(stack_path, configuration, build_options)
+    )
   if(!result.success) return result
   return new ValidatedOutput(true, configuration)
 }
 
-export function buildIfMissing(builder: BuildDriver, stack_path: string, configuration: StackConfiguration, build_options: BuildOptions)
+export function buildIfMissing(builder: BuildDriver, stack_path: string, configuration: StackConfiguration, build_options: BuildOptions) : ValidatedOutput<undefined>
 {
   if(builder.isBuilt(stack_path, configuration))
   {
-    return new ValidatedOutput(true);
+    return new ValidatedOutput(true, undefined);
   }
   else
   {
