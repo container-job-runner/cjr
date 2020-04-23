@@ -61,7 +61,7 @@ export abstract class StackConfiguration
   abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;
   abstract addBind(hostPath: string, containerPath: string, options?:Dictionary): boolean;
   abstract addVolume(volumeName: string, containerPath: string): boolean;
-  abstract addPort(hostPort: number, containerPort: number): boolean;
+  abstract addPort(hostPort: number, containerPort: number, address?:string): boolean;
   abstract addLabel(field: string, value: string): boolean;
   abstract addFlag(field: string, value: string): boolean;
   abstract removeFlag(field: string): boolean;
