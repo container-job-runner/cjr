@@ -6,7 +6,7 @@ import * as chalk from 'chalk'
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { ShellCommand } from "../../shell-command"
-import { RunDriver, Dictionary } from '../abstract/run-driver'
+import { RunDriver, Dictionary, JobState, JobInfo, JobInfoFilter } from '../abstract/run-driver'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl } from '../../curl'
 import { cli_name } from '../../constants'
@@ -31,86 +31,160 @@ export class DockerSocketRunDriver extends RunDriver
     })
   }
 
-  jobInfo(stack_paths: Array<string>, job_states: Array<string> = []) : Array<Dictionary>
+  jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
+  {
+    // const filters:Dictionary = {"label": [`runner=${cli_name}`]}
+    // if(job_states.length > 0)  filters['status'] = job_states
+
+    // const raw_info:Array<Dictionary> = []
+    // stack_paths.map((stack_path: string) => {
+    //   var result = this.curl.get({
+    //     "url": "/containers/json",
+    //     "data": {
+    //       all: true,
+    //       filters: JSON.stringify({"label": [`runner=${cli_name}`]})
+    //     }
+    // })
+
+    // })
+
+    return new ValidatedOutput(true, [])
+
+    // var result = this.curl.get({
+    //   "url": "/containers/json",
+    //   "data": {
+    //     all: true,
+    //     filters: JSON.stringify({"label": [`runner=${cli_name}`]})
+    //   }
+    // })
+
+    // if(!this.validAPIResponse(result, 200))
+    //   return []
+
+    // // standardize output. NOTE: Add comment to docker-socket-build-driver
+    // return result?.data?.body?.map( (cntr: Dictionary) => {
+    //   return {
+    //     id:      cntr.Id,
+    //     names:   cntr.Names,
+    //     command: cntr.Command,
+    //     status:  cntr.Status,                                     // rename status string in classical driver
+    //     state:   cntr.State?.toLowerCase(),                       // note rename this to state also in classical driver
+    //     stack:   cntr.Labels?.stack || "",
+    //     labels:  cntr.Labels || {},
+    //     ports:   cntr.Ports?.map((prt:Dictionary) => {
+    //       return {
+    //         ip: prt.IP,
+    //         containerPort: prt.PrivatePort,
+    //         hostPort: prt.PublicPort
+    //       }
+    //     }) || [],
+    //   }
+    // }) || [];
+  }
+
+  jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput<string>
+  {
+    // // -- create container ---------------------------------------------------
+    // var result = this.curl.post({
+    //   "url": "/containers/create",
+    //   "unix-socket": this.socket,
+    //   "encoding": "json",
+    //   "data": configuration.createObject(),
+    // })
+
+    // return (new ValidatedOutput(false)).pushError(this.ERRORSTRINGS.BAD_RESPONSE)
+    // if(!result.success) return result
+    // if(!result.data?.['id']) return new ValidatedOutput(false).pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
+
+    // const container_id = result.data['id'];
+    // if(callbacks?.postCreate) callbacks.postCreate(container_id)
+    // // -- run container --------------------------------------------------------
+    // if(configuration.syncronous()) // user docker command
+    // {
+    //   result = this.shell.exec(
+    //     `${this.base_command} start`,
+    //     {attach: {}, interactive: {}},
+    //     [container_id]
+    //   )
+    //   if(!result.success) return result
+    // }
+    // else // use docker api
+    // {
+    //   var result = this.curl.post({
+    //     "url": "/containers/create",
+    //     "encoding": "json",
+    //     "data": configuration.createObject(),
+    //   })
+    // }
+    // if(!result.success) return result
+    // if(callbacks?.postExec) callbacks.postExec(result)
+
+
+
+
+    // const command = `${this.base_command} start`;
+    // const args: Array<string> = [container_id]
+    // const flags = (!job_options.detached) ? {attach: {}, interactive: {}} : {}
+    // const shell_options = (!job_options.detached) ? {stdio: "inherit"} : {stdio: "pipe"}
+    // result = this.shell.exec(command, flags, args, shell_options)
+    // if(!result.success) return result
+    // if(callbacks?.postExec) callbacks.postExec(result)
+    // return result
+
+
+
+    // return result
+
+
+
+    return new ValidatedOutput(true, "")
+  }
+
+  jobLog(id: string) : ValidatedOutput<undefined>
   {
     var result = this.curl.get({
-      "url": "/containers/json",
-      "data": {
-        all: true,
-        filters: JSON.stringify({"label": [`runner=${cli_name}`]})
-      }
+      "url": `/containers/${id}/json`,
+      "data": {all: true, filter: [`label=runner=${cli_name}`]}
     })
-
-    if(!this.validAPIResponse(result, 200))
-      return []
-
-    // standardize output. NOTE: Add comment to docker-socket-build-driver
-    return result?.data?.response?.map( (cntr: Dictionary) => {
-      return {
-        id:      cntr.Id,
-        names:   cntr.Names,
-        command: cntr.Command,
-        status:  cntr.Status,                                     // rename status string in classical driver
-        state:   cntr.State?.toLowerCase(),                       // note rename this to state also in classical driver
-        stack:   cntr.Labels?.stack || "",
-        labels:  cntr.Labels || {},
-        ports:   cntr.Ports?.map((prt:Dictionary) => {
-          return {
-            ip: prt.IP,
-            containerPort: prt.PrivatePort,
-            hostPort: prt.PublicPort
-          }
-        }) || [],
-      }
-    }) || [];
+    //return result
+    return new ValidatedOutput(true, undefined)
   }
 
-  jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput
+  jobAttach(id: string) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true)
-  }
-
-  jobLog(id: string) : ValidatedOutput
-  {
-    return new ValidatedOutput(true)
-  }
-
-  jobAttach(id: string) : ValidatedOutput
-  {
-    return new ValidatedOutput(
-      true,
+    return new ValidatedOutput(true, undefined).absorb(
       this.shell.exec(`${this.base_command} attach`, {}, [id])
     )
   }
 
-  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, mode:"print"|"output"|"json") : ValidatedOutput
+  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, mode:"print"|"output"|"json") : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true)
+    return new ValidatedOutput(true, undefined)
   }
 
-  jobToImage(id: string, image_name: string): ValidatedOutput
+  jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true)
+    return new ValidatedOutput(true, undefined)
   }
 
-  jobStop(ids: Array<string>) : ValidatedOutput
+  jobStop(ids: Array<string>) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true)
+    return new ValidatedOutput(true, undefined)
   }
 
-  jobDelete(ids: Array<string>) : ValidatedOutput
+  jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true)
+    return new ValidatedOutput(true, undefined)
   }
 
-  volumeCreate(options:Dictionary): ValidatedOutput
+  volumeCreate(options:Dictionary): ValidatedOutput<string>
   {
-    return new ValidatedOutput(true)
+    return new ValidatedOutput(true, "")
   }
 
-  volumeDelete(options:Dictionary): ValidatedOutput
+  volumeDelete(options:Dictionary): ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true)
+    return new ValidatedOutput(true, undefined)
   }
 
   emptyConfiguration()
@@ -118,7 +192,7 @@ export class DockerSocketRunDriver extends RunDriver
     return new DockerStackConfiguration()
   }
 
-  private validAPIResponse(response: ValidatedOutput, code?:number) : boolean
+  private validAPIResponse(response: ValidatedOutput<any>, code?:number) : boolean
   {
     if(!response.success) return false
     if(response.data?.header?.type !== "application/json") return false

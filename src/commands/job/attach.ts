@@ -1,14 +1,16 @@
-import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/commands/stack-command'
-import {matchingJobIds, promptUserForJobId} from '../../lib/functions/run-functions'
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../../lib/commands/stack-command'
+import { promptUserForJobId, firstJobId } from '../../lib/functions/run-functions'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { ValidatedOutput } from '../../lib/validated-output'
+import { ErrorStrings } from '../../lib/error-strings'
 
 export default class Attach extends StackCommand {
   static description = 'Attach to a running job.'
   static args = [{name: 'id', required: false}]
   static flags = {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false})
   }
@@ -19,13 +21,23 @@ export default class Attach extends StackCommand {
     const {argv, flags} = this.parse(Attach)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner = this.newRunner(flags.explicit)
-    var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
+    const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var id = argv[0] || await promptUserForJobId(runner, stack_paths, ["running"], !this.settings.get('interactive')) || ""
     if(id === "") return // exit if user selects empty
     // match with existing container ids
-    var result = matchingJobIds(runner, [id], stack_paths)
-    if(result.success) runner.jobAttach(result.data[0])
-    printResultState(result)
+    var result = firstJobId(
+      runner.jobInfo({
+        "ids": [id],
+        "stack-paths": stack_paths,
+        "job-states": ["running"]
+      }))
+    if(result.success)
+      runner.jobAttach(result.data[0])
+    else
+      printResultState(
+        new ValidatedOutput(false, undefined)
+          .pushError(ErrorStrings.ATTACH.NO_MATCHING_ID)
+      )
   }
 
 }

@@ -4,10 +4,10 @@
 
 import * as path from 'path'
 import * as chalk from 'chalk'
-import { cli_name } from '../../constants'
+import { cli_name, stack_path_label, name_label } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
 import { PathTools } from '../../fileio/path-tools'
-import { RunDriver, Dictionary, JobState, JobPortInfo, JobInfo } from '../abstract/run-driver'
+import { RunDriver, Dictionary, JobState, JobPortInfo, JobInfo, JobInfoFilter } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
 import { dr_vo_validator } from './schema/docker-run-schema'
 import { de_vo_validator } from './schema/docker-exec-schema'
@@ -158,21 +158,38 @@ export class DockerRunDriver extends RunDriver
   //                              then jobs with any stack will be returned.
   // job_states: Array<string> - the state of returned jobs will match with any of the values specified in this array. If
   //                             job_states=[] or job_states=[""] then jobs with any state will be returned.
-  jobInfo(stack_paths: Array<string>, job_states: Array<JobState> = []) : Array<JobInfo>
+  jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
   {
-    const info:Array<JobInfo> = []
-    if(stack_paths.length == 0) stack_paths = [""]
-    stack_paths.map((stack_path:string) => // loop through stacks
+    const result:ValidatedOutput<Array<JobInfo>> = new ValidatedOutput(true, [])
+    const stack_filter: Array<string|undefined> = filter?.['stack-paths'] || [undefined];
+    const state_filter: Array<JobState|undefined> = filter?.['job-states'] || [undefined];
+    const name_filter: Array<string|undefined> = filter?.names || [undefined];
+    const id_filter: Array<string|undefined> = filter?.ids || [undefined];
+
+    // note: this is done using 4 loops with one docker command per each parameter choice.
+    // an alternative would be to get all jobs in one object, then filter using JS.
+    // However calling docker inspect on every job run by cjr could be very expensive
+
+    stack_filter.map((stack_path:string|undefined) => // loop through stacks
     {
-      if(job_states.length == 0)
-        info.push( ...this.jobInfoCall(stack_path))
-      else
-        job_states.map((job_state: JobState) => info.push( ...this.jobInfoCall(stack_path, job_state)))
+      state_filter.map((job_state: JobState|undefined) => // loop through states
+      {
+        name_filter.map((name: string|undefined) => // loop through states
+        {
+          id_filter.map((id: string|undefined) => // loop through states
+          {
+            const jic_result = this.jobInfoCall(stack_path, job_state, name, id)
+            result.absorb(jic_result)
+            result.data.push( ...jic_result.data)
+          })
+        })
+      })
     })
-    return info
+
+    return result
   }
 
-  protected jobInfoCall(stack_path: string, job_state?: JobState) : Array<JobInfo>
+  protected jobInfoCall(stack_path: string|undefined, job_state: JobState|undefined, name: string|undefined, id: string|undefined) : ValidatedOutput<Array<JobInfo>>
   {
     const command = `${this.base_command} ps`;
       const args: Array<string> = []
@@ -181,15 +198,17 @@ export class DockerRunDriver extends RunDriver
         "no-trunc": {},
         "filter": [`label=runner=${cli_name}`]
       };
-      if(stack_path) flags["filter"].push(`label=stack=${stack_path}`)
+      if(stack_path) flags["filter"].push(`label=${stack_path_label}=${stack_path}`)
       if(job_state) flags["filter"].push(`status=${job_state}`)
+      if(name) flags["filter"].push(`label=${name_label}=${name}`) // use label name instead of flags["filter"].push(`name=${name}`)
+      if(id) flags["filter"].push(`id=${id}`)
       this.addFormatFlags(flags, {format: "json"})
       const result = this.outputParser(this.shell.output(command, flags, args, {}))
       if(result.success) return this.extractJobInfo(result.data)
-      else return []
+      else return new ValidatedOutput(false, [])
   }
 
-  protected extractJobInfo(raw_ps_data: Array<Dictionary>) : Array<JobInfo>
+  protected extractJobInfo(raw_ps_data: Array<Dictionary>) : ValidatedOutput<Array<JobInfo>>
   {
     // NOTE: docker ps does not correctly format labels with --format {{json .}}
     // This Function calls docker inspect to extract properly formatted labels
@@ -200,7 +219,7 @@ export class DockerRunDriver extends RunDriver
       ids,
       {})
     )
-    if(!result.success) return []
+    if(!result.success) return new ValidatedOutput(false, [])
     // -- function for extracting port information for inspect
     const extractBoundPorts = (PortBindings:Dictionary) => { // entries are of the form {"PORT/tcp"|"PORT/udp": [{HostPort: string, HostIp: String}], "PORTKEY": [{hostPort: "NUMBER"}]}
       const port_info: Array<JobPortInfo> = [];
@@ -231,18 +250,21 @@ export class DockerRunDriver extends RunDriver
       return "unknown"
     }
 
-    return raw_ps_data.map((x:Dictionary) => {
-      return {
-        id: x.ID,
-        names: x.Names,
-        command: x.Command,
-        state: state(x.Status),
-        stack: inspect_data?.[x.ID]?.Labels.stack || "",
-        labels: inspect_data?.[x.ID]?.Labels || {},
-        ports: inspect_data?.[x.ID]?.Ports || [],
-        status: x.Status
-      }
-    })
+    return new ValidatedOutput(
+      true,
+      raw_ps_data.map((x:Dictionary) => {
+        return {
+          id: x.ID,
+          names: x.Names,
+          command: x.Command,
+          state: state(x.Status),
+          stack: inspect_data?.[x.ID]?.Labels.stack || "",
+          labels: inspect_data?.[x.ID]?.Labels || {},
+          ports: inspect_data?.[x.ID]?.Ports || [],
+          status: x.Status
+        }
+      })
+    )
   }
 
   jobToImage(id: string, image_name: string) : ValidatedOutput<undefined>

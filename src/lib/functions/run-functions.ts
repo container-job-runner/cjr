@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as os from 'os'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
-import { RunDriver, JobState, JobInfo, JobPortInfo } from '../drivers/abstract/run-driver'
+import { RunDriver, JobState, JobInfo, JobPortInfo, JobInfoFilter } from '../drivers/abstract/run-driver'
 import { BuildDriver } from '../drivers/abstract/build-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { PathTools } from '../fileio/path-tools'
@@ -12,7 +12,7 @@ import { JSONFile } from '../fileio/json-file'
 import { ValidatedOutput } from '../validated-output'
 import { printResultState, trim } from './misc-functions'
 import { ShellCommand } from '../shell-command'
-import { X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths } from '../constants'
+import { X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths, stack_path_label } from '../constants'
 import { buildAndLoad, BuildOptions } from '../functions/build-functions'
 import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
 import { PodmanStackConfiguration } from '../config/stacks/podman/podman-stack-configuration'
@@ -180,9 +180,12 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
 {
   const result = new ValidatedOutput(true, undefined);
   // -- get information on all matching jobs -----------------------------------
-  var mb_result = matchingJobInfo(container_runtime.runner, copy_options["ids"], copy_options["stack-paths"] || [""])
-  if(!mb_result.success) return result.absorb(mb_result)
-  const job_info_array = mb_result.data
+  var ji_result = container_runtime.runner.jobInfo({
+    "ids": copy_options['ids'],
+    "stack-paths": copy_options["stack-paths"] || undefined
+  })
+  if(!ji_result.success) return result.absorb(ji_result)
+  const job_info_array = ji_result.data
   // -- copy results from all matching jobs ------------------------------------
   job_info_array.map((job:Dictionary) => {
     // -- 1. extract label information -----------------------------------------
@@ -214,7 +217,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
 export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<string>
 {
   // -- get job information ----------------------------------------------------
-  var result = matchingJobInfo(container_runtime.runner, [job_id], [""])
+  var result = container_runtime.runner.jobInfo({ids: [job_id]})
   if(!result.success) return new ValidatedOutput(false, "").absorb(result)
   const job_info = result.data[0] // only shell into first resut
   // -- extract hostRoot and file_volume_id ------------------------------------
@@ -339,61 +342,44 @@ export function bundleStack(container_runtime: ContainerRuntime, options: StackB
 
 // == JOB INFO FUNCTIONS =======================================================
 
-// returns all running job ids
-export function allJobIds(runner: RunDriver, stack_paths: Array<string>=[], states:Array<JobState> = [])
+// returns ValidatedObject with ids of jobs
+export function jobIds(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<string>>
 {
-  return runner.jobInfo(stack_paths, states).map((x:Dictionary) => x.id)
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true, job_info.data.map((ji:JobInfo) => ji.id))
 }
 
-// returns array of jobs ids for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobIds(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = []) : ValidatedOutput<Array<string>>
+export function volumeIds(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<string>>
 {
-  const job_result = matchingJobInfo(runner, ids, stack_paths, states)
-  if(job_result.success) return new ValidatedOutput(false, job_result.data.map((x:JobInfo):string => x.id))
-  return new ValidatedOutput(false, [])
-}
-
-// returns array of jobs info objects for all jobs whose id begins with the letters in any string in the passed parameter "id"
-export function matchingJobInfo(runner: RunDriver, ids: Array<string>, stack_paths: Array<string>, states:Array<JobState> = []) : ValidatedOutput<Array<JobInfo>>
-{
-  ids = ids.filter((id:string) => id !== "") // remove empty ids
-  if(ids.length < 1) return new ValidatedOutput(false, [], [ErrorStrings.JOBS.INVALID_ID])
-  return filterJobInfoByID(runner.jobInfo(stack_paths, states), new RegExp(`^(${ids.join('|')})`))
-}
-
-// -----------------------------------------------------------------------------
-// FILTERJOBINFOBYID filters the output of RunDriver.jobInfo() and returns all
-// jobs whose ID satisfies the provided regular expression.
-// -- Parameters ---------------------------------------------------------------
-// job_info: Array<Dictionary> - absolute path where cli was called from
-// regex: RegExp - regular expression
-// -- Returns ------------------------------------------------------------------
-// ValidatedOutput - data contains array of Dictinary with matching job info
-function filterJobInfoByID(job_info: Array<JobInfo>, regex: RegExp) : ValidatedOutput<Array<JobInfo>>
-{
-  const matching_jobs = job_info.filter((job:JobInfo) => regex.test(job.id))
-  return (matching_jobs.length > 0) ?
-    new ValidatedOutput(true, matching_jobs) :
-    new ValidatedOutput(false, [], [ErrorStrings.JOBS.NO_MATCHING_ID])
-}
-
-// determines if job with given name exists. Refactor with resultNameId
-export function jobNameLabeltoID(runner: RunDriver, name: string, stack_path?: string, state?:JobState)
-{
-  const job_info = runner.jobInfo(
-    (stack_path) ? [stack_path] : [],
-    (state) ? [state] : []
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true,
+    job_info.data
+    .map((ji:JobInfo) => ji.labels?.[file_volume_label] || "")
+    .filter((s:string) => s !== "")
   )
-  const index    = job_info.map((x:Dictionary) => x?.labels?.name).indexOf(name)
-  return (index == -1) ? false : job_info[index].id
 }
 
-export function nextAvailablePort(runner: RunDriver, port:number=1024)
+export function firstJobId(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<string>
 {
-  const job_info = runner.jobInfo([], []) // get all jobs
+  if(job_info.data.length < 1)
+    return new ValidatedOutput(false, "").pushError(ErrorStrings.JOBS.NO_MATCHING_ID)
+  return new ValidatedOutput(true, job_info.data[0].id)
+}
+
+// returns ValidatedObject with first name of jobs
+export function jobNames(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<string>>
+{
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true, job_info.data.map((ji:JobInfo) => ji.names.pop() || ""))
+}
+
+export function nextAvailablePort(runner: RunDriver, port:number=1024) : number
+{
+  const job_info = runner.jobInfo() // get all jobs
+  if(!job_info.success) return port
   // -- extract port and order ascending ---------------------------------------
   const ports:Array<number> = []
-  job_info.map( (job_info:JobInfo) => ports.push(
+  job_info.data.map( (job_info:JobInfo) => ports.push(
       ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
     )
   )
@@ -677,7 +663,7 @@ export function addGenericLabels(configuration: StackConfiguration, hostRoot: st
 {
   if(hostRoot) configuration.addLabel("hostRoot", hostRoot)
   configuration.addLabel("containerRoot", configuration.getContainerRoot())
-  configuration.addLabel("stack", stack_path)
+  configuration.addLabel(stack_path_label, stack_path)
 }
 
 // -----------------------------------------------------------------------------
@@ -754,11 +740,11 @@ export function loadProjectSettings(project_root: string):{result: ValidatedOutp
 
 // == Interactive Functions ====================================================
 
-export async function promptUserForJobId(runner: RunDriver, stack_path: Array<string>, states:Array<JobState>=[], silent: boolean = false)
+export async function promptUserForJobId(runner: RunDriver, stack_paths: Array<string>|undefined, states:Array<JobState>|undefined=undefined, silent: boolean = false)
 {
   if(silent) return false;
-  const job_info = runner.jobInfo(stack_path, states)
-  return await promptUserForId(job_info);
+  const job_info = runner.jobInfo({"stack-paths":stack_paths, "job-states": states})
+  return await promptUserForId(job_info.data);
 }
 
 // helper function for promptUserForJobId & promptUserForResultId

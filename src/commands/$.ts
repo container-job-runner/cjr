@@ -1,7 +1,7 @@
 import * as chalk from 'chalk'
 import {flags} from '@oclif/command'
 import {Dictionary, StackCommand} from '../lib/commands/stack-command'
-import {jobStart, jobCopy, matchingJobInfo, ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
+import {jobStart, jobCopy, ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
 import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
 import {printResultState, initX11} from '../lib/functions/misc-functions'
 
@@ -96,7 +96,7 @@ export default class Run extends StackCommand {
   shouldAutocopy(flags: Dictionary, container_runtime: ContainerRuntime, job_id: string, stack_path: string)
   {
     // -- check that job has stopped -------------------------------------------
-    const result = matchingJobInfo(container_runtime.runner, [job_id], [stack_path])
+    const result = container_runtime.runner.jobInfo({"ids": [job_id], "stack-paths": [stack_path]})
     if(!result.success) return false
     if(result.data?.[0]?.state != 'exited') return false
     // -- check flag status ----------------------------------------------------

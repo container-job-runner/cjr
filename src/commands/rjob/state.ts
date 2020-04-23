@@ -1,7 +1,5 @@
 import {flags} from '@oclif/command'
 import {RemoteCommand} from '../../lib/remote/commands/remote-command'
-import {matchingJobInfo} from '../../lib/functions/run-functions'
-import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class State extends RemoteCommand {
   static description = 'Get the current state of a job.'

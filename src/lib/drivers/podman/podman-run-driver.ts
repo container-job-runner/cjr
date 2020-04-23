@@ -8,6 +8,7 @@ import { DockerRunDriver }  from '../docker/docker-run-driver'
 import { pr_vo_validator } from './schema/podman-run-schema'
 import { PodmanStackConfiguration } from '../../config/stacks/podman/podman-stack-configuration'
 import { parseJSON } from '../../functions/misc-functions'
+import { ValidatedOutput } from '../../validated-output'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -25,7 +26,7 @@ export class PodmanRunDriver extends DockerRunDriver
     }
   }
 
-  protected extractJobInfo(raw_ps_data: Array<Dictionary>) : Array<JobInfo>
+  protected extractJobInfo(raw_ps_data: Array<Dictionary>) : ValidatedOutput<Array<JobInfo>>
   {
     // NOTE: podman ps has a bad format for determining open ports.
     // This Function calls podman inspect to extract port information
@@ -33,7 +34,7 @@ export class PodmanRunDriver extends DockerRunDriver
     const result = this.outputParser(
       this.shell.output(`${this.base_command} inspect`, {}, ids, {})
     )
-    if(!result.success) return []
+    if(!result.success) return new ValidatedOutput(false, [])
     // -- function for extracting port information for inspect
     const extractBoundPorts = (PortBindings:Dictionary) => { // entries are of the form {"PORT/tcp"|"PORT/udp": [{HostPort: string, HostIp: String}], "PORTKEY": [{hostPort: "NUMBER"}]}
       const port_info: Array<JobPortInfo> = [];
@@ -61,18 +62,21 @@ export class PodmanRunDriver extends DockerRunDriver
       return "unknown"
     }
 
-    return raw_ps_data.map((x:Dictionary) => {
-      return {
-        id: x.ID,
-        names: x.Names,
-        command: x.Command,
-        state: state(x.Status),
-        stack: x?.Labels?.stack || "",
-        labels: x?.Labels || {},
-        ports: inspect_data?.[x.ID]?.Ports || [],
-        status: x.Status
-      }
-    })
+    return new ValidatedOutput(
+      true,
+      raw_ps_data.map((x:Dictionary) => {
+        return {
+          id: x.ID,
+          names: x.Names,
+          command: x.Command,
+          state: state(x.Status),
+          stack: x?.Labels?.stack || "",
+          labels: x?.Labels || {},
+          ports: inspect_data?.[x.ID]?.Ports || [],
+          status: x.Status
+        }
+      })
+    )
   }
 
   protected addResourceFlags(flags: Dictionary, run_object: Dictionary)

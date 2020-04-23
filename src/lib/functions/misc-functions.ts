@@ -4,11 +4,11 @@ import * as fs from 'fs'
 import * as path from 'path'
 import * as inquirer from 'inquirer'
 
-import {ValidatedOutput} from '../validated-output'
-import {ErrorStrings, WarningStrings} from '../error-strings'
-import {JSTools} from '../js-tools'
-import {ShellCommand} from '../shell-command'
-import {RunDriver} from '../drivers/abstract/run-driver'
+import { ValidatedOutput } from '../validated-output'
+import { ErrorStrings, WarningStrings } from '../error-strings'
+import { JSTools } from '../js-tools'
+import { ShellCommand } from '../shell-command'
+import { RunDriver } from '../drivers/abstract/run-driver'
 import { outputFile } from 'fs-extra'
 
 type Dictionary = {[key: string]: any}

@@ -1,9 +1,11 @@
-import {flags} from '@oclif/command'
 import * as chalk from 'chalk'
-import {JSTools} from '../../lib/js-tools'
-import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
-import {matchingJobInfo, promptUserForJobId, allJobIds} from '../../lib/functions/run-functions'
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { JSTools } from '../../lib/js-tools'
+import { StackCommand, Dictionary } from '../../lib/commands/stack-command'
+import { promptUserForJobId } from '../../lib/functions/run-functions'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { ValidatedOutput } from '../../lib/validated-output'
+import { JobInfo } from '../../lib/drivers/abstract/run-driver'
 
 export default class Labels extends StackCommand {
   static description = 'Retrieve labels for a job.'
@@ -15,7 +17,7 @@ export default class Labels extends StackCommand {
     "all-running": flags.boolean({default: false}),
     json: flags.boolean({default: false}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "visible-stacks": flags.string({default: [], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false})
   }
@@ -26,26 +28,26 @@ export default class Labels extends StackCommand {
     const {argv, flags} = this.parse(Labels)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner = this.newRunner(flags.explicit)
-    var stack_paths = flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
+    const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // get id and stack_path
-    var job_info
-    if(flags.all) // -- select all jobs ----------------------------------------
-      job_info = runner.jobInfo(stack_paths)
-    else if(flags["all-completed"]) // -- select all completed jobs ------------
-      job_info = runner.jobInfo(stack_paths, ["exited"])
+    var job_info:ValidatedOutput<Array<JobInfo>>
+    if(flags.all) // -- delete all jobs ----------------------------------------
+      job_info = runner.jobInfo({'stack-paths': stack_paths})
+    else if(flags["all-completed"]) // -- delete all jobs ----------------------
+      job_info = runner.jobInfo({'stack-paths': stack_paths, 'job-states': ["exited"]})
     else if(flags["all-running"])
-      job_info = runner.jobInfo(stack_paths, ["running"])
-    else  // -- stop only jobs specified by user -------------------------------
+      job_info = runner.jobInfo({'stack-paths': stack_paths, 'job-states': ["running"]})
+    else
     {
-      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, [], !this.settings.get('interactive')) || "")
+      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, undefined, !this.settings.get('interactive')) || "")
       if(ids === "") return // exit if user selects empty
-      var result = matchingJobInfo(runner, JSTools.arrayWrap(ids), stack_paths)
-      if(result.success) job_info = result.data
-      else return (flags.json) ? console.log("{}") : printResultState(result)
+      job_info = runner.jobInfo({'ids': JSTools.arrayWrap(ids), 'stack-paths': stack_paths})
     }
+    if(!job_info.success)
+      return (flags.json) ? console.log("{}") : printResultState(job_info)
 
     var data:Dictionary = {}
-    job_info.map((info:Dictionary) => {
+    job_info.data.map((info:JobInfo) => {
       if(flags?.label)
         data[info.id] = info.labels[flags.label]
       else

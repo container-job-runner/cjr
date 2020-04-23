@@ -22,7 +22,7 @@ export default class Init extends ProjectSettingsCommand {
     "remote-name": flags.string({env: 'REMOTENAME', description: "default remote resource for project"}),
     "config-files": flags.string({multiple: true, description: "additional overriding configuration files for project stack"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
-    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified, only these stacks will be visible when running cjr from within this project directory."}),
   }
   static strict = false;
 
@@ -61,6 +61,7 @@ export default class Init extends ProjectSettingsCommand {
       const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
       if(!result.success) return printResultState(result)
       console.log(`Initialized cjr project in ${projectSettingsDirPath(project_root)}`)
+      this.printProjectSettings(project_settings, project_root)
     }
   }
 

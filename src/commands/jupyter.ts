@@ -12,13 +12,13 @@ export default class Run extends StackCommand {
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    x11: flags.boolean({default: false}),
-    port: flags.string({default: "auto"}),
-    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
-    explicit: flags.boolean({default: false}),
+    "x11": flags.boolean({default: false}),
+    "port": flags.string({default: "auto"}),
+    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
+    "explicit": flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
@@ -53,12 +53,11 @@ export default class Run extends StackCommand {
     if(flags['port'] == 'auto')
       flags['port'] = `${nextAvailablePort(container_runtime.runner, 7013)}`
 
-    var result = new ValidatedOutput(true)
     const project_root = flags['project-root'] || "";
     const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start jupyter ------------------------
     {
-      result = startJupyterInProject(
+      const result = startJupyterInProject(
         container_runtime,
         output_options,
         {
@@ -73,28 +72,30 @@ export default class Run extends StackCommand {
           "sync": false,
           "x11": flags.x11
         });
+        printResultState(result)
     }
     if(args['command'] === 'stop') // -- stop jupyter --------------------------
     {
-      result = stopJupyter(container_runtime, {"project-root": project_root});
+      const result = stopJupyter(container_runtime, {"project-root": project_root});
+      printResultState(result)
     }
     if(args['command'] === 'list') // -- list jupyter --------------------------
     {
-      result = listJupyter(container_runtime, {"project-root": project_root})
+      const result = listJupyter(container_runtime, {"project-root": project_root})
+      printResultState(result)
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = await getJupyterUrl(container_runtime, {"project-root": project_root})
       if(url_result.success) console.log(url_result.data)
-      result.absorb(url_result)
+      printResultState(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = await getJupyterUrl(container_runtime, {"project-root": project_root})
       if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
-      result.absorb(url_result)
+      printResultState(url_result)
     }
-    printResultState(result)
   }
 
 }

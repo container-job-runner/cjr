@@ -1,5 +1,5 @@
 import {flags} from '@oclif/command'
-import {printVerticalTable, printHorizontalTable} from '../../lib/functions/misc-functions'
+import {printVerticalTable, printHorizontalTable, printResultState} from '../../lib/functions/misc-functions'
 import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
@@ -10,7 +10,7 @@ export default class List extends StackCommand {
     all: flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
     "show-stashes": flags.boolean({default: false, description: "show stashes"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "visible-stacks": flags.string({default: [], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     explicit: flags.boolean({default: false}),
     verbose: flags.boolean({default: false, char: 'v', description: "shows all job properties."})
@@ -22,8 +22,10 @@ export default class List extends StackCommand {
     const {argv, flags} = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner  = this.newRunner(flags.explicit)
-    var stack_paths = (flags['all']) ? [] : flags['visible-stacks'].map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
-    const jobs = runner.jobInfo(stack_paths)
+    const stack_paths = (flags['all']) ? undefined : flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
+    const job_info = runner.jobInfo({'stack-paths': stack_paths})
+    if(!job_info.success) return printResultState(job_info)
+    const jobs = job_info.data
 
     if(flags.json) { // -- JSON format -----------------------------------------
       console.log(JSON.stringify(jobs))

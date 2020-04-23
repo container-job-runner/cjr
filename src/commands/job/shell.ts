@@ -17,7 +17,7 @@ export default class Shell extends StackCommand {
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
-    "visible-stacks": flags.string({default: [""], multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
   }
   static strict = true;
 
@@ -34,7 +34,7 @@ export default class Shell extends StackCommand {
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- get job id -----------------------------------------------------------
-    const id_str = argv[0] || await promptUserForJobId(c_runtime.runner, flags["visible-stacks"], [], !this.settings.get('interactive')) || ""
+    const id_str = argv[0] || await promptUserForJobId(c_runtime.runner, flags["visible-stacks"], undefined, !this.settings.get('interactive')) || ""
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,

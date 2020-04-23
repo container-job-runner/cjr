@@ -4,7 +4,7 @@ import {ShellCommand} from '../shell-command'
 import {ErrorStrings} from '../error-strings'
 import {ValidatedOutput} from '../validated-output'
 import {JUPYTER_JOB_NAME} from '../constants'
-import {jobNameLabeltoID, jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels} from './run-functions'
+import {jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
 import {BuildOptions} from './build-functions'
 import {RunDriver} from '../drivers/abstract/run-driver'
 
@@ -26,8 +26,13 @@ export type JupyterOptions = {
 export function startJupyterInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"project-root" : jup_options['project-root'] || ""})
-  const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
-  if(jupyter_job_id !== false)
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [jupyter_job_name], 'job-states': ['running']}))
+  // -- exit if request fails --------------------------------------------------
+  if(!job_info_request.success)
+    return new ValidatedOutput(false, "")
+  // -- exit if jupyter is already running -------------------------------------
+  const jupyter_job_id = job_info_request.data
+  if(jupyter_job_id)
     return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'project-root': jup_options['project-root'] || ""}))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
@@ -54,8 +59,13 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
 export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:string, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : job_id})
-  const jupyter_job_id   = jobNameLabeltoID(container_runtime.runner, jupyter_job_name, jup_options['stack-path'], "running");
-  if(jupyter_job_id !== false)
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [jupyter_job_name], 'job-states': ['running']}))
+  // -- exit if request fails --------------------------------------------------
+  if(!job_info_request.success)
+    return new ValidatedOutput(false, "")
+  // -- exit if jupyter is already running -------------------------------------
+  const jupyter_job_id = job_info_request.data
+  if(jupyter_job_id)
     return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': job_id}))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
@@ -81,8 +91,9 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
 // -- extract the url for a jupyter notebook  ----------------------------------
 export function stopJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
-  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
-  if(jupyter_job_id === false)
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [JUPYTER_JOB_NAME(identifier)], 'job-states': ['running']}))
+  const jupyter_job_id = job_info_request.data
+  if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return container_runtime.runner.jobStop([jupyter_job_id])
@@ -90,8 +101,9 @@ export function stopJupyter(container_runtime: ContainerRuntime, identifier: {"j
 
 export function listJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
-  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
-  if(jupyter_job_id === false)
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [JUPYTER_JOB_NAME(identifier)], 'job-states': ['running']}))
+  const jupyter_job_id = job_info_request.data
+  if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return container_runtime.runner.jobExec(jupyter_job_id, ['jupyter', 'notebook', 'list'], {}, 'print')
@@ -101,8 +113,9 @@ export function listJupyter(container_runtime: ContainerRuntime, identifier: {"j
 // function can send repeated requests if the first one fails
 export async function getJupyterUrl(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
 {
-  const jupyter_job_id = jobNameLabeltoID(container_runtime.runner, JUPYTER_JOB_NAME(identifier), "", "running");
-  if(jupyter_job_id === false) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [JUPYTER_JOB_NAME(identifier)], 'job-states': ['running']}))
+  const jupyter_job_id = job_info_request.data
+  if(jupyter_job_id == "") return (new ValidatedOutput(false, "")).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   var result = new ValidatedOutput(false, "").pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
