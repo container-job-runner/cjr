@@ -12,6 +12,9 @@ export const ErrorStrings = {
     NO_MATCHING_ID: chalk`{bold No Matching Job ID}`,
     FAILED_START : chalk`{bold Failed to start job}`
   },
+  ATTACH:{
+    NO_MATCHING_ID: chalk`{bold No Matching Running Job ID}`
+  },
   BUILD:{
     FAILED_AUTOBUILD: chalk`{bold Failed to Build Stack Image.}`
   },
