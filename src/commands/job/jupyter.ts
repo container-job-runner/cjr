@@ -21,7 +21,8 @@ export default class Run extends StackCommand {
     "explicit": flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
+    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"})
     }
   static strict = false;
 
@@ -32,9 +33,11 @@ export default class Run extends StackCommand {
       "stack": (args?.['command'] === 'start'), // only require stack for start,
       "config-files": false,
       "project-root":false,
-      "stacks-dir": false
+      "stacks-dir": false,
+      "visible-stacks":false
     })
     const stack_path = this.fullStackPath(flags.stack || "", flags["stacks-dir"] || "")
+    const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  false,
@@ -62,7 +65,10 @@ export default class Run extends StackCommand {
     {
       const result = startJupyterInJob(
         container_runtime,
-        job_id,
+        {
+          "id": job_id,
+          "allowable-stack-paths": parent_stack_paths
+        },
         output_options,
         {
           "stack-path": stack_path,

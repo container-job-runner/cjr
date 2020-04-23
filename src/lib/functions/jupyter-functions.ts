@@ -56,9 +56,9 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
     return new ValidatedOutput(true, start_output.data.id) // return id of jupyter job
 }
 
-export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:string, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
+export function startJupyterInJob(container_runtime: ContainerRuntime, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
-  const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : job_id})
+  const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : parent_job.id})
   const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [jupyter_job_name], 'states': ['running']}))
   // -- exit if request fails --------------------------------------------------
   if(!job_info_request.success)
@@ -66,7 +66,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
   // -- exit if jupyter is already running -------------------------------------
   const jupyter_job_id = job_info_request.data
   if(jupyter_job_id)
-    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': job_id}))
+    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': parent_job.id}))
   // -- start new jupyter job --------------------------------------------------
   const job_options:JobOptions = {
     "stack-path":   jup_options["stack-path"],
@@ -83,7 +83,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
     "remove":       true
   }
   // -- start job and extract job id -------------------------------------------
-  const exec_output = jobExec(container_runtime, job_id, job_options, output_options)
+  const exec_output = jobExec(container_runtime, parent_job, job_options, output_options)
   if(!exec_output.success) return new ValidatedOutput(false, "").absorb(exec_output)
   return new ValidatedOutput(true, exec_output.data.id) // return id of jupyter job
 }

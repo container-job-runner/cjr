@@ -215,18 +215,23 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
   return result
 }
 
-export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
+export function jobExec(container_runtime:ContainerRuntime, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
 {
   const failed_result = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
   const nohost_result = new ValidatedOutput(true, {"id":"", "output": "", "exit-code": 0});
   // -- get job information ----------------------------------------------------
-  var result = container_runtime.runner.jobInfo({ids: [job_id]})
-  if(!result.success) return failed_result.absorb(result)
-  const job_info = result.data[0] // only shell into first resut
+  const job_info_request = firstJob(
+    container_runtime.runner.jobInfo({
+      "ids": [parent_job.id],
+      "stack-paths": parent_job?.["allowable-stack-paths"]
+    })
+  )
+  if(!job_info_request.success) return failed_result.absorb(job_info_request)
+  const job_info = job_info_request.data // only shell into first resut
   // -- extract hostRoot and file_volume_id ------------------------------------
-  const host_root = job_info?.labels?.hostRoot || ""
-  const file_volume_id = job_info?.labels?.[file_volume_label] || ""
-  const job_stack_path = job_info?.labels?.stack || ""
+  const host_root = job_info.labels?.hostRoot || ""
+  const file_volume_id = job_info.labels?.[file_volume_label] || ""
+  const job_stack_path = job_info.labels?.[stack_path_label] || ""
   if(!host_root) nohost_result.pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
   //if(!file_volume_id) return result.pushWarning(WarningStrings.JOBEXEC.NO_VOLUME(job_info.id))
   // -- set job properties -----------------------------------------------------
@@ -367,6 +372,14 @@ export function firstJobId(job_info: ValidatedOutput<Array<JobInfo>>) : Validate
   if(job_info.data.length < 1)
     return new ValidatedOutput(false, "").pushError(ErrorStrings.JOBS.NO_MATCHING_ID)
   return new ValidatedOutput(true, job_info.data[0].id)
+}
+
+export function firstJob(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<JobInfo>
+{
+  const failure_output:JobInfo = {id: "", names: [], command: "", status: "", state: "dead", stack: "", labels: {}, ports: []}
+  if(job_info.data.length < 1)
+    return new ValidatedOutput(false, failure_output).pushError(ErrorStrings.JOBS.NO_MATCHING_ID)
+  return new ValidatedOutput(true, job_info.data[0])
 }
 
 // returns ValidatedObject with first name of jobs
@@ -751,7 +764,7 @@ export async function promptUserForJobId(runner: RunDriver, stack_paths: Array<s
 }
 
 // helper function for promptUserForJobId & promptUserForResultId
-export async function promptUserForId(id_info: Array<Dictionary>)
+export async function promptUserForId(id_info: Array<Dictionary>) : Promise<string>
 {
   const response = await inquirer.prompt([{
   name: 'id',

@@ -23,15 +23,17 @@ export default class Shell extends StackCommand {
     "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"})
   }
   static strict = false;
 
   async run()
   {
     const {args, argv, flags} = this.parse(Shell)
-    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false})
+    this.augmentFlagsWithProjectSettings(flags, {"stack":true, "config-files": false, "visible-stacks":false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
+    const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
     const run_shortcut = new RunShortcuts()
     // -- set container runtime options ----------------------------------------
     const c_runtime:ContainerRuntime = {
@@ -64,7 +66,7 @@ export default class Shell extends StackCommand {
       silent:   flags.quiet,
       explicit: flags.explicit
     }
-    const result = jobExec(c_runtime, id_str, job_options, output_options)
+    const result = jobExec(c_runtime, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options)
     if(!result.success) printResultState(result)
     // -- print id -------------------------------------------------------------
     const job_id = result.data.id

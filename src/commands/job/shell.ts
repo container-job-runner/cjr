@@ -26,6 +26,7 @@ export default class Shell extends StackCommand {
     const {argv, flags} = this.parse(Shell)
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "visible-stacks":false, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
+    const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
     // -- set container runtime options ----------------------------------------
     const c_runtime:ContainerRuntime = {
       builder: this.newBuilder(flags.explicit),
@@ -55,6 +56,6 @@ export default class Shell extends StackCommand {
       silent:   false,
       explicit: flags.explicit
     }
-    printResultState(jobExec(c_runtime, id_str, job_options, output_options))
+    printResultState(jobExec(c_runtime, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options))
   }
 }
