@@ -217,6 +217,9 @@ export class DockerRunDriver extends RunDriver
   {
     // NOTE: docker ps does not correctly format labels with --format {{json .}}
     // This Function calls docker inspect to extract properly formatted labels
+    if(raw_ps_data.length == 0)
+      return new ValidatedOutput(true, [])
+
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
     const result = this.outputParser(this.shell.output(
       `${this.base_command} inspect`,

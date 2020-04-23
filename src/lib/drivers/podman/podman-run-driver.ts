@@ -31,6 +31,9 @@ export class PodmanRunDriver extends DockerRunDriver
   {
     // NOTE: podman ps has a bad format for determining open ports.
     // This Function calls podman inspect to extract port information
+    if(raw_ps_data.length == 0)
+      return new ValidatedOutput(true, [])
+
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
     const result = this.outputParser(
       this.shell.output(`${this.base_command} inspect`, {}, ids, {})
