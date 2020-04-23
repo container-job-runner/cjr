@@ -118,17 +118,22 @@ export abstract class StackCommand extends Command
   // -- Returns ----------------------------------------------------------------
   //  Array<object> Each object has properties "hostPort" and "containerPort"
   // ---------------------------------------------------------------------------
-  protected parsePortFlag(raw_ports: Array<string>)
+  protected parsePortFlag(raw_ports: Array<string>) : Array<{address?: string, hostPort: number, containerPort: number}>
   {
-    const ports:Array<{hostPort: number, containerPort: number}> = []
-    var regex_a = RegExp(/^\d+:\d+$/) // flag format: --port=hostPort:containerPort
-    var regex_b = RegExp(/^\d+$/)     // flag format: --port=port
+    const ports:Array<{address?: string, hostPort: number, containerPort: number}> = []
+    var regex_a = RegExp(/^\S*:\d+:\d+$/) // flag format: --port=address:hostPort:containerPort
+    var regex_b = RegExp(/^\d+:\d+$/) // flag format: --port=hostPort:containerPort
+    var regex_c = RegExp(/^\d+$/)     // flag format: --port=port
     raw_ports?.map(port_string => {
       if(regex_a.test(port_string)) {
+        let p = port_string.split(':')
+        ports.push({address: p[0], hostPort: parseInt(p[1]), containerPort: parseInt(p[2])})
+      }
+      if(regex_b.test(port_string)) {
         let p = port_string.split(':').map((e:string) => parseInt(e))
         ports.push({hostPort: p[0], containerPort: p[1]})
       }
-      else if(regex_b.test(port_string)) {
+      else if(regex_c.test(port_string)) {
         let p = parseInt(port_string)
         ports.push({hostPort: p, containerPort: p})
       }
