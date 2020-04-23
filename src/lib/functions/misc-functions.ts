@@ -118,6 +118,15 @@ export function trim(output:ValidatedOutput<string>) : ValidatedOutput<string>
   return trimmed_output
 }
 
+// trims any whitespace from command output output
+export function trimTrailingNewline(output:ValidatedOutput<string>) : ValidatedOutput<string>
+{
+  const trimmed_output = new ValidatedOutput<string>(true, "").absorb(output);
+  if(!trimmed_output.success) return trimmed_output
+  trimmed_output.data = output.data.replace(/\r\n$/, "")
+  return trimmed_output
+}
+
 // -----------------------------------------------------------------------------
 // PRINTTABLE: prints a formatted table_parameters with title, header.
 // -- Parameters ---------------------------------------------------------------
