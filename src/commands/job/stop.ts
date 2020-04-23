@@ -10,9 +10,7 @@ export default class Stop extends StackCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
-    "all": flags.boolean({default: false}),
-    "all-completed": flags.boolean({default: false}),
-    "all-running": flags.boolean({default: false}),
+    "all": flags.boolean({default: false, description: "stop all running jobs"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -28,11 +26,7 @@ export default class Stop extends StackCommand {
     const runner  = this.newRunner(flags.explicit)
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var job_info:ValidatedOutput<Array<JobInfo>>
-    if(flags.all) // -- delete all jobs ----------------------------------------
-      job_info = runner.jobInfo({'stack-paths': stack_paths})
-    else if(flags["all-completed"]) // -- delete all jobs ----------------------
-      job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["exited"]})
-    else if(flags["all-running"])
+    if(flags.all) // -- stop all running jobs ----------------------------------
       job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["running"]})
     else  // -- stop only jobs specified by user -------------------------------
     {
