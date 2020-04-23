@@ -92,6 +92,8 @@ export const StatusStrings = {
   JOBSTART:{
     BUILD : "Build Output",
     VOLUMECOPY : "rsync Output",
+    VOLUMECOPY_TOVOLUME : "rsync Output (Host -> Volume)",
+    VOLUMECOPY_TOHOST : "rsync Output (Volume -> Host)",
     START : "Job Output",
     JOB_ID : "Job Id"
   },

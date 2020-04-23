@@ -132,7 +132,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   else if(job_options["host-root"] && job_options["file-access"] === "volume" && job_options?.["file-volume-id"])
     mountFileVolume(configuration, job_options["host-root"], job_options["file-volume-id"])
   else if(job_options["host-root"] && job_options["file-access"] === "volume") {
-    printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY, output_options)
+    printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY_TOVOLUME, output_options)
     const cmv_result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
     if(!cmv_result.success) return failed_result.absorb(cmv_result)
   }
@@ -158,7 +158,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   const result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, job_options["synchronous"] ? 'inherit' : 'pipe')
   // -- print id ---------------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.JOB_ID, output_options)
-  if(output_options.verbose) console.log(result.data)
+  if(output_options.verbose) console.log(result.data.id)
   if(result.data.id === "") result.pushError(ErrorStrings.JOBS.FAILED_START)
   return result
 }
@@ -178,6 +178,7 @@ function printStatusHeader(message: string, output_options: OutputOptions, line_
 // -----------------------------------------------------------------------------
 export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyOptions) : ValidatedOutput<undefined>
 {
+  printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY_TOHOST, {verbose: copy_options.verbose, explicit: false, silent: false})
   const result = new ValidatedOutput(true, undefined);
   // -- get information on all matching jobs -----------------------------------
   var ji_result = container_runtime.runner.jobInfo({
