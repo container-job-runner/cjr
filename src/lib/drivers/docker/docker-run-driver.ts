@@ -7,12 +7,13 @@ import * as chalk from 'chalk'
 import { cli_name, stack_path_label, name_label } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
 import { PathTools } from '../../fileio/path-tools'
-import { RunDriver, Dictionary, JobState, JobPortInfo, JobInfo, JobInfoFilter } from '../abstract/run-driver'
+import { RunDriver, Dictionary, JobState, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
 import { dr_vo_validator } from './schema/docker-run-schema'
 import { de_vo_validator } from './schema/docker-exec-schema'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { trim, parseJSON, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
+import { SshShellCommand } from '../../remote/ssh-shell-command'
 
 export class DockerRunDriver extends RunDriver
 {
@@ -44,32 +45,35 @@ export class DockerRunDriver extends RunDriver
     return new DockerStackConfiguration()
   }
 
-  jobStart(stack_path: string, configuration: DockerStackConfiguration, callbacks:Dictionary={}) : ValidatedOutput<string>
+  jobStart(stack_path: string, configuration: DockerStackConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
+    const failure_output:ValidatedOutput<NewJobInfo> = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
     const job_options = configuration.runObject()
     // add mandatory labels
     const mandatory_labels = {runner: cli_name}
     job_options["labels"] = { ...(job_options["labels"] || {}), ...mandatory_labels}
     if(!this.run_schema_validator(job_options).success)
-      return new ValidatedOutput(false, "").pushError(this.ERRORSTRINGS.INVALID_JOB)
+      return failure_output.pushError(this.ERRORSTRINGS.INVALID_JOB)
     // -- create container -----------------------------------------------------
-    const result = this.create(
+    const create_output = this.create(
       this.imageName(stack_path, configuration.buildHash()),
       configuration.getCommand(),
       job_options
     )
-    if(!result.success) return result
-    const container_id = result.data;
-    if(callbacks?.postCreate) callbacks.postCreate(container_id)
+    if(!create_output.success) return failure_output
+    const container_id = create_output.data;
     // -- run container --------------------------------------------------------
     const command = `${this.base_command} start`;
     const args: Array<string> = [container_id]
     const flags = (!job_options.detached) ? {attach: {}, interactive: {}} : {}
-    const shell_options = (!job_options.detached) ? {stdio: "inherit"} : {stdio: "pipe"}
-    result.absorb(this.shell.exec(command, flags, args, shell_options))
-    if(!result.success) return result
-    if(callbacks?.postExec) callbacks.postExec(result)
-    return result
+    const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
+    const shell_output = this.shell.exec(command, flags, args, shell_options)
+
+    return new ValidatedOutput(true, {
+      "id": container_id,
+      "output": ShellCommand.stdout(shell_output.data),
+      "exit-code": ShellCommand.status(shell_output.data)
+    })
   }
 
   protected create(image_name: string, command_string: string, run_options={}) : ValidatedOutput<string>
@@ -100,17 +104,19 @@ export class DockerRunDriver extends RunDriver
       .absorb(this.shell.exec(command, flags, args))
   }
 
-  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={}, mode:"print"|"output"|"json") : ValidatedOutput<undefined>|ValidatedOutput<string>
+  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={}, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
-    var command = `${this.base_command} exec`;
-    var args = [id].concat(exec_command)
+    const command = `${this.base_command} exec`
+    const args = [id].concat(exec_command)
     const flags = this.execFlags(exec_options)
-    if(mode == "print")
-      return new ValidatedOutput(true, undefined).absorb(this.shell.exec(command, flags, args))
-    else if(mode == "json")
-      return parseJSON(this.shell.output(command, flags, args, {}))
-    else
-      return this.shell.output(command, flags, args)
+    const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
+    const result = this.shell.exec(command, flags, args, shell_options)
+
+    return new ValidatedOutput(true, {
+      "id": "", // no idea for docker cli exec
+      "output": ShellCommand.stdout(result.data),
+      "exit-code": ShellCommand.status(result.data)
+    })
   }
 
   jobDelete(ids: Array<string>) : ValidatedOutput<undefined>

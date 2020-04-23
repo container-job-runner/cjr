@@ -8,6 +8,7 @@ import {THEIA_JOB_NAME} from '../constants'
 import {jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
 import {BuildOptions} from './build-functions'
 import {BuildDriver} from '../drivers/abstract/build-driver'
+import { parseJSON } from './misc-functions'
 
 export type TheiaOptions = {
   "stack-path": string,
@@ -56,9 +57,9 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
       "remove":       true
     }
     // -- start job and extract job id -----------------------------------------
-    var result = jobStart(container_runtime, job_options, output_options)
-    if(!result.success) return result
-    return new ValidatedOutput(true, result.data) // return id of theia job
+    const start_output = jobStart(container_runtime, job_options, output_options)
+    if(!start_output.success) return new ValidatedOutput(false, "").absorb(start_output)
+    return new ValidatedOutput(true, start_output.data.id) // return id of theia job
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
@@ -79,9 +80,15 @@ export async function getTheiaUrl(container_runtime: ContainerRuntime, identifie
   const theia_job_id = job_info_request.data
   if(theia_job_id == "")
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
-  const result = container_runtime.runner.jobExec(theia_job_id, ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`], {}, 'json')
-  if(!result.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
-  return new ValidatedOutput(true, `http://${result.data.url}:${result.data.port}`);
+  const exec_output = container_runtime.runner.jobExec(
+    theia_job_id,
+    ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`],
+    {},
+    "pipe"
+  )
+  const json_output = parseJSON(new ValidatedOutput(true, exec_output.data.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
+  if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
+  return new ValidatedOutput(true, `http://${json_output.data?.url}:${json_output.data?.port}`);
 }
 
 // -- starts the Theia Electron app  -------------------------------------------

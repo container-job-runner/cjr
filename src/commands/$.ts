@@ -71,10 +71,10 @@ export default class Run extends StackCommand {
       "remove":       (flags['file-access'] === "bind" && !flags["keep-record"]) ? true : false
     }
     // -- start job and extract job id -----------------------------------------
-    var result = jobStart(c_runtime, job_options, output_options)
-    if(!result.success) return printResultState(result)
+    const start_result = jobStart(c_runtime, job_options, output_options)
+    if(!start_result.success) return printResultState(start_result)
     // -- print id -------------------------------------------------------------
-    const job_id = result.data
+    const job_id = start_result.data.id
     const print_condition = (job_id !== "") && !flags.quiet && !flags.verbose
     if(print_condition && flags.async)
       console.log(job_id)

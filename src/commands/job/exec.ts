@@ -9,17 +9,17 @@ export default class Shell extends StackCommand {
   static description = 'Start a new job using files from a completd or currently running job.'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    async: flags.boolean({exclusive: ['sync']}),
-    sync: flags.boolean({exclusive: ['async']}),
-    x11: flags.boolean({default: false}),
-    port: flags.string({default: [], multiple: true}),
-    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
-    message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
-    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
+    "async": flags.boolean({exclusive: ['sync']}),
+    "sync": flags.boolean({exclusive: ['async']}),
+    "x11": flags.boolean({default: false}),
+    "port": flags.string({default: [], multiple: true}),
+    "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    "message": flags.string({description: "use this flag to tag a job with a user-supplied message"}),
+    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet":flags.boolean({default: false, char: 'q'}),
-    explicit: flags.boolean({default: false}),
+    "explicit": flags.boolean({default: false}),
     "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
@@ -67,7 +67,7 @@ export default class Shell extends StackCommand {
     const result = jobExec(c_runtime, id_str, job_options, output_options)
     if(!result.success) printResultState(result)
     // -- print id -------------------------------------------------------------
-    const job_id = result.data
+    const job_id = result.data.id
     const print_condition = (job_id !== "") && !flags.quiet && !flags.verbose
     if(print_condition && flags.async)
       console.log(job_id)

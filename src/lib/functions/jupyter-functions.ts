@@ -51,9 +51,9 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
       "remove":       true
     }
     // -- start job and extract job id -----------------------------------------
-    var result = jobStart(container_runtime, job_options, output_options)
-    if(!result.success) return result
-    return new ValidatedOutput(true, result.data) // return id of jupyter job
+    const start_output  = jobStart(container_runtime, job_options, output_options)
+    if(!start_output.success) return new ValidatedOutput(false, "").absorb(start_output)
+    return new ValidatedOutput(true, start_output.data.id) // return id of jupyter job
 }
 
 export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:string, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
@@ -83,9 +83,9 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, job_id:st
     "remove":       true
   }
   // -- start job and extract job id -------------------------------------------
-  const result = jobExec(container_runtime, job_id, job_options, output_options)
-  if(!result.success) return result
-  return new ValidatedOutput(true, result.data) // return id of jupyter job
+  const exec_output = jobExec(container_runtime, job_id, job_options, output_options)
+  if(!exec_output.success) return new ValidatedOutput(false, "").absorb(exec_output)
+  return new ValidatedOutput(true, exec_output.data.id) // return id of jupyter job
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
@@ -106,7 +106,9 @@ export function listJupyter(container_runtime: ContainerRuntime, identifier: {"j
   if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
-    return container_runtime.runner.jobExec(jupyter_job_id, ['jupyter', 'notebook', 'list'], {}, 'print')
+    return new ValidatedOutput(true, undefined).absorb(
+      container_runtime.runner.jobExec(jupyter_job_id, ['jupyter', 'notebook', 'list'], {}, 'inherit')
+    )
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
@@ -158,13 +160,13 @@ function jupyterCommand(jup_options: JupyterOptions) {
 function parseNotebookListCommand(runner: RunDriver, jupyter_id: string) : ValidatedOutput<string>
 {
   // -- get output from jupyter ------------------------------------------------
-  const result = runner.jobExec(jupyter_id, ['jupyter', 'notebook', 'list'], {}, 'output')
-  if(!result.success) return result
-  const raw_output = (result.data as string).trim().split("\n").pop() // get last non-empty line of output
+  const exec_result = runner.jobExec(jupyter_id, ['jupyter', 'notebook', 'list'], {}, 'pipe')
+  if(!exec_result.success) return new ValidatedOutput(false, "").absorb(exec_result)
+  const raw_output = exec_result.data.output.trim().split("\n").pop() // get last non-empty line of output
   if(!raw_output) return new ValidatedOutput(false, "")
   // -- extract url ------------------------------------------------------------
   const re = /http:\/\/\S+:+\S*/ // matches http://X:X
-  if(!re.test(result.data)) return new ValidatedOutput(false, "")
+  if(!re.test(raw_output)) return new ValidatedOutput(false, "")
   const url = raw_output.match(re)?.[0] || ""
   if(!url) return new ValidatedOutput(false, "")
   return new ValidatedOutput(true, url)

@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as os from 'os'
 import * as inquirer from 'inquirer'
 import * as chalk from 'chalk'
-import { RunDriver, JobState, JobInfo, JobPortInfo, JobInfoFilter } from '../drivers/abstract/run-driver'
+import { RunDriver, JobState, JobInfo, JobPortInfo, JobInfoFilter, NewJobInfo } from '../drivers/abstract/run-driver'
 import { BuildDriver } from '../drivers/abstract/build-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { PathTools } from '../fileio/path-tools'
@@ -113,8 +113,9 @@ export type StackBundleOptions =
 // job_options: JobOptions
 // output_options: OutputOptions
 // -----------------------------------------------------------------------------
-export function jobStart(container_runtime: ContainerRuntime, job_options: JobOptions, output_options: OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<string>
+export function jobStart(container_runtime: ContainerRuntime, job_options: JobOptions, output_options: OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
 {
+  const failed_result = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
   // -- 1. build stack and load stack configuration ----------------------------
   printStatusHeader(StatusStrings.JOBSTART.BUILD, output_options)
   const bl_result = buildAndLoad(
@@ -123,7 +124,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
     job_options["stack-path"],
     job_options["config-files"]
   )
-  if(!bl_result.success) return new ValidatedOutput(false, "").absorb(bl_result)
+  if(!bl_result.success) return failed_result.absorb(bl_result)
   const configuration:StackConfiguration = bl_result.data
   // -- 2.1 update configuration: mount Files ----------------------------------
   if(job_options["host-root"] && job_options["file-access"] === "bind")
@@ -133,7 +134,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   else if(job_options["host-root"] && job_options["file-access"] === "volume") {
     printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY, output_options)
     const cmv_result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
-    if(!cmv_result.success) return new ValidatedOutput(false, "").absorb(cmv_result)
+    if(!cmv_result.success) return failed_result.absorb(cmv_result)
   }
   setRelativeWorkDir(configuration, job_options["host-root"] || "", job_options["cwd"])
 
@@ -155,11 +156,11 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   addGenericLabels(configuration, job_options["host-root"] || "", job_options["stack-path"])
   // -- 3. start job -----------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.START, output_options)
-  const result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, {})
+  const result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, 'inherit')
   // -- print id ---------------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.JOB_ID, output_options)
   if(output_options.verbose) console.log(result.data)
-  if(result.data === "") result.pushError(ErrorStrings.JOBS.FAILED_START)
+  if(result.data.id === "") result.pushError(ErrorStrings.JOBS.FAILED_START)
   return result
 }
 
@@ -214,17 +215,19 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
   return result
 }
 
-export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<string>
+export function jobExec(container_runtime:ContainerRuntime, job_id: string, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
 {
+  const failed_result = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
+  const nohost_result = new ValidatedOutput(true, {"id":"", "output": "", "exit-code": 0});
   // -- get job information ----------------------------------------------------
   var result = container_runtime.runner.jobInfo({ids: [job_id]})
-  if(!result.success) return new ValidatedOutput(false, "").absorb(result)
+  if(!result.success) return failed_result.absorb(result)
   const job_info = result.data[0] // only shell into first resut
   // -- extract hostRoot and file_volume_id ------------------------------------
   const host_root = job_info?.labels?.hostRoot || ""
   const file_volume_id = job_info?.labels?.[file_volume_label] || ""
   const job_stack_path = job_info?.labels?.stack || ""
-  if(!host_root) return new ValidatedOutput(true, "").pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
+  if(!host_root) nohost_result.pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
   //if(!file_volume_id) return result.pushWarning(WarningStrings.JOBEXEC.NO_VOLUME(job_info.id))
   // -- set job properties -----------------------------------------------------
   shell_job_options['stack-path'] = shell_job_options['stack-path'] || job_stack_path
@@ -504,7 +507,7 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
     container_runtime.runner.jobStart(
       rsync_constants.stack_path,
       rsync_configuration,
-      {verbose: false, explicit: false, silent: false}
+      'inherit'
     )
   )
 }

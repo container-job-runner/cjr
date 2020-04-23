@@ -50,7 +50,7 @@ export default class Stash extends StackCommand {
     // -- start job and extract job id -----------------------------------------
     var result = jobStart(c_runtime, job_options, output_options)
     if(!result.success) return printResultState(result)
-    const job_id = result.data
+    const job_id = result.data.id
     if(job_id != "" && !flags.quiet && this.settings.get('alway-print-job-id'))
       console.log(job_id)
   }

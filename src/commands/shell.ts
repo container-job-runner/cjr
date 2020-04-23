@@ -1,21 +1,22 @@
-import {flags} from '@oclif/command'
-import {StackCommand} from '../lib/commands/stack-command'
-import {jobStart, jobToImage, ContainerRuntime, OutputOptions, JobOptions} from "../lib/functions/run-functions"
-import {printResultState, initX11} from '../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../lib/commands/stack-command'
+import { jobStart, jobToImage, ContainerRuntime, OutputOptions, JobOptions } from "../lib/functions/run-functions"
+import { printResultState, initX11 } from '../lib/functions/misc-functions'
+import { ValidatedOutput } from '../lib/validated-output'
 
 export default class Shell extends StackCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
   static args = []
   static flags = {
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
-    explicit: flags.boolean({default: false}),
-    save: flags.string({description: "saves new image that contains modifications"}),
-    port: flags.string({default: [], multiple: true}),
-    x11: flags.boolean({default: false}),
+    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
+    "explicit": flags.boolean({default: false}),
+    "save": flags.string({description: "saves new image that contains modifications"}),
+    "port": flags.string({default: [], multiple: true}),
+    "x11": flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
@@ -44,24 +45,30 @@ export default class Shell extends StackCommand {
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
-      "stack-path":   stack_path,
-      "config-files": flags["config-files"],
+      "stack-path":    stack_path,
+      "config-files":  flags["config-files"],
       "build-options": this.parseBuildModeFlag(flags["build-mode"]),
-      "command":      this.settings.get("container-default-shell"),
-      "host-root":    flags["project-root"] || "",
-      "cwd":          flags["working-directory"],
-      "file-access":  "bind",
-      "synchronous":  true,
-      "x11":          flags.x11,
-      "ports":        this.parsePortFlag(flags.port),
-      "remove":       (flags.save !== undefined) ? false : true
+      "command":       this.settings.get("container-default-shell"),
+      "host-root":     flags["project-root"] || "",
+      "cwd":           flags["working-directory"],
+      "file-access":   "bind",
+      "synchronous":   true,
+      "x11":           flags.x11,
+      "ports":         this.parsePortFlag(flags.port),
+      "remove":        (flags.save !== undefined) ? false : true
     }
 
-    var result = jobStart(c_runtime, job_options, output_options)
-    if(!result.success) return printResultState(result)
+    const start_result = jobStart(c_runtime, job_options, output_options)
+    if(!start_result.success) return printResultState(start_result)
 
-    if(flags.save !== undefined) await jobToImage(c_runtime.runner, result, flags.save, true, this.settings.get('interactive'))
-    printResultState(result);
+    if(flags.save !== undefined) await jobToImage(
+      c_runtime.runner,
+      new ValidatedOutput(start_result.success, start_result.data.id), // wrap id into ValidatedOutput<string>
+      flags.save,
+      true,
+      this.settings.get('interactive')
+    )
+    printResultState(start_result);
   }
 
 }

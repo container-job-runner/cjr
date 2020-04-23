@@ -1,18 +1,18 @@
-import {flags} from '@oclif/command'
-import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
-import {jobExec, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions} from '../../lib/functions/run-functions'
-import {printResultState, initX11} from '../../lib/functions/misc-functions'
+import { flags} from '@oclif/command'
+import { StackCommand, Dictionary } from '../../lib/commands/stack-command'
+import { jobExec, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
+import { printResultState, initX11 } from '../../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
   static description = 'Start an interactive shell to view or modify a job\'s files or outputs.'
   static args = [{name: 'id', required: false}]
   static flags = {
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    x11: flags.boolean({default: false}),
-    port: flags.string({default: [], multiple: true}),
-    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
-    explicit: flags.boolean({default: false}),
+    "x11": flags.boolean({default: false}),
+    "port": flags.string({default: [], multiple: true}),
+    "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    "explicit": flags.boolean({default: false}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),

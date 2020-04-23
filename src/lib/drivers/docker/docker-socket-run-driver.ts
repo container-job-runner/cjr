@@ -6,7 +6,7 @@ import * as chalk from 'chalk'
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { ShellCommand } from "../../shell-command"
-import { RunDriver, Dictionary, JobState, JobInfo, JobInfoFilter } from '../abstract/run-driver'
+import { RunDriver, Dictionary, JobState, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl } from '../../curl'
 import { cli_name } from '../../constants'
@@ -82,7 +82,7 @@ export class DockerSocketRunDriver extends RunDriver
     // }) || [];
   }
 
-  jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput<string>
+  jobStart(stack_path: string, configuration: StackConfiguration, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>
   {
     // // -- create container ---------------------------------------------------
     // var result = this.curl.post({
@@ -137,17 +137,17 @@ export class DockerSocketRunDriver extends RunDriver
 
 
 
-    return new ValidatedOutput(true, "")
+   return new ValidatedOutput(true, {id:"","exit-code": 0,output:""})
   }
 
-  jobLog(id: string) : ValidatedOutput<undefined>
+  jobLog(id: string) : ValidatedOutput<string>
   {
     var result = this.curl.get({
       "url": `/containers/${id}/json`,
       "data": {all: true, filter: [`label=runner=${cli_name}`]}
     })
     //return result
-    return new ValidatedOutput(true, undefined)
+    return new ValidatedOutput(true, "")
   }
 
   jobAttach(id: string) : ValidatedOutput<undefined>
@@ -157,9 +157,9 @@ export class DockerSocketRunDriver extends RunDriver
     )
   }
 
-  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, mode:"print"|"output"|"json") : ValidatedOutput<undefined>
+  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
-    return new ValidatedOutput(true, undefined)
+    return new ValidatedOutput(true, {id:"","exit-code": 0,output:""})
   }
 
   jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
