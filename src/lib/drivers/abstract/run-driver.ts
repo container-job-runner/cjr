@@ -52,7 +52,7 @@ export abstract class RunDriver extends ContainerDriver
   // ---------------------------------------------------------------------------
   abstract jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>;
   abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput<string>;
-  abstract jobLog(id: string) : ValidatedOutput<undefined>;
+  abstract jobLog(id: string) : ValidatedOutput<string>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
   abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary,  mode:"print"|"output"|"json") : ValidatedOutput<undefined>|ValidatedOutput<String>;
   abstract jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
