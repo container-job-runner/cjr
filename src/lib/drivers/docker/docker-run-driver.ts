@@ -386,7 +386,7 @@ export class DockerRunDriver extends RunDriver
     {
       flags["p"] = {
         escape: false,
-        value: run_object.ports.map((po:Dictionary) => `${po.hostPort}:${po.containerPort}`)
+        value: run_object.ports.map((po:Dictionary) => `${(po.address) ? `${po.address}:` : ""}${po.hostPort}:${po.containerPort}`)
       }
     }
   }
