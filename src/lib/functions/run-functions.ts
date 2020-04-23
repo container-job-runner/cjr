@@ -155,7 +155,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
   addGenericLabels(configuration, job_options["host-root"] || "", job_options["stack-path"])
   // -- 3. start job -----------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.START, output_options)
-  const result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, 'inherit')
+  const result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, job_options["synchronous"] ? 'inherit' : 'pipe')
   // -- print id ---------------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.JOB_ID, output_options)
   if(output_options.verbose) console.log(result.data)
