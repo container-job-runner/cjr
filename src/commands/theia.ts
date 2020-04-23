@@ -1,11 +1,11 @@
 import * as chalk from 'chalk'
-import {flags} from '@oclif/command'
-import {StackCommand} from '../lib/commands/stack-command'
-import {printResultState, initX11} from '../lib/functions/misc-functions'
-import {startTheiaInProject, stopTheia, getTheiaUrl, startTheiaApp} from '../lib/functions/theia-functions'
-import {OutputOptions, ContainerRuntime, nextAvailablePort} from '../lib/functions/run-functions'
-import {ValidatedOutput} from '../lib/validated-output'
-import {JSTools} from '../lib/js-tools'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../lib/commands/stack-command'
+import { printResultState, initX11 } from '../lib/functions/misc-functions'
+import { startTheiaInProject, stopTheia, getTheiaUrl, startTheiaApp } from '../lib/functions/theia-functions'
+import { OutputOptions, ContainerRuntime, nextAvailablePort } from '../lib/functions/run-functions'
+import { ValidatedOutput } from '../lib/validated-output'
+import { JSTools } from '../lib/js-tools'
 
 export default class Run extends StackCommand {
     static description = 'Start a Theia IDE.'
@@ -13,12 +13,13 @@ export default class Run extends StackCommand {
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    x11: flags.boolean({default: false}),
-    port: flags.string({default: "auto"}),
-    explicit: flags.boolean({default: false}),
+    "x11": flags.boolean({default: false}),
+    "port": flags.string({default: "auto"}),
+    "expose": flags.boolean({default: false}),
+    "explicit": flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
@@ -50,8 +51,11 @@ export default class Run extends StackCommand {
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- select port ----------------------------------------------------------
-    if(flags['port'] == 'auto')
-      flags['port'] = `${nextAvailablePort(container_runtime.runner, 7001)}`
+    if(flags['port'] == 'auto') {
+      const port_number = nextAvailablePort(container_runtime.runner, 7001)
+      const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
+      flags['port'] = `${port_address}:${port_number}:${port_number}`
+    }
 
     var result = new ValidatedOutput(true, undefined)
     const project_root = flags['project-root'] || "";
