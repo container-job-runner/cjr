@@ -97,12 +97,14 @@ export class DockerStackConfiguration extends StackConfiguration
       return true;
   }
 
-  addPort(hostPort: number, containerPort: number)
+  addPort(hostPort: number, containerPort: number, address?: string)
   {
       const validPort = (x:number) => (Number.isInteger(x) && x > 0)
       if(!validPort(hostPort) || !validPort(containerPort)) return false
       if(!(this.raw_object?.ports)) this.raw_object.ports = [];
-      this.raw_object.ports.push({hostPort: hostPort, containerPort: containerPort})
+      const port_spec:Dictionary = {hostPort: hostPort, containerPort: containerPort}
+      if(address !== undefined) port_spec['address'] = address
+      this.raw_object.ports.push(port_spec)
       return true;
   }
 
