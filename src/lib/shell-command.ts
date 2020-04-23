@@ -52,7 +52,7 @@ export class ShellCommand
 
       const child_process = spawnSync(command_string, [], JSTools.oSubset({... default_options, ...options}, this.spawn_options))
       const result = new ValidatedOutput(true, child_process)
-      if(child_process.status != 0) { // -- check if exit-code is non zero
+      if(child_process?.status !== 0) { // -- check if exit-code is non zero
         result.pushError(child_process?.stderr?.toString('ascii'))
       }
       return result
@@ -78,11 +78,7 @@ export class ShellCommand
     {
       const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer', shell: '/bin/bash'}})
       if(!result.success) return new ValidatedOutput(false, "")
-
-      // process stdout --------------------------------------------------------
-      const child_process = result.data
-      const stdout_str:string = child_process?.stdout?.toString('ascii') || ""
-      return new ValidatedOutput(true, stdout_str)
+      return new ValidatedOutput(true, ShellCommand.stdout(result.data))
     }
 
     commandString(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {}) : string
@@ -138,4 +134,17 @@ export class ShellCommand
       }
       return value;
     }
+
+    // == Helper functions for extracting properties from exec output
+
+    static stdout(child_process: SpawnSyncReturns<Buffer>) : string
+    {
+      return child_process?.stdout?.toString('ascii') || ""
+    }
+
+    static status(child_process: SpawnSyncReturns<Buffer>) : number
+    {
+      return child_process?.status || -1
+    }
+
 }
