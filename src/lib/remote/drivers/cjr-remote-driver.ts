@@ -402,12 +402,12 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  async promptUserForJobId(resource: Dictionary, interactive: boolean)
+  async promptUserForJobId(resource: Dictionary, interactive: boolean) : Promise<string>
   {
     if(!interactive) return ""
     // -- set resource ---------------------------------------------------------
     var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    if(!result.success) return ""
     // -- execute ssh command --------------------------------------------------
     result = parseJSON(
       this.ssh_shell.output(
@@ -415,7 +415,7 @@ export class CJRRemoteDriver extends RemoteDriver
         this.interactive_ssh_options,
       )
     )
-    if(!result.success) return result;
+    if(!result.success) return "";
     return await promptUserForId(result.data)
   }
 
