@@ -57,6 +57,9 @@ export const docker_stack_configuration_schema = {
             },
             "containerPort": {
               "type": "integer"
+            },
+            "address": {
+              "type": "string"
             }
           },
           "required": [
