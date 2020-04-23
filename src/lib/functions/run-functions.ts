@@ -12,7 +12,7 @@ import { JSONFile } from '../fileio/json-file'
 import { ValidatedOutput } from '../validated-output'
 import { printResultState, trim } from './misc-functions'
 import { ShellCommand } from '../shell-command'
-import { X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths, stack_path_label } from '../constants'
+import { X11_POSIX_BIND, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, rsync_constants, file_volume_label, project_settings_file, stack_bundle_rsync_file_paths, stack_path_label, host_root_label, container_root_label } from '../constants'
 import { buildAndLoad, BuildOptions } from '../functions/build-functions'
 import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
 import { PodmanStackConfiguration } from '../config/stacks/podman/podman-stack-configuration'
@@ -191,7 +191,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
   job_info_array.map((job:Dictionary) => {
     // -- 1. extract label information -----------------------------------------
     const id = job.id;
-    const hostRoot = job.labels?.hostRoot || ""
+    const hostRoot = job.labels?.[host_root_label] || ""
     const file_volume_id = job.labels?.[file_volume_label] || ""
     const stack_path = job.labels?.[stack_path_label] || ""
     const host_path  = copy_options?.["host-path"] || hostRoot // set copy-path to job hostRoot if it's not specified
@@ -229,7 +229,7 @@ export function jobExec(container_runtime:ContainerRuntime, parent_job:{"id": st
   if(!job_info_request.success) return failed_result.absorb(job_info_request)
   const job_info = job_info_request.data // only shell into first resut
   // -- extract hostRoot and file_volume_id ------------------------------------
-  const host_root = job_info.labels?.hostRoot || ""
+  const host_root = job_info.labels?.[host_root_label] || ""
   const file_volume_id = job_info.labels?.[file_volume_label] || ""
   const job_stack_path = job_info.labels?.[stack_path_label] || ""
   if(!host_root) nohost_result.pushWarning(WarningStrings.JOBEXEC.NO_HOSTROOT(job_info.id))
@@ -677,8 +677,8 @@ export function enableX11(configuration: StackConfiguration, explicit:boolean = 
 // -----------------------------------------------------------------------------
 export function addGenericLabels(configuration: StackConfiguration, hostRoot: string, stack_path: string)
 {
-  if(hostRoot) configuration.addLabel("hostRoot", hostRoot)
-  configuration.addLabel("containerRoot", configuration.getContainerRoot())
+  if(hostRoot) configuration.addLabel(host_root_label, hostRoot)
+  configuration.addLabel(container_root_label, configuration.getContainerRoot())
   configuration.addLabel(stack_path_label, stack_path)
 }
 

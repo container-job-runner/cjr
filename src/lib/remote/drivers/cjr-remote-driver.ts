@@ -8,7 +8,7 @@ import {FileTools} from "../../fileio/file-tools"
 import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 import {BuildDriver} from "../../drivers/abstract/build-driver"
 import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions, RemoteJupyterOptions} from "./remote-driver"
-import {cli_bundle_dir_name, projectIDPath, project_idfile, stack_bundle_rsync_file_paths} from '../../constants'
+import {cli_bundle_dir_name, projectIDPath, project_idfile, stack_bundle_rsync_file_paths, host_root_label, stack_path_label} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
 import {BuildOptions} from '../../functions/build-functions'
@@ -51,7 +51,7 @@ export class CJRRemoteDriver extends RemoteDriver
      '$'          : ['explicit', 'async', 'verbose', 'quiet', 'port', 'x11', 'message', 'label', 'autocopy', 'build-mode']
   }
   private ssh_shell: SshShellCommand
-  private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': 'hostRoot', 'stack-path': 'stack'}
+  private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': host_root_label, 'stack-path': stack_path_label}
   private remoteStackName = (remote_job_dir: string, stack_name: string) => `${path.posix.basename(remote_job_dir)}-${stack_name}`
   private remoteStackPath = (remote_job_dir: string, stack_name: string) => path.posix.join(remote_job_dir, this.remoteStackName(remote_job_dir, stack_name))
   private multiplex_options: MultiplexOptions = {"autodisconnect": true, "autoconnect": true, "restart-existing-connection": true}
