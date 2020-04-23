@@ -66,15 +66,8 @@ export default class Shell extends StackCommand {
       silent:   flags.quiet,
       explicit: flags.explicit
     }
-    const result = jobExec(c_runtime, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options)
-    if(!result.success) printResultState(result)
-    // -- print id -------------------------------------------------------------
-    const job_id = result.data.id
-    const print_condition = (job_id !== "") && !flags.quiet && !flags.verbose
-    if(print_condition && flags.async)
-      console.log(job_id)
-    if(print_condition && !flags.async && this.settings.get('alway-print-job-id'))
-      console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
-
+    printResultState(
+      jobExec(c_runtime, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options)
+    )
   }
 }
