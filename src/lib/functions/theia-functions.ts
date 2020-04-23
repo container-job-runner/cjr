@@ -35,7 +35,7 @@ export type Dictionary = {[key: string]: any}
 export function startTheiaInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [theia_job_name], 'job-states': ['running']}))
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [theia_job_name], 'states': ['running']}))
   const theia_job_id = job_info_request.data
   if(theia_job_id !== "")
     return (new ValidatedOutput(true, theia_job_id)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id, theia_options['project-root'] || ""))
@@ -65,7 +65,7 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
 // -- extract the url for a theia notebook  ------------------------------------
 export function stopTheia(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'job-states': ['running']}))
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'states': ['running']}))
   const theia_job_id = job_info_request.data
   if(theia_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
@@ -76,7 +76,7 @@ export function stopTheia(container_runtime: ContainerRuntime, identifier: {"pro
 // -- extract the url for a theia server  --------------------------------------
 export async function getTheiaUrl(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
 {
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'job-states': ['running']}))
+  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'states': ['running']}))
   const theia_job_id = job_info_request.data
   if(theia_job_id == "")
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))

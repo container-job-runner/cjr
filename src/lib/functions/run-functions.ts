@@ -746,7 +746,7 @@ export function loadProjectSettings(project_root: string):{result: ValidatedOutp
 export async function promptUserForJobId(runner: RunDriver, stack_paths: Array<string>|undefined, states:Array<JobState>|undefined=undefined, silent: boolean = false)
 {
   if(silent) return false;
-  const job_info = runner.jobInfo({"stack-paths":stack_paths, "job-states": states})
+  const job_info = runner.jobInfo({"stack-paths":stack_paths, "states": states})
   return await promptUserForId(job_info.data);
 }
 

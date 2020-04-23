@@ -34,9 +34,9 @@ export default class Labels extends StackCommand {
     if(flags.all) // -- delete all jobs ----------------------------------------
       job_info = runner.jobInfo({'stack-paths': stack_paths})
     else if(flags["all-completed"]) // -- delete all jobs ----------------------
-      job_info = runner.jobInfo({'stack-paths': stack_paths, 'job-states': ["exited"]})
+      job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["exited"]})
     else if(flags["all-running"])
-      job_info = runner.jobInfo({'stack-paths': stack_paths, 'job-states': ["running"]})
+      job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["running"]})
     else
     {
       const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, undefined, !this.settings.get('interactive')) || "")

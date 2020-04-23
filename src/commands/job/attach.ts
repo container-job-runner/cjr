@@ -29,7 +29,7 @@ export default class Attach extends StackCommand {
       runner.jobInfo({
         "ids": [id],
         "stack-paths": stack_paths,
-        "job-states": ["running"]
+        "states": ["running"]
       }))
     if(result.success)
       runner.jobAttach(result.data[0])

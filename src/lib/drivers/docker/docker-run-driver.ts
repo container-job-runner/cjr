@@ -167,7 +167,7 @@ export class DockerRunDriver extends RunDriver
   {
     const result:ValidatedOutput<Array<JobInfo>> = new ValidatedOutput(true, [])
     const stack_filter: Array<string|undefined> = filter?.['stack-paths'] || [undefined];
-    const state_filter: Array<JobState|undefined> = filter?.['job-states'] || [undefined];
+    const state_filter: Array<JobState|undefined> = filter?.['states'] || [undefined];
     const name_filter: Array<string|undefined> = filter?.names || [undefined];
     const id_filter: Array<string|undefined> = filter?.ids || [undefined];
 

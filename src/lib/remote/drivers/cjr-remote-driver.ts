@@ -8,7 +8,7 @@ import {FileTools} from "../../fileio/file-tools"
 import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 import {BuildDriver} from "../../drivers/abstract/build-driver"
 import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions, RemoteJupyterOptions} from "./remote-driver"
-import {cli_bundle_dir_name, projectIDPath, project_idfile, job_info_label, stack_bundle_rsync_file_paths} from '../../constants'
+import {cli_bundle_dir_name, projectIDPath, project_idfile, stack_bundle_rsync_file_paths} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
 import {BuildOptions} from '../../functions/build-functions'
