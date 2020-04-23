@@ -5,6 +5,7 @@
 import { ContainerDriver } from "./container-driver"
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
+import { stack_path_label, name_label } from '../../constants'
 
 // -- types --------------------------------------------------------------------
 export type Dictionary = {[key: string]: any}
@@ -24,9 +25,11 @@ export type JobInfo = {
   labels:  {[key: string]: string},
   ports:   Array<JobPortInfo>
 }
-export type SearchFilter = {
-  stack_paths?: Array<string>,
-  job_states?: Array<JobState>
+export type JobInfoFilter = {
+  "stack-paths"?: Array<string>,
+  "job-states"?: Array<JobState>,
+  "ids"?: Array<string>
+  "names"?: Array<string>
 }
 
 export abstract class RunDriver extends ContainerDriver
@@ -47,7 +50,7 @@ export abstract class RunDriver extends ContainerDriver
   // -- Returns ----------------------------------------------------------------
   // ValidatedOutput<Array<JobInfo>> - information about matching job
   // ---------------------------------------------------------------------------
-  abstract jobInfo(filter?: SearchFilter) : ValidatedOutput<Array<JobInfo>>;
+  abstract jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>;
   abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput<string>;
   abstract jobLog(id: string) : ValidatedOutput<undefined>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
@@ -57,4 +60,33 @@ export abstract class RunDriver extends ContainerDriver
   abstract jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
   abstract volumeCreate(options:Dictionary): ValidatedOutput<string>
   abstract volumeDelete(options:Dictionary): ValidatedOutput<undefined>
+
+  // A private helper function that can be used by JobInfo to filter jobs
+  private jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter) : Array<JobInfo>
+  {
+    const filter_id:boolean = filter?.['ids'] !== undefined
+    const id_regex = new RegExp(`^(${filter?.['ids']?.join('|') || ""})`)
+
+    const filter_name:boolean = filter?.['names'] !== undefined
+    const name_regex = new RegExp(`^(${filter?.['names']?.join('|') || ""})`)
+
+    const filter_stack_path:boolean = filter?.['stack-paths'] !== undefined
+    const stackF = filter?.["stack-paths"]?.includes || ((x:any) => true);
+
+    const filter_state:boolean = filter?.['job-states'] !== undefined
+    const stateF = filter?.["stack-paths"]?.includes || ((x:any) => true);
+
+    return job_info.filter((job:JobInfo) => {
+      if(filter_id && !id_regex.test(job.id))
+        return false
+      if(filter_name && !name_regex.test(job.labels?.[name_label] || ""))
+        return false
+      if(filter_stack_path && !stackF(job.labels?.[stack_path_label]))
+        return false
+      if(filter_state && !stateF(job.state))
+        return false
+      return true
+    })
+  }
+
 }
