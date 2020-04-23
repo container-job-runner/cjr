@@ -24,7 +24,7 @@ import { ProjectSettings } from '../config/project-settings/project-settings'
 export type Dictionary = {[key: string]: any}
 
 // -- options for core function startJob ---------------------------------------
-export type port   = {hostPort:number, containerPort: number}
+export type port   = {hostPort:number, containerPort: number, address?: string}
 export type label  = {key:string, value: string}
 export type ports  = Array<port>
 export type labels = Array<label>
@@ -140,8 +140,7 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
 
   // -- 2.2 update configuration: apply options --------------------------------
   if(job_options?.ports)
-    job_options["ports"].map((p:{hostPort:number, containerPort: number}) =>
-      configuration.addPort(p.hostPort, p.containerPort))
+    job_options["ports"].map((p:port) => configuration.addPort(p.hostPort, p.containerPort, p.address))
   if(job_options?.x11) enableX11(configuration, output_options.explicit)
   if(job_options?.environment) Object.keys(job_options['environment']).map((key:string) =>
     configuration.addRunEnvironmentVariable(key, job_options['environment']?.[key] || "")
