@@ -35,8 +35,11 @@ export type Dictionary = {[key: string]: any}
 export function startTheiaInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [theia_job_name], 'states': ['running']}))
-  const theia_job_id = job_info_request.data
+  const job_info_request = container_runtime.runner.jobInfo({'names': [theia_job_name], 'states': ['running']})
+  // -- exit if request fails --------------------------------------------------
+  if(!job_info_request.success)
+    return new ValidatedOutput(false, "")
+  const theia_job_id = firstJobId(job_info_request).data
   if(theia_job_id !== "")
     return (new ValidatedOutput(true, theia_job_id)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id, theia_options['project-root'] || ""))
   // -- start new theia job ----------------------------------------------------

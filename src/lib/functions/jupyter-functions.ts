@@ -26,12 +26,12 @@ export type JupyterOptions = {
 export function startJupyterInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"project-root" : jup_options['project-root'] || ""})
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [jupyter_job_name], 'states': ['running']}))
+  const job_info_request = container_runtime.runner.jobInfo({'names': [jupyter_job_name], 'states': ['running']})
   // -- exit if request fails --------------------------------------------------
   if(!job_info_request.success)
     return new ValidatedOutput(false, "")
   // -- exit if jupyter is already running -------------------------------------
-  const jupyter_job_id = job_info_request.data
+  const jupyter_job_id = firstJobId(job_info_request).data
   if(jupyter_job_id)
     return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'project-root': jup_options['project-root'] || ""}))
   // -- start new jupyter job --------------------------------------------------
@@ -51,7 +51,7 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
       "remove":       true
     }
     // -- start job and extract job id -----------------------------------------
-    const start_output  = jobStart(container_runtime, job_options, output_options)
+    const start_output = jobStart(container_runtime, job_options, output_options)
     if(!start_output.success) return new ValidatedOutput(false, "").absorb(start_output)
     return new ValidatedOutput(true, start_output.data.id) // return id of jupyter job
 }
@@ -59,12 +59,12 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
 export function startJupyterInJob(container_runtime: ContainerRuntime, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : parent_job.id})
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [jupyter_job_name], 'states': ['running']}))
+  const job_info_request = container_runtime.runner.jobInfo({'names': [jupyter_job_name], 'states': ['running']})
   // -- exit if request fails --------------------------------------------------
   if(!job_info_request.success)
     return new ValidatedOutput(false, "")
   // -- exit if jupyter is already running -------------------------------------
-  const jupyter_job_id = job_info_request.data
+  const jupyter_job_id = firstJobId(job_info_request).data
   if(jupyter_job_id)
     return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': parent_job.id}))
   // -- start new jupyter job --------------------------------------------------
