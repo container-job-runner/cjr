@@ -27,7 +27,7 @@ export type JobInfo = {
 }
 export type JobInfoFilter = {
   "stack-paths"?: Array<string>,
-  "job-states"?: Array<JobState>,
+  "states"?: Array<JobState>,
   "ids"?: Array<string>
   "names"?: Array<string>
 }
@@ -78,7 +78,7 @@ export abstract class RunDriver extends ContainerDriver
     const filter_stack_path:boolean = filter?.['stack-paths'] !== undefined
     const stackF = filter?.["stack-paths"]?.includes || ((x:any) => true);
 
-    const filter_state:boolean = filter?.['job-states'] !== undefined
+    const filter_state:boolean = filter?.['states'] !== undefined
     const stateF = filter?.["stack-paths"]?.includes || ((x:any) => true);
 
     return job_info.filter((job:JobInfo) => {
