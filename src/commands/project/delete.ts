@@ -33,7 +33,7 @@ export default class Delete extends ProjectSettingsCommand {
     )
     const project_root:string = (prflag['project-root'] as string)
     // -------------------------------------------------------------------------
-    const {project_settings} = loadProjectSettings(project_root)
+    const project_settings = loadProjectSettings(project_root).data
     const fields:Array<ps_fields> = ['stack', 'remote-name', 'config-files', 'stacks-dir', 'visible-stacks']
     const fields_to_delete:Array<ps_fields> = (Object.keys(JSTools.oSubset(flags, fields)) as Array<ps_fields>)
     fields_to_delete.map((field:ps_fields) => project_settings.remove(field))

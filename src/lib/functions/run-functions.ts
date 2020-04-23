@@ -198,8 +198,8 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
     if(!hostRoot) return result.pushWarning(WarningStrings.JOBCOPY.NO_HOSTROOT(id))
     if(!file_volume_id) return result.pushWarning(WarningStrings.JOBCOPY.NO_VOLUME(id))
     // -- 2. load stack configuration & get download settings ------------------
-    const ps_object = loadProjectSettings(host_path) // check settings in copy path (not hostRoot) in case user wants to copy into folder that is not hostRoot
-    const lc_result = container_runtime.builder.loadConfiguration(stack_path, (ps_object.project_settings.get('config-files') as Array<string>) || [])
+    const load_result = loadProjectSettings(host_path) // check settings in copy path (not hostRoot) in case user wants to copy into folder that is not hostRoot
+    const lc_result = container_runtime.builder.loadConfiguration(stack_path, (load_result.data.get('config-files') as Array<string>) || [])
     const configuration:StackConfiguration = (lc_result.success) ? lc_result.data : container_runtime.builder.emptyConfiguration()
     // -- 3. copy files --------------------------------------------------------
     const rsync_options: RsyncOptions = {
@@ -264,8 +264,10 @@ export function bundleProject(container_runtime: ContainerRuntime, options: Proj
 export function bundleProjectSettings(container_runtime: ContainerRuntime, options: ProjectBundleOptions) : ValidatedOutput<undefined>
 {
   printStatusHeader(StatusStrings.BUNDLE.PROJECT_SETTINGS, {verbose: options?.verbose || false, silent: false, explicit: false})
-  var {result, project_settings} = loadProjectSettings(options["project-root"])
-  if(!result.success) return result
+  const result = new ValidatedOutput(true, undefined)
+  const load_result = loadProjectSettings(options["project-root"])
+  if(!load_result.success) return new ValidatedOutput(false, undefined).absorb(load_result)
+  const project_settings = load_result.data;
   // -- ensure directory structure ---------------------------------------------
   const bundle_stacks_dir = path.join(options["bundle-path"], 'stacks')
   fs.ensureDirSync(bundle_stacks_dir)
@@ -712,31 +714,22 @@ export function prependXAuth(command: string, explicit: boolean = false)
 // ValidatedOutput - data is an object with fields:
 //    - hostRoot: hostRoot where settings directory lives
 //    - settings: settings that where loaded from file
-export function scanForSettingsDirectory(dirpath: string):{result: ValidatedOutput<undefined>, project_settings: ProjectSettings}
+export function scanForSettingsDirectory(dirpath: string):ValidatedOutput<ProjectSettings>
 {
   var dirpath_parent = dirpath
-  var result: ValidatedOutput<undefined>
-  var project_settings:ProjectSettings = new ProjectSettings()
-
   do {
     dirpath = dirpath_parent
     dirpath_parent = path.dirname(dirpath)
     // -- exit if settings file is invalid -------------------------------------
-    ;( {result, project_settings} = loadProjectSettings(dirpath) )              // see https://stackoverflow.com/questions/27386234/object-destructuring-without-var
-    printResultState(result) // print any warnings if file is invalid
-    if(result.success && project_settings.get("project-root") == 'auto') {
-      project_settings.set({"project-root": dirpath})
-      return {
-        result: result,
-        project_settings: project_settings
-      }
+    const load_result = loadProjectSettings(dirpath)
+    printResultState(load_result) // print any warnings if file is invalid
+    if(load_result.success && load_result.data.get("project-root") == 'auto') {
+      load_result.data.set({"project-root": dirpath})
+      return load_result
     }
   } while(dirpath != dirpath_parent)
 
-  return {
-    result: new ValidatedOutput(false, undefined),
-    project_settings: project_settings
-  }
+  return new ValidatedOutput(false, new ProjectSettings())
 }
 
 // -----------------------------------------------------------------------------
@@ -747,11 +740,11 @@ export function scanForSettingsDirectory(dirpath: string):{result: ValidatedOutp
 // result: ValidatedOutput - result from file load
 // project_settings: ProjectSettings
 // -----------------------------------------------------------------------------
-export function loadProjectSettings(project_root: string):{result: ValidatedOutput<undefined>, project_settings: ProjectSettings}
+export function loadProjectSettings(project_root: string): ValidatedOutput<ProjectSettings>
 {
   const project_settings = new ProjectSettings()
   const result = project_settings.loadFromFile(projectSettingsYMLPath(project_root))
-  return {result: result, project_settings: project_settings}
+  return new ValidatedOutput(true, project_settings).absorb(result)
 }
 
 // == Interactive Functions ====================================================

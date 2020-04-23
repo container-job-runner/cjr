@@ -56,19 +56,20 @@ export abstract class StackCommand extends Command
     // -- exit if no-autoload flag is enabled ----------------------------------
     if(flags?.['no-autoload']) return flags
     // -- load settings and augment flags  -------------------------------------
-    var result = new ValidatedOutput(false, undefined)
-    var project_settings:ProjectSettings = new ProjectSettings()
-    if(!flags?.['project-root'] && this.settings.get('auto-project-root')){
-      ;( {result, project_settings} = scanForSettingsDirectory(process.cwd()) )
-    } else if(flags?.['project-root']){
-      ;( {result, project_settings} = loadProjectSettings(flags['project-root']) )
-    }
+    var load_result:ValidatedOutput<ProjectSettings>
+    if(!flags?.['project-root'] && this.settings.get('auto-project-root'))
+      load_result = scanForSettingsDirectory(process.cwd())
+    else if(flags?.['project-root'])
+      load_result = loadProjectSettings(flags['project-root'])
+    else
+      load_result = new ValidatedOutput(false, new ProjectSettings())
+
     // -- merge flags if load was successful -----------------------------------
-    if(result.success) {
-      var mergeable_fields:Array<ps_fields> = Object.keys(flag_props) as Array<ps_fields>
+    if(load_result.success) {
+      const mergeable_fields:Array<ps_fields> = Object.keys(flag_props) as Array<ps_fields>
       JSTools.rMergeOnEmpty(
         flags,
-        project_settings.getMultiple(mergeable_fields))
+        load_result.data.getMultiple(mergeable_fields))
     }
     // -- exit with error if required flags are missing ------------------------
     const required_flags = (Object.keys(flag_props) as Array<ps_fields>).filter((name:ps_fields) => flag_props[name])

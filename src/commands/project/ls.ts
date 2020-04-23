@@ -19,9 +19,9 @@ export default class ls extends ProjectSettingsCommand {
     const {flags} = this.parse(ls)
     this.augmentFlagsWithProjectSettings(flags, {"project-root":true})
     const project_root: string = (flags["project-root"] as string)
-    const {result, project_settings} = loadProjectSettings(project_root)
-    if(!result.success) return printResultState(result)
-    this.printProjectSettings(project_settings, project_root)
+    const load_result = loadProjectSettings(project_root)
+    if(!load_result.success) return printResultState(load_result)
+    this.printProjectSettings(load_result.data, project_root)
   }
 
 }

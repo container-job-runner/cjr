@@ -30,13 +30,14 @@ export default class Init extends ProjectSettingsCommand {
   {
     const {flags} = this.parse(Init)
     const project_root = process.cwd();
-    const {result, project_settings} = loadProjectSettings(project_root)
-    if(result.success) // do nothing (project-settings directory already exists)
+    const load_result = loadProjectSettings(project_root)
+    if(load_result.success) // do nothing (project-settings directory already exists)
     {
       console.log("project-Settings directory already exists.")
     }
     else // create new project-settings directory
     {
+      const project_settings = load_result.data;
       fs.ensureDirSync(projectSettingsDirPath(project_root))
       switch (flags.template)
       {
