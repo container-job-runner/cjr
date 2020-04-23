@@ -32,6 +32,7 @@ export default class Copy extends StackCommand {
     }
     // -- get job ids ----------------------------------------------------------
     var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_paths, undefined, !this.settings.get('interactive')) || [])
+    if(ids.length == 0) return // exit if ids are empty or if user exits interactive dialog
     // -- set copy options -----------------------------------------------------
     const copy_options:CopyOptions = {
       "ids": ids,
