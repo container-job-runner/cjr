@@ -6,8 +6,9 @@ import * as crypto from 'crypto'
 //cli names
 export const cli_name = "cjr"
 
-// labels
-export const job_info_label = "jobinfo"
+// job labels
+export const name_label = 'name'
+export const stack_path_label  = 'stack'
 export const file_volume_label = 'filevolume'
 
 // flag message
