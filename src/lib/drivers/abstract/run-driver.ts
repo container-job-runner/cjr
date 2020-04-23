@@ -31,6 +31,11 @@ export type JobInfoFilter = {
   "ids"?: Array<string>
   "names"?: Array<string>
 }
+export type NewJobInfo = {
+  "id": string,
+  "output": string,
+  "exit-code": number
+}
 
 export abstract class RunDriver extends ContainerDriver
 {
@@ -51,10 +56,10 @@ export abstract class RunDriver extends ContainerDriver
   // ValidatedOutput<Array<JobInfo>> - information about matching job
   // ---------------------------------------------------------------------------
   abstract jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>;
-  abstract jobStart(stack_path: string, configuration: StackConfiguration, callbacks:Dictionary): ValidatedOutput<string>;
+  abstract jobStart(stack_path: string, configuration: StackConfiguration, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>;
   abstract jobLog(id: string) : ValidatedOutput<string>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
-  abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary,  mode:"print"|"output"|"json") : ValidatedOutput<undefined>|ValidatedOutput<String>;
+  abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>;
   abstract jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
   abstract jobStop(ids: Array<string>) : ValidatedOutput<undefined>
   abstract jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
