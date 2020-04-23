@@ -40,10 +40,10 @@ export class CJRRemoteDriver extends RemoteDriver
   private interactive_ssh_options = {ssh: {interactive: true}}
   private transferrable_flags = { // displays the flags that will be passed to remote cjr commands. All other flags are ignored
      'job:attach' : ['explicit'],
-     'job:copy'   : ['explicit', 'verbose', 'all'],
-     'job:delete' : ['explicit', 'quiet'],
+     'job:cp'     : ['explicit', 'verbose', 'all'],
+     'job:rm'     : ['explicit', 'quiet'],
      'job:labels' : ['all', 'all-completed', 'all-running'],
-     'job:ls'   : ['explicit', 'verbose', 'json', 'all'],
+     'job:ls'     : ['explicit', 'verbose', 'json', 'all'],
      'job:log'    : ['explicit', 'lines', 'all'],
      'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'quiet'],
      'job:shell'  : ['explicit', 'discard'],
@@ -130,7 +130,7 @@ export class CJRRemoteDriver extends RemoteDriver
       if(this.output_options.explicit) copy_flags['explicit'] = {}
       if(this.output_options.silent) copy_flags['quiet'] = {}
       const exec_result = this.ssh_shell.exec(
-        'cjr job:copy',
+        'cjr job:cp',
         copy_flags,
         [job_id],
         this.interactive_ssh_options
@@ -184,7 +184,7 @@ export class CJRRemoteDriver extends RemoteDriver
     const job_ids = Object.keys(job_labels)
     if(job_ids.length == 0) return this.stopMultiplexMasterAndReturn(new ValidatedOutput(true, [], [], [WarningStrings.REMOTEJOB.DELETE.NO_MATCHING_REMOTEJOBS])) // no jobs to delete
     result = this.ssh_shell.exec(
-      'cjr job:delete',
+      'cjr job:rm',
       cjr_flags,
       job_ids,
       this.interactive_ssh_options
