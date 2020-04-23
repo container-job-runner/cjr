@@ -26,9 +26,11 @@ export default class Log extends StackCommand {
     const id = argv[0] || await promptUserForJobId(runner, stack_paths, undefined, !this.settings.get('interactive')) || ""
     if(id === "") return // exit if user selects empty
     // match with existing container ids
-    const result = firstJobId(runner.jobInfo({"ids": [id], "stack-paths": stack_paths}))
-    if(result.success) runner.jobLog(result.data, (flags.all) ? "all" : flags.lines)
-    printResultState(result)
+    const job_info_request = firstJobId(runner.jobInfo({"ids": [id], "stack-paths": stack_paths}))
+    if(!job_info_request.success) return printResultState(job_info_request)
+    const log_request = runner.jobLog(job_info_request.data, (flags.all) ? "all" : flags.lines)
+    if(!log_request.success) return printResultState(log_request)
+    console.log(log_request.data)
   }
 
 }

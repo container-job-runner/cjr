@@ -12,7 +12,7 @@ import { ShellCommand } from "../../shell-command"
 import { dr_vo_validator } from './schema/docker-run-schema'
 import { de_vo_validator } from './schema/docker-exec-schema'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
-import { trim, parseJSON, parseLineJSON } from '../../functions/misc-functions'
+import { trim, parseJSON, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 
 export class DockerRunDriver extends RunDriver
 {
@@ -82,21 +82,20 @@ export class DockerRunDriver extends RunDriver
     return result
   }
 
-  jobLog(id: string, lines: string="all") : ValidatedOutput<undefined>
+  jobLog(id: string, lines: string="all") : ValidatedOutput<string>
   {
-    var command = `${this.base_command} logs`;
-    var args = [id]
+    const command = `${this.base_command} logs`;
+    const args = [id]
     const lines_int = parseInt(lines)
     const flags = (isNaN(lines_int)) ? {} : {tail: `${lines_int}`}
-    return new ValidatedOutput(true, undefined)
-      .absorb(this.shell.exec(command, flags, args))
+    return trimTrailingNewline(this.shell.output(command, flags, args))
   }
 
   jobAttach(id: string) : ValidatedOutput<undefined>
   {
-    var command = `${this.base_command} attach`;
-    var args = [id]
-    var flags = {}
+    const command = `${this.base_command} attach`;
+    const args = [id]
+    const flags = {}
     return new ValidatedOutput(true, undefined)
       .absorb(this.shell.exec(command, flags, args))
   }
