@@ -263,7 +263,7 @@ export class DockerRunDriver extends RunDriver
           names: x.Names,
           command: x.Command,
           state: state(x.Status),
-          stack: inspect_data?.[x.ID]?.Labels.stack || "",
+          stack: inspect_data?.[x.ID]?.Labels?.[stack_path_label] || "",
           labels: inspect_data?.[x.ID]?.Labels || {},
           ports: inspect_data?.[x.ID]?.Ports || [],
           status: x.Status

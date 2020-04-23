@@ -9,6 +9,7 @@ import { pr_vo_validator } from './schema/podman-run-schema'
 import { PodmanStackConfiguration } from '../../config/stacks/podman/podman-stack-configuration'
 import { parseJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
+import { stack_path_label } from '../../constants'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -70,7 +71,7 @@ export class PodmanRunDriver extends DockerRunDriver
           names: x.Names,
           command: x.Command,
           state: state(x.Status),
-          stack: x?.Labels?.stack || "",
+          stack: x?.Labels?.[stack_path_label] || "",
           labels: x?.Labels || {},
           ports: inspect_data?.[x.ID]?.Ports || [],
           status: x.Status

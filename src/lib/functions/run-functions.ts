@@ -191,9 +191,9 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
   job_info_array.map((job:Dictionary) => {
     // -- 1. extract label information -----------------------------------------
     const id = job.id;
-    const hostRoot = job?.labels?.hostRoot || ""
-    const file_volume_id = job?.labels?.[file_volume_label] || ""
-    const stack_path = job?.labels?.stack || ""
+    const hostRoot = job.labels?.hostRoot || ""
+    const file_volume_id = job.labels?.[file_volume_label] || ""
+    const stack_path = job.labels?.[stack_path_label] || ""
     const host_path  = copy_options?.["host-path"] || hostRoot // set copy-path to job hostRoot if it's not specified
     if(!hostRoot) return result.pushWarning(WarningStrings.JOBCOPY.NO_HOSTROOT(id))
     if(!file_volume_id) return result.pushWarning(WarningStrings.JOBCOPY.NO_VOLUME(id))
