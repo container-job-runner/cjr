@@ -1,34 +1,35 @@
-import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../lib/remote/commands/remote-command'
-import {OutputOptions, ContainerRuntime, JobOptions} from '../../lib/functions/run-functions'
-import {startJupyterApp} from "../../lib/functions/jupyter-functions"
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { RemoteCommand } from '../../lib/remote/commands/remote-command'
+import { OutputOptions, ContainerRuntime, JobOptions, nextAvailablePort } from '../../lib/functions/run-functions'
+import { startJupyterApp } from "../../lib/functions/jupyter-functions"
+import { printResultState, initX11 } from '../../lib/functions/misc-functions'
 
-export default class Exec extends RemoteCommand {
+export default class Jupyter extends RemoteCommand {
   static description = 'Start a jupiter server for viewing or modifying job\'s files or outputs'
   static args = [{name: 'id', required: true}, {name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}),
-    stack: flags.string({env: 'STACK'}),
-    port: flags.integer({default: 7027, exclusive: ['stop', 'list', 'app']}),
+    "stack": flags.string({env: 'STACK'}),
+    "port": flags.string({default: "auto"}),
+    "expose": flags.boolean({default: false}),
     "stack-upload-mode": flags.string({default: "cached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "protocol": flags.string({exclusive: ['stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying stack-upload-mode, and build-mode'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
-    x11: flags.boolean({default: false}),
+    "x11": flags.boolean({default: false}),
     "tunnel": flags.boolean({default: false, description: "tunnel traffic through ssh port 22"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    verbose: flags.boolean({default: false, char: 'v', description: 'shows output from all stages of job', exclusive: ['quiet']}),
-    quiet: flags.boolean({default: false, char: 'q'}),
-    explicit: flags.boolean({default: false})
+    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output from all stages of job', exclusive: ['quiet']}),
+    "quiet": flags.boolean({default: false, char: 'q'}),
+    "explicit": flags.boolean({default: false})
   }
   static strict = false;
 
   async run()
   {
-    const {flags, args, argv} = this.parse(Exec)
+    const {flags, args, argv} = this.parse(Jupyter)
     this.augmentFlagsWithProjectSettings(flags, {
       "stack": (args?.['command'] === 'start'), // only require stack for start
       "project-root": false,
@@ -56,7 +57,14 @@ export default class Exec extends RemoteCommand {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.verbose)
     }
-
+    // -- check x11 user settings ----------------------------------------------
+    if(flags['x11'] && args['command'] == 'start') await initX11(this.settings.get('interactive'), flags.explicit)
+    // -- select port ----------------------------------------------------------
+    if(flags['port'] == 'auto') {
+      const port_number = nextAvailablePort(container_runtime.runner, 7027)
+      const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
+      flags['port'] = `${port_address}:${port_number}:${port_number}`
+    }
     const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start jupyter ------------------------
     {
@@ -70,7 +78,7 @@ export default class Exec extends RemoteCommand {
         "file-access":  "volume",
         "synchronous":  false,
         "x11":          flags.x11,
-        "ports":        [{containerPort: flags['port'], hostPort: flags['port']}],
+        "ports":        this.parsePortFlag([flags.port]),
         "labels":       [],
         "remove":       false
       }

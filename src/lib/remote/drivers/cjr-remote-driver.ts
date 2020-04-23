@@ -56,6 +56,7 @@ export class CJRRemoteDriver extends RemoteDriver
   private remoteStackPath = (remote_job_dir: string, stack_name: string) => path.posix.join(remote_job_dir, this.remoteStackName(remote_job_dir, stack_name))
   private multiplex_options: MultiplexOptions = {"autodisconnect": true, "autoconnect": true, "restart-existing-connection": true}
   private tunnel_local_hostname = '127.0.0.1'
+  private job_jupyter_x11_multiplex_tag = 'job_jupyter'
 
   constructor(ssh_shell: SshShellCommand, output_options: OutputOptions, storage_directory: string, multiplex_options: MultiplexOptions = {})
   {
@@ -244,7 +245,10 @@ export class CJRRemoteDriver extends RemoteDriver
     // -- validate parameters --------------------------------------------------
     if(!exec_options.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
     // -- start ssh master -----------------------------------------------------
-    var result:ValidatedOutput<any> = this.initConnection(resource, {x11: job_options?.x11 || false})
+    var result:ValidatedOutput<any> = this.initConnection(resource, {
+      ... { x11: job_options?.x11 || false },
+      ... ( exec_options["connect-options"] || {} )
+    })
     if(!result.success) return result
     // -- read json job data to extract projectid ------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.SHELL.READING_JOBINFO, this.output_options.verbose)
@@ -447,11 +451,16 @@ export class CJRRemoteDriver extends RemoteDriver
     const port:string = `${job_options?.ports?.[0]?.hostPort || ""}`
     if(!port) return (new ValidatedOutput(false, undefined)).pushError('Internal Error: empty port')
 
+    // if x11 is required, then get full id of job, and create special ssh master named using id. This connection will remain open
+    // Note: since this driver does not know ids, we cannot create special multiplex master for each job. Therefore it only supports one job with x11
+    const connect_options = (job_options['x11']) ? {tag: this.job_jupyter_x11_multiplex_tag} : {}
+
     var result:ValidatedOutput<any> = this.jobExec(resource, container_runtime, job_options, {
       "id": rjup_options['id'],
       "mode": 'job:jupyter',
       "host-project-root": rjup_options["host-project-root"],
-      "stack-upload-mode": rjup_options["stack-upload-mode"]
+      "stack-upload-mode": rjup_options["stack-upload-mode"],
+      "connect-options": connect_options
     })
 
     if(result.success && rjup_options['tunnel']) {
@@ -459,19 +468,20 @@ export class CJRRemoteDriver extends RemoteDriver
         remotePort: port,
         localPort: port,
         localHostname: this.tunnel_local_hostname,
-        x11: job_options['x11'] || false
+        x11: false
       })
       if(!success) result.pushError('Failed to start tunnel')
     }
     return result
   }
 
-  jobJupyterStop(resource: Dictionary, id: string) {
+  jobJupyterStop(resource: Resource, id: string) {
     // -- set resource ---------------------------------------------------------
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
 
     this.ssh_shell.tunnelStop();
+    this.disconnect(resource, {tag: this.job_jupyter_x11_multiplex_tag}) // stop any x11 master for job
     return this.jobJupyterGeneric(resource, id, 'stop', 'exec');
   }
 
@@ -910,7 +920,7 @@ export class CJRRemoteDriver extends RemoteDriver
   private initConnection(resource: Resource, options: Dictionary = {})
   {
     if(this.multiplex_options.autoconnect)
-      return this.connect(resource)
+      return this.connect(resource, options)
     else
       return this.ssh_shell.setResource(resource)
   }
@@ -919,7 +929,7 @@ export class CJRRemoteDriver extends RemoteDriver
   {
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
-    else return new ValidatedOutput(this.ssh_shell.multiplexStop(), undefined)
+    else return new ValidatedOutput(this.ssh_shell.multiplexStop(options), undefined)
   }
 
   connect(resource: Resource, options: Dictionary = {})
@@ -927,8 +937,8 @@ export class CJRRemoteDriver extends RemoteDriver
     var result = this.ssh_shell.setResource(resource)
     if(!result.success) return result
 
-    if(this.multiplex_options['restart-existing-connection'] && this.ssh_shell.multiplexExists()) {
-      this.ssh_shell.multiplexStop()
+    if(this.multiplex_options['restart-existing-connection'] && this.ssh_shell.multiplexExists(options)) {
+      this.ssh_shell.multiplexStop(options)
     }
     return new ValidatedOutput(this.ssh_shell.multiplexStart(options), undefined)
   }

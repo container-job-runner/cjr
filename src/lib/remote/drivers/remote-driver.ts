@@ -15,7 +15,8 @@ export type RemoteExecOptions = {
   "id": string,                   // id of job that user wants to shell/exec into
   "host-project-root": string,         // current project root (used only for setting cwd in remote container)
   "mode": "job:exec"|"job:shell"|"job:jupyter"
-  "stack-upload-mode": "cached"|"uncached"
+  "stack-upload-mode": "cached"|"uncached",
+  "connect-options"?: Dictionary // any options that should be passed when starting multiplex connection
 }
 
 export type RemoteJupyterOptions = {
