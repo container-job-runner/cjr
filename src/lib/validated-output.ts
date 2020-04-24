@@ -1,14 +1,14 @@
 export class ValidatedOutput<T>
 {
     success: boolean
-    data: T
+    value: T
     error: Array<string>
     warning: Array<string>
 
-    constructor(success: boolean, data: T, error: Array<string> = [], warning: Array<string> = [])
+    constructor(success: boolean, value: T, error: Array<string> = [], warning: Array<string> = [])
     {
       this.success = success;
-      this.data = data;
+      this.value = value;
       this.error = error;
       this.warning = warning;
     }
