@@ -100,13 +100,13 @@ export default class Jupyter extends RemoteCommand {
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
-      if(url_result.success) console.log(url_result.data)
+      if(url_result.success) console.log(url_result.value)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = driver.jobJupyterUrl(resource, args.id, {mode: (flags['tunnel']) ? 'tunnel' : 'remote'})
-      if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
+      if(url_result.success) startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }
     printResultState(result)

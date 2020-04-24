@@ -53,7 +53,7 @@ export class PodmanRunDriver extends DockerRunDriver
     }
     // -- extract label & port data -----------------------------------------------
     const inspect_data:Dictionary = {}
-      result.data.map((info:Dictionary) => {
+      result.value.map((info:Dictionary) => {
         const id = info?.['Id'];
         if(id) inspect_data[id] = {Ports: extractBoundPorts(info?.['HostConfig']['PortBindings'] || {})}
     });

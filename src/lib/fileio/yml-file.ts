@@ -17,7 +17,7 @@ export class YMLFile extends TextFile
     {
       try
       {
-        return new ValidatedOutput(true, yaml.safeLoad(result.data))
+        return new ValidatedOutput(true, yaml.safeLoad(result.value))
       }
       catch(e)
       {

@@ -55,7 +55,7 @@ export class TextFile
   validatedRead(name:string) : ValidatedOutput<any>
   {
     var result = this.read(name)
-    if(result.success) result.absorb(this.validator(result.data))
+    if(result.success) result.absorb(this.validator(result.value))
     return result
   }
 

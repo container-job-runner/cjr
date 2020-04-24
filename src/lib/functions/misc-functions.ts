@@ -46,7 +46,7 @@ export async function initX11(interactive: boolean, explicit: boolean) : Promise
     var result = shell.output(`plutil -extract nolisten_tcp xml1 -o - ${x11_config_path}`) // note extract as xml1 instead of json since json exits in error
     if(!result.success) return new ValidatedOutput(false, undefined)
     var response: { flag: any; } & { flag: any; } = {flag: false}
-    if((new RegExp('<true/>')).test(result.data))
+    if((new RegExp('<true/>')).test(result.value))
     {
       if(interactive) {
         printResultState(new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
@@ -78,7 +78,7 @@ export function parseJSON(output:ValidatedOutput<string>) : ValidatedOutput<any>
   if(!parsed_output.success) return parsed_output
   try
   {
-    parsed_output.data = JSON.parse(output.data)
+    parsed_output.value = JSON.parse(output.value)
   }
   catch(e)
   {
@@ -96,7 +96,7 @@ export function parseLineJSON(output:ValidatedOutput<string>) : ValidatedOutput<
   if(!parsed_output.success) return parsed_output
   try
   {
-    parsed_output.data = output.data.split("\n")
+    parsed_output.value = output.value.split("\n")
       .filter((e:string) => e !== "") // remove empty strings
       .map((e:string) => JSON.parse(e)) // parse each line
   }
@@ -114,7 +114,7 @@ export function trim(output:ValidatedOutput<string>) : ValidatedOutput<string>
 {
   const trimmed_output = new ValidatedOutput<string>(true, "").absorb(output);
   if(!trimmed_output.success) return trimmed_output
-  trimmed_output.data = output.data.trim()
+  trimmed_output.value = output.value.trim()
   return trimmed_output
 }
 
@@ -123,7 +123,7 @@ export function trimTrailingNewline(output:ValidatedOutput<string>) : ValidatedO
 {
   const trimmed_output = new ValidatedOutput<string>(true, "").absorb(output);
   if(!trimmed_output.success) return trimmed_output
-  trimmed_output.data = output.data.replace(/\r\n$/, "")
+  trimmed_output.value = output.value.replace(/\r\n$/, "")
   return trimmed_output
 }
 
@@ -164,7 +164,7 @@ export function printVerticalTable(configuration: Dictionary)
   // -- print header -----------------------------------------------------------
   if(c_header) printRow(c_header)
   // -- print data -------------------------------------------------------------
-  configuration.data.map((row: Array<string>) => printRow(row))
+  configuration.value.map((row: Array<string>) => printRow(row))
 }
 
 export function printHorizontalTable(configuration: Dictionary)
@@ -188,7 +188,7 @@ export function printHorizontalTable(configuration: Dictionary)
           )
         })
       }
-      if(data_index != configuration.data.length - 1) console.log()
+      if(data_index != configuration.value.length - 1) console.log()
   }
 
   // -- print title ------------------------------------------------------------
@@ -197,5 +197,5 @@ export function printHorizontalTable(configuration: Dictionary)
     console.log(chalk`-- {bold ${title}} ${"-".repeat(width - title.length - 4)}`)
   }
   // -- print data -------------------------------------------------------------
-  configuration.data.map((item: Array<string>, index: number) => printItem(item, index))
+  configuration.value.map((item: Array<string>, index: number) => printItem(item, index))
 }

@@ -50,7 +50,7 @@ export class Settings
   private load()
   {
     const result = this.JSON_file.read(this.config_name)
-    Settings.raw_data = (result.success) ? {...this.defaults, ...result.data} : this.defaults
+    Settings.raw_data = (result.success) ? {...this.defaults, ...result.value} : this.defaults
   }
 
 }

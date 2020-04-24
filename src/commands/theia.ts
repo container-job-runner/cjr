@@ -89,13 +89,13 @@ export default class Run extends StackCommand {
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list theia url
     {
       const url_result = await getTheiaUrl(container_runtime, {"project-root": project_root})
-      if(url_result.success) console.log(url_result.data)
+      if(url_result.success) console.log(url_result.value)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = await getTheiaUrl(container_runtime, {"project-root": project_root})
-      if(url_result.success) startTheiaApp(url_result.data, webapp_path || "", flags.explicit)
+      if(url_result.success) startTheiaApp(url_result.value, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }
     printResultState(result)

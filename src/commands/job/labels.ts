@@ -47,7 +47,7 @@ export default class Labels extends StackCommand {
       return (flags.json) ? console.log("{}") : printResultState(job_info)
 
     var data:Dictionary = {}
-    job_info.data.map((info:JobInfo) => {
+    job_info.value.map((info:JobInfo) => {
       if(flags?.label)
         data[info.id] = info.labels[flags.label]
       else

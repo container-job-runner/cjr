@@ -43,7 +43,7 @@ export default class Bundle extends StackCommand {
     // -- create tmp dir for bundle --------------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name))
     if(!result.success) return printResultState(result)
-    const tmp_dir = result.data
+    const tmp_dir = result.value
     // -- set copy options -----------------------------------------------------
     const options: ProjectBundleOptions = {
       "project-root": (flags["project-root"] as string),

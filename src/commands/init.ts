@@ -37,7 +37,7 @@ export default class Init extends ProjectSettingsCommand {
     }
     else // create new project-settings directory
     {
-      const project_settings = load_result.data;
+      const project_settings = load_result.value;
       fs.ensureDirSync(projectSettingsDirPath(project_root))
       switch (flags.template)
       {

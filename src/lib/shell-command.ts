@@ -78,7 +78,7 @@ export class ShellCommand
     {
       const result = this.exec(command, flags, args, {...options, ...{stdio : 'pipe', "ignore-silent": true, encoding: 'buffer', shell: '/bin/bash'}})
       if(!result.success) return new ValidatedOutput(false, "")
-      return new ValidatedOutput(true, ShellCommand.stdout(result.data))
+      return new ValidatedOutput(true, ShellCommand.stdout(result.value))
     }
 
     commandString(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {}) : string

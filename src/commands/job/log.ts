@@ -28,9 +28,9 @@ export default class Log extends StackCommand {
     // match with existing container ids
     const job_info_request = firstJobId(runner.jobInfo({"ids": [id], "stack-paths": stack_paths}))
     if(!job_info_request.success) return printResultState(job_info_request)
-    const log_request = runner.jobLog(job_info_request.data, (flags.all) ? "all" : flags.lines)
+    const log_request = runner.jobLog(job_info_request.value, (flags.all) ? "all" : flags.lines)
     if(!log_request.success) return printResultState(log_request)
-    console.log(log_request.data)
+    console.log(log_request.value)
   }
 
 }

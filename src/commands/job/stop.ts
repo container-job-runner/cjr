@@ -35,7 +35,7 @@ export default class Stop extends StackCommand {
       job_info = runner.jobInfo({'ids': JSTools.arrayWrap(ids), 'stack-paths': stack_paths})
     }
     // -- stop jobs ------------------------------------------------------------
-    const ids_to_stop = jobIds(job_info).data
+    const ids_to_stop = jobIds(job_info).value
     if(!flags.quiet) ids_to_stop.map((x:string) => console.log(` Stopping ${x}`))
     runner.jobStop(ids_to_stop)
   }

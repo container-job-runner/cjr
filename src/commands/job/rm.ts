@@ -44,8 +44,8 @@ export default class Delete extends StackCommand {
     // -- delete jobs ----------------------------------------------------------
     if(!job_info.success)
       return printResultState(job_info)
-    const job_ids = jobIds(job_info).data
-    const volume_ids = volumeIds(job_info).data
+    const job_ids = jobIds(job_info).value
+    const volume_ids = volumeIds(job_info).value
     if(!flags.quiet) job_ids.map((x:string) => console.log(` Deleting ${x}`))
     runner.jobDelete(job_ids)
     runner.volumeDelete(volume_ids)

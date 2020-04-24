@@ -72,7 +72,7 @@ export class DockerBuildDriver extends BuildDriver
       }
       this.addJSONFormatFlag(flags);
       var result = parseLineJSON(this.shell.output(command, flags, args, {}))
-      return (result.success && !JSTools.isEmpty(result.data)) ? true : false
+      return (result.success && !JSTools.isEmpty(result.value)) ? true : false
     }
 
     build(stack_path: string, configuration:DockerStackConfiguration, options?: Dictionary) : ValidatedOutput<undefined>
@@ -81,7 +81,7 @@ export class DockerBuildDriver extends BuildDriver
 
       const validated_result = this.validate(stack_path)
       if(!validated_result.success) return result.absorb(validated_result)
-      const stack_type = validated_result.data['stack-type'] || ""
+      const stack_type = validated_result.value['stack-type'] || ""
 
       var exec_result: ValidatedOutput<any>;
       if(stack_type === 'local-dockerfile') // build local stack -------------------------
@@ -111,7 +111,7 @@ export class DockerBuildDriver extends BuildDriver
           const load_result = this.shell.output(command,flags, [], {cwd: stack_path})
           if(!load_result.success) return result.absorb(load_result)
           // -- extract name and retag -----------------------------------------
-          const image_name = load_result.data?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"
+          const image_name = load_result.value?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"
           if(!image_name) return (new ValidatedOutput(false, undefined)).pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
           exec_result = this.shell.exec(`${this.base_command} image tag`, {}, [image_name, this.imageName(stack_path, configuration.buildHash())])
         }

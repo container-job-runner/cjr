@@ -16,7 +16,7 @@ export class JSONFile extends TextFile
     {
       try
       {
-        return new ValidatedOutput(true, JSON.parse(result.data))
+        return new ValidatedOutput(true, JSON.parse(result.value))
       }
       catch(e)
       {

@@ -63,7 +63,7 @@ export default class Shell extends StackCommand {
 
     if(flags.save !== undefined) await jobToImage(
       c_runtime.runner,
-      new ValidatedOutput(start_result.success, start_result.data.id), // wrap id into ValidatedOutput<string>
+      new ValidatedOutput(start_result.success, start_result.value.id), // wrap id into ValidatedOutput<string>
       flags.save,
       true,
       this.settings.get('interactive')

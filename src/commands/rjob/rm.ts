@@ -49,7 +49,7 @@ export default class Delete extends RemoteCommand {
     if(state_filter != undefined) { // filter existing jobs on resource -------
       result = driver.jobInfo(resource, state_filter)
       if(!result.success) return printResultState(result)
-      ids = result.data.map((x:Dictionary) => x.id)
+      ids = result.value.map((x:Dictionary) => x.id)
     }
     else { // use args or prompt user for input --------------------------------
       ids = (argv.length > 0) ? argv : JSTools.arrayWrap(

@@ -39,7 +39,7 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
   // -- exit if request fails --------------------------------------------------
   if(!job_info_request.success)
     return new ValidatedOutput(false, "")
-  const theia_job_id = firstJobId(job_info_request).data
+  const theia_job_id = firstJobId(job_info_request).value
   if(theia_job_id !== "")
     return (new ValidatedOutput(true, theia_job_id)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id, theia_options['project-root'] || ""))
   // -- start new theia job ----------------------------------------------------
@@ -62,14 +62,14 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
     // -- start job and extract job id -----------------------------------------
     const start_output = jobStart(container_runtime, job_options, output_options)
     if(!start_output.success) return new ValidatedOutput(false, "").absorb(start_output)
-    return new ValidatedOutput(true, start_output.data.id) // return id of theia job
+    return new ValidatedOutput(true, start_output.value.id) // return id of theia job
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
 export function stopTheia(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'states': ['running']}))
-  const theia_job_id = job_info_request.data
+  const theia_job_id = job_info_request.value
   if(theia_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   else
@@ -80,7 +80,7 @@ export function stopTheia(container_runtime: ContainerRuntime, identifier: {"pro
 export async function getTheiaUrl(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
 {
   const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'states': ['running']}))
-  const theia_job_id = job_info_request.data
+  const theia_job_id = job_info_request.value
   if(theia_job_id == "")
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   const exec_output = container_runtime.runner.jobExec(
@@ -89,9 +89,9 @@ export async function getTheiaUrl(container_runtime: ContainerRuntime, identifie
     {},
     "pipe"
   )
-  const json_output = parseJSON(new ValidatedOutput(true, exec_output.data.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
+  const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
   if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
-  return new ValidatedOutput(true, `http://${json_output.data?.url}:${json_output.data?.port}`);
+  return new ValidatedOutput(true, `http://${json_output.value?.url}:${json_output.value?.port}`);
 }
 
 // -- starts the Theia Electron app  -------------------------------------------
@@ -120,7 +120,7 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
 // -- command to start theia server --------------------------------------------
 function theiaCommand(builder: BuildDriver, theia_options: TheiaOptions) {
   const result = builder.loadConfiguration(theia_options['stack-path'], theia_options['config-files'] || [])
-  const container_root = (result.success) ? (result.data?.getContainerRoot() || "") : ""
+  const container_root = (result.success) ? (result.value?.getContainerRoot() || "") : ""
   const project_dir = (container_root && theia_options['project-root']) ? path.posix.join(container_root, path.basename(theia_options['project-root'])) : container_root
   return `theia --hostname $${ENV.url} --port $${ENV.port} ${project_dir}`;
 }

@@ -28,7 +28,7 @@ export function buildAndLoad(builder: BuildDriver, build_options: BuildOptions, 
 {
   var result = builder.loadConfiguration(stack_path, overloaded_config_paths)
   if(!result.success) return result
-  const configuration = result.data
+  const configuration = result.value
   if(build_options?.['never']) // simply return configuration
     return new ValidatedOutput(true, configuration)
   else if(build_options?.['reuse-image']) // build if image is missing
@@ -69,7 +69,7 @@ export function removeImage(builder: BuildDriver, stack_path: string, all_config
   {
     var result = builder.loadConfiguration(stack_path, overloaded_config_paths)
     if(!result.success) return result
-    const configuration = result.data
+    const configuration = result.value
     return builder.removeImage(stack_path, configuration)
   }
 }

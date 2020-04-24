@@ -41,7 +41,7 @@ export abstract class StackConfiguration
     if(!read_result.success)
       return read_result
     else
-      return this.setRawObject(read_result.data, path.dirname(file_path))
+      return this.setRawObject(read_result.value, path.dirname(file_path))
   }
 
   writeToFile(file_path: string): ValidatedOutput<undefined>|ValidatedOutput<Error>

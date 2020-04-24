@@ -91,13 +91,13 @@ export default class Run extends StackCommand {
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = await getJupyterUrl(container_runtime, {"project-root": project_root})
-      if(url_result.success) console.log(url_result.data)
+      if(url_result.success) console.log(url_result.value)
       printResultState(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = await getJupyterUrl(container_runtime, {"project-root": project_root})
-      if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
+      if(url_result.success) startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
       printResultState(url_result)
     }
   }

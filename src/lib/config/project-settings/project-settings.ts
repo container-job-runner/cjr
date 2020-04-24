@@ -74,7 +74,7 @@ export class ProjectSettings
     }
 
     //  -- set project settings variable -----------------------------------------
-    const project_settings:ps_props = read_result.data || {}
+    const project_settings:ps_props = read_result.value || {}
     this.stackToAbsPath(project_settings, file_path)
     const r1 = this.stacksDirToAbsPath(project_settings, file_path)
     const r2 = this.configFilesToAbsPath(project_settings, file_path)

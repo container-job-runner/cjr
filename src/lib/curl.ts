@@ -136,7 +136,7 @@ export class Curl
     const blank_output = new ValidatedOutput(false, {header: {code: NaN, type: ""}, body: ""})
 
     if(!result.success) return blank_output
-    const raw_output:string = result.data
+    const raw_output:string = result.value
 
     // -- extract header and body -- Note: only supports headers with no blank lines
     const header:string = (/^HTTP\/\d.\d[\s\S]*(?=\r\n\r\n)/).exec(raw_output)?.pop() || "" // matches HTTP\d.d ... \r\n\r\n

@@ -74,7 +74,7 @@ export default class Run extends StackCommand {
     const start_result = jobStart(c_runtime, job_options, output_options)
     if(!start_result.success) return printResultState(start_result)
     // -- print id -------------------------------------------------------------
-    const job_id = start_result.data.id
+    const job_id = start_result.value.id
     const print_condition = (job_id !== "") && !flags.quiet && !flags.verbose
     if(print_condition && flags.async)
       console.log(job_id)
@@ -98,7 +98,7 @@ export default class Run extends StackCommand {
     // -- check that job has stopped -------------------------------------------
     const result = container_runtime.runner.jobInfo({"ids": [job_id], "stack-paths": [stack_path]})
     if(!result.success) return false
-    if(result.data?.[0]?.state != 'exited') return false
+    if(result.value?.[0]?.state != 'exited') return false
     // -- check flag status ----------------------------------------------------
     if(!flags["project-root"]) return false
     if(flags["file-access"] === 'bind') return false

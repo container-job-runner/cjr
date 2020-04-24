@@ -31,7 +31,7 @@ export abstract class RemoteCommand extends StackCommand
       // -- validate id --------------------------------------------------------
       var result = this.validResourceName(flags["remote-name"])
       if(!result.success) return printResultState(result)
-      const remote_name = result.data
+      const remote_name = result.value
       // -- modify resource and write file -------------------------------------
       const resource = this.resource_configuration.getResource(remote_name)
       if(resource !== undefined) {

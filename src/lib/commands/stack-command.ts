@@ -69,7 +69,7 @@ export abstract class StackCommand extends Command
       const mergeable_fields:Array<ps_fields> = Object.keys(flag_props) as Array<ps_fields>
       JSTools.rMergeOnEmpty(
         flags,
-        load_result.data.getMultiple(mergeable_fields))
+        load_result.value.getMultiple(mergeable_fields))
     }
     // -- exit with error if required flags are missing ------------------------
     const required_flags = (Object.keys(flag_props) as Array<ps_fields>).filter((name:ps_fields) => flag_props[name])

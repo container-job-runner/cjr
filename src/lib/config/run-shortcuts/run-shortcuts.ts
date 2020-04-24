@@ -17,7 +17,7 @@ export class RunShortcuts
     const read_result = this.yml_file.validatedRead(file_path)
     if(!read_result.success)
       return result.pushWarning(WarningStrings.OPENRULES.INVALID_YML(file_path))
-    this.rules = read_result.data
+    this.rules = read_result.value
     return result
   }
 

@@ -61,7 +61,7 @@ export class DockerRunDriver extends RunDriver
       job_options
     )
     if(!create_output.success) return failure_output
-    const container_id = create_output.data;
+    const container_id = create_output.value;
     // -- run container --------------------------------------------------------
     const command = `${this.base_command} start`;
     const args: Array<string> = [container_id]
@@ -71,8 +71,8 @@ export class DockerRunDriver extends RunDriver
 
     return new ValidatedOutput(true, {
       "id": container_id,
-      "output": ShellCommand.stdout(shell_output.data),
-      "exit-code": ShellCommand.status(shell_output.data)
+      "output": ShellCommand.stdout(shell_output.value),
+      "exit-code": ShellCommand.status(shell_output.value)
     })
   }
 
@@ -82,7 +82,7 @@ export class DockerRunDriver extends RunDriver
     const args  = [image_name, command_string]
     const flags = this.runFlags(run_options)
     const result = trim(this.shell.output(command, flags, args, {}))
-    if(result.data === "") result.pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
+    if(result.value === "") result.pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
     return result
   }
 
@@ -114,8 +114,8 @@ export class DockerRunDriver extends RunDriver
 
     return new ValidatedOutput(true, {
       "id": "", // no idea for docker cli exec
-      "output": ShellCommand.stdout(result.data),
-      "exit-code": ShellCommand.status(result.data)
+      "output": ShellCommand.stdout(result.value),
+      "exit-code": ShellCommand.status(result.value)
     })
   }
 
@@ -185,7 +185,7 @@ export class DockerRunDriver extends RunDriver
           {
             const jic_result = this.jobInfoCall(stack_path, job_state, name, id)
             result.absorb(jic_result)
-            result.data.push( ...jic_result.data)
+            result.value.push( ...jic_result.value)
           })
         })
       })
@@ -209,7 +209,7 @@ export class DockerRunDriver extends RunDriver
       if(id) flags["filter"].push(`id=${id}`)
       this.addFormatFlags(flags, {format: "json"})
       const result = this.outputParser(this.shell.output(command, flags, args, {}))
-      if(result.success) return this.extractJobInfo(result.data)
+      if(result.success) return this.extractJobInfo(result.value)
       else return new ValidatedOutput(false, [])
   }
 
@@ -242,7 +242,7 @@ export class DockerRunDriver extends RunDriver
     }
     // -- extract label & port data -----------------------------------------------
     const inspect_data:Dictionary = {}
-    result.data.map((info:Dictionary) => {
+    result.value.map((info:Dictionary) => {
       if(info.ID)
         inspect_data[info.ID] = {
           'Labels': info?.['Labels'] || {},

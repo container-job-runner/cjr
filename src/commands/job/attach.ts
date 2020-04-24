@@ -32,7 +32,7 @@ export default class Attach extends StackCommand {
         "states": ["running"]
       }))
     if(result.success)
-      runner.jobAttach(result.data[0])
+      runner.jobAttach(result.value[0])
     else
       printResultState(
         new ValidatedOutput(false, undefined)

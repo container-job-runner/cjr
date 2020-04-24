@@ -32,7 +32,7 @@ export class ResourceConfiguration
   loadFromFile()
   {
     const result = this.json_file.validatedRead(remote_config_filename)
-    if(result.success) this.raw_object = result.data
+    if(result.success) this.raw_object = result.value
     return result
   }
 

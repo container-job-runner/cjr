@@ -52,7 +52,7 @@ export default class Run extends StackCommand {
     // -- extract full id ------------------------------------------------------
     const id_request:ValidatedOutput<string> = firstJobId(container_runtime.runner.jobInfo({"ids": [args.id]}))
     if(!id_request.success) return printResultState(id_request)
-    const job_id = id_request.data
+    const job_id = id_request.value
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- select port ----------------------------------------------------------
@@ -97,13 +97,13 @@ export default class Run extends StackCommand {
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
       const url_result = await getJupyterUrl(container_runtime, {"job-id": job_id})
-      if(url_result.success) console.log(url_result.data)
+      if(url_result.success) console.log(url_result.value)
       else printResultState(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
       const url_result = await getJupyterUrl(container_runtime, {"job-id": job_id})
-      if(url_result.success) startJupyterApp(url_result.data, webapp_path || "", flags.explicit)
+      if(url_result.success) startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
       else printResultState(url_result)
     }
 

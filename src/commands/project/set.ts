@@ -26,7 +26,7 @@ export default class Set extends ProjectSettingsCommand {
     const {flags} = this.parse(Set)
     this.augmentFlagsWithProjectSettings(flags, {"project-root":true})
     const project_root: string = (flags["project-root"] as string)
-    const project_settings = loadProjectSettings(project_root).data
+    const project_settings = loadProjectSettings(project_root).value
     const fields:Array<ps_fields> = ['stack', 'remote-name', 'config-files', 'stacks-dir', 'visible-stacks']
     project_settings.set((JSTools.oSubset(flags, fields) as ps_props))
     if(flags['project-root-auto']) project_settings.set({'project-root': 'auto'})
