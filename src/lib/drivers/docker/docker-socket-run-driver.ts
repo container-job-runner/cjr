@@ -8,8 +8,8 @@ import { StackConfiguration } from "../../config/stacks/abstract/stack-configura
 import { ShellCommand } from "../../shell-command"
 import { RunDriver, Dictionary, JobState, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
-import { Curl } from '../../curl'
-import { cli_name } from '../../constants'
+import { Curl, RequestOutput } from '../../curl'
+import { cli_name, stack_path_label } from '../../constants'
 
 export class DockerSocketRunDriver extends RunDriver
 {
@@ -33,53 +33,41 @@ export class DockerSocketRunDriver extends RunDriver
 
   jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
   {
-    // const filters:Dictionary = {"label": [`runner=${cli_name}`]}
-    // if(job_states.length > 0)  filters['status'] = job_states
+    // -- make api request -----------------------------------------------------
+    const api_result = this.curl.get({
+      "url": "/containers/json",
+      "data": {
+        all: true,
+        filters: JSON.stringify({"label": [`runner=${cli_name}`]})
+      }
+    });
 
-    // const raw_info:Array<Dictionary> = []
-    // stack_paths.map((stack_path: string) => {
-    //   var result = this.curl.get({
-    //     "url": "/containers/json",
-    //     "data": {
-    //       all: true,
-    //       filters: JSON.stringify({"label": [`runner=${cli_name}`]})
-    //     }
-    // })
+    // -- check request status -------------------------------------------------
+    if(!this.validAPIResponse(api_result, 200))
+      return new ValidatedOutput(false, [])
 
-    // })
+    // -- convert API response into Array<JobInfo> -----------------------------
+    const job_info: Array<JobInfo> = api_result.value.body?.map( (cntr: Dictionary) => {
+      return {
+        id:      cntr.Id,
+        names:   cntr.Names,
+        command: cntr.Command,
+        status:  cntr.Status,
+        state:   cntr.State?.toLowerCase(),
+        stack:   cntr.Labels?.[stack_path_label] || "",
+        labels:  cntr.Labels || {},
+        ports:   cntr.Ports?.map((prt:Dictionary) => {
+          return {
+            ip: prt.IP,
+            containerPort: prt.PrivatePort,
+            hostPort: prt.PublicPort
+          }
+        }) || [],
+      }
+    }) || [];
 
-    return new ValidatedOutput(true, [])
-
-    // var result = this.curl.get({
-    //   "url": "/containers/json",
-    //   "data": {
-    //     all: true,
-    //     filters: JSON.stringify({"label": [`runner=${cli_name}`]})
-    //   }
-    // })
-
-    // if(!this.validAPIResponse(result, 200))
-    //   return []
-
-    // // standardize output. NOTE: Add comment to docker-socket-build-driver
-    // return result?.data?.body?.map( (cntr: Dictionary) => {
-    //   return {
-    //     id:      cntr.Id,
-    //     names:   cntr.Names,
-    //     command: cntr.Command,
-    //     status:  cntr.Status,                                     // rename status string in classical driver
-    //     state:   cntr.State?.toLowerCase(),                       // note rename this to state also in classical driver
-    //     stack:   cntr.Labels?.stack || "",
-    //     labels:  cntr.Labels || {},
-    //     ports:   cntr.Ports?.map((prt:Dictionary) => {
-    //       return {
-    //         ip: prt.IP,
-    //         containerPort: prt.PrivatePort,
-    //         hostPort: prt.PublicPort
-    //       }
-    //     }) || [],
-    //   }
-    // }) || [];
+    // -- filter jobs and return -----------------------------------------------
+    return new ValidatedOutput(true, this.jobFilter(job_info, filter))
   }
 
   jobStart(stack_path: string, configuration: StackConfiguration, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>
@@ -94,9 +82,9 @@ export class DockerSocketRunDriver extends RunDriver
 
     // return (new ValidatedOutput(false)).pushError(this.ERRORSTRINGS.BAD_RESPONSE)
     // if(!result.success) return result
-    // if(!result.data?.['id']) return new ValidatedOutput(false).pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
+    // if(!result.value?.['id']) return new ValidatedOutput(false).pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
 
-    // const container_id = result.data['id'];
+    // const container_id = result.value['id'];
     // if(callbacks?.postCreate) callbacks.postCreate(container_id)
     // // -- run container --------------------------------------------------------
     // if(configuration.syncronous()) // user docker command
@@ -192,11 +180,11 @@ export class DockerSocketRunDriver extends RunDriver
     return new DockerStackConfiguration()
   }
 
-  private validAPIResponse(response: ValidatedOutput<any>, code?:number) : boolean
+  private validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
   {
     if(!response.success) return false
-    if(response.data?.header?.type !== "application/json") return false
-    if(code !== undefined && response.data?.header?.code !== code) return false
+    if(response.value.header.type !== "application/json") return false
+    if(code !== undefined && response.value.header.code !== code) return false
     return true
   }
 
