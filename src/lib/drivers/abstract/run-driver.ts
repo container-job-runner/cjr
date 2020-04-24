@@ -67,8 +67,11 @@ export abstract class RunDriver extends ContainerDriver
   abstract volumeDelete(options:Dictionary): ValidatedOutput<undefined>
 
   // A private helper function that can be used by JobInfo to filter jobs
-  private jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter) : Array<JobInfo>
+  protected jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter) : Array<JobInfo>
   {
+    if(filter === undefined)
+      return job_info
+
     const filter_id:boolean = filter?.['ids'] !== undefined
     const id_regex = new RegExp(`^(${filter?.['ids']?.join('|') || ""})`)
 
