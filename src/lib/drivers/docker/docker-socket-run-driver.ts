@@ -43,7 +43,7 @@ export class DockerSocketRunDriver extends RunDriver
     });
 
     // -- check request status -------------------------------------------------
-    if(!this.validAPIResponse(api_result, 200))
+    if(!this.validJSONAPIResponse(api_result, 200))
       return new ValidatedOutput(false, [])
 
     // -- convert API response into Array<JobInfo> -----------------------------
@@ -128,14 +128,24 @@ export class DockerSocketRunDriver extends RunDriver
    return new ValidatedOutput(true, {id:"","exit-code": 0,output:""})
   }
 
-  jobLog(id: string) : ValidatedOutput<string>
+  jobLog(id: string, lines: string="all") : ValidatedOutput<string>
   {
-    var result = this.curl.get({
-      "url": `/containers/${id}/json`,
-      "data": {all: true, filter: [`label=runner=${cli_name}`]}
+    // -- make api request -----------------------------------------------------
+    var api_result = this.curl.get({
+      "url": `/containers/${id}/logs`,
+      "data": {
+        tail: lines,
+        stdout: true,
+        stderr: true
+      }
     })
-    //return result
-    return new ValidatedOutput(true, "")
+
+    // -- check request status -------------------------------------------------
+    if(!this.validAPIResponse(api_result, 200))
+      return new ValidatedOutput(false, "")
+
+    // -- return jobs ----------------------------------------------------------
+    return new ValidatedOutput(true, api_result.value.body?.trim())
   }
 
   jobAttach(id: string) : ValidatedOutput<undefined>
@@ -183,8 +193,14 @@ export class DockerSocketRunDriver extends RunDriver
   private validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
   {
     if(!response.success) return false
-    if(response.value.header.type !== "application/json") return false
     if(code !== undefined && response.value.header.code !== code) return false
+    return true
+  }
+
+  private validJSONAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
+  {
+    if(!this.validAPIResponse(response)) return false
+    if(response.value.header.type !== "application/json") return false
     return true
   }
 
