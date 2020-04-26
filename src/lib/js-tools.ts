@@ -7,6 +7,8 @@
 // isArray - deteremines if data is of Array type
 // =============================================================================
 
+import * as crypto from 'crypto'
+
 type Dictionary = {[key: string]: any}
 
 export class JSTools
@@ -115,6 +117,11 @@ export class JSTools
     }
     lines.push(s)
     return lines
+  }
+
+  static md5(s: string) : string
+  {
+    return crypto.createHash('md5').update(s).digest('hex')
   }
 
   static async sleep(milliseconds:number)
