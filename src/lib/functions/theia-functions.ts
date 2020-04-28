@@ -4,7 +4,7 @@ import {JSTools} from '../js-tools'
 import {ShellCommand} from '../shell-command'
 import {ErrorStrings} from '../error-strings'
 import {ValidatedOutput} from '../validated-output'
-import {THEIA_JOB_NAME} from '../constants'
+import {THEIA_JOB_NAME, name_label} from '../constants'
 import {jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
 import {BuildOptions} from './build-functions'
 import {BuildDriver} from '../drivers/abstract/build-driver'
@@ -35,7 +35,10 @@ export type Dictionary = {[key: string]: any}
 export function startTheiaInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
-  const job_info_request = container_runtime.runner.jobInfo({'names': [theia_job_name], 'states': ['running']})
+  const job_info_request = container_runtime.runner.jobInfo({
+    'labels': { [name_label] : [theia_job_name] },
+    'states': ['running']
+  })
   // -- exit if request fails --------------------------------------------------
   if(!job_info_request.success)
     return new ValidatedOutput(false, "")
@@ -56,7 +59,7 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
       "synchronous":  theia_options['sync'] || false,
       "x11":          theia_options['x11'] || false,
       "ports":        theia_options['ports'],
-      "labels":       theia_options['labels'].concat([{key:"name", "value": theia_job_name}]),
+      "labels":       theia_options['labels'].concat([{key: name_label, "value": theia_job_name}]),
       "remove":       true
     }
     // -- start job and extract job id -----------------------------------------
@@ -68,7 +71,12 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
 // -- extract the url for a theia notebook  ------------------------------------
 export function stopTheia(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'states': ['running']}))
+  const job_info_request = firstJobId(
+    container_runtime.runner.jobInfo({
+      'labels': { [name_label]: [THEIA_JOB_NAME(identifier)]},
+      'states': ['running']
+    })
+  )
   const theia_job_id = job_info_request.value
   if(theia_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
@@ -79,7 +87,12 @@ export function stopTheia(container_runtime: ContainerRuntime, identifier: {"pro
 // -- extract the url for a theia server  --------------------------------------
 export async function getTheiaUrl(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
 {
-  const job_info_request = firstJobId(container_runtime.runner.jobInfo({'names': [THEIA_JOB_NAME(identifier)], 'states': ['running']}))
+  const job_info_request = firstJobId(
+    container_runtime.runner.jobInfo({
+      'labels': { [name_label]: [THEIA_JOB_NAME(identifier)]},
+      'states': ['running']
+    })
+  )
   const theia_job_id = job_info_request.value
   if(theia_job_id == "")
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))

@@ -164,7 +164,7 @@ export function printVerticalTable(configuration: Dictionary)
   // -- print header -----------------------------------------------------------
   if(c_header) printRow(c_header)
   // -- print data -------------------------------------------------------------
-  configuration.value.map((row: Array<string>) => printRow(row))
+  configuration.data.map((row: Array<string>) => printRow(row))
 }
 
 export function printHorizontalTable(configuration: Dictionary)
@@ -197,5 +197,5 @@ export function printHorizontalTable(configuration: Dictionary)
     console.log(chalk`-- {bold ${title}} ${"-".repeat(width - title.length - 4)}`)
   }
   // -- print data -------------------------------------------------------------
-  configuration.value.map((item: Array<string>, index: number) => printItem(item, index))
+  configuration.data.map((item: Array<string>, index: number) => printItem(item, index))
 }

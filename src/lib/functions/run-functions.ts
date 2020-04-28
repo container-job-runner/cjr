@@ -18,6 +18,7 @@ import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
 import { PodmanStackConfiguration } from '../config/stacks/podman/podman-stack-configuration'
 import { JSTools } from '../js-tools'
 import { ProjectSettings } from '../config/project-settings/project-settings'
+import { JobConfiguration } from '../config/jobs/job-configuration'
 
 // == TYPES ====================================================================
 
@@ -35,7 +36,7 @@ export type JobOptions = {
     "config-files": Array<string>,                                              // any additional configuration files for stack
     "build-options": BuildOptions,                                              // specifies how to build stack before run
     "command": string,                                                          // command for job
-    "entrypoint"?: string,                                                      // optional entrypoint override
+    "entrypoint"?: Array<string>,                                               // optional entrypoint override
     "host-root"?: string,                                                       // project host root
     "file-access": "volume"|"bind",                                             // specifies how project files are accessed by container
     "file-volume-id"?: string,                                                  // if this field is specified, this volume will be mounted at container Root (instead of a new volume being created)
@@ -125,37 +126,39 @@ export function jobStart(container_runtime: ContainerRuntime, job_options: JobOp
     job_options["config-files"]
   )
   if(!bl_result.success) return failed_result.absorb(bl_result)
-  const configuration:StackConfiguration = bl_result.value
+  const stack_configuration:StackConfiguration = bl_result.value
+  const job_configuration:JobConfiguration<StackConfiguration> = container_runtime.runner.emptyJobConfiguration(stack_configuration)
   // -- 2.1 update configuration: mount Files ----------------------------------
   if(job_options["host-root"] && job_options["file-access"] === "bind")
-    bindHostRoot(configuration, job_options["host-root"])
+    bindHostRoot(stack_configuration, job_options["host-root"])
   else if(job_options["host-root"] && job_options["file-access"] === "volume" && job_options?.["file-volume-id"])
-    mountFileVolume(configuration, job_options["host-root"], job_options["file-volume-id"])
+    mountFileVolume(job_configuration, job_options["host-root"], job_options["file-volume-id"])
   else if(job_options["host-root"] && job_options["file-access"] === "volume") {
     printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY_TOVOLUME, output_options)
-    const cmv_result = createAndMountFileVolume(container_runtime, configuration, job_options["host-root"], output_options.verbose)
+    const cmv_result = createAndMountFileVolume(container_runtime, job_configuration, job_options["host-root"], output_options.verbose)
     if(!cmv_result.success) return failed_result.absorb(cmv_result)
   }
-  setRelativeWorkDir(configuration, job_options["host-root"] || "", job_options["cwd"])
-
   // -- 2.2 update configuration: apply options --------------------------------
   if(job_options?.ports)
-    job_options["ports"].map((p:port) => configuration.addPort(p.hostPort, p.containerPort, p.address))
-  if(job_options?.x11) enableX11(configuration, output_options.explicit)
+    job_options["ports"].map((p:port) => stack_configuration.addPort(p.hostPort, p.containerPort, p.address))
+  if(job_options?.x11) enableX11(stack_configuration, output_options.explicit)
   if(job_options?.environment) Object.keys(job_options['environment']).map((key:string) =>
-    configuration.addRunEnvironmentVariable(key, job_options['environment']?.[key] || "")
+    stack_configuration.addEnvironmentVariable(key, job_options['environment']?.[key] || "")
   )
+  if(job_options?.entrypoint) stack_configuration.setEntrypoint(job_options.entrypoint)
+  // -- 3. set up job configuration --------------------------------------------------
+
   if(job_options?.labels) job_options["labels"].map(
-    (flag:{key:string, value: string}) => configuration.addLabel(flag.key, flag.value)
+    (flag:{key:string, value: string}) => job_configuration.addLabel(flag.key, flag.value)
   )
-  if(job_options?.entrypoint) configuration.setEntrypoint(job_options.entrypoint)
-  configuration.setCommand((job_options["x11"]) ? prependXAuth(job_options["command"], output_options.explicit) : job_options["command"])
-  configuration.setSyncronous(job_options["synchronous"])
-  configuration.setRemoveOnExit(job_options["remove"])
-  addGenericLabels(configuration, job_options["host-root"] || "", job_options["stack-path"])
+  setRelativeWorkDir(job_configuration, job_options["host-root"] || "", job_options["cwd"])
+  job_configuration.command = [(job_options["x11"]) ? prependXAuth(job_options["command"], output_options.explicit) : job_options["command"]]
+  job_configuration.synchronous = job_options["synchronous"]
+  job_configuration.remove_on_exit = job_options["remove"]
+  addGenericLabels(job_configuration, job_options["host-root"] || "", job_options["stack-path"])
   // -- 3. start job -----------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.START, output_options)
-  const result = container_runtime.runner.jobStart(job_options["stack-path"], configuration, job_options["synchronous"] ? 'inherit' : 'pipe')
+  const result = container_runtime.runner.jobStart(job_configuration, job_options["synchronous"] ? 'inherit' : 'pipe')
   // -- print id ---------------------------------------------------------------
   printStatusHeader(StatusStrings.JOBSTART.JOB_ID, output_options)
   if(output_options.verbose) console.log(result.value.id)
@@ -200,7 +203,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
     // -- 2. load stack configuration & get download settings ------------------
     const load_result = loadProjectSettings(host_path) // check settings in copy path (not hostRoot) in case user wants to copy into folder that is not hostRoot
     const lc_result = container_runtime.builder.loadConfiguration(stack_path, (load_result.value.get('config-files') as Array<string>) || [])
-    const configuration:StackConfiguration = (lc_result.success) ? lc_result.value : container_runtime.builder.emptyConfiguration()
+    const configuration:StackConfiguration = (lc_result.success) ? lc_result.value : container_runtime.builder.emptyStackConfiguration()
     // -- 3. copy files --------------------------------------------------------
     const rsync_options: RsyncOptions = {
       "host-path": host_path,
@@ -425,7 +428,7 @@ export function nextAvailablePort(runner: RunDriver, port:number=1024) : number
 // hostRoot:string  - Project root folder
 // verbose: boolean - flag for rsync
 // -----------------------------------------------------------------------------
-export function createAndMountFileVolume(container_runtime: ContainerRuntime, configuration: StackConfiguration, hostRoot: string, verbose: boolean=false) : ValidatedOutput<undefined>
+export function createAndMountFileVolume(container_runtime: ContainerRuntime, configuration: JobConfiguration<StackConfiguration>, hostRoot: string, verbose: boolean=false) : ValidatedOutput<undefined>
 {
   // -- create volume ----------------------------------------------------------
   const vc_result = container_runtime.runner.volumeCreate({});
@@ -438,10 +441,10 @@ export function createAndMountFileVolume(container_runtime: ContainerRuntime, co
     direction: "to-volume",
     mode: "mirror",
     verbose: verbose,
-    files: configuration.getRsyncUploadSettings(true)
+    files: configuration.stack_configuration.getRsyncUploadSettings(true)
   }
   // -- check if runtime is docker and chownvolume flags is active -------------
-  if( (configuration.getFlags()?.['chown-file-volume'] === true) )  {
+  if( (configuration.stack_configuration.getFlags()?.['chown-file-volume'] === true) )  {
       // -- get user id & set chown property -----------------------------------
       const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
       if(id_result.success && id_result.value) copy_options.chown = id_result.value
@@ -462,10 +465,10 @@ export function createAndMountFileVolume(container_runtime: ContainerRuntime, co
 // hostRoot:string - Project root folder
 // volume_id:string - volume id
 // -----------------------------------------------------------------------------
-export function mountFileVolume(configuration: StackConfiguration, hostRoot: string, volume_id: string)
+export function mountFileVolume(configuration: JobConfiguration<StackConfiguration>, hostRoot: string, volume_id: string)
 {
   const hostRoot_basename = path.basename(hostRoot)
-  configuration.addVolume(volume_id, path.posix.join(configuration.getContainerRoot(), hostRoot_basename))
+  configuration.stack_configuration.addVolume(volume_id, path.posix.join(configuration.stack_configuration.getContainerRoot(), hostRoot_basename))
   configuration.addLabel(file_volume_label, volume_id)
 }
 
@@ -479,17 +482,17 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
 {
   if(!copy_options["host-path"]) return new ValidatedOutput(true, undefined)
   if(!copy_options["volume"]) return new ValidatedOutput(true, undefined)
-  // -- create configuration for rsync job -------------------------------------
-  const rsync_configuration = rsyncJobConfiguration(container_runtime.runner, copy_options)
+  // -- create stack configuration for rsync job -------------------------------
+  const rsync_stack_configuration = rsyncStackConfiguration(container_runtime.runner, copy_options)
   // -- ensure rsync container is built ----------------------------------------
-  if(!container_runtime.builder.isBuilt(rsync_constants.stack_path, rsync_configuration)) {
-    const result = container_runtime.builder.build(rsync_constants.stack_path, rsync_configuration)
+  if(!container_runtime.builder.isBuilt(rsync_constants.image, rsync_stack_configuration)) {
+    const result = container_runtime.builder.build(rsync_constants.image, rsync_stack_configuration)
     if(!result.success) return result
   }
   // -- set rsync flags --------------------------------------------------------
   const rsync_flags:Dictionary = {a: {}}
   addrsyncIncludeExclude( // -- mount any rsync include or exclude files -------
-      rsync_configuration,
+      rsync_stack_configuration,
       rsync_flags,
       copy_options.files || {include: "", exclude: ""}
   )
@@ -505,23 +508,26 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
       break
   }
   if(copy_options?.verbose) rsync_flags.v = {}
-  // -- set rsync command ------------------------------------------------------
+  // -- set rsync job ------------------------------------------------------
   const rsync_base_command = rsyncCommandString(
     rsync_constants.source_dir,
     rsync_constants.dest_dir,
     rsync_flags
   )
+
+  const rsync_job_configuration = container_runtime.runner.emptyJobConfiguration(rsync_stack_configuration)
+  rsync_job_configuration.remove_on_exit = true
+  rsync_job_configuration.synchronous = true
   if(manual_copy)
-    rsync_configuration.setCommand('sh')
+    rsync_job_configuration.command = ['sh']
   else if(copy_options['chown'])
-    rsync_configuration.setCommand(`${rsync_base_command} && chown -R ${copy_options['chown']}:${copy_options['chown']} ${rsync_constants.dest_dir}`)
+    rsync_job_configuration.command = [`${rsync_base_command} && chown -R ${copy_options['chown']}:${copy_options['chown']} ${rsync_constants.dest_dir}`]
   else
-    rsync_configuration.setCommand(rsync_base_command)
+    rsync_job_configuration.command = [rsync_base_command]
   // -- start rsync job --------------------------------------------------------
   return new ValidatedOutput(true, undefined).absorb(
     container_runtime.runner.jobStart(
-      rsync_constants.stack_path,
-      rsync_configuration,
+      rsync_job_configuration,
       'inherit'
     )
   )
@@ -536,22 +542,22 @@ export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_o
 // copy_direction: string - specified which direction the copy is going. It can
 //                          either be "to-host" or "to-container"
 // -----------------------------------------------------------------------------
-function rsyncJobConfiguration(runner: RunDriver, copy_options: RsyncOptions)
+function rsyncStackConfiguration(runner: RunDriver, copy_options: RsyncOptions) : StackConfiguration
 {
-  const rsync_configuration = runner.emptyConfiguration()
+  const rsync_stack_configuration = runner.emptyStackConfiguration()
+
+  rsync_stack_configuration.setImage(rsync_constants.image)
   if(copy_options["direction"] == "to-host")
   {
-    rsync_configuration.addVolume(copy_options["volume"], rsync_constants.source_dir)
-    rsync_configuration.addBind(copy_options["host-path"], rsync_constants.dest_dir)
+    rsync_stack_configuration.addVolume(copy_options["volume"], rsync_constants.source_dir)
+    rsync_stack_configuration.addBind(copy_options["host-path"], rsync_constants.dest_dir)
   }
   else if(copy_options["direction"] == "to-volume")
   {
-    rsync_configuration.addVolume(copy_options["volume"], rsync_constants.dest_dir)
-    rsync_configuration.addBind(copy_options["host-path"], rsync_constants.source_dir)
+    rsync_stack_configuration.addVolume(copy_options["volume"], rsync_constants.dest_dir)
+    rsync_stack_configuration.addBind(copy_options["host-path"], rsync_constants.source_dir)
   }
-  rsync_configuration.setRemoveOnExit(true)
-  rsync_configuration.setSyncronous(true)
-  return rsync_configuration
+  return rsync_stack_configuration
 }
 
 // -----------------------------------------------------------------------------
@@ -600,11 +606,11 @@ export function rsyncCommandString(source: string, destination: string, flags: D
 // containerRoot - Container root folder
 // hostDir       - user directory (defaults to process.cwd())
 // -----------------------------------------------------------------------------
-export function setRelativeWorkDir(configuration: StackConfiguration, hostRoot: string, hostDir: string = process.cwd())
+export function setRelativeWorkDir(configuration: JobConfiguration<StackConfiguration>, hostRoot: string, hostDir: string = process.cwd())
 {
-  if(!hostRoot) return configuration.setWorkingDir(configuration.getContainerRoot()) // should only be set if containerRoot is set
-  const ced = containerWorkingDir(hostDir, hostRoot, configuration.getContainerRoot())
-  if(ced) configuration.setWorkingDir(ced)
+  if(!hostRoot) return // should only be set if containerRoot is set
+  const ced = containerWorkingDir(hostDir, hostRoot, configuration.stack_configuration.getContainerRoot())
+  if(ced) configuration.working_directory = ced
 }
 
 // -----------------------------------------------------------------------------
@@ -654,13 +660,13 @@ export function enableX11(configuration: StackConfiguration, explicit:boolean = 
       }
       const socket_number:string = sockets.pop()?.replace("X", "") || "0" // select socket with highest number - this is useful since an xQuartx chrach will leave behind a non functional socket
       configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND)
-      configuration.addRunEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
+      configuration.addEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
       const shell = new ShellCommand(explicit, false)
       shell.output("xhost +localhost", {}, []);
       break;
     case "linux": // == LINUX ==================================================
       configuration.addBind(X11_POSIX_BIND, X11_POSIX_BIND, {selinux: false})
-      configuration.addRunEnvironmentVariable("DISPLAY", `$DISPLAY`)
+      configuration.addEnvironmentVariable("DISPLAY", `$DISPLAY`)
   }
 
   // -- add special flags for podman -------------------------------------------
@@ -677,10 +683,10 @@ export function enableX11(configuration: StackConfiguration, explicit:boolean = 
 // hostRoot: string - hostRoot of job
 // stack_path: string - absolute path to stack used to run job
 // -----------------------------------------------------------------------------
-export function addGenericLabels(configuration: StackConfiguration, hostRoot: string, stack_path: string)
+export function addGenericLabels(configuration: JobConfiguration<StackConfiguration>, hostRoot: string, stack_path: string)
 {
   if(hostRoot) configuration.addLabel(host_root_label, hostRoot)
-  configuration.addLabel(container_root_label, configuration.getContainerRoot())
+  configuration.addLabel(container_root_label, configuration.stack_configuration.getContainerRoot())
   configuration.addLabel(stack_path_label, stack_path)
 }
 
