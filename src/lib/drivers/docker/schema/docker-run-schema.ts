@@ -8,7 +8,10 @@ export const docker_run_schema = {
   "description": "Used internally by DockerRunDriver in run command",
   "type": "object",
   "properties": {
-    "command": {"type": "string"},
+    "command": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
     "mounts": {"$ref": "docker-configuration-schema.json#/definitions/mounts"},
     "ports": {"$ref": "docker-configuration-schema.json#/definitions/ports"},
     "environment": {"$ref": "docker-configuration-schema.json#/definitions/args"},
