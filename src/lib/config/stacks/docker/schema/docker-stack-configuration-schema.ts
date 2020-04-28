@@ -2,6 +2,7 @@ import * as Ajv from 'ajv'
 import {ajvValidatorToValidatedOutput} from '../../../../functions/misc-functions'
 
 export const docker_stack_configuration_schema = {
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "docker-configuration-schema.json",
   "title": "Docker Configuration Schema",
   "description": "Full Configuration Specification for a Docker Stack",
@@ -12,6 +13,7 @@ export const docker_stack_configuration_schema = {
     "mounts": {"$ref": "#/definitions/mounts"},
     "ports": {"$ref": "#/definitions/ports"},
     "environment": {"$ref": "#/definitions/args"},
+    "dynamic-environment": {"$ref": "#/definitions/args"},
     "resources": {"$ref": "#/definitions/resources"},
     "files": {"$ref": "#/definitions/files"},
     "flags": {"$ref": "#/definitions/flags"}
@@ -37,7 +39,8 @@ export const docker_stack_configuration_schema = {
         "pull": {
           "type": "boolean"
         },
-        "args": {"$ref": "#/definitions/args"}
+        "args": {"$ref": "#/definitions/args"},
+        "dynamic-args": {"$ref": "#/definitions/args"}
       }
     },
     "mounts": {
