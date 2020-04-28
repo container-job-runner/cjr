@@ -5,9 +5,9 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import {JSTools} from '../../../js-tools'
-import {YMLFile} from '../../../fileio/yml-file'
-import {ValidatedOutput} from '../../../validated-output'
+import { JSTools } from '../../../js-tools'
+import { YMLFile } from '../../../fileio/yml-file'
+import { ValidatedOutput } from '../../../validated-output'
 type Dictionary = {[key: string]: any}
 
 export abstract class StackConfiguration
@@ -20,6 +20,8 @@ export abstract class StackConfiguration
     if(result.success) this.raw_object = value
     return result
   }
+
+  abstract validate(value: Dictionary): ValidatedOutput<undefined>;
 
   getRawObject()
   {
@@ -50,32 +52,39 @@ export abstract class StackConfiguration
   }
 
   abstract buildHash(): string;  // unique id to identify configuration for building
-  abstract runHash(): string;  // unique id to identify configuration for running
-  // interactive components that may be called by CLI to modify existing configuration
-  abstract setCommand(value: string): void;
-  abstract setEntrypoint(value: string): void;
-  abstract setWorkingDir(value: string): void;
-  abstract setSyncronous(value: boolean): void;
-  abstract setRemoveOnExit(value: boolean): void;
+  abstract buildObject() : Dictionary;
+
+  // == modifiers ==============================================================
+  abstract setImage(value: string): void
+  abstract setEntrypoint(value: Array<string>): void;
   abstract setRsyncUploadSettings(value: {include: string, exclude: string}): void;
   abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;
+  // ----> mount modifiers
   abstract addBind(hostPath: string, containerPath: string, options?:Dictionary): boolean;
   abstract addVolume(volumeName: string, containerPath: string): boolean;
+  abstract removeBind(hostPath: string): ValidatedOutput<undefined>;
+  abstract removeVolume(parent_path: string): ValidatedOutput<undefined>;
+  abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>;
+  // ----> resource modifiers
+  abstract setMemory(value: number, units:"GB"|"MB"|"B") : void
+  abstract setSwapMemory(value: number, units:"GB"|"MB"|"B") : void
+  abstract setCpu(value: number) : void
+  // ----> port modifiers
   abstract addPort(hostPort: number, containerPort: number, address?:string): boolean;
-  abstract addLabel(field: string, value: string): boolean;
+  abstract removePort(hostPort: number): ValidatedOutput<undefined>;
+  // ----> environment variables
+  abstract addEnvironmentVariable(name: string, value: string, dynamic?: boolean): boolean;
+  abstract removeEnvironmentVariable(name: string): boolean;
+  // ----> misc flag modifiers
   abstract addFlag(field: string, value: string): boolean;
   abstract removeFlag(field: string): boolean;
-  abstract addRunEnvironmentVariable(name: string, value: string): boolean;
-  // access functions
-  abstract getCommand(): string;
+  // ----> build Args
+  abstract addBuildArg(name: string, value: string, evaluate?: boolean): boolean;
+  abstract removeBuildArg(name: string, value: string, evaluate?: boolean): boolean;
+  // == access functions =======================================================
+  abstract getImage(): string;
   abstract getContainerRoot() : string;
   abstract getRsyncUploadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
   abstract getRsyncDownloadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
   abstract getFlags(): Dictionary;
-  // output objects for run-drivers or build-drivers
-  abstract runObject() : Dictionary;
-  abstract buildObject() : Dictionary;
-  // misc Functions
-  abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>;
-  abstract validate(value: Dictionary): ValidatedOutput<undefined>;
 }
