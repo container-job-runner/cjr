@@ -10,16 +10,21 @@ import { RunDriver, Dictionary, JobState, JobInfo, JobInfoFilter, NewJobInfo } f
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label } from '../../constants'
+import { spawn } from 'child_process'
+import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 
 export class DockerSocketRunDriver extends RunDriver
 {
   protected curl: Curl
   protected base_command: string = "docker"
+  protected labels = {"invisible-on-stop": "IOS"}
 
   protected ERRORSTRINGS = {
     BAD_RESPONSE: chalk`{bold Bad API Response.} Is Docker running?`,
     EMPTY_CREATE_ID: chalk`{bold Unable to create container.}`,
-    FAILED_CREATE_VOLUME: chalk`{bold Unable to create volume.}`
+    FAILED_CREATE_VOLUME: chalk`{bold Unable to create volume.}`,
+    FAILED_STOP: (id:string) => chalk`{bold Unable to stop job ${id}}`,
+    FAILED_DELETE: (id:string) => chalk`{bold Unable to delete job ${id}}`
   }
 
   constructor(shell: ShellCommand, options: {tag: string, selinux: boolean, socket: string})
@@ -66,66 +71,49 @@ export class DockerSocketRunDriver extends RunDriver
       }
     }) || [];
 
+    // -- remove any stopped jobs with invisible-on-stop flag?
+    //"labels": { [stack_path_label] : stack_paths }
+
     // -- filter jobs and return -----------------------------------------------
     return new ValidatedOutput(true, this.jobFilter(job_info, filter))
   }
 
-  jobStart(stack_path: string, configuration: StackConfiguration, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>
+  // NOTE: presently does not support auto removal for async jobs
+  jobStart(configuration: DockerJobConfiguration, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>
   {
-    // // -- create container ---------------------------------------------------
-    // var result = this.curl.post({
-    //   "url": "/containers/create",
-    //   "unix-socket": this.socket,
-    //   "encoding": "json",
-    //   "data": configuration.createObject(),
-    // })
+    const failure_response = {id: "", "exit-code": 0, output: ""}
+    configuration.addLabel("runner", cli_name) // add mandatory label
+    if(configuration.remove_on_exit && !configuration.synchronous)
+      configuration.addLabel(this.labels['invisible-on-stop'], "true")
 
-    // return (new ValidatedOutput(false)).pushError(this.ERRORSTRINGS.BAD_RESPONSE)
-    // if(!result.success) return result
-    // if(!result.value?.['id']) return new ValidatedOutput(false).pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
+    // -- make api request -----------------------------------------------------
+    const api_request = this.curl.post({
+      "url": "/containers/create",
+      "encoding": "json",
+      "data": configuration.apiContainerCreateObject(),
+    })
 
-    // const container_id = result.value['id'];
-    // if(callbacks?.postCreate) callbacks.postCreate(container_id)
-    // // -- run container --------------------------------------------------------
-    // if(configuration.syncronous()) // user docker command
-    // {
-    //   result = this.shell.exec(
-    //     `${this.base_command} start`,
-    //     {attach: {}, interactive: {}},
-    //     [container_id]
-    //   )
-    //   if(!result.success) return result
-    // }
-    // else // use docker api
-    // {
-    //   var result = this.curl.post({
-    //     "url": "/containers/create",
-    //     "encoding": "json",
-    //     "data": configuration.createObject(),
-    //   })
-    // }
-    // if(!result.success) return result
-    // if(callbacks?.postExec) callbacks.postExec(result)
+    // -- check request status -------------------------------------------------
+    if(!this.validJSONAPIResponse(api_request, 200) || !api_request.value.body?.Id)
+      return new ValidatedOutput(false, failure_response)
 
+    const id:string = api_request.value.body.Id;
+    // -- run job using docker command (allows for sync and remove) ------------
+    const command = `${this.base_command} start`;
+    const args: Array<string> = [id]
+    const flags = (configuration.synchronous) ? {attach: {}, interactive: {}} : {}
+    const shell_options = {stdio: (stdio == "pipe") ? "pipe" : "inherit"}
+    const exec_result = this.shell.exec(command, flags, args, shell_options)
 
+    if(configuration.remove_on_exit && configuration.synchronous)
+      this.jobDelete([id])
 
+    return new ValidatedOutput(true, {
+        "id": id,
+        "exit-code": ShellCommand.status(exec_result.value),
+        "output": ShellCommand.stdout(exec_result.value)
+    })
 
-    // const command = `${this.base_command} start`;
-    // const args: Array<string> = [container_id]
-    // const flags = (!job_options.detached) ? {attach: {}, interactive: {}} : {}
-    // const shell_options = (!job_options.detached) ? {stdio: "inherit"} : {stdio: "pipe"}
-    // result = this.shell.exec(command, flags, args, shell_options)
-    // if(!result.success) return result
-    // if(callbacks?.postExec) callbacks.postExec(result)
-    // return result
-
-
-
-    // return result
-
-
-
-   return new ValidatedOutput(true, {id:"","exit-code": 0,output:""})
   }
 
   jobLog(id: string, lines: string="all") : ValidatedOutput<string>
@@ -167,12 +155,25 @@ export class DockerSocketRunDriver extends RunDriver
 
   jobStop(ids: Array<string>) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true, undefined)
+    const result = new ValidatedOutput<undefined>(true, undefined)
+
+    // loop through ids. Note: since this driver is syncronous this could be very slow if ids.length is large
+    ids.map((id:string) => {
+      const api_request = this.curl.post({
+          "url": `/containers/${id}/stop`,
+          "data": {t: 10}
+        })
+      result.absorb(api_request);
+      if(!this.validAPIResponse(api_request, 204))
+        result.pushError(this.ERRORSTRINGS.FAILED_STOP(id))
+    })
+
+    return result
   }
 
   jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true, undefined)
+    return new ValidatedOutput(true, undefined) // require deletes
   }
 
   volumeCreate(options:Dictionary): ValidatedOutput<string>
@@ -185,9 +186,14 @@ export class DockerSocketRunDriver extends RunDriver
     return new ValidatedOutput(true, undefined)
   }
 
-  emptyConfiguration()
+  emptyStackConfiguration()
   {
     return new DockerStackConfiguration()
+  }
+
+  emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
+  {
+    return new DockerJobConfiguration(stack_configuration || this.emptyStackConfiguration())
   }
 
   private validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
