@@ -29,6 +29,6 @@ export abstract class ContainerDriver
     return stack_path // default behavior for remote images
   }
 
-  abstract emptyConfiguration(): StackConfiguration
+  abstract emptyStackConfiguration(): StackConfiguration
 
 }
