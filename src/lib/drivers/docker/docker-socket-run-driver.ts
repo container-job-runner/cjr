@@ -41,7 +41,7 @@ export class DockerSocketRunDriver extends RunDriver
     // -- make api request -----------------------------------------------------
     const api_result = this.curl.get({
       "url": "/containers/json",
-      "data": {
+      "params": {
         all: true,
         filters: JSON.stringify({"label": [`runner=${cli_name}`]})
       }
@@ -90,7 +90,7 @@ export class DockerSocketRunDriver extends RunDriver
     const api_request = this.curl.post({
       "url": "/containers/create",
       "encoding": "json",
-      "data": configuration.apiContainerCreateObject(),
+      "body": configuration.apiContainerCreateObject(),
     })
 
     // -- check request status -------------------------------------------------
@@ -121,7 +121,7 @@ export class DockerSocketRunDriver extends RunDriver
     // -- make api request -----------------------------------------------------
     var api_result = this.curl.get({
       "url": `/containers/${id}/logs`,
-      "data": {
+      "params": {
         "tail":   lines,
         "stdout": true,
         "stderr": true
@@ -160,7 +160,7 @@ export class DockerSocketRunDriver extends RunDriver
     ids.map((id:string) => {
       const api_request = this.curl.post({
           "url": `/containers/${id}/stop`,
-          "data": {t: 10}
+          "body": {t: 10}
         })
       result.absorb(api_request);
       if(!this.validAPIResponse(api_request, 204))
@@ -199,7 +199,7 @@ export class DockerSocketRunDriver extends RunDriver
     const api_request = this.curl.post({
       "url": "/volumes/create",
       "encoding": "json",
-      "data": data
+      "body": data
     })
 
        // -- check request status -------------------------------------------------
