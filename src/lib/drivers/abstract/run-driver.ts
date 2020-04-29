@@ -64,8 +64,8 @@ export abstract class RunDriver extends ContainerDriver
   abstract jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
   abstract jobStop(ids: Array<string>) : ValidatedOutput<undefined>
   abstract jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
-  abstract volumeCreate(options:Dictionary): ValidatedOutput<string>
-  abstract volumeDelete(options:Dictionary): ValidatedOutput<undefined>
+  abstract volumeCreate(options?:Dictionary): ValidatedOutput<string>
+  abstract volumeDelete(ids: Array<string>): ValidatedOutput<undefined>
 
   abstract emptyJobConfiguration(stack_configuration?: StackConfiguration): JobConfiguration<StackConfiguration>
 
