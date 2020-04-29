@@ -30,13 +30,14 @@ export type CurlOptions = {
   "output-response-header"?: boolean,
   "method"?: method_types,
   "header"?: string,
-  "data"?: string|Array<string>
+  "body"?: string|Array<string>
 }
 export type RequestOptions = {
   "url": string,
   "encoding"?: "json"|"url",
   "unix-socket"?: string,
-  "data"?: any
+  "params"?: any,
+  "body"?: any
 }
 export type RequestOutput = {
   "header": {
@@ -74,8 +75,8 @@ export class Curl
       flags['unix-socket'] = {value: options['unix-socket'], noequals: true}
     if(options['header'])
       flags['H'] = {value: options['header'], noequals: true}
-    if(options['data'])
-      flags['d'] = {value: options['data'], noequals: true}
+    if(options['body'])
+      flags['d'] = {value: options['body'], noequals: true}
     if(options['method'])
       flags['X'] = {value: options['method'], noequals: true}
     if(options['output-response-header'])
@@ -87,14 +88,9 @@ export class Curl
   // Shorthand for GET request with url or JSON data
   get(options: RequestOptions):ValidatedOutput<RequestOutput>
   {
-    const has_data  = options?.['data'] != undefined;
-    const dataToStr = (has_data && options['encoding'] == "json") ?
-      (s:string) => querystring.stringify({json: JSON.stringify(s)}) :
-      querystring.stringify;
-
     const result = this.curl(
       {
-        "url": `${url.resolve(this.base_url, options['url'])}?${(has_data) ? dataToStr(options['data']) : ""}`,
+        "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
         "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
         "output-response-header": true,
         "header": 'Content-Type: application/x-www-form-urlencoded',
@@ -107,14 +103,9 @@ export class Curl
   // Shorthand for POST request with url or JSON data
   delete(options: RequestOptions):ValidatedOutput<RequestOutput>
   {
-    const has_data  = options?.['data'] != undefined;
-    const dataToStr = (has_data && options['encoding'] == "json") ?
-      (s:string) => querystring.stringify({json: JSON.stringify(s)}) :
-      querystring.stringify;
-
     const result = this.curl(
       {
-        "url": `${url.resolve(this.base_url, options['url'])}?${(has_data) ? dataToStr(options['data']) : ""}`,
+        "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
         "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
         "output-response-header": true,
         "header": 'Content-Type: application/x-www-form-urlencoded',
@@ -139,15 +130,24 @@ export class Curl
     return this.processCurlOutput(c_result)
   }
 
+  private paramsString(options: RequestOptions)
+  {
+    const has_params  = options?.['params'] != undefined;
+    const dataToStr = (has_params && options['encoding'] == "json") ?
+      (s:string) => querystring.stringify({json: JSON.stringify(s)}) :
+      querystring.stringify;
+    return (has_params) ? `?${dataToStr(options['params'])}` : ""
+  }
+
   private postCurlOptions(options: RequestOptions, header: string, dataToStr:(data: any) => string):CurlOptions
   {
     return {
-        "url": url.resolve(this.base_url, options['url']),
+        "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
         "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
         "header": header,
         "method": 'POST',
         "output-response-header": true,
-        "data": dataToStr(options['data'])
+        "body": dataToStr(options['body'])
       }
   }
 
