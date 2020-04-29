@@ -148,9 +148,25 @@ export class DockerSocketRunDriver extends RunDriver
     return new ValidatedOutput(true, {id:"","exit-code": 0,output:""})
   }
 
-  jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
+  jobToImage(id: string, image_name: string): ValidatedOutput<string>
   {
-    return new ValidatedOutput(true, undefined)
+    const [repo, tag] = image_name.split(':')
+    const params:Dictionary = {"container": id}
+    if(repo) params["repo"] = repo
+    if(tag) params["tag"] = image_name
+
+    const api_request = this.curl.post({
+      "url": "/commit",
+      "params": params,
+      "encoding": "json",
+      "body": {},
+    })
+
+    // -- check request status -------------------------------------------------
+    if(!this.validAPIResponse(api_request, 201) || !api_request.value?.body?.Id)
+      return new ValidatedOutput(false, "")
+
+    return new ValidatedOutput(true, api_request.value.body.Id)
   }
 
   jobStop(ids: Array<string>) : ValidatedOutput<undefined>
