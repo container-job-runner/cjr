@@ -61,7 +61,7 @@ export abstract class RunDriver extends ContainerDriver
   abstract jobLog(id: string) : ValidatedOutput<string>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
   abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>;
-  abstract jobToImage(id: string, image_name: string): ValidatedOutput<undefined>
+  abstract jobToImage(id: string, image_name: string): ValidatedOutput<string>
   abstract jobStop(ids: Array<string>) : ValidatedOutput<undefined>
   abstract jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
   abstract volumeCreate(options?:Dictionary): ValidatedOutput<string>
