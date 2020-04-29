@@ -122,9 +122,9 @@ export class DockerSocketRunDriver extends RunDriver
     var api_result = this.curl.get({
       "url": `/containers/${id}/logs`,
       "data": {
-        tail: lines,
-        stdout: true,
-        stderr: true
+        "tail":   lines,
+        "stdout": true,
+        "stderr": true
       }
     })
 
@@ -157,7 +157,6 @@ export class DockerSocketRunDriver extends RunDriver
   {
     const result = new ValidatedOutput<undefined>(true, undefined)
 
-    // loop through ids. Note: since this driver is syncronous this could be very slow if ids.length is large
     ids.map((id:string) => {
       const api_request = this.curl.post({
           "url": `/containers/${id}/stop`,
@@ -173,17 +172,60 @@ export class DockerSocketRunDriver extends RunDriver
 
   jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true, undefined) // require deletes
+    const result = new ValidatedOutput(true, undefined)
+
+    ids.map((id:string) => {
+      // -- make api request -----------------------------------------------------
+      const api_result = this.curl.delete({
+        "url": `/containers/${id}`,
+      })
+      // -- check request status -------------------------------------------------
+      result.absorb(api_result)
+      if(!this.validAPIResponse(api_result, 204))
+        result.pushError(this.ERRORSTRINGS.FAILED_DELETE(id))
+    })
+
+    return result
   }
 
-  volumeCreate(options:Dictionary): ValidatedOutput<string>
+  volumeCreate(options?:Dictionary): ValidatedOutput<string>
   {
-    return new ValidatedOutput(true, "")
+    const data:Dictionary = {}
+    if(options?.name) data.Name = options.name
+    if(options?.driver) data.Driver = options.driver
+    if(options?.labels) data.Labels = options.labels
+
+    // -- make api request -----------------------------------------------------
+    const api_request = this.curl.post({
+      "url": "/volumes/create",
+      "encoding": "json",
+      "data": data
+    })
+
+       // -- check request status -------------------------------------------------
+    if(!this.validJSONAPIResponse(api_request, 201) || !api_request.value.body?.Name)
+      return new ValidatedOutput(false, "")
+
+    const id:string = api_request.value.body.Name;
+    return new ValidatedOutput(true, id)
   }
 
-  volumeDelete(options:Dictionary): ValidatedOutput<undefined>
+  volumeDelete(ids: Array<string>): ValidatedOutput<undefined>
   {
-    return new ValidatedOutput(true, undefined)
+    const result = new ValidatedOutput(true, undefined)
+
+    ids.map((id:string) => {
+      // -- make api request -----------------------------------------------------
+      const api_result = this.curl.delete({
+        "url": `/volumes/${id}`,
+      })
+      // -- check request status -------------------------------------------------
+      result.absorb(api_result)
+      if(!this.validAPIResponse(api_result, 204))
+        result.pushError(this.ERRORSTRINGS.FAILED_DELETE(id))
+    })
+
+    return result
   }
 
   emptyStackConfiguration()
