@@ -93,14 +93,34 @@ export class Curl
       querystring.stringify;
 
     const result = this.curl(
-        {
-          "url": `${url.resolve(this.base_url, options['url'])}?${(has_data) ? dataToStr(options['data']) : ""}`,
-          "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
-          "output-response-header": true,
-          "header": 'Content-Type: application/x-www-form-urlencoded',
-          "method": 'GET'
-        },
-      )
+      {
+        "url": `${url.resolve(this.base_url, options['url'])}?${(has_data) ? dataToStr(options['data']) : ""}`,
+        "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
+        "output-response-header": true,
+        "header": 'Content-Type: application/x-www-form-urlencoded',
+        "method": 'GET'
+      },
+    )
+    return this.processCurlOutput(result)
+  }
+
+  // Shorthand for POST request with url or JSON data
+  delete(options: RequestOptions):ValidatedOutput<RequestOutput>
+  {
+    const has_data  = options?.['data'] != undefined;
+    const dataToStr = (has_data && options['encoding'] == "json") ?
+      (s:string) => querystring.stringify({json: JSON.stringify(s)}) :
+      querystring.stringify;
+
+    const result = this.curl(
+      {
+        "url": `${url.resolve(this.base_url, options['url'])}?${(has_data) ? dataToStr(options['data']) : ""}`,
+        "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
+        "output-response-header": true,
+        "header": 'Content-Type: application/x-www-form-urlencoded',
+        "method": 'DELETE'
+      },
+    )
     return this.processCurlOutput(result)
   }
 
