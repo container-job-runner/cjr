@@ -4,16 +4,19 @@
 
 import * as path from 'path'
 import * as chalk from 'chalk'
-import { cli_name, stack_path_label, name_label } from '../../constants'
+import { cli_name, stack_path_label, name_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
 import { PathTools } from '../../fileio/path-tools'
-import { RunDriver, Dictionary, JobState, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
+import { RunDriver, JobState, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
 import { dr_vo_validator } from './schema/docker-run-schema'
 import { de_vo_validator } from './schema/docker-exec-schema'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { trim, parseJSON, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { SshShellCommand } from '../../remote/ssh-shell-command'
+import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
+import { DockerExecConfiguration } from '../../config/exec/docker-exec-configuration'
+import { ExecConstrutorOptions } from '../../config/exec/exec-configuration'
 
 export class DockerRunDriver extends RunDriver
 {
@@ -40,24 +43,33 @@ export class DockerRunDriver extends RunDriver
     this.selinux = options.selinux || false
   }
 
-  emptyConfiguration()
+  emptyStackConfiguration()
   {
     return new DockerStackConfiguration()
   }
 
-  jobStart(stack_path: string, configuration: DockerStackConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
+  {
+    return new DockerJobConfiguration(stack_configuration || this.emptyStackConfiguration())
+  }
+
+  emptyExecConfiguration(options?:ExecConstrutorOptions)
+  {
+    return new DockerExecConfiguration(options)
+  }
+
+  jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
     const failure_output:ValidatedOutput<NewJobInfo> = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
-    const job_options = configuration.runObject()
+    const job_options = job_configuration.cliContainerCreateObject()
     // add mandatory labels
-    const mandatory_labels = {runner: cli_name}
-    job_options["labels"] = { ...(job_options["labels"] || {}), ...mandatory_labels}
+    job_configuration.addLabel("runner", cli_name)
     if(!this.run_schema_validator(job_options).success)
       return failure_output.pushError(this.ERRORSTRINGS.INVALID_JOB)
     // -- create container -----------------------------------------------------
     const create_output = this.create(
-      this.imageName(stack_path, configuration.buildHash()),
-      configuration.getCommand(),
+      job_configuration.stack_configuration.getImage(),
+      job_configuration.command,
       job_options
     )
     if(!create_output.success) return failure_output
@@ -65,7 +77,7 @@ export class DockerRunDriver extends RunDriver
     // -- run container --------------------------------------------------------
     const command = `${this.base_command} start`;
     const args: Array<string> = [container_id]
-    const flags = (!job_options.detached) ? {attach: {}, interactive: {}} : {}
+    const flags = (job_configuration.synchronous) ? {attach: {}, interactive: {}} : {}
     const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
     const shell_output = this.shell.exec(command, flags, args, shell_options)
 
@@ -76,12 +88,12 @@ export class DockerRunDriver extends RunDriver
     })
   }
 
-  protected create(image_name: string, command_string: string, run_options={}) : ValidatedOutput<string>
+  protected create(image_name: string, command: Array<string>, run_options={}) : ValidatedOutput<string>
   {
-    const command = `${this.base_command} create`;
-    const args  = [image_name, command_string]
+    const cmd = `${this.base_command} create`;
+    const args  = [image_name].concat(command)
     const flags = this.runFlags(run_options)
-    const result = trim(this.shell.output(command, flags, args, {}))
+    const result = trim(this.shell.output(cmd, flags, args, {}))
     if(result.value === "") result.pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
     return result
   }
@@ -104,11 +116,13 @@ export class DockerRunDriver extends RunDriver
       .absorb(this.shell.exec(command, flags, args))
   }
 
-  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary={}, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  jobExec(id: string, configuration: DockerExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
     const command = `${this.base_command} exec`
-    const args = [id].concat(exec_command)
-    const flags = this.execFlags(exec_options)
+    const flags = this.execFlags(configuration.cliExecObject())
+    if(configuration.interactive && stdio == "pipe") // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will cause problems for programs that use TTY since -t flag is active
+      delete flags['i']
+    const args = [id].concat(configuration.command)
     const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
     const result = this.shell.exec(command, flags, args, shell_options)
 
@@ -165,52 +179,20 @@ export class DockerRunDriver extends RunDriver
   //                             job_states=[] or job_states=[""] then jobs with any state will be returned.
   jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
   {
-    const result:ValidatedOutput<Array<JobInfo>> = new ValidatedOutput(true, [])
-    const stack_filter: Array<string|undefined> = filter?.['stack-paths'] || [undefined];
-    const state_filter: Array<JobState|undefined> = filter?.['states'] || [undefined];
-    const name_filter: Array<string|undefined> = filter?.names || [undefined];
-    const id_filter: Array<string|undefined> = filter?.ids || [undefined];
-
-    // note: this is done using 4 loops with one docker command per each parameter choice.
-    // an alternative would be to get all jobs in one object, then filter using JS.
-    // However calling docker inspect on every job run by cjr could be very expensive
-
-    stack_filter.map((stack_path:string|undefined) => // loop through stacks
-    {
-      state_filter.map((job_state: JobState|undefined) => // loop through states
-      {
-        name_filter.map((name: string|undefined) => // loop through states
-        {
-          id_filter.map((id: string|undefined) => // loop through states
-          {
-            const jic_result = this.jobInfoCall(stack_path, job_state, name, id)
-            result.absorb(jic_result)
-            result.value.push( ...jic_result.value)
-          })
-        })
-      })
-    })
-
-    return result
-  }
-
-  protected jobInfoCall(stack_path: string|undefined, job_state: JobState|undefined, name: string|undefined, id: string|undefined) : ValidatedOutput<Array<JobInfo>>
-  {
-    const command = `${this.base_command} ps`;
+      const command = `${this.base_command} ps`;
       const args: Array<string> = []
       const flags: Dictionary = {
         "a" : {},
         "no-trunc": {},
         "filter": [`label=runner=${cli_name}`]
       };
-      if(stack_path) flags["filter"].push(`label=${stack_path_label}=${stack_path}`)
-      if(job_state) flags["filter"].push(`status=${job_state}`)
-      if(name) flags["filter"].push(`label=${name_label}=${name}`) // use label name instead of flags["filter"].push(`name=${name}`)
-      if(id) flags["filter"].push(`id=${id}`)
       this.addFormatFlags(flags, {format: "json"})
-      const result = this.outputParser(this.shell.output(command, flags, args, {}))
-      if(result.success) return this.extractJobInfo(result.value)
-      else return new ValidatedOutput(false, [])
+      const ps_output = this.outputParser(this.shell.output(command, flags, args, {}))
+      if(!ps_output.success) return new ValidatedOutput(false, [])
+
+      const info_request = this.extractJobInfo(ps_output.value)
+      if(!info_request.success) return new ValidatedOutput(false, [])
+      return new ValidatedOutput(true, this.jobFilter(info_request.value, filter))
   }
 
   protected extractJobInfo(raw_ps_data: Array<Dictionary>) : ValidatedOutput<Array<JobInfo>>
@@ -275,24 +257,22 @@ export class DockerRunDriver extends RunDriver
     )
   }
 
-  jobToImage(id: string, image_name: string) : ValidatedOutput<undefined>
+  jobToImage(id: string, image_name: string) : ValidatedOutput<string>
   {
     const command = `${this.base_command} commit`
     const args  = [id, image_name]
     const flags = {}
-    return new ValidatedOutput(true, undefined).absorb(
-      this.shell.output(command, flags, args)
-    )
+    return trim(this.shell.output(command, flags, args))
   }
 
   // options accepts following properties {lables?: Array<string>, driver?: string, name?:string}
-  volumeCreate(options:Dictionary = {}) : ValidatedOutput<string>
+  volumeCreate(options?:Dictionary) : ValidatedOutput<string>
   {
     const command = `${this.base_command} volume create`
     var flags:Dictionary = {}
     if(options?.labels?.length > 0) flags.labels = options?.labels
     if(options?.driver) flags.driver = options?.driver
-    const args = (options.name) ? [options.name] : []
+    const args = (options?.name) ? [options.name] : []
     return trim(this.shell.output(command, flags, args, {}))
   }
 
@@ -324,7 +304,7 @@ export class DockerRunDriver extends RunDriver
 
   protected execFlags(exec_object: Dictionary)
   {
-    var flags = {};
+    var flags: Dictionary = {};
     if(this.exec_schema_validator(exec_object).success) //verify docker-run schema
     {
       this.addInteractiveFlags(flags, exec_object)
