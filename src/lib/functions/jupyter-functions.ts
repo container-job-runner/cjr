@@ -121,10 +121,14 @@ export function listJupyter(container_runtime: ContainerRuntime, identifier: {"j
   const jupyter_job_id = job_info_request.value
   if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
-  else
+  else {
     return new ValidatedOutput(true, undefined).absorb(
-      container_runtime.runner.jobExec(jupyter_job_id, ['jupyter', 'notebook', 'list'], {}, 'inherit')
+      container_runtime.runner.jobExec(jupyter_job_id,
+        container_runtime.runner.emptyExecConfiguration( { command: ['jupyter', 'notebook', 'list'] } ),
+        'inherit'
+      )
     )
+  }
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
@@ -181,7 +185,11 @@ function jupyterCommand(jup_options: JupyterOptions) {
 function parseNotebookListCommand(runner: RunDriver, jupyter_id: string) : ValidatedOutput<string>
 {
   // -- get output from jupyter ------------------------------------------------
-  const exec_result = runner.jobExec(jupyter_id, ['jupyter', 'notebook', 'list'], {}, 'pipe')
+  const exec_result = runner.jobExec(
+    jupyter_id,
+    runner.emptyExecConfiguration( { command: ['jupyter', 'notebook', 'list'] } ),
+    'pipe'
+  )
   if(!exec_result.success) return new ValidatedOutput(false, "").absorb(exec_result)
   const raw_output = exec_result.value.output.trim().split("\n").pop() // get last non-empty line of output
   if(!raw_output) return new ValidatedOutput(false, "")

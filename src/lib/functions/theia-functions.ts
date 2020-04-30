@@ -98,8 +98,9 @@ export async function getTheiaUrl(container_runtime: ContainerRuntime, identifie
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   const exec_output = container_runtime.runner.jobExec(
     theia_job_id,
-    ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`],
-    {},
+    container_runtime.runner.emptyExecConfiguration({
+      command: ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
+    }),
     "pipe"
   )
   const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
