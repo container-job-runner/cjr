@@ -2,14 +2,14 @@
 // RunDriver: Abstract class for running jobs and accessing their info
 // ===========================================================================
 
-import { stack_path_label, name_label } from '../../constants'
+import { stack_path_label, name_label, Dictionary } from '../../constants'
 import { ContainerDriver } from "./container-driver"
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { JobConfiguration } from '../../config/jobs/job-configuration'
+import { ExecConfiguration, ExecConstrutorOptions } from '../../config/exec/exec-configuration'
 
 // -- types --------------------------------------------------------------------
-export type Dictionary = {[key: string]: any}
 export type JobPortInfo = {
   hostIp: string,
   containerPort: number,
@@ -60,7 +60,7 @@ export abstract class RunDriver extends ContainerDriver
   abstract jobStart(configuration: JobConfiguration<StackConfiguration>, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>;
   abstract jobLog(id: string) : ValidatedOutput<string>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
-  abstract jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>;
+  abstract jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>;
   abstract jobToImage(id: string, image_name: string): ValidatedOutput<string>
   abstract jobStop(ids: Array<string>) : ValidatedOutput<undefined>
   abstract jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
@@ -68,6 +68,8 @@ export abstract class RunDriver extends ContainerDriver
   abstract volumeDelete(ids: Array<string>): ValidatedOutput<undefined>
 
   abstract emptyJobConfiguration(stack_configuration?: StackConfiguration): JobConfiguration<StackConfiguration>
+  abstract emptyStackConfiguration(): StackConfiguration
+  abstract emptyExecConfiguration(options?: ExecConstrutorOptions): ExecConfiguration
 
   // A private helper function that can be used by JobInfo to filter jobs
   // if blacklist parameter is false or unspecified, filter will whitelist.
