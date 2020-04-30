@@ -6,12 +6,15 @@ import * as chalk from 'chalk'
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { ShellCommand } from "../../shell-command"
-import { RunDriver, Dictionary, JobState, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
+import { RunDriver, JobState, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl, RequestOutput } from '../../curl'
-import { cli_name, stack_path_label } from '../../constants'
+import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { spawn } from 'child_process'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
+import { DockerExecConfiguration } from '../../config/exec/docker-exec-configuration'
+import { ExecConstrutorOptions } from '../../config/exec/exec-configuration'
+import { trimTrailingNewline } from '../../functions/misc-functions'
 
 export class DockerSocketRunDriver extends RunDriver
 {
@@ -23,6 +26,7 @@ export class DockerSocketRunDriver extends RunDriver
     BAD_RESPONSE: chalk`{bold Bad API Response.} Is Docker running?`,
     EMPTY_CREATE_ID: chalk`{bold Unable to create container.}`,
     FAILED_CREATE_VOLUME: chalk`{bold Unable to create volume.}`,
+    FAILED_COMMIT: (id:string) => chalk`{bold Unable to create image from job ${id}.}`,
     FAILED_STOP: (id:string) => chalk`{bold Unable to stop job ${id}}`,
     FAILED_DELETE: (id:string) => chalk`{bold Unable to delete job ${id}}`
   }
@@ -98,7 +102,7 @@ export class DockerSocketRunDriver extends RunDriver
       return new ValidatedOutput(false, failure_response)
 
     const id:string = api_request.value.body.Id;
-    // -- run job using docker command (allows for sync and remove) ------------
+    // -- run job using docker command (allows for sync) ------------
     const command = `${this.base_command} start`;
     const args: Array<string> = [id]
     const flags = (configuration.synchronous) ? {attach: {}, interactive: {}} : {}
@@ -143,9 +147,56 @@ export class DockerSocketRunDriver extends RunDriver
     )
   }
 
-  jobExec(id: string, exec_command: Array<string>, exec_options:Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  jobExec(id: string, configuration: DockerExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
-    return new ValidatedOutput(true, {id:"","exit-code": 0,output:""})
+
+    if(configuration.synchronous) // use docker command
+    {
+      const command = `${this.base_command} exec`
+      var flags:Dictionary = {t: {}}
+      if(configuration.interactive && stdio == "inherit") // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will occur since -t flag is active
+        flags['i'] = {}
+      if(configuration.working_directory) flags['w'] = configuration.working_directory
+      const args = [id].concat(configuration.command)
+      const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
+
+      const result = this.shell.exec(command, flags, args, shell_options)
+      return new ValidatedOutput(true, {
+        "id": "", // no idea for docker cli exec
+        "output": ShellCommand.stdout(result.value).replace(/\r\n$/, ""),
+        "exit-code": ShellCommand.status(result.value)
+      })
+    }
+    else // user docker API
+    {
+      const failure_response = {id: "", "exit-code": 0, output: ""}
+      const api_create_request = this.curl.post({
+        "url": `/containers/${id}/exec`,
+        "encoding": "json",
+        "body": configuration.apiExecObject(),
+      })
+
+      // -- check request status -------------------------------------------------
+      if(!this.validAPIResponse(api_create_request, 201) || !api_create_request.value.body?.Id)
+        return new ValidatedOutput(false, failure_response)
+
+      const exec_id:string = api_create_request.value.body?.Id
+      const api_start_request = this.curl.post({
+        "url": `/exec/${exec_id}/start`,
+        "encoding": "json",
+        "body": {tty: true, detach: true},
+      })
+
+      // -- check request status -------------------------------------------------
+      if(!this.validAPIResponse(api_start_request, 200))
+        return new ValidatedOutput(false, failure_response)
+
+      return new ValidatedOutput(true, {
+        "id": exec_id,
+        "output": "",
+        "exit-code": 0
+      })
+    }
   }
 
   jobToImage(id: string, image_name: string): ValidatedOutput<string>
@@ -164,7 +215,7 @@ export class DockerSocketRunDriver extends RunDriver
 
     // -- check request status -------------------------------------------------
     if(!this.validAPIResponse(api_request, 201) || !api_request.value?.body?.Id)
-      return new ValidatedOutput(false, "")
+      return new ValidatedOutput(false, "").pushError(this.ERRORSTRINGS.FAILED_COMMIT(id))
 
     return new ValidatedOutput(true, api_request.value.body.Id)
   }
@@ -252,6 +303,11 @@ export class DockerSocketRunDriver extends RunDriver
   emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
   {
     return new DockerJobConfiguration(stack_configuration || this.emptyStackConfiguration())
+  }
+
+  emptyExecConfiguration(options?:ExecConstrutorOptions)
+  {
+    return new DockerExecConfiguration(options)
   }
 
   private validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
