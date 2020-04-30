@@ -34,6 +34,7 @@ export type CurlOptions = {
 }
 export type RequestOptions = {
   "url": string,
+  "param-encoding"?: "json"|"url",
   "encoding"?: "json"|"url",
   "unix-socket"?: string,
   "params"?: any,
@@ -133,7 +134,7 @@ export class Curl
   private paramsString(options: RequestOptions)
   {
     const has_params  = options?.['params'] != undefined;
-    const dataToStr = (has_params && options['encoding'] == "json") ?
+    const dataToStr = (has_params && options['param-encoding'] == "json") ?
       (s:string) => querystring.stringify({json: JSON.stringify(s)}) :
       querystring.stringify;
     return (has_params) ? `?${dataToStr(options['params'])}` : ""
