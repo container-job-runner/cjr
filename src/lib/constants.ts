@@ -3,6 +3,9 @@ import * as os from 'os'
 import * as chalk from 'chalk'
 import * as crypto from 'crypto'
 
+// types
+export type Dictionary = { [key:string] : any }
+
 //cli names
 export const cli_name = "cjr"
 
