@@ -48,19 +48,20 @@ export default class Run extends StackCommand {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
-    // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
-        // -- select port ----------------------------------------------------------
-    if(flags['port'] == 'auto') {
-      const port_number = nextAvailablePort(container_runtime.runner, 7013)
-      const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
-      flags['port'] = `${port_address}:${port_number}:${port_number}`
-    }
 
     const project_root = flags['project-root'] || "";
     const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start jupyter ------------------------
     {
+      // -- check x11 user settings ----------------------------------------------
+      if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+          // -- select port ----------------------------------------------------------
+      if(flags['port'] == 'auto') {
+        const port_number = nextAvailablePort(container_runtime.runner, 7013)
+        const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
+        flags['port'] = `${port_address}:${port_number}:${port_number}`
+      }
+
       const result = startJupyterInProject(
         container_runtime,
         output_options,

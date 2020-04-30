@@ -53,16 +53,17 @@ export default class Run extends StackCommand {
     const id_request:ValidatedOutput<string> = firstJobId(container_runtime.runner.jobInfo({"ids": [args.id]}))
     if(!id_request.success) return printResultState(id_request)
     const job_id = id_request.value
-    // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
-    // -- select port ----------------------------------------------------------
-    if(flags['port'] == 'auto')
-      flags['port'] = `${nextAvailablePort(container_runtime.runner, 7019)}`
     // -- read settings --------------------------------------------------------
     const project_root = flags['project-root'] || "";
     const webapp_path = this.settings.get('webapp');
     if(args['command'] === 'start') // -- start jupyter ------------------------
     {
+      // -- check x11 user settings ----------------------------------------------
+      if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+      // -- select port ----------------------------------------------------------
+      if(flags['port'] == 'auto')
+        flags['port'] = `${nextAvailablePort(container_runtime.runner, 7019)}`
+
       const result = startJupyterInJob(
         container_runtime,
         {
