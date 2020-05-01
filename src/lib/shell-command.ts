@@ -147,4 +147,17 @@ export class ShellCommand
       return child_process?.status || -1
     }
 
+    // == Helper functions for flags
+
+    static removeEmptyFlags(flags: Dictionary)
+    {
+      Object.keys(flags).map((key:string) => {
+        if(flags[key] === undefined || flags[key] === "")
+          delete flags[key]
+        else if(flags[key]?.value === "")
+          delete flags[key]
+      })
+      return flags
+    }
+
 }
