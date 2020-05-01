@@ -15,8 +15,7 @@ import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stac
 import { trim, parseJSON, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { SshShellCommand } from '../../remote/ssh-shell-command'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
-import { DockerExecConfiguration } from '../../config/exec/docker-exec-configuration'
-import { ExecConstrutorOptions } from '../../config/exec/exec-configuration'
+import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec-configuration'
 
 export class DockerRunDriver extends RunDriver
 {
@@ -55,7 +54,7 @@ export class DockerRunDriver extends RunDriver
 
   emptyExecConfiguration(options?:ExecConstrutorOptions)
   {
-    return new DockerExecConfiguration(options)
+    return new ExecConfiguration(options)
   }
 
   jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
@@ -116,12 +115,15 @@ export class DockerRunDriver extends RunDriver
       .absorb(this.shell.exec(command, flags, args))
   }
 
-  jobExec(id: string, configuration: DockerExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
     const command = `${this.base_command} exec`
-    const flags = this.execFlags(configuration.cliExecObject())
-    if(configuration.interactive && stdio == "pipe") // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will cause problems for programs that use TTY since -t flag is active
-      delete flags['i']
+      const flags = ShellCommand.removeEmptyFlags({
+        'w': configuration.working_directory,
+        'd': (configuration.synchronous) ? undefined : {},
+        't': {},
+        'i': (stdio === "pipe") ? undefined : {} // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will cause problems for programs that use TTY since -t flag is active
+      })
     const args = [id].concat(configuration.command)
     const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
     const result = this.shell.exec(command, flags, args, shell_options)
@@ -302,18 +304,6 @@ export class DockerRunDriver extends RunDriver
     return flags
   }
 
-  protected execFlags(exec_object: Dictionary)
-  {
-    var flags: Dictionary = {};
-    if(this.exec_schema_validator(exec_object).success) //verify docker-run schema
-    {
-      this.addInteractiveFlags(flags, exec_object)
-      this.addWorkingDirFlags(flags, exec_object)
-      this.addDetachedFlags(flags, exec_object)
-    }
-    return flags
-  }
-
   // === START protected Helper Functions for flag generation ====================
 
   protected addFormatFlags(flags: Dictionary, run_object: Dictionary)
@@ -352,14 +342,6 @@ export class DockerRunDriver extends RunDriver
     if(run_object?.name)
     {
       flags["name"] = run_object.name
-    }
-  }
-
-  protected addDetachedFlags(flags:Dictionary, run_object: Dictionary)
-  {
-    if(run_object?.detached)
-    {
-      flags["d"] = {}
     }
   }
 
