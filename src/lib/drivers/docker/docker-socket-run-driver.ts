@@ -12,9 +12,9 @@ import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { spawn } from 'child_process'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
-import { DockerExecConfiguration } from '../../config/exec/docker-exec-configuration'
-import { ExecConstrutorOptions } from '../../config/exec/exec-configuration'
+import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec-configuration'
 import { trimTrailingNewline } from '../../functions/misc-functions'
+import { JSTools } from '../../js-tools'
 
 export class DockerSocketRunDriver extends RunDriver
 {
@@ -147,33 +147,42 @@ export class DockerSocketRunDriver extends RunDriver
     )
   }
 
-  jobExec(id: string, configuration: DockerExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
-
-    if(configuration.synchronous) // use docker command
+    if(configuration.synchronous) // -- use docker command ---------------------
     {
       const command = `${this.base_command} exec`
-      var flags:Dictionary = {t: {}}
-      if(configuration.interactive && stdio == "inherit") // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will occur since -t flag is active
-        flags['i'] = {}
-      if(configuration.working_directory) flags['w'] = configuration.working_directory
+      const flags = ShellCommand.removeEmptyFlags({
+        'w': configuration.working_directory,
+        'd': (configuration.synchronous) ? undefined : {},
+        't': {},
+        'i': (stdio === "pipe") ? undefined : {} // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will cause problems for programs that use TTY since -t flag is active
+      })
       const args = [id].concat(configuration.command)
       const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
-
       const result = this.shell.exec(command, flags, args, shell_options)
+
       return new ValidatedOutput(true, {
         "id": "", // no idea for docker cli exec
         "output": ShellCommand.stdout(result.value).replace(/\r\n$/, ""),
         "exit-code": ShellCommand.status(result.value)
       })
     }
-    else // user docker API
+    else // --- user docker API ------------------------------------------------
     {
       const failure_response = {id: "", "exit-code": 0, output: ""}
       const api_create_request = this.curl.post({
         "url": `/containers/${id}/exec`,
         "encoding": "json",
-        "body": configuration.apiExecObject(),
+        "body": {
+          "AttachStdin": true,
+          "AttachStdout": true,
+          "AttachStderr": true,
+          "OpenStdin": true,
+          "Tty": true,
+          "Cmd": configuration.command,
+          "WorkingDir": configuration.working_directory,
+        }
       })
 
       // -- check request status -------------------------------------------------
@@ -307,7 +316,7 @@ export class DockerSocketRunDriver extends RunDriver
 
   emptyExecConfiguration(options?:ExecConstrutorOptions)
   {
-    return new DockerExecConfiguration(options)
+    return new ExecConfiguration(options)
   }
 
   private validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
