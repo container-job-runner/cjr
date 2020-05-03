@@ -4,12 +4,12 @@
 
 import { ShellCommand } from "../../shell-command"
 import { JobInfo, JobPortInfo } from '../abstract/run-driver'
-import { DockerRunDriver }  from '../docker/docker-run-driver'
-import { pr_vo_validator } from './schema/podman-run-schema'
-import { PodmanStackConfiguration } from '../../config/stacks/podman/podman-stack-configuration'
+import { DockerRunDriver, DockerCreateOptions }  from '../docker/docker-run-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
 import { stack_path_label } from '../../constants'
+import { DockerStackConfigObject, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
+import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
@@ -17,14 +17,16 @@ type Dictionary = {[key: string]: any}
 export class PodmanRunDriver extends DockerRunDriver
 {
   protected base_command = 'podman'
-  protected outputParser = parseJSON
-  protected run_schema_validator  = pr_vo_validator
+  protected JSONOutputParser = parseJSON
 
-  protected addFormatFlags(flags: Dictionary, run_flags: Dictionary)
+  protected extractCommand(job_configuration: DockerJobConfiguration) : Array<string>
   {
-    if(run_flags?.format === "json") {
-      flags["format"] = 'json'
-    }
+    return job_configuration.command;
+  }
+
+  protected addJSONFormatFlag(flags: Dictionary)
+  {
+    flags["format"] = 'json'
   }
 
   protected extractJobInfo(raw_ps_data: Array<Dictionary>) : ValidatedOutput<Array<JobInfo>>
@@ -35,7 +37,7 @@ export class PodmanRunDriver extends DockerRunDriver
       return new ValidatedOutput(true, [])
 
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
-    const result = this.outputParser(
+    const result = this.JSONOutputParser(
       this.shell.output(`${this.base_command} inspect`, {}, ids, {})
     )
     if(!result.success) return new ValidatedOutput(false, [])
@@ -83,36 +85,36 @@ export class PodmanRunDriver extends DockerRunDriver
     )
   }
 
-  protected addResourceFlags(flags: Dictionary, run_object: Dictionary)
+  protected addResourceFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
-    const valid_keys = ["cpus", "gpu", "memory"] // podman does not support swap-memory
     const keys = Object.keys(run_object?.resources || {})
-    keys?.map((key:string) => {
-      if(valid_keys.includes(key)) flags[key] = run_object?.resources[key]
+    const valid_keys:Array<keyof DockerStackResourceConfig> = ["cpus", "gpu", "memory"] // podman does not support memory-swap
+    valid_keys?.map((key:keyof DockerStackResourceConfig) => {
+      if(run_object?.resources?.[key]) flags[key] = run_object.resources[key]
     })
   }
 
-  protected mountObjectToFlagStr(mo: Dictionary)
+  protected mountObjectToFlagStr(mo: DockerStackMountConfig)
   {
     switch(mo.type)
     {
       case "bind":
-        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.hostPath)},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.hostPath || "")},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""}`
       case "volume":
-        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.volumeName)},destination=${ShellCommand.bashEscape(mo.containerPath)},exec${(mo.readonly) ? ",readonly" : ""}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.volumeName || "")},destination=${ShellCommand.bashEscape(mo.containerPath)},exec${(mo.readonly) ? ",readonly" : ""}`
       case "tmpfs":
         return `type=${mo.type},destination=${ShellCommand.bashEscape(mo.containerPath)}`
     }
   }
 
-  protected selinuxBindMountObjectToFlagStr(mo: Dictionary)
+  protected selinuxBindMountObjectToFlagStr(mo: DockerStackMountConfig)
   {
-    if(mo.type !== "bind") return []
+    if(mo.type !== "bind" || !mo.hostPath) return []
     const selinux_str = 'z' // allow sharing with all containers
     return `${ShellCommand.bashEscape(mo.hostPath)}:${ShellCommand.bashEscape(mo.containerPath)}:${selinux_str}${(mo.readonly) ? ",readonly" : ""}`
   }
 
-  protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)
+  protected addSpecialFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     super.addSpecialFlags(flags, run_object)
     if(run_object?.flags?.userns) { // used for consistant file permissions
@@ -125,16 +127,19 @@ export class PodmanRunDriver extends DockerRunDriver
     {
       flags["mac-address"] = run_object?.flags?.['mac-address']
     }
-    if(run_object?.flags?.['net'])
+    if(run_object?.flags?.['network'])
     {
-      flags["net"] = run_object?.flags?.['net']
+      flags["network"] = run_object?.flags?.['network']
     }
     return flags
   }
 
-  emptyConfiguration()
+  protected addEntrypointFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
-    return new PodmanStackConfiguration()
+    if(run_object?.entrypoint)
+    {
+      flags["entrypoint"] = JSON.stringify(run_object['entrypoint'])
+    }
   }
 
 }
