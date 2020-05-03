@@ -3,11 +3,11 @@
 // ===========================================================================
 
 import { stack_path_label, name_label, Dictionary } from '../../constants'
-import { ContainerDriver } from "./container-driver"
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { JobConfiguration } from '../../config/jobs/job-configuration'
 import { ExecConfiguration, ExecConstrutorOptions } from '../../config/exec/exec-configuration'
+import { ShellCommand } from '../../shell-command'
 
 // -- types --------------------------------------------------------------------
 export type JobPortInfo = {
@@ -38,8 +38,15 @@ export type NewJobInfo = {
   "exit-code": number
 }
 
-export abstract class RunDriver extends ContainerDriver
+export abstract class RunDriver
 {
+  protected shell: ShellCommand
+
+  constructor(shell: ShellCommand)
+  {
+    this.shell = shell;
+  }
+
   // ---------------------------------------------------------------------------
   // JOBINFO - returns information on running and completed jobs
   // -- Parameters -------------------------------------------------------------
@@ -57,7 +64,7 @@ export abstract class RunDriver extends ContainerDriver
   // ValidatedOutput<Array<JobInfo>> - information about matching job
   // ---------------------------------------------------------------------------
   abstract jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>;
-  abstract jobStart(configuration: JobConfiguration<StackConfiguration>, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>;
+  abstract jobStart(configuration: JobConfiguration<StackConfiguration<any>>, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>;
   abstract jobLog(id: string) : ValidatedOutput<string>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
   abstract jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>;
@@ -67,8 +74,8 @@ export abstract class RunDriver extends ContainerDriver
   abstract volumeCreate(options?:Dictionary): ValidatedOutput<string>
   abstract volumeDelete(ids: Array<string>): ValidatedOutput<undefined>
 
-  abstract emptyJobConfiguration(stack_configuration?: StackConfiguration): JobConfiguration<StackConfiguration>
-  abstract emptyStackConfiguration(): StackConfiguration
+  abstract emptyJobConfiguration(stack_configuration?: StackConfiguration<any>): JobConfiguration<StackConfiguration<any>>
+  abstract emptyStackConfiguration(): StackConfiguration<any>
   abstract emptyExecConfiguration(options?: ExecConstrutorOptions): ExecConfiguration
 
   // A private helper function that can be used by JobInfo to filter jobs
