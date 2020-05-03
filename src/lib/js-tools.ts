@@ -49,6 +49,21 @@ export class JSTools
     }
   }
 
+  static rRemoveEmpty(a: Dictionary)
+  {
+    if(JSTools.isObject(a))
+    {
+      for (const key in a)
+      {
+        if(JSTools.isEmpty(a[key]))
+          delete a[key]
+        else
+          JSTools.rRemoveEmpty(a[key])
+      }
+    }
+    return a
+  }
+
   static rCopy(a: Dictionary)
   {
     return JSTools.rMerge({}, a)
@@ -85,15 +100,18 @@ export class JSTools
   static isString(val: any) {
       return (typeof val === 'string' || val instanceof String);
   }
-
+  static isBoolean(val: any) {
+      return (typeof val === 'boolean');
+  }
   static isArray(val: any) {
       return val instanceof Array;
   }
 
   static isEmpty(val: any) {
-     return (JSTools.isString(val) && (val === "")) ||
+    if(JSTools.isBoolean(val)) return false
+    return (JSTools.isString(val) && (val === "")) ||
      (JSTools.isArray(val) && (val.length == 0)) ||
-     (JSTools.isObject(val) && (Object.entries(val).length === 0)) ||
+     (JSTools.isObject(val) && (Object.keys(val).length === 0)) ||
      (!val)
   }
 
