@@ -3,56 +3,16 @@
 // It encapsulates the most general features required by all configurations
 // ===========================================================================
 
-import * as fs from 'fs'
-import * as path from 'path'
-import { JSTools } from '../../../js-tools'
-import { YMLFile } from '../../../fileio/yml-file'
 import { ValidatedOutput } from '../../../validated-output'
-type Dictionary = {[key: string]: any}
+import { Dictionary } from '../../../constants'
 
-export abstract class StackConfiguration
+export abstract class StackConfiguration<T>
 {
-  protected raw_object: Dictionary = {}
-  protected abstract yml_file:YMLFile
-
-  setRawObject(value: Dictionary, parent_path: string) {
-    const result = this.validate(value)
-    if(result.success) this.raw_object = value
-    return result
-  }
-
-  abstract validate(value: Dictionary): ValidatedOutput<undefined>;
-
-  getRawObject()
-  {
-    return JSTools.rCopy(this.raw_object)
-  }
-
-  merge (other: StackConfiguration) {
-    JSTools.rMerge(this.raw_object, other.raw_object)
-  }
-
-  loadFromFile(file_path: string, mode: 'overwrite'|'merge'='overwrite') : ValidatedOutput<undefined>
-  {
-    // -- exit if no hostRoot is specified -------------------------------------
-    if(!file_path) return new ValidatedOutput(true, undefined);
-    // -- exit if no settings file exists --------------------------------------
-    if(!fs.existsSync(file_path)) return new ValidatedOutput(false, undefined);
-    // -- exit if settings file is invalid -------------------------------------
-    const read_result = this.yml_file.validatedRead(file_path)
-    if(!read_result.success)
-      return read_result
-    else
-      return this.setRawObject(read_result.value, path.dirname(file_path))
-  }
-
-  writeToFile(file_path: string): ValidatedOutput<undefined>|ValidatedOutput<Error>
-  {
-    return this.yml_file.validatedWrite(file_path, this.raw_object)
-  }
-
-  abstract buildHash(): string;  // unique id to identify configuration for building
-  abstract buildObject() : Dictionary;
+  stack_path: string|undefined
+  abstract config: T
+  abstract load(stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<undefined>
+  abstract readConfigFromFile(path: string) : ValidatedOutput<undefined>
+  abstract writeConfigToFile(path: string) : ValidatedOutput<undefined> | ValidatedOutput<Error>
 
   // == modifiers ==============================================================
   abstract setImage(value: string): void
@@ -66,8 +26,8 @@ export abstract class StackConfiguration
   abstract removeVolume(parent_path: string): ValidatedOutput<undefined>;
   abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>;
   // ----> resource modifiers
-  abstract setMemory(value: number, units:"GB"|"MB"|"B") : void
-  abstract setSwapMemory(value: number, units:"GB"|"MB"|"B") : void
+  abstract setMemory(value: number, units:"GB"|"MB"|"KB"|"B") : void
+  abstract setSwapMemory(value: number, units:"GB"|"MB"|"KB"|"B") : void
   abstract setCpu(value: number) : void
   // ----> port modifiers
   abstract addPort(hostPort: number, containerPort: number, address?:string): boolean;
@@ -81,8 +41,12 @@ export abstract class StackConfiguration
   // ----> build Args
   abstract addBuildArg(name: string, value: string, evaluate?: boolean): boolean;
   abstract removeBuildArg(name: string, value: string, evaluate?: boolean): boolean;
+
   // == access functions =======================================================
   abstract getImage(): string;
+  abstract getEntrypoint() : Array<string> | undefined;
+  abstract getName(): string;
+
   abstract getContainerRoot() : string;
   abstract getRsyncUploadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
   abstract getRsyncDownloadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
