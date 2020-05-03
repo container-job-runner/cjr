@@ -7,7 +7,7 @@ import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { ShellCommand } from "../../shell-command"
 import { RunDriver, JobState, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
-import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfiguration, DockerStackPortConfig, DockerStackMountConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { spawn } from 'child_process'
@@ -16,8 +16,59 @@ import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec
 import { trimTrailingNewline } from '../../functions/misc-functions'
 import { JSTools } from '../../js-tools'
 
+// === START API TYPES =========================================================
+
+type DockerAPI_CreateObject =
+{
+  "Image"?: string,
+  "Entrypoint"?: Array<string>,
+  "Cmd"?: Array<string>,
+  "WorkingDir"?: string,
+  "Env"?: Array<string>, // strings should be of form VAR=VALUE
+  "ExposedPorts"?: { [key:string] : {} } // key is <port>/<protocol> (e.g. 3000/tcp)
+  "HostConfig"?: DockerAPI_HostConfig,
+  "Labels"?: {[key: string] : string},
+  "MacAddress"?: string,
+  "AttachStdin"?: boolean,
+  "AttachStdout"?: boolean,
+  "AttachStderr"?: boolean,
+  "OpenStdin"?: boolean,
+  "Tty"?: boolean,
+}
+
+type DockerAPI_HostConfig =
+{
+  "Binds"?: Array<string>,
+  "Tmpfs"?: {[key: string]: any}, // containerPath : tempfs options (see: https://docs.docker.com/engine/api/v1.40/#operation/ContainerCreate)
+  "Mounts"?: Array<DockerAPI_Mount>,
+  "PortBindings"?: {[key: string]: Array<DockerAPI_HostPortConfig>}, // key is <port>/<protocol> (e.g. 3000/tcp)
+  "NetworkMode"?: "bridge" | "host" | "none",
+  "CpuPeriod"?: number,
+  "CpuQuota"?: number,
+  "Memory"?: number,
+  "MemorySwap"?: number
+}
+
+type DockerAPI_Mount =
+{
+  "Target": string,
+  "Source": string,
+  "Type": "bind"|"volume"|"tmpfs",
+  "ReadOnly"?: boolean,
+  "Consistency"?: "default" | "consistent" | "cached" | "delegated"
+}
+
+type DockerAPI_HostPortConfig =
+{
+  "HostIp"?: string,
+  "HostPort": string
+}
+
+// === END API TYPES ===========================================================
+
 export class DockerSocketRunDriver extends RunDriver
 {
+  protected tag: string|undefined
   protected curl: Curl
   protected base_command: string = "docker"
   protected labels = {"invisible-on-stop": "IOS"}
@@ -33,11 +84,13 @@ export class DockerSocketRunDriver extends RunDriver
 
   constructor(shell: ShellCommand, options: {tag: string, selinux: boolean, socket: string})
   {
-    super(shell, options.tag)
+    super(shell)
+    this.tag = options?.tag
     this.curl = new Curl(shell, {
       "unix-socket": options.socket,
       "base-url": "http://v1.24"
     })
+
   }
 
   jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
@@ -94,7 +147,7 @@ export class DockerSocketRunDriver extends RunDriver
     const api_request = this.curl.post({
       "url": "/containers/create",
       "encoding": "json",
-      "body": configuration.apiContainerCreateObject(),
+      "body": this.generateCreateData(configuration),
     })
 
     // -- check request status -------------------------------------------------
@@ -306,7 +359,7 @@ export class DockerSocketRunDriver extends RunDriver
 
   emptyStackConfiguration()
   {
-    return new DockerStackConfiguration()
+    return new DockerStackConfiguration(this.tag)
   }
 
   emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
@@ -332,5 +385,188 @@ export class DockerSocketRunDriver extends RunDriver
     if(response.value.header.type !== "application/json") return false
     return true
   }
+
+  private generateCreateData(job_configuration: DockerJobConfiguration) : DockerAPI_CreateObject
+  {
+    const create_object: DockerAPI_CreateObject = {}
+
+    this.addApiCreateObjectMounts(job_configuration.stack_configuration, create_object)
+    this.addApiCreateObjectPorts(job_configuration.stack_configuration, create_object)
+    this.addApiCreateObjectEnvironment(job_configuration.stack_configuration, create_object)
+    this.addApiCreateObjectResourceLimits(job_configuration.stack_configuration, create_object)
+    this.addApiCreateObjectMisc(job_configuration.stack_configuration, create_object)
+    create_object.Image = job_configuration.stack_configuration.getImage()
+
+    const job_props: DockerAPI_CreateObject = {
+      "AttachStdin": true,
+      "AttachStdout": true,
+      "AttachStderr": true,
+      "OpenStdin": true,
+      "Tty": true,
+      "Cmd": job_configuration.command,
+      "WorkingDir": job_configuration.working_directory,
+      "Labels": job_configuration.labels
+    }
+
+    return {
+      ... create_object,
+      ... job_props
+    }
+  }
+
+  // === START API Functions for generating CreateObject ===================================================
+
+  private addApiCreateObjectMounts(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  {
+    // -- exit if no mounts are present in configuration  ----------------------
+    if(!configuration.config?.mounts)
+      return
+
+    // -- create any missing fields --------------------------------------------
+    if(!create_object.HostConfig)
+      create_object.HostConfig = {}
+    if(!create_object.HostConfig.Mounts)
+      create_object.HostConfig.Mounts = []
+
+    // -- add mounts -----------------------------------------------------------
+    const mounts = create_object.HostConfig.Mounts
+    configuration.config?.mounts?.map((m: DockerStackMountConfig) => {
+      // -- volumes ------------------------------------------------------------
+      if(m?.type === 'volume' && m?.containerPath && m?.volumeName)
+      {
+        const mount: DockerAPI_Mount = {"Type": "volume", "Source": m.volumeName, "Target": m.containerPath}
+        if(m.readonly) mount.ReadOnly = true
+        mounts.push(mount)
+      }
+      // -- binds ------------------------------------------------------------
+      if(m?.type === 'bind' && m?.containerPath && m?.hostPath)
+      {
+        const mount: DockerAPI_Mount = {"Type": "bind", "Source": m.hostPath, "Target": m.containerPath}
+        if(m.readonly) mount.ReadOnly = true
+        if(['consistent', 'delegated', 'cached'].includes(m.consistency || "")) mount.Consistency = m.consistency
+        mounts.push(mount)
+      }
+      // -- tempfs -----------------------------------------------------------
+      if(m?.type === 'tmpfs' && m?.containerPath)
+      {
+        const mount: DockerAPI_Mount = {"Type": "tmpfs", "Source": "", "Target": m.containerPath}
+        mounts.push(mount)
+      }
+    })
+  }
+
+  private addApiCreateObjectPorts(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  {
+    // -- exit if no ports are present in configuration  ----------------------
+    if(!configuration.config?.ports)
+      return
+
+    // -- create any missing fields --------------------------------------------
+    if(!create_object.HostConfig)
+      create_object.HostConfig = {}
+    if(!create_object.HostConfig.PortBindings)
+      create_object.HostConfig.PortBindings = {}
+    if(!create_object.ExposedPorts)
+      create_object.ExposedPorts = {}
+
+    // -- add ports -----------------------------------------------------------
+    const ports = create_object.HostConfig.PortBindings
+    const exposed_ports = create_object.ExposedPorts
+    configuration.config?.ports?.map((p: DockerStackPortConfig) => {
+      if(p?.hostPort && p?.containerPort)
+      {
+         const key = `${p.containerPort}/tcp`
+         const port: Array<DockerAPI_HostPortConfig> = [{'HostPort': `${p.hostPort}`}]
+         if(p.hostIp) port[0]['HostIp'] = p.hostIp
+         ports[key] = port
+         exposed_ports[key] = {}
+      }
+    })
+  }
+
+  private addApiCreateObjectEnvironment(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  {
+    // -- exit if no environment are present in configuration  -----------------
+    if(configuration.config?.environment == undefined)
+      return
+
+    // -- create any missing fields --------------------------------------------
+    if(!create_object.Env)
+      create_object.Env = []
+
+    // -- add environments -----------------------------------------------------
+    const co_env = create_object.Env
+    const env = configuration.config.environment
+    Object.keys(env).map( (env_name:string) => {
+      co_env.push(`${env_name}=${env[env_name]}`)
+    })
+  }
+
+  private addApiCreateObjectResourceLimits(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  {
+    // -- exit if no mounts are present in configuration  ----------------------
+    if(!configuration.config?.resources)
+      return
+
+    // -- create any missing fields --------------------------------------------
+    if(!create_object.HostConfig)
+      create_object.HostConfig = {}
+
+    // -- add resource limits --------------------------------------------------
+    const bitParser = (value: string|undefined) : number => {
+
+      if(!value) return -1
+
+      // extracts integer before b,k,m,g
+      const extract = (s:string) => parseInt(
+        s.match(/^[0-9]+(?=[bkmg])/)?.pop() || ""
+      )
+
+      if(/^[0-9]+b/.test(value))
+        return extract(value)
+      else if(/^[0-9]+k/.test(value))
+        return 1000 * extract(value)
+      else if(/^[0-9]+m/.test(value))
+        return 1000000 * extract(value)
+      else if(/^[0-9]+g/.test(value))
+        return 1000000000 * extract(value)
+      return -1
+    }
+
+    // -- add resource limits --------------------------------------------------
+    const memory = bitParser(configuration.config?.resources?.['memory'])
+    if(memory != -1)
+      create_object.HostConfig.Memory = memory
+
+    const memory_swap = bitParser(configuration.config?.resources?.['memory-swap'])
+    if(memory_swap != -1)
+      create_object.HostConfig.MemorySwap = memory_swap
+
+    // -- add cpu limits -------------------------------------------------------
+    const cpus = parseFloat(configuration.config?.resources?.['cpus'] || "")
+    if(!isNaN(cpus)) {
+      create_object.HostConfig.CpuPeriod = 100000
+      create_object.HostConfig.CpuQuota  = Math.round(100000 * cpus)
+    }
+
+  }
+
+  private addApiCreateObjectMisc(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  {
+    // -- Network Mode ---------------------------------------------------------
+    if(["bridge", "host", "none"].includes(configuration.config?.flags?.network || "")) {
+      if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
+      create_object.HostConfig.NetworkMode = (configuration.config?.flags?.network as "bridge"|"host"|"none")
+    }
+    // -- MAC Address ----------------------------------------------------------
+    if(configuration.config?.flags?.["mac-address"]) {
+      create_object.MacAddress = configuration.config.flags["mac-address"]
+    }
+    // -- Entrypoint -----------------------------------------------------------
+    if(configuration.config?.entrypoint)
+      create_object.Entrypoint = configuration.config?.entrypoint
+  }
+
+  // === END API Functions =====================================================
 
 }
