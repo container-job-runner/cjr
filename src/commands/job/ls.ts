@@ -1,19 +1,21 @@
-import {flags} from '@oclif/command'
-import {printVerticalTable, printHorizontalTable, printResultState} from '../../lib/functions/misc-functions'
-import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
+import * as path from 'path'
+import { flags} from '@oclif/command'
+import { printVerticalTable, printHorizontalTable, printResultState } from '../../lib/functions/misc-functions'
+import { StackCommand } from '../../lib/commands/stack-command'
+import { Dictionary } from '../../lib/constants'
 
 export default class List extends StackCommand {
   static description = 'List all running and completed jobs.'
   static args = []
   static flags = {
-    json: flags.boolean({default: false}),
-    all: flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
+    "json": flags.boolean({default: false}),
+    "all": flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
     "show-stashes": flags.boolean({default: false, description: "show stashes"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false, char: 'v', description: "shows all job properties."})
+    "explicit": flags.boolean({default: false}),
+    "verbose": flags.boolean({default: false, char: 'v', description: "shows all job properties."})
   }
   static strict = true;
 
@@ -71,7 +73,7 @@ export default class List extends StackCommand {
           "column_width":   20,
           "text_width":     15,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => runner.stackName(d.stack)
+          "getter": (d:Dictionary) => path.basename(d.stack)
         },
         command: {
           "column_header":  "COMMAND",
