@@ -2,10 +2,6 @@
 // Project Settings Command: Abstract Class
 // ===========================================================================
 
-// ===========================================================================
-// Base Command: Abstract Class
-// ===========================================================================
-
 import * as fs from 'fs'
 import * as path from 'path'
 import Command from '@oclif/command'
@@ -19,14 +15,11 @@ import {DockerRunDriver} from '../drivers/docker/docker-run-driver'
 import {PodmanRunDriver} from '../drivers/podman/podman-run-driver'
 import {ShellCommand} from '../shell-command'
 import {JSTools} from '../js-tools'
-import {missingFlagError} from '../constants'
+import {missingFlagError, Dictionary} from '../constants'
 import {ValidatedOutput} from '../validated-output'
 import {loadProjectSettings, scanForSettingsDirectory} from '../functions/run-functions'
 import {ProjectSettings, ps_fields} from '../config/project-settings/project-settings'
 
-
-// -- types --------------------------------------------------------------------
-export type Dictionary = {[key: string]: any}
 
 export abstract class ProjectSettingsCommand extends StackCommand
 {
