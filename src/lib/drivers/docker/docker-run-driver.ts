@@ -2,28 +2,32 @@
 // Docker-Run-Driver: Controls Docker For Running containers
 // ===========================================================================
 
-import * as path from 'path'
 import * as chalk from 'chalk'
 import { cli_name, stack_path_label, name_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
-import { PathTools } from '../../fileio/path-tools'
 import { RunDriver, JobState, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
-import { dr_vo_validator } from './schema/docker-run-schema'
-import { de_vo_validator } from './schema/docker-exec-schema'
-import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfiguration, DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { trim, parseJSON, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
-import { SshShellCommand } from '../../remote/ssh-shell-command'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec-configuration'
+
+// internal types: used for creating jobs
+export type DockerCreateOptions = DockerStackConfigObject & {
+  "interactive": boolean
+  "command": Array<string>
+  "wd": string,
+  "detached": boolean,
+  "remove": boolean,
+  "labels": { [key: string] : string}
+}
 
 export class DockerRunDriver extends RunDriver
 {
   protected base_command = 'docker'
   protected selinux: boolean = false
-  protected run_schema_validator = dr_vo_validator
-  protected exec_schema_validator = de_vo_validator
-  protected outputParser = parseLineJSON
+  protected JSONOutputParser = parseLineJSON
+  protected tag: string|undefined
 
   protected ERRORSTRINGS = {
     INVALID_JOB : chalk`{bold job_options object did not pass validation.}`,
@@ -38,13 +42,14 @@ export class DockerRunDriver extends RunDriver
 
   constructor(shell: ShellCommand, options: {tag: string, selinux: boolean})
   {
-    super(shell, options.tag)
+    super(shell)
+    this.tag = options?.tag
     this.selinux = options.selinux || false
   }
 
   emptyStackConfiguration()
   {
-    return new DockerStackConfiguration()
+    return new DockerStackConfiguration(this.tag)
   }
 
   emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
@@ -60,15 +65,13 @@ export class DockerRunDriver extends RunDriver
   jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
     const failure_output:ValidatedOutput<NewJobInfo> = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
-    const job_options = job_configuration.cliContainerCreateObject()
+    const job_options = this.generateJobOptions(job_configuration)
     // add mandatory labels
     job_configuration.addLabel("runner", cli_name)
-    if(!this.run_schema_validator(job_options).success)
-      return failure_output.pushError(this.ERRORSTRINGS.INVALID_JOB)
     // -- create container -----------------------------------------------------
     const create_output = this.create(
       job_configuration.stack_configuration.getImage(),
-      job_configuration.command,
+      this.extractCommand(job_configuration),
       job_options
     )
     if(!create_output.success) return failure_output
@@ -87,7 +90,33 @@ export class DockerRunDriver extends RunDriver
     })
   }
 
-  protected create(image_name: string, command: Array<string>, run_options={}) : ValidatedOutput<string>
+  protected generateJobOptions(job_configuration: DockerJobConfiguration) : DockerCreateOptions
+  {
+    return {
+      ... job_configuration.stack_configuration.config,
+      ... {
+        "interactive": true,
+        "command": job_configuration.command,
+        "wd": job_configuration.working_directory,
+        "detached": !job_configuration.synchronous,
+        "remove": job_configuration.remove_on_exit,
+        "labels": job_configuration.labels
+      }
+    }
+  }
+
+  protected extractCommand(job_configuration: DockerJobConfiguration) : Array<string>
+  {
+    const command = job_configuration.command;
+    const entrypoint = job_configuration.stack_configuration.getEntrypoint()
+
+    if(!entrypoint)
+      return command
+    else // if entrypoint exists prepend command with all but first entry which will be added to --entrypoint flag
+      return entrypoint.splice(1).concat(command)
+  }
+
+  protected create(image_name: string, command: Array<string>, run_options:DockerCreateOptions) : ValidatedOutput<string>
   {
     const cmd = `${this.base_command} create`;
     const args  = [image_name].concat(command)
@@ -188,8 +217,8 @@ export class DockerRunDriver extends RunDriver
         "no-trunc": {},
         "filter": [`label=runner=${cli_name}`]
       };
-      this.addFormatFlags(flags, {format: "json"})
-      const ps_output = this.outputParser(this.shell.output(command, flags, args, {}))
+      this.addJSONFormatFlag(flags)
+      const ps_output = this.JSONOutputParser(this.shell.output(command, flags, args, {}))
       if(!ps_output.success) return new ValidatedOutput(false, [])
 
       const info_request = this.extractJobInfo(ps_output.value)
@@ -205,7 +234,7 @@ export class DockerRunDriver extends RunDriver
       return new ValidatedOutput(true, [])
 
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
-    const result = this.outputParser(this.shell.output(
+    const result = this.JSONOutputParser(this.shell.output(
       `${this.base_command} inspect`,
       {format: '{{"{\\\"ID\\\":"}}{{json .Id}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Labels\\\":"}}{{json .Config.Labels}}{{"}"}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ}
       ids,
@@ -278,49 +307,37 @@ export class DockerRunDriver extends RunDriver
     return trim(this.shell.output(command, flags, args, {}))
   }
 
-  imageName(stack_path: string, prefix: string="")
+  protected runFlags(run_object: DockerCreateOptions) // TODO: CONSOLIDATE ALL FUNCTIONS THAT DID NOT REQUIRE OVERLOADING
   {
-    return super.imageName(stack_path, prefix).toLowerCase() // Docker only accepts lowercase image names
-  }
-
-  protected runFlags(run_object: Dictionary) // TODO: CONSOLIDATE ALL FUNCTIONS THAT DID NOT REQUIRE OVERLOADING
-  {
-    var flags = {};
-    if(this.run_schema_validator(run_object).success) //verify docker-run schema
-    {
-      this.addEntrypointFlags(flags, run_object)
-      this.addFormatFlags(flags, run_object)
-      this.addRemovalFlags(flags, run_object)
-      this.addInteractiveFlags(flags, run_object)
-      this.addWorkingDirFlags(flags, run_object)
-      this.addNameFlags(flags, run_object)
-      this.addPortFlags(flags, run_object)
-      this.addENVFlags(flags, run_object)
-      this.addMountFlags(flags, run_object)
-      this.addResourceFlags(flags, run_object)
-      this.addLabelFlags(flags, run_object)
-      this.addSpecialFlags(flags, run_object)
-    }
+    var flags:Dictionary = {};
+    this.addEntrypointFlags(flags, run_object)
+    this.addRemovalFlags(flags, run_object)
+    this.addInteractiveFlags(flags, run_object)
+    this.addWorkingDirFlags(flags, run_object)
+    this.addPortFlags(flags, run_object)
+    this.addENVFlags(flags, run_object)
+    this.addMountFlags(flags, run_object)
+    this.addResourceFlags(flags, run_object)
+    this.addLabelFlags(flags, run_object)
+    this.addSpecialFlags(flags, run_object)
     return flags
   }
 
   // === START protected Helper Functions for flag generation ====================
 
-  protected addFormatFlags(flags: Dictionary, run_object: Dictionary)
+  protected addJSONFormatFlag(flags: Dictionary)
   {
-    if(run_object?.format === "json") {
-      flags["format"] = '{{json .}}'
-    }
+    flags["format"] = '{{json .}}'
   }
 
-  protected addRemovalFlags(flags: Dictionary, run_object: Dictionary)
+  protected addRemovalFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     if(run_object?.remove) {
       flags["rm"] = {}
     }
   }
 
-  protected addInteractiveFlags(flags: Dictionary, run_object: Dictionary)
+  protected addInteractiveFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     if(run_object?.interactive == true)
     {
@@ -329,7 +346,7 @@ export class DockerRunDriver extends RunDriver
     }
   }
 
-  protected addWorkingDirFlags(flags:Dictionary, run_object: Dictionary)
+  protected addWorkingDirFlags(flags:Dictionary, run_object: DockerCreateOptions)
   {
     if(run_object?.wd)
     {
@@ -337,55 +354,45 @@ export class DockerRunDriver extends RunDriver
     }
   }
 
-  protected addNameFlags(flags:Dictionary, run_object: Dictionary)
+  protected addPortFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
-    if(run_object?.name)
-    {
-      flags["name"] = run_object.name
-    }
-  }
-
-  protected addPortFlags(flags: Dictionary, run_object: Dictionary)
-  {
-    if(run_object?.ports?.length > 0)
+    if(run_object?.ports && run_object?.ports?.length > 0)
     {
       flags["p"] = {
-        escape: false,
-        value: run_object.ports.map((po:Dictionary) => `${(po.address) ? `${po.address}:` : ""}${po.hostPort}:${po.containerPort}`)
+        value: run_object.ports.map((po:DockerStackPortConfig) => `${(po.hostIp) ? `${po.hostIp}:` : ""}${po.hostPort}:${po.containerPort}`)
       }
     }
   }
 
-  protected addENVFlags(flags: Dictionary, run_object: Dictionary)
+  protected addENVFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     if(run_object?.environment)
     {
       const keys = Object.keys(run_object.environment)
       flags["env"] = {
-        escape: false,
-        value: keys.map(key => `${key}=${run_object.environment[key]}`)
+        value: keys.map(key => `${key}=${run_object.environment?.[key] || ""}`)
       }
     }
   }
 
-  protected addResourceFlags(flags: Dictionary, run_object: Dictionary)
+  protected addResourceFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
-    const valid_keys = ["cpus", "gpu", "memory", "swap-memory"]
     const keys = Object.keys(run_object?.resources || {})
-    keys?.map((key:string) => {
-      if(valid_keys.includes(key)) flags[key] = run_object?.resources[key]
+    const valid_keys:Array<keyof DockerStackResourceConfig> = ["cpus", "gpu", "memory", "memory-swap"]
+    valid_keys?.map((key:keyof DockerStackResourceConfig) => {
+      if(run_object?.resources?.[key]) flags[key] = run_object.resources[key]
     })
   }
 
-  protected addEntrypointFlags(flags: Dictionary, run_object: Dictionary)
+  protected addEntrypointFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
-    if(run_object?.entrypoint)
+    if(run_object?.entrypoint?.[0])
     {
-      flags["entrypoint"] = run_object['entrypoint']
+      flags["entrypoint"] = run_object['entrypoint'][0]
     }
   }
 
-  protected addSpecialFlags(flags: Dictionary, run_object: Dictionary)
+  protected addSpecialFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     if(run_object?.flags?.network) { // used for sharing DISPLAY variable
       flags["network"] = run_object.flags.network
@@ -396,14 +403,14 @@ export class DockerRunDriver extends RunDriver
     }
   }
 
-  protected addMountFlags(flags: Dictionary, run_object: Dictionary)
+  protected addMountFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
-    if(run_object?.mounts?.length > 0)
+    if(run_object?.mounts && run_object?.mounts?.length > 0)
     {
       // -- standard mounts use --mount flag -----------------------------------
       const standard_mounts = (this.selinux) ?
-        run_object.mounts.filter( (mount:Dictionary) => ((mount.type != "bind") || (mount.type == "bind" && mount?.selinux === false)) ) :
-        run_object.mounts.filter( (mount:Dictionary) => ((mount.type != "bind") || (mount.type == "bind" && mount?.selinux !== true)) ) ;
+        run_object.mounts.filter( (mount:DockerStackMountConfig) => ((mount.type != "bind") || (mount.type == "bind" && mount?.selinux === false)) ) :
+        run_object.mounts.filter( (mount:DockerStackMountConfig) => ((mount.type != "bind") || (mount.type == "bind" && mount?.selinux !== true)) ) ;
       if (standard_mounts.length > 0)
         flags["mount"] = {
           escape: false,
@@ -411,8 +418,8 @@ export class DockerRunDriver extends RunDriver
         }
       // -- selinux mounts require --volume flag -------------------------------
       const selinux_mounts  = (this.selinux) ?
-        run_object.mounts.filter( (mount:Dictionary) => (mount.type == "bind" && mount?.selinux !== false) ) :
-        run_object.mounts.filter( (mount:Dictionary) => (mount.type == "bind" && mount?.selinux === true)  ) ;
+        run_object.mounts.filter( (mount:DockerStackMountConfig) => (mount.type == "bind" && mount?.selinux !== false) ) :
+        run_object.mounts.filter( (mount:DockerStackMountConfig) => (mount.type == "bind" && mount?.selinux === true)  ) ;
       if(selinux_mounts.length > 0)
         flags["volume"] = {
           escape: false,
@@ -421,27 +428,27 @@ export class DockerRunDriver extends RunDriver
     }
   }
 
-  protected mountObjectToFlagStr(mo: Dictionary)
+  protected mountObjectToFlagStr(mo: DockerStackMountConfig)
   {
     switch(mo.type)
     {
       case "bind":
-        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.hostPath)},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.hostPath || "")},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
       case "volume":
-        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.volumeName)},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""}`
+        return `type=${mo.type},source=${ShellCommand.bashEscape(mo.volumeName || "")},destination=${ShellCommand.bashEscape(mo.containerPath)}${(mo.readonly) ? ",readonly" : ""}`
       case "tmpfs":
         return `type=${mo.type},destination=${ShellCommand.bashEscape(mo.containerPath)}`
     }
   }
 
-  protected selinuxBindMountObjectToFlagStr(mo: Dictionary)
+  protected selinuxBindMountObjectToFlagStr(mo: DockerStackMountConfig)
   {
-    if(mo.type !== "bind") return []
+    if(mo.type !== "bind" || !mo.hostPath) return []
     const selinux_str = 'z' // allow sharing with all containers
     return `${ShellCommand.bashEscape(mo.hostPath)}:${ShellCommand.bashEscape(mo.containerPath)}:${selinux_str}${(mo.readonly) ? ",readonly" : ""},consistency=${mo.consistency || "consistent"}`
   }
 
-  protected addLabelFlags(flags: Dictionary, run_object: Dictionary)
+  protected addLabelFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     if(run_object?.labels) {
       const keys = Object.keys(run_object.labels)
