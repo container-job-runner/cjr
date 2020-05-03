@@ -1,5 +1,6 @@
 import * as Ajv from 'ajv'
 import {ajvValidatorToValidatedOutput} from '../../../../functions/misc-functions'
+import { string } from '@oclif/command/lib/flags'
 
 export const docker_stack_configuration_schema = {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -10,10 +11,11 @@ export const docker_stack_configuration_schema = {
   "properties": {
     "version": {"$ref": "#/definitions/version"},
     "build": {"$ref": "#/definitions/build"},
+    "entrypoint": {"$ref": "#/definitions/entrypoint"},
     "mounts": {"$ref": "#/definitions/mounts"},
     "ports": {"$ref": "#/definitions/ports"},
     "environment": {"$ref": "#/definitions/args"},
-    "dynamic-environment": {"$ref": "#/definitions/args"},
+    "environment-dynamic": {"$ref": "#/definitions/args"},
     "resources": {"$ref": "#/definitions/resources"},
     "files": {"$ref": "#/definitions/files"},
     "flags": {"$ref": "#/definitions/flags"}
@@ -22,15 +24,12 @@ export const docker_stack_configuration_schema = {
   "definitions": {
     "version": {
         "type": "string",
-        "pattern": "1"  // for general matching use: "^[0-9]+(\.[0-9]+)?$"
+        "pattern": "1.0"  // for general matching use: "^[0-9]+(\.[0-9]+)?$"
     },
     "build": {
       "type": "object",
       "properties": {
-        "dockerfile": {
-          "type": "string"
-        },
-        "context": {
+        "image": {
           "type": "string"
         },
         "no-cache": {
@@ -40,8 +39,15 @@ export const docker_stack_configuration_schema = {
           "type": "boolean"
         },
         "args": {"$ref": "#/definitions/args"},
-        "dynamic-args": {"$ref": "#/definitions/args"}
-      }
+        "args-dynamic": {"$ref": "#/definitions/args"}
+      },
+      "additionalProperties": false
+    },
+    "entrypoint": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
     },
     "mounts": {
       "type": "array",
@@ -61,25 +67,26 @@ export const docker_stack_configuration_schema = {
             "containerPort": {
               "type": "integer"
             },
-            "address": {
+            "hostIp": {
               "type": "string"
             }
           },
           "required": [
             "hostPort",
             "containerPort"
-          ]
+          ],
+          "additionalProperties": false
         }
       ]
     },
     "resources": {
       "type": "object",
       "properties": {
-        "cpu:": {
+        "cpus": {
           "type": "string",
           "pattern": "^[0-9]+(\.[0-9]+)?$"
         },
-        "gpu:": {
+        "gpu": {
           "type": "string"
         },
         "memory": {
@@ -93,7 +100,8 @@ export const docker_stack_configuration_schema = {
       },
       "dependencies": {
         "memory-swap": ["memory"]
-      }
+      },
+      "additionalProperties": false
     },
     "files": {
       "type": "object",
@@ -108,12 +116,17 @@ export const docker_stack_configuration_schema = {
             "upload-include-from" : {type: "string"},
             "download-exclude-from" : {type: "string"},
             "download-include-from" : {type: "string"},
-          }
+          },
+          "additionalProperties": false
         }
-      }
+      },
+      "additionalProperties": false
     },
     "flags" : {
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     },
     "volume": {
       "type": "object",
