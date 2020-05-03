@@ -1,17 +1,16 @@
-import * as chalk from 'chalk'
-import {flags} from '@oclif/command'
-import {StackCommand, Dictionary} from '../lib/commands/stack-command'
-import {jobStart, ContainerRuntime, OutputOptions, JobOptions} from "../lib/functions/run-functions"
-import {printResultState} from '../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../lib/commands/stack-command'
+import { jobStart, ContainerRuntime, OutputOptions, JobOptions } from "../lib/functions/run-functions"
+import { printResultState } from '../lib/functions/misc-functions'
 
 export default class Stash extends StackCommand {
   static description = 'Save current project state as a result.'
   static flags = {
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    message: flags.string({description: "optional message to describes the job"}),
-    explicit: flags.boolean({default: false}),
+    "message": flags.string({description: "optional message to describes the job"}),
+    "explicit": flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}), // if selected will not print out job id
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"})

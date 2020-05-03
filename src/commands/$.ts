@@ -1,9 +1,10 @@
 import * as chalk from 'chalk'
-import {flags} from '@oclif/command'
-import {Dictionary, StackCommand} from '../lib/commands/stack-command'
-import {jobStart, jobCopy, ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
-import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
-import {printResultState, initX11} from '../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../lib/commands/stack-command'
+import { jobStart, jobCopy, ContainerRuntime, OutputOptions, JobOptions, CopyOptions } from "../lib/functions/run-functions"
+import { RunShortcuts } from "../lib/config/run-shortcuts/run-shortcuts"
+import { printResultState, initX11 } from '../lib/functions/misc-functions'
+import { Dictionary } from '../lib/constants'
 
 export default class Run extends StackCommand {
   static description = 'Start a job that runs a shell command.'

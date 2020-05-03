@@ -1,5 +1,5 @@
 import { flags} from '@oclif/command'
-import { StackCommand, Dictionary } from '../../lib/commands/stack-command'
+import { StackCommand } from '../../lib/commands/stack-command'
 import { jobExec, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
 import { printResultState, initX11 } from '../../lib/functions/misc-functions'
 

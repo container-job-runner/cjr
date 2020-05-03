@@ -1,9 +1,8 @@
 import { flags } from '@oclif/command'
-import { StackCommand, Dictionary } from '../../lib/commands/stack-command'
+import { StackCommand } from '../../lib/commands/stack-command'
 import { JSTools } from '../../lib/js-tools'
 import { promptUserForJobId, jobIds, volumeIds } from '../../lib/functions/run-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
-import { file_volume_label } from '../../lib/constants'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { JobInfo } from '../../lib/drivers/abstract/run-driver'
 
@@ -11,7 +10,7 @@ export default class Delete extends StackCommand {
   static description = 'Delete a job and its associated data; works on both running and completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
-    all: flags.boolean({default: false}),
+    "all": flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),

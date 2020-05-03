@@ -1,9 +1,7 @@
-import * as chalk from 'chalk'
-import {flags} from '@oclif/command'
-import {JSTools} from '../../lib/js-tools'
-import {ProjectSettingsCommand, Dictionary} from '../../lib/commands/project-settings-command'
-import {loadProjectSettings} from "../../lib/functions/run-functions"
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { ProjectSettingsCommand } from '../../lib/commands/project-settings-command'
+import { loadProjectSettings } from "../../lib/functions/run-functions"
+import { printResultState } from '../../lib/functions/misc-functions'
 
 export default class ls extends ProjectSettingsCommand {
   static description = 'List all project settings.'

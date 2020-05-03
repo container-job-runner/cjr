@@ -1,16 +1,16 @@
 import * as chalk from 'chalk'
 import * as fs from 'fs-extra'
 import * as path from 'path'
-import {flags} from '@oclif/command'
-import {JSTools} from '../lib/js-tools'
-import {ProjectSettingsCommand, Dictionary} from '../lib/commands/project-settings-command'
-import {loadProjectSettings} from "../lib/functions/run-functions"
-import {cli_name, projectSettingsDirPath, projectSettingsYMLPath} from "../lib/constants"
-import {printResultState} from '../lib/functions/misc-functions'
-import {ValidatedOutput} from '../lib/validated-output'
-import {ProjectSettings, ps_fields, ps_props} from '../lib/config/project-settings/project-settings'
-import {DockerStackConfiguration} from '../lib/config/stacks/docker/docker-stack-configuration'
-import {TextFile} from '../lib/fileio/text-file'
+import { flags } from '@oclif/command'
+import { JSTools } from '../lib/js-tools'
+import { ProjectSettingsCommand } from '../lib/commands/project-settings-command'
+import { loadProjectSettings } from "../lib/functions/run-functions"
+import { cli_name, projectSettingsDirPath, projectSettingsYMLPath } from "../lib/constants"
+import { printResultState } from '../lib/functions/misc-functions'
+import { ValidatedOutput } from '../lib/validated-output'
+import { ProjectSettings, ps_fields, ps_props } from '../lib/config/project-settings/project-settings'
+import { DockerStackConfiguration } from '../lib/config/stacks/docker/docker-stack-configuration'
+import { TextFile } from '../lib/fileio/text-file'
 
 export default class Init extends ProjectSettingsCommand {
   static description = 'Initialize a project in the current directory.'

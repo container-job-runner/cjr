@@ -1,12 +1,10 @@
-import * as chalk from 'chalk'
-import {flags} from '@oclif/command'
-import {JSTools} from '../../lib/js-tools'
-import {ProjectSettingsCommand, Dictionary} from '../../lib/commands/project-settings-command'
-import {loadProjectSettings} from "../../lib/functions/run-functions"
-import {projectSettingsYMLPath} from "../../lib/constants"
-import {printResultState} from '../../lib/functions/misc-functions'
-import {ValidatedOutput} from '../../lib/validated-output'
-import {ProjectSettings, ps_fields, ps_props} from '../../lib/config/project-settings/project-settings'
+import { flags } from '@oclif/command'
+import { JSTools } from '../../lib/js-tools'
+import { ProjectSettingsCommand}  from '../../lib/commands/project-settings-command'
+import { loadProjectSettings } from "../../lib/functions/run-functions"
+import { projectSettingsYMLPath } from "../../lib/constants"
+import { printResultState } from '../../lib/functions/misc-functions'
+import { ps_fields } from '../../lib/config/project-settings/project-settings'
 
 export default class Delete extends ProjectSettingsCommand {
   static description = 'Delete any project settings.'

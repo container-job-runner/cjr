@@ -1,7 +1,8 @@
-import {flags} from '@oclif/command'
-import {StackCommand, Dictionary} from '../../lib/commands/stack-command'
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../../lib/commands/stack-command'
+import { printResultState } from '../../lib/functions/misc-functions'
 import * as chalk from 'chalk'
+import { Dictionary } from '../../lib/constants'
 
 export default class Set extends StackCommand {
   static description = 'Set one or multiple cli parameters.'

@@ -1,28 +1,29 @@
-import {flags} from '@oclif/command'
-import {Dictionary, StackCommand} from '../lib/commands/stack-command'
-import {RemoteCommand} from '../lib/remote/commands/remote-command'
-import {ContainerRuntime, OutputOptions, JobOptions, CopyOptions} from "../lib/functions/run-functions"
-import {RunShortcuts} from "../lib/config/run-shortcuts/run-shortcuts"
-import {printResultState, initX11} from '../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../lib/commands/stack-command'
+import { RemoteCommand } from '../lib/remote/commands/remote-command'
+import { ContainerRuntime, OutputOptions, JobOptions } from "../lib/functions/run-functions"
+import { RunShortcuts } from "../lib/config/run-shortcuts/run-shortcuts"
+import { printResultState, initX11 } from '../lib/functions/misc-functions'
+import { Dictionary } from '../lib/constants'
 
 export default class Run extends RemoteCommand {
   static description = 'Start a job that runs a shell command on a remote resource.'
   static args  = []
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    explicit: flags.boolean({default: false}),
-    async: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
-    quiet: flags.boolean({default: false, char: 'q'}),
-    port: flags.string({default: [], multiple: true}),
-    x11: flags.boolean({default: false}),
-    message: flags.string({description: "use this flag to tag a job with a user-supplied message"}),
-    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
-    autocopy: flags.boolean({default: false, exclusive: ["async"], description: "automatically copy files back to the projec root on exit"}),
+    "explicit": flags.boolean({default: false}),
+    "async": flags.boolean({default: false}),
+    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
+    "quiet": flags.boolean({default: false, char: 'q'}),
+    "port": flags.string({default: [], multiple: true}),
+    "x11": flags.boolean({default: false}),
+    "message": flags.string({description: "use this flag to tag a job with a user-supplied message"}),
+    "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    "autocopy": flags.boolean({default: false, exclusive: ["async"], description: "automatically copy files back to the projec root on exit"}),
     "file-access": flags.string({default: "volume", options: ["volume", "bind"], description: "how files are accessed from the container. Options are: volume and bind."}),
     "file-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description:  'specifies how project-root is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed location'}),
     "stack-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),

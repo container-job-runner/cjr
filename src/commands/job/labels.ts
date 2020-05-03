@@ -1,25 +1,26 @@
 import * as chalk from 'chalk'
 import { flags } from '@oclif/command'
 import { JSTools } from '../../lib/js-tools'
-import { StackCommand, Dictionary } from '../../lib/commands/stack-command'
+import { StackCommand } from '../../lib/commands/stack-command'
 import { promptUserForJobId } from '../../lib/functions/run-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { JobInfo } from '../../lib/drivers/abstract/run-driver'
+import { Dictionary } from '../../lib/constants'
 
 export default class Labels extends StackCommand {
   static description = 'Retrieve labels for a job.'
   static args = [{name: 'id'}]
   static flags = {
-    label: flags.string({}),
-    all: flags.boolean({default: false}),
+    "label": flags.string({}),
+    "all": flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
-    json: flags.boolean({default: false}),
+    "json": flags.boolean({default: false}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    explicit: flags.boolean({default: false})
+    "explicit": flags.boolean({default: false})
   }
   static strict = false;
 
