@@ -102,7 +102,7 @@ export class ShellCommand
         if(JSTools.isString(props) || JSTools.isArray(props)) value = props
         else if(JSTools.isObject(props)) value = props.value
         flag_arr  = arrayWrap(value).map((v:string) => flagString(v, key, shorthand, escape, props?.noequals || false))
-        cmdstr   += flag_arr.join(" ")
+        cmdstr   += flag_arr.join("")
       }
       return `${cmdstr} ${(this.escape_args) ? ShellCommand.bashEscapeArgs(args).join(" ") : args.join(" ")}`;
     }
