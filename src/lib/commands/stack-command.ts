@@ -6,27 +6,24 @@ import * as fs from 'fs'
 import * as path from 'path'
 import Command from '@oclif/command'
 import * as chalk from 'chalk'
-import {Settings} from '../settings'
-import {DockerBuildDriver} from '../drivers/docker/docker-build-driver'
-import {PodmanBuildDriver} from '../drivers/podman/podman-build-driver'
-import {DockerSocketBuildDriver} from '../drivers/docker/docker-socket-build-driver'
-import {PodmanSocketBuildDriver} from '../drivers/podman/podman-socket-build-driver'
-import {BuildahBuildDriver} from '../drivers/buildah/buildah-build-driver'
-import {DockerRunDriver} from '../drivers/docker/docker-run-driver'
-import {PodmanRunDriver} from '../drivers/podman/podman-run-driver'
-import {DockerSocketRunDriver} from '../drivers/docker/docker-socket-run-driver'
-import {PodmanSocketRunDriver} from '../drivers/podman/podman-socket-run-driver'
-import {ShellCommand} from '../shell-command'
-import {JSTools} from '../js-tools'
-import {missingFlagError} from '../constants'
-import {ValidatedOutput} from '../validated-output'
-import {loadProjectSettings, scanForSettingsDirectory} from '../functions/run-functions'
-import {BuildOptions} from '../functions/build-functions'
-import {ProjectSettings, ps_fields} from '../config/project-settings/project-settings'
+import { Settings } from '../settings'
+import { DockerBuildDriver } from '../drivers/docker/docker-build-driver'
+import { PodmanBuildDriver } from '../drivers/podman/podman-build-driver'
+import { DockerSocketBuildDriver } from '../drivers/docker/docker-socket-build-driver'
+import { PodmanSocketBuildDriver } from '../drivers/podman/podman-socket-build-driver'
+import { BuildahBuildDriver } from '../drivers/buildah/buildah-build-driver'
+import { DockerRunDriver } from '../drivers/docker/docker-run-driver'
+import { PodmanRunDriver } from '../drivers/podman/podman-run-driver'
+import { DockerSocketRunDriver } from '../drivers/docker/docker-socket-run-driver'
+import { PodmanSocketRunDriver } from '../drivers/podman/podman-socket-run-driver'
+import { ShellCommand } from '../shell-command'
+import { JSTools } from '../js-tools'
+import { missingFlagError, Dictionary } from '../constants'
+import { ValidatedOutput } from '../validated-output'
+import { loadProjectSettings, scanForSettingsDirectory } from '../functions/run-functions'
+import { BuildOptions } from '../functions/build-functions'
+import { ProjectSettings, ps_fields } from '../config/project-settings/project-settings'
 import { triggerAsyncId } from 'async_hooks'
-
-// -- types --------------------------------------------------------------------
-export type Dictionary = {[key: string]: any}
 
 export abstract class StackCommand extends Command
 {
@@ -180,23 +177,23 @@ export abstract class StackCommand extends Command
     {
         case "docker":
         {
-          return new DockerBuildDriver(shell, tag);
+          return new DockerBuildDriver(shell);
         }
         case "docker-socket":
         {
-          return new DockerSocketBuildDriver(shell, {tag: tag, socket: socket});
+          return new DockerSocketBuildDriver(shell, {socket: socket});
         }
         case "podman":
         {
-          return new PodmanBuildDriver(shell, tag);
+          return new PodmanBuildDriver(shell);
         }
         case "podman-socket":
         {
-          return new PodmanSocketBuildDriver(shell, {tag: tag, socket: socket});
+          return new PodmanSocketBuildDriver(shell, {socket: socket});
         }
         case "buildah":
         {
-          return new BuildahBuildDriver(shell, tag);
+          return new BuildahBuildDriver(shell);
         }
         default:
         {
