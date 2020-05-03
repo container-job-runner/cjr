@@ -1,6 +1,6 @@
 import { StackConfiguration } from "../stacks/abstract/stack-configuration";
 
-export class JobConfiguration<T extends StackConfiguration>
+export class JobConfiguration<T extends StackConfiguration<any>>
 {
   stack_configuration: T;
   command: Array<string>;
