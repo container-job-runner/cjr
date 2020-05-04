@@ -10,7 +10,6 @@ import { DockerCliBuildDriver } from '../drivers/docker/docker-cli-build-driver'
 import { PodmanCliBuildDriver } from '../drivers/podman/podman-cli-build-driver'
 import { DockerSocketBuildDriver } from '../drivers/docker/docker-socket-build-driver'
 import { PodmanSocketBuildDriver } from '../drivers/podman/podman-socket-build-driver'
-import { BuildahBuildDriver } from '../drivers/buildah/buildah-build-driver'
 import { DockerCliRunDriver } from '../drivers/docker/docker-cli-run-driver'
 import { PodmanCliRunDriver } from '../drivers/podman/podman-cli-run-driver'
 import { DockerSocketRunDriver } from '../drivers/docker/docker-socket-run-driver'
@@ -189,10 +188,6 @@ export abstract class StackCommand extends Command
         case "podman-socket":
         {
           return new PodmanSocketBuildDriver(shell, {socket: socket});
-        }
-        case "buildah":
-        {
-          return new BuildahBuildDriver(shell);
         }
         default:
         {
