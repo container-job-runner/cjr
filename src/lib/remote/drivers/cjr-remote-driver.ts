@@ -270,7 +270,7 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.START.CREATING_DIRECTORIES, this.output_options.verbose)
     result = this.getStackUploadDirectories(resource, {
       'stack-upload-mode':  exec_options['stack-upload-mode'],
-      'local-stack-name':   container_runtime.builder.stackName(job_options['stack-path']),
+      'local-stack-name':   path.basename(job_options['stack-path']),
       'project-id':         local_project_id,
       'parent-remote-job-dir' : parent_remote_job_dir
     })
@@ -321,7 +321,7 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.START.CREATING_DIRECTORIES, this.output_options.verbose)
     result = this.getUploadDirectories(resource, {
         "local-project-root": host_root,
-        "local-stack-name":   container_runtime.builder.stackName(job_options['stack-path']),
+        "local-stack-name":   path.basename(job_options['stack-path']),
         "project-id":         project_id,
         "file-upload-mode":   remote_options["file-upload-mode"],
         "stack-upload-mode":  remote_options["stack-upload-mode"]
@@ -633,9 +633,9 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!options['local-project-root']) return new ValidatedOutput(true, undefined)
     if(!options['remote-project-root']) return new ValidatedOutput(false, undefined).pushError('Internal Error: missing remote-project-root')
     // -- 1. load stack configuration ------------------------------------------
-    var result:ValidatedOutput<any> = container_runtime.builder.loadConfiguration(options['local-stack-path'], options['local-config-files'])
+    const configuration = container_runtime.runner.emptyStackConfiguration()
+    var result:ValidatedOutput<any> = configuration.load(options['local-stack-path'], options['local-config-files'])
     if(!result.success) return result
-    const configuration:StackConfiguration = result.value
     // -- 3. transfer stack over rsync ------------------------------------------
     const upload_settings = configuration.getRsyncUploadSettings(true)
     const rsync_flags:Dictionary = {a:{}, delete:{}}
