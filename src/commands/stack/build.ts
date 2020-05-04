@@ -1,8 +1,9 @@
-import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/commands/stack-command'
-import {JSTools} from '../../lib/js-tools'
-import {buildAndLoad} from '../../lib/functions/build-functions'
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../../lib/commands/stack-command'
+import { JSTools } from '../../lib/js-tools'
+import { buildAndLoad } from '../../lib/functions/build-functions'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { ContainerRuntime } from '../../lib/functions/run-functions'
 
 export default class Build extends StackCommand {
   static description = 'Manually build images for one or more stacks.'
@@ -23,11 +24,14 @@ export default class Build extends StackCommand {
     const {argv, flags} = this.parse(Build)
     this.augmentFlagsWithProjectSettings(flags, {stack:false, "config-files": false, "stacks-dir": true})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
-    const builder = this.newBuilder(flags.explicit, flags.quiet)
+    const c_runtime:ContainerRuntime = {
+      builder: this.newBuilder(flags.explicit, !flags.verbose),
+      runner:  this.newRunner(flags.explicit, flags.quiet)
+    }
     stack_list.map((stack_name:string) => {
       printResultState(
         buildAndLoad(
-          builder,
+          c_runtime,
           {"no-cache": flags['no-cache'], "pull": flags['pull']},
           this.fullStackPath(stack_name, flags["stacks-dir"]),
           flags['config-files']
