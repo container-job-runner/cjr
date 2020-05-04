@@ -173,6 +173,9 @@ export const docker_stack_configuration_schema = {
         },
         "selinux": {
           "type": "boolean"
+        },
+        "includeForRemoteJob": {
+          "type": "boolean"
         }
       },
       "required": [
