@@ -89,7 +89,7 @@ export class SshShellCommand
       if(use_multiplex)
         ssh_flags.S = {value: this.multiplexSocketPath(multiplex_options), noequals: true}
       const ssh_args = [`${this.resource.username}@${this.resource.address}`]
-      if(command) ssh_args.push(this.shell.commandString(command, flags, args, options))
+      if(command) ssh_args.push(this.shell.commandString(command, flags, args))
       return {ssh_flags: ssh_flags, ssh_args: ssh_args}
     }
 
