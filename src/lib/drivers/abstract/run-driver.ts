@@ -65,7 +65,7 @@ export abstract class RunDriver
   // ---------------------------------------------------------------------------
   abstract jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>;
   abstract jobStart(configuration: JobConfiguration<StackConfiguration<any>>, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>;
-  abstract jobLog(id: string) : ValidatedOutput<string>;
+  abstract jobLog(id: string, lines: string) : ValidatedOutput<string>;
   abstract jobAttach(id: string) : ValidatedOutput<undefined>;
   abstract jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>;
   abstract jobToImage(id: string, image_name: string): ValidatedOutput<string>
