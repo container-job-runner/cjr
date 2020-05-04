@@ -7,7 +7,7 @@ import * as path from 'path'
 import Command from '@oclif/command'
 import * as chalk from 'chalk'
 import { Settings } from '../settings'
-import { DockerBuildDriver } from '../drivers/docker/docker-cli-build-driver'
+import { DockerCliBuildDriver } from '../drivers/docker/docker-cli-build-driver'
 import { PodmanBuildDriver } from '../drivers/podman/podman-cli-build-driver'
 import { DockerSocketBuildDriver } from '../drivers/docker/docker-socket-build-driver'
 import { PodmanSocketBuildDriver } from '../drivers/podman/podman-socket-build-driver'
@@ -177,7 +177,7 @@ export abstract class StackCommand extends Command
     {
         case "docker":
         {
-          return new DockerBuildDriver(shell);
+          return new DockerCliBuildDriver(shell);
         }
         case "docker-socket":
         {

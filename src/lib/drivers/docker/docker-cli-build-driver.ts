@@ -15,7 +15,7 @@ import { StackConfiguration } from '../../config/stacks/abstract/stack-configura
 
 type StackValidateResult = {"stack-type"?: string}
 
-export class DockerBuildDriver extends BuildDriver
+export class DockerCliBuildDriver extends BuildDriver
 {
     protected base_command = 'docker'
     protected outputParser = parseLineJSON

@@ -1,6 +1,6 @@
-import {DockerBuildDriver} from '../docker/docker-cli-build-driver'
+import {DockerCliBuildDriver} from '../docker/docker-cli-build-driver'
 
-export class BuildahBuildDriver extends DockerBuildDriver
+export class BuildahBuildDriver extends DockerCliBuildDriver
 {
     protected base_command = 'buildah'
     protected sub_commands = {

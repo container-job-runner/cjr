@@ -1,11 +1,11 @@
-import { DockerBuildDriver } from '../docker/docker-cli-build-driver'
+import { DockerCliBuildDriver } from '../docker/docker-cli-build-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 
 // - types ---------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-export class PodmanBuildDriver extends DockerBuildDriver
+export class PodmanBuildDriver extends DockerCliBuildDriver
 {
     protected base_command = 'podman'
     protected outputParser = parseJSON
