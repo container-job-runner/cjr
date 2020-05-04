@@ -30,8 +30,8 @@ export default class Stash extends StackCommand {
     }
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit),
-      runner:  this.newRunner(flags.explicit)
+      builder: this.newBuildDriver(flags.explicit),
+      runner:  this.newRunDriver(flags.explicit)
     }
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {

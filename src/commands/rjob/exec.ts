@@ -63,8 +63,8 @@ export default class Exec extends RemoteCommand {
     const id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.verbose)
+      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
+      runner:  this.newRunDriver(flags.explicit, flags.verbose)
     }
     // -- set job options ------------------------------------------------------
     const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))) ? true : false

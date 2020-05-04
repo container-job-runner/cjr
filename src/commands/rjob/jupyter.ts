@@ -54,8 +54,8 @@ export default class Jupyter extends RemoteCommand {
     const driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.verbose)
+      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
+      runner:  this.newRunDriver(flags.explicit, flags.verbose)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11'] && args['command'] == 'start') await initX11(this.settings.get('interactive'), flags.explicit)

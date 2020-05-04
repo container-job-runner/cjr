@@ -37,8 +37,8 @@ export default class Bundle extends StackCommand {
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, true)
+      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
+      runner:  this.newRunDriver(flags.explicit, true)
     }
     // -- create tmp dir for bundle --------------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name))

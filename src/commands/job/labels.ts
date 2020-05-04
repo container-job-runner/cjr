@@ -28,7 +28,7 @@ export default class Labels extends StackCommand {
   {
     const {argv, flags} = this.parse(Labels)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunner(flags.explicit)
+    const runner = this.newRunDriver(flags.explicit)
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // get id and stack_path
     var job_info:ValidatedOutput<Array<JobInfo>>

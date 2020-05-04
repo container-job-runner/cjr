@@ -20,7 +20,7 @@ export default class Attach extends StackCommand {
   {
     const {argv, flags} = this.parse(Attach)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunner(flags.explicit)
+    const runner = this.newRunDriver(flags.explicit)
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var id = argv[0] || await promptUserForJobId(runner, stack_paths, ["running"], !this.settings.get('interactive')) || ""
     if(id === "") return // exit if user selects empty

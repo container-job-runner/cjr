@@ -37,8 +37,8 @@ export default class Shell extends StackCommand {
     const run_shortcut = new RunShortcuts()
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, (flags.quiet) ? true : !flags.verbose),
-      runner:  this.newRunner(flags.explicit, (flags.quiet) ? true : false)
+      builder: this.newBuildDriver(flags.explicit, (flags.quiet) ? true : !flags.verbose),
+      runner:  this.newRunDriver(flags.explicit, (flags.quiet) ? true : false)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)

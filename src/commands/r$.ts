@@ -60,8 +60,8 @@ export default class Run extends RemoteCommand {
     var remote_driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.quiet)
+      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
+      runner:  this.newRunDriver(flags.explicit, flags.quiet)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)

@@ -17,7 +17,7 @@ export default class State extends StackCommand {
   {
     const {args, flags} = this.parse(State)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunner(flags.explicit)
+    const runner = this.newRunDriver(flags.explicit)
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     const result = runner.jobInfo({'ids': [args.id], 'stack-paths': stack_paths})
     if(!result.success) return console.log('non-existent')

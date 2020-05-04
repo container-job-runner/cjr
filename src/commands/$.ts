@@ -50,8 +50,8 @@ export default class Run extends StackCommand {
     }
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, !flags.verbose),
-      runner:  this.newRunner(flags.explicit, flags.quiet)
+      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
+      runner:  this.newRunDriver(flags.explicit, flags.quiet)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)

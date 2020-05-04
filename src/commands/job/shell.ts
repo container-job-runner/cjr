@@ -29,8 +29,8 @@ export default class Shell extends StackCommand {
     const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit),
-      runner:  this.newRunner(flags.explicit)
+      builder: this.newBuildDriver(flags.explicit),
+      runner:  this.newRunDriver(flags.explicit)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)

@@ -25,7 +25,7 @@ export default class Delete extends StackCommand {
   {
     const {argv, flags} = this.parse(Delete)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunner(flags.explicit)
+    const runner = this.newRunDriver(flags.explicit)
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var job_info:ValidatedOutput<Array<JobInfo>>
     if(flags.all) // -- delete all jobs ----------------------------------------

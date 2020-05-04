@@ -25,8 +25,8 @@ export default class Build extends StackCommand {
     this.augmentFlagsWithProjectSettings(flags, {stack:false, "config-files": false, "stacks-dir": true})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, flags.quiet),
-      runner:  this.newRunner(flags.explicit, flags.quiet)
+      builder: this.newBuildDriver(flags.explicit, flags.quiet),
+      runner:  this.newRunDriver(flags.explicit, flags.quiet)
     }
     stack_list.map((stack_name:string) => {
       printResultState(

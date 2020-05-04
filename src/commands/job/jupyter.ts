@@ -46,8 +46,8 @@ export default class Run extends StackCommand {
     }
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit),
-      runner:  this.newRunner(flags.explicit)
+      builder: this.newBuildDriver(flags.explicit),
+      runner:  this.newRunDriver(flags.explicit)
     }
     // -- extract full id ------------------------------------------------------
     const id_request:ValidatedOutput<string> = firstJobId(drivers.runner.jobInfo({"ids": [args.id]}))

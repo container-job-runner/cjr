@@ -20,7 +20,7 @@ export default class Log extends StackCommand {
   {
     const {argv, flags} = this.parse(Log)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunner(flags.explicit)
+    const runner = this.newRunDriver(flags.explicit)
     // get id and stack_path
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     const id = argv[0] || await promptUserForJobId(runner, stack_paths, undefined, !this.settings.get('interactive')) || ""

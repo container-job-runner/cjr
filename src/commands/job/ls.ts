@@ -23,7 +23,7 @@ export default class List extends StackCommand {
   {
     const {argv, flags} = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner  = this.newRunner(flags.explicit)
+    const runner  = this.newRunDriver(flags.explicit)
     const stack_paths = (flags['all']) ? undefined : flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     const job_info = runner.jobInfo({'stack-paths': stack_paths})
     if(!job_info.success) return printResultState(job_info)

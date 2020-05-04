@@ -27,8 +27,8 @@ export default class Copy extends StackCommand {
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuilder(flags.explicit, flags.quiet),
-      runner:  this.newRunner(flags.explicit, flags.quiet)
+      builder: this.newBuildDriver(flags.explicit, flags.quiet),
+      runner:  this.newRunDriver(flags.explicit, flags.quiet)
     }
     // -- get job ids ----------------------------------------------------------
     var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(drivers.runner, stack_paths, undefined, !this.settings.get('interactive')) || [])
