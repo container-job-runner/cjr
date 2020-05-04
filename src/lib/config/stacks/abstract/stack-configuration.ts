@@ -10,9 +10,11 @@ export abstract class StackConfiguration<T>
 {
   stack_path: string|undefined
   abstract config: T
+
+  //LOAD loads stack configuration from a directory containing requisite stack data
   abstract load(stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<undefined>
-  abstract readConfigFromFile(path: string) : ValidatedOutput<undefined>
-  abstract writeConfigToFile(path: string) : ValidatedOutput<undefined> | ValidatedOutput<Error>
+  //SAVE saves configuration into stack directory
+  abstract save(stack_path: string, options?: Dictionary) : ValidatedOutput<undefined> | ValidatedOutput<Error>
 
   // == modifiers ==============================================================
   abstract setImage(value: string): void
