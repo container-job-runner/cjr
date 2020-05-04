@@ -1,10 +1,7 @@
-import * as fs from 'fs'
-import * as path from 'path'
-import {JSTools} from '../../js-tools'
-import {YMLFile} from '../../fileio/yml-file'
-import {ValidatedOutput} from '../../validated-output'
-import {WarningStrings} from '../../error-strings'
-import {rs_vo_validator} from './run-shortcuts-schema'
+import { YMLFile } from '../../fileio/yml-file'
+import { ValidatedOutput } from '../../validated-output'
+import { WarningStrings } from '../../error-strings'
+import { rs_vo_validator } from './run-shortcuts-schema'
 
 export class RunShortcuts
 {

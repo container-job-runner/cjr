@@ -3,13 +3,11 @@
 // Lazy loading & static data object
 // ===========================================================================
 
-import * as fs from 'fs'
-import * as path from 'path'
-import {JSONFile} from './fileio/json-file'
-import {ValidatedOutput} from './validated-output'
-import {cli_settings_yml_name, defaultCLISettings} from './constants'
-import {ErrorStrings} from './error-strings'
-import {JSTools} from './js-tools'
+import { JSONFile } from './fileio/json-file'
+import { ValidatedOutput } from './validated-output'
+import { cli_settings_yml_name, defaultCLISettings } from './constants'
+import { ErrorStrings } from './error-strings'
+import { JSTools } from './js-tools'
 
 export class Settings
 {

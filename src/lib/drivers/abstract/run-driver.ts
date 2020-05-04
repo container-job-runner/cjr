@@ -2,7 +2,7 @@
 // RunDriver: Abstract class for running jobs and accessing their info
 // ===========================================================================
 
-import { stack_path_label, name_label, Dictionary } from '../../constants'
+import { stack_path_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { JobConfiguration } from '../../config/jobs/job-configuration'

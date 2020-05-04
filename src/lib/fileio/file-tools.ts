@@ -3,7 +3,6 @@ import * as os from 'os'
 import * as path from 'path'
 import {ValidatedOutput} from '../validated-output'
 import {ShellCommand} from '../shell-command'
-import {JSTools} from '../js-tools'
 import { trim } from '../functions/misc-functions'
 
 export class FileTools

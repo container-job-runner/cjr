@@ -4,17 +4,13 @@
 
 import * as chalk from 'chalk'
 import { ValidatedOutput } from "../../validated-output"
-import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { ShellCommand } from "../../shell-command"
-import { RunDriver, JobState, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
+import { RunDriver, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { DockerStackConfiguration, DockerStackPortConfig, DockerStackMountConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
-import { spawn } from 'child_process'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec-configuration'
-import { trimTrailingNewline } from '../../functions/misc-functions'
-import { JSTools } from '../../js-tools'
 
 // === START API TYPES =========================================================
 
