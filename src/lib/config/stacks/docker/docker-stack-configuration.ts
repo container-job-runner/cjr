@@ -35,6 +35,7 @@ export type DockerStackMountConfig = {
   "readonly"?: boolean
   "consistency"?: "consistent" | "cached" | "delegated"
   "selinux"?: boolean
+  "includeForRemoteJob"?: boolean
 }
 
 export type DockerStackPortConfig = {
