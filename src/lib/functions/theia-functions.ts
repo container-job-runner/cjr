@@ -1,14 +1,15 @@
 import * as path from 'path'
 import * as os from 'os'
-import {JSTools} from '../js-tools'
-import {ShellCommand} from '../shell-command'
-import {ErrorStrings} from '../error-strings'
-import {ValidatedOutput} from '../validated-output'
-import {THEIA_JOB_NAME, name_label} from '../constants'
-import {jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
-import {BuildOptions} from './build-functions'
-import {BuildDriver} from '../drivers/abstract/build-driver'
+import { JSTools } from '../js-tools'
+import { ShellCommand } from '../shell-command'
+import { ErrorStrings } from '../error-strings'
+import { ValidatedOutput } from '../validated-output'
+import { THEIA_JOB_NAME, name_label, Dictionary } from '../constants'
+import { jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId } from './run-functions'
+import { BuildOptions } from './build-functions'
+import { BuildDriver } from '../drivers/abstract/build-driver'
 import { parseJSON } from './misc-functions'
+import { RunDriver } from '../drivers/abstract/run-driver'
 
 export type TheiaOptions = {
   "stack-path": string,
@@ -27,8 +28,6 @@ const ENV = {
   url:  'THEIA_URL',
   port: 'THEIA_PORT'
 }
-
-export type Dictionary = {[key: string]: any}
 
 // === Core functions ==========================================================
 
@@ -50,7 +49,7 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
       "stack-path":   theia_options["stack-path"],
       "config-files": theia_options["config-files"] || [],
       "build-options":theia_options["build-options"] || {'reuse-image': true},
-      "command":      theiaCommand(container_runtime.builder, theia_options),
+      "command":      theiaCommand(container_runtime.runner, theia_options),
       "environment":  theiaEnvironment(theia_options),
       //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line socket based driver is developed
       "host-root":    theia_options["project-root"] || "",
@@ -132,9 +131,10 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
 // === Helper functions ========================================================
 
 // -- command to start theia server --------------------------------------------
-function theiaCommand(builder: BuildDriver, theia_options: TheiaOptions) {
-  const result = builder.loadConfiguration(theia_options['stack-path'], theia_options['config-files'] || [])
-  const container_root = (result.success) ? (result.value?.getContainerRoot() || "") : ""
+function theiaCommand(runner: RunDriver, theia_options: TheiaOptions) {
+  const configuration = runner.emptyStackConfiguration()
+  const load_result = configuration.load(theia_options['stack-path'], theia_options['config-files'] || [])
+  const container_root = configuration.getContainerRoot()
   const project_dir = (container_root && theia_options['project-root']) ? path.posix.join(container_root, path.basename(theia_options['project-root'])) : container_root
   return `theia --hostname $${ENV.url} --port $${ENV.port} ${project_dir}`;
 }
