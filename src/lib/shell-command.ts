@@ -15,7 +15,6 @@
 // shell.exec('command', {flag: {value: 'val1', noequals: true}})  // command --flag 'val1'
 // =============================================================================
 
-import * as chalk from 'chalk'
 import { spawn, spawnSync, SpawnSyncReturns, ChildProcess } from 'child_process'
 import { ValidatedOutput } from './validated-output'
 import { JSTools } from './js-tools'
@@ -28,11 +27,6 @@ export class ShellCommand
     escape_args: boolean  = true
     escape_flags: boolean = true
 
-    private ErrorStrings = {
-      INVALID_JSON: chalk`{bold Invalid JSON} - shell output did not contain valid JSON.`,
-      INVALID_LINEJSON: chalk`{bold INVALID LINE JSON} - shell output did not contain valid Line JSON.`
-    }
-
     private spawn_options = ['cwd', 'input', 'argv0', 'stdio', 'env', 'uid', 'gid', 'timeout', 'killSignal', 'maxBuffer', 'encoding', 'shell']
 
     constructor(explicit: boolean, silent: boolean)
@@ -44,7 +38,7 @@ export class ShellCommand
     // Sync command with stdio set to 'inherit' or 'ignore'. Returns ValidatedOutput containing child process
     exec(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}): ValidatedOutput<SpawnSyncReturns<Buffer>>
     {
-      const command_string = this.commandString(command, flags, args, options)
+      const command_string = this.commandString(command, flags, args)
       const default_options:Dictionary = {stdio : 'inherit', shell: '/bin/bash'}
 
       if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
@@ -61,7 +55,7 @@ export class ShellCommand
     // Async request with stdio set to 'inherit' or 'ignore'. Returns ValidatedOutput containing child process
     execAsync(command: string, flags: Dictionary = {}, args: Array<string> = [], options: Dictionary = {}) : ValidatedOutput<ChildProcess>
     {
-      const command_string = this.commandString(command, flags, args, options)
+      const command_string = this.commandString(command, flags, args)
       const default_options:Dictionary = {stdio : 'pipe', shell: '/bin/bash'}
 
       if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
@@ -81,7 +75,7 @@ export class ShellCommand
       return new ValidatedOutput(true, ShellCommand.stdout(result.value))
     }
 
-    commandString(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {}) : string
+    commandString(command: string, flags: Dictionary = {}, args: Array<string> = []) : string
     {
       // HELPER: wraps variable in array
       const arrayWrap = (x:any) => (JSTools.isArray(x)) ? x : [x]
