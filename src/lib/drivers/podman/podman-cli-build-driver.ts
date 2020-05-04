@@ -1,9 +1,7 @@
 import { DockerCliBuildDriver } from '../docker/docker-cli-build-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
-
-// - types ---------------------------------------------------------------------
-type Dictionary = {[key: string]: any}
+import { Dictionary } from '../../constants'
 
 export class PodmanCliBuildDriver extends DockerCliBuildDriver
 {

@@ -7,12 +7,9 @@ import { JobInfo, JobPortInfo } from '../abstract/run-driver'
 import { DockerCliRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
-import { stack_path_label } from '../../constants'
-import { DockerStackConfigObject, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
+import { stack_path_label, Dictionary } from '../../constants'
+import { DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
-
-// -- types --------------------------------------------------------------------
-type Dictionary = {[key: string]: any}
 
 export class PodmanCliRunDriver extends DockerCliRunDriver
 {

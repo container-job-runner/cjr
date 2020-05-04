@@ -5,7 +5,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import Command from '@oclif/command'
-import * as chalk from 'chalk'
 import { Settings } from '../settings'
 import { DockerCliBuildDriver } from '../drivers/docker/docker-cli-build-driver'
 import { PodmanCliBuildDriver } from '../drivers/podman/podman-cli-build-driver'
@@ -23,7 +22,6 @@ import { ValidatedOutput } from '../validated-output'
 import { loadProjectSettings, scanForSettingsDirectory } from '../functions/run-functions'
 import { BuildOptions } from '../functions/build-functions'
 import { ProjectSettings, ps_fields } from '../config/project-settings/project-settings'
-import { triggerAsyncId } from 'async_hooks'
 
 export abstract class StackCommand extends Command
 {

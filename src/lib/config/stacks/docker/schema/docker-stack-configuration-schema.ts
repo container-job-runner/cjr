@@ -1,6 +1,6 @@
 import * as Ajv from 'ajv'
-import {ajvValidatorToValidatedOutput} from '../../../../functions/misc-functions'
-import { string } from '@oclif/command/lib/flags'
+import { ajvValidatorToValidatedOutput } from '../../../../functions/misc-functions'
+import { Dictionary } from '../../../../constants'
 
 export const docker_stack_configuration_schema = {
   "$schema": "http://json-schema.org/draft-07/schema#",
@@ -207,7 +207,6 @@ export const docker_stack_configuration_schema = {
 }
 
 // Ajv validator for validating schema
-type Dictionary = {[key:string] : any}
 const ajv = new Ajv({schemas: [docker_stack_configuration_schema]})
 export const dsc_ajv_validator = ajv.getSchema(docker_stack_configuration_schema["$id"])
 export const dsc_vo_validator  = (raw_object: Dictionary) => ajvValidatorToValidatedOutput(dsc_ajv_validator, raw_object)

@@ -8,10 +8,7 @@ import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings, WarningStrings } from '../error-strings'
 import { JSTools } from '../js-tools'
 import { ShellCommand } from '../shell-command'
-import { RunDriver } from '../drivers/abstract/run-driver'
-import { outputFile } from 'fs-extra'
-
-type Dictionary = {[key: string]: any}
+import { Dictionary } from '../constants'
 
 export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary) : ValidatedOutput<undefined>
 {

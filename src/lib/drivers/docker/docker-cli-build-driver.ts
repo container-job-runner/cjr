@@ -1,19 +1,11 @@
-import * as fs from 'fs-extra'
-import * as path from 'path'
-import * as yaml from 'js-yaml'
 import * as chalk from 'chalk'
 import { BuildDriver } from '../abstract/build-driver'
 import { ValidatedOutput } from '../../validated-output'
 import { JSTools } from '../../js-tools'
 import { DockerStackConfiguration} from '../../config/stacks/docker/docker-stack-configuration'
-import { FileTools } from '../../fileio/file-tools'
-import { YMLFile } from '../../fileio/yml-file'
-import { TextFile } from '../../fileio/text-file'
 import { parseLineJSON } from '../../functions/misc-functions'
 import { Dictionary, cli_name, stack_path_label } from '../../constants'
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration'
-
-type StackValidateResult = {"stack-type"?: string}
 
 export class DockerCliBuildDriver extends BuildDriver
 {

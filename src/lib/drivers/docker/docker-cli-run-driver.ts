@@ -3,12 +3,12 @@
 // ===========================================================================
 
 import * as chalk from 'chalk'
-import { cli_name, stack_path_label, name_label, Dictionary } from '../../constants'
+import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
-import { RunDriver, JobState, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
+import { RunDriver, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
 import { DockerStackConfiguration, DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
-import { trim, parseJSON, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
+import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec-configuration'
 

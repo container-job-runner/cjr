@@ -1,5 +1,6 @@
 import * as Ajv from 'ajv'
-import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
+import { ajvValidatorToValidatedOutput } from '../../functions/misc-functions'
+import { Dictionary } from '../../constants'
 
 export const project_settings_schema = {
   "$id": "project-schema.json",
@@ -29,7 +30,6 @@ export const project_settings_schema = {
 }
 
 // Ajv validator for validating schema
-type Dictionary = {[key:string] : any}
 const ajv = new Ajv({schemas: [project_settings_schema]})
 export const ps_ajv_validator = ajv.getSchema(project_settings_schema["$id"])
 export const ps_vo_validator  = (raw_object: Dictionary) => ajvValidatorToValidatedOutput(ps_ajv_validator, raw_object)
