@@ -18,7 +18,7 @@ import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
 import { JSTools } from '../js-tools'
 import { ProjectSettings } from '../config/project-settings/project-settings'
 import { JobConfiguration } from '../config/jobs/job-configuration'
-import { PodmanRunDriver } from '../drivers/podman/podman-cli-run-driver'
+import { PodmanCliRunDriver } from '../drivers/podman/podman-cli-run-driver'
 import { PodmanSocketRunDriver } from '../drivers/podman/podman-socket-run-driver'
 
 // == TYPES ====================================================================
@@ -662,7 +662,7 @@ export function enableX11(configuration: StackConfiguration<any>, runner: RunDri
   }
 
   // -- add special flags for podman -------------------------------------------
-  if(runner instanceof PodmanRunDriver || runner instanceof PodmanSocketRunDriver) {
+  if(runner instanceof PodmanCliRunDriver || runner instanceof PodmanSocketRunDriver) {
     configuration.addFlag("network", "host") // allows reuse of DISPLAY variable from host
     configuration.addFlag("security-opt", "label=disable") // allows /tmp/X11 directory to be accesible in container
   }

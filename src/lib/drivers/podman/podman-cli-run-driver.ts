@@ -14,7 +14,7 @@ import { DockerJobConfiguration } from '../../config/jobs/docker-job-configurati
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-export class PodmanRunDriver extends DockerCliRunDriver
+export class PodmanCliRunDriver extends DockerCliRunDriver
 {
   protected base_command = 'podman'
   protected JSONOutputParser = parseJSON
