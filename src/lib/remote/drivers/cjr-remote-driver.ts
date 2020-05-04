@@ -10,7 +10,7 @@ import {BuildDriver} from "../../drivers/abstract/build-driver"
 import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions, RemoteJupyterOptions} from "./remote-driver"
 import {cli_bundle_dir_name, projectIDPath, project_idfile, stack_bundle_rsync_file_paths, host_root_label, stack_path_label} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
-import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerRuntime, StackBundleOptions} from '../../functions/run-functions'
+import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerDrivers, StackBundleOptions} from '../../functions/run-functions'
 import {BuildOptions} from '../../functions/build-functions'
 import {printResultState, parseJSON} from '../../functions/misc-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
@@ -240,7 +240,7 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  jobExec(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, exec_options: RemoteExecOptions)
+  jobExec(resource: Resource, local_drivers:ContainerDrivers, job_options: JobOptions, exec_options: RemoteExecOptions)
   {
     // -- validate parameters --------------------------------------------------
     if(!exec_options.id) return new ValidatedOutput(false, [], [ErrorStrings.REMOTEJOB.EMPTY_ID])
@@ -280,7 +280,7 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy stack -----------------------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_STACK, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    result = this.pushStack(container_runtime, {
+    result = this.pushStack(local_drivers, {
       "local-stack-path":job_options['stack-path'],
       "local-config-files":job_options['config-files'],
       "remote-stack-path": remote_stack_path,
@@ -304,7 +304,7 @@ export class CJRRemoteDriver extends RemoteDriver
   }
 
   //jobStart(resource: Dictionary, builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>, flags: Dictionary, args: Dictionary, argv: Array<string>)
-  jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, remote_options: RemoteStartOptions)
+  jobStart(resource: Resource, local_drivers:ContainerDrivers, job_options: JobOptions, remote_options: RemoteStartOptions)
   {
     const host_root = job_options['host-root'] || ""
     // -- set resource ---------------------------------------------------------
@@ -333,7 +333,7 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy stack -----------------------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_STACK, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    result = this.pushStack(container_runtime, {
+    result = this.pushStack(local_drivers, {
       "local-stack-path":job_options['stack-path'],
       "local-config-files":job_options['config-files'],
       "remote-stack-path": remote_stack_path,
@@ -343,7 +343,7 @@ export class CJRRemoteDriver extends RemoteDriver
     this.printStatus(StatusStrings.REMOTEJOB.DONE, true)
     // -- copy files & project id ----------------------------------------------
     this.printStatus(StatusStrings.REMOTEJOB.START.UPLOADING_FILES, this.output_options.verbose) // Note: if verbose print extra line if verbose or scp gobbles line
-    result = this.pushProjectFiles(container_runtime, {
+    result = this.pushProjectFiles(local_drivers, {
       "local-project-root": host_root,
       "local-stack-path": job_options['stack-path'],
       "local-config-files": job_options['config-files'],
@@ -446,7 +446,7 @@ export class CJRRemoteDriver extends RemoteDriver
 
   // -- Jupyter commands -------------------------------------------------------
 
-  jobJupyterStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, rjup_options: RemoteJupyterOptions)
+  jobJupyterStart(resource: Resource, local_drivers:ContainerDrivers, job_options: JobOptions, rjup_options: RemoteJupyterOptions)
   {
     const port:string = `${job_options?.ports?.[0]?.hostPort || ""}`
     if(!port) return (new ValidatedOutput(false, undefined)).pushError('Internal Error: empty port')
@@ -455,7 +455,7 @@ export class CJRRemoteDriver extends RemoteDriver
     // Note: since this driver does not know ids, we cannot create special multiplex master for each job. Therefore it only supports one job with x11
     const connect_options = (job_options['x11']) ? {tag: this.job_jupyter_x11_multiplex_tag} : {}
 
-    var result:ValidatedOutput<any> = this.jobExec(resource, container_runtime, job_options, {
+    var result:ValidatedOutput<any> = this.jobExec(resource, local_drivers, job_options, {
       "id": rjup_options['id'],
       "mode": 'job:jupyter',
       "host-project-root": rjup_options["host-project-root"],
@@ -575,7 +575,7 @@ export class CJRRemoteDriver extends RemoteDriver
   // builder - BuildDriver for building stack
   // stack_path: path on local machine where stack is located
   // configuration: Dictionary - result from stack configuration.bundle()
-  private pushStack(container_runtime: ContainerRuntime, options: {"local-stack-path":string, "local-config-files":Array<string>, "remote-stack-path": string, verbose: boolean})
+  private pushStack(local_drivers: ContainerDrivers, options: {"local-stack-path":string, "local-config-files":Array<string>, "remote-stack-path": string, verbose: boolean})
   {
     // -- 1. create local tmp directory ----------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(
@@ -596,7 +596,7 @@ export class CJRRemoteDriver extends RemoteDriver
       "build-options":{never: true},
       "config-files-only": true
     }
-    result = bundleStack(container_runtime, bundle_options)
+    result = bundleStack(local_drivers, bundle_options)
     if(!result.success) removeTmpStackAndReturn(result)
     // -- 3. upload local stack ------------------------------------------------
     if(path.isAbsolute(options['local-stack-path']) && fs.existsSync(options['local-stack-path']))
@@ -628,12 +628,12 @@ export class CJRRemoteDriver extends RemoteDriver
 
 
   // scp project files remote resource
-  private pushProjectFiles(container_runtime: ContainerRuntime, options: {"local-project-root":string, "local-stack-path":string, "local-config-files":Array<string>, "remote-project-root": string, verbose: boolean})
+  private pushProjectFiles(local_drivers: ContainerDrivers, options: {"local-project-root":string, "local-stack-path":string, "local-config-files":Array<string>, "remote-project-root": string, verbose: boolean})
   {
     if(!options['local-project-root']) return new ValidatedOutput(true, undefined)
     if(!options['remote-project-root']) return new ValidatedOutput(false, undefined).pushError('Internal Error: missing remote-project-root')
     // -- 1. load stack configuration ------------------------------------------
-    const configuration = container_runtime.runner.emptyStackConfiguration()
+    const configuration = local_drivers.runner.emptyStackConfiguration()
     var result:ValidatedOutput<any> = configuration.load(options['local-stack-path'], options['local-config-files'])
     if(!result.success) return result
     // -- 3. transfer stack over rsync ------------------------------------------

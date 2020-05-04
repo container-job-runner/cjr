@@ -1,7 +1,7 @@
 import * as chalk from 'chalk'
 import { flags} from '@oclif/command'
 import { StackCommand } from '../../lib/commands/stack-command'
-import { jobExec, ContainerRuntime, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
+import { jobExec, ContainerDrivers, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
 import { RunShortcuts } from "../../lib/config/run-shortcuts/run-shortcuts"
 import { printResultState, initX11 } from '../../lib/functions/misc-functions'
 
@@ -36,7 +36,7 @@ export default class Shell extends StackCommand {
     const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
     const run_shortcut = new RunShortcuts()
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, (flags.quiet) ? true : !flags.verbose),
       runner:  this.newRunner(flags.explicit, (flags.quiet) ? true : false)
     }
@@ -67,7 +67,7 @@ export default class Shell extends StackCommand {
       explicit: flags.explicit
     }
     printResultState(
-      jobExec(c_runtime, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options)
+      jobExec(drivers, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options)
     )
   }
 }

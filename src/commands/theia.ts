@@ -3,7 +3,7 @@ import { flags } from '@oclif/command'
 import { StackCommand } from '../lib/commands/stack-command'
 import { printResultState, initX11 } from '../lib/functions/misc-functions'
 import { startTheiaInProject, stopTheia, getTheiaUrl, startTheiaApp } from '../lib/functions/theia-functions'
-import { OutputOptions, ContainerRuntime, nextAvailablePort } from '../lib/functions/run-functions'
+import { OutputOptions, ContainerDrivers, nextAvailablePort } from '../lib/functions/run-functions'
 import { ValidatedOutput } from '../lib/validated-output'
 import { JSTools } from '../lib/js-tools'
 
@@ -44,7 +44,7 @@ export default class Run extends StackCommand {
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const container_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
@@ -58,13 +58,13 @@ export default class Run extends StackCommand {
       if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
       // -- select port ----------------------------------------------------------
       if(flags['port'] == 'auto') {
-        const port_number = nextAvailablePort(container_runtime.runner, 7001)
+        const port_number = nextAvailablePort(drivers.runner, 7001)
         const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
         flags['port'] = `${port_address}:${port_number}:${port_number}`
       }
 
       const start_result = startTheiaInProject(
-        container_runtime,
+        drivers,
         output_options,
         {
           "stack-path": stack_path,
@@ -84,18 +84,18 @@ export default class Run extends StackCommand {
     }
     if(args['command'] === 'stop') // -- stop theia --------------------------
     {
-      const stop_result = stopTheia(container_runtime, {"project-root": project_root})
+      const stop_result = stopTheia(drivers, {"project-root": project_root})
       result.absorb(stop_result);
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list theia url
     {
-      const url_result = await getTheiaUrl(container_runtime, {"project-root": project_root})
+      const url_result = await getTheiaUrl(drivers, {"project-root": project_root})
       if(url_result.success) console.log(url_result.value)
       result.absorb(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
-      const url_result = await getTheiaUrl(container_runtime, {"project-root": project_root})
+      const url_result = await getTheiaUrl(drivers, {"project-root": project_root})
       if(url_result.success) startTheiaApp(url_result.value, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }

@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { StackCommand } from '../lib/commands/stack-command'
-import { jobStart, jobToImage, ContainerRuntime, OutputOptions, JobOptions } from "../lib/functions/run-functions"
+import { jobStart, jobToImage, ContainerDrivers, OutputOptions, JobOptions } from "../lib/functions/run-functions"
 import { printResultState, initX11 } from '../lib/functions/misc-functions'
 import { ValidatedOutput } from '../lib/validated-output'
 
@@ -37,7 +37,7 @@ export default class Shell extends StackCommand {
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
@@ -58,11 +58,11 @@ export default class Shell extends StackCommand {
       "remove":        (flags.save !== undefined) ? false : true
     }
 
-    const start_result = jobStart(c_runtime, job_options, output_options)
+    const start_result = jobStart(drivers, job_options, output_options)
     if(!start_result.success) return printResultState(start_result)
 
     if(flags.save !== undefined) await jobToImage(
-      c_runtime.runner,
+      drivers.runner,
       new ValidatedOutput(start_result.success, start_result.value.id), // wrap id into ValidatedOutput<string>
       flags.save,
       true,

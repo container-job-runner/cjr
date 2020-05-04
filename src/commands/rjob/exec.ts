@@ -1,6 +1,6 @@
 import {flags} from '@oclif/command'
 import {RemoteCommand} from '../../lib/remote/commands/remote-command'
-import {OutputOptions, ContainerRuntime, JobOptions} from '../../lib/functions/run-functions'
+import {OutputOptions, ContainerDrivers, JobOptions} from '../../lib/functions/run-functions'
 import {RunShortcuts} from "../../lib/config/run-shortcuts/run-shortcuts"
 import {printResultState} from '../../lib/functions/misc-functions'
 
@@ -62,7 +62,7 @@ export default class Exec extends RemoteCommand {
     // -- get job id  ----------------------------------------------------------
     const id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.verbose)
     }
@@ -84,7 +84,7 @@ export default class Exec extends RemoteCommand {
     }
     result = driver.jobExec(
       resource,
-      c_runtime,
+      drivers,
       job_options,
       {
         id: id,

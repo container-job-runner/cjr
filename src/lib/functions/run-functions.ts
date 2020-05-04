@@ -59,7 +59,7 @@ export type CopyOptions = {
   force?:boolean                                                                // used by remote for copying into project directories that differ from project directory that was used to start job
 }
 
-export type ContainerRuntime = {
+export type ContainerDrivers = {
   runner: RunDriver,
   builder: BuildDriver
 }
@@ -109,11 +109,11 @@ export type StackBundleOptions =
 // -----------------------------------------------------------------------------
 // STARTJOB starts a new job.
 // -- Parameters ---------------------------------------------------------------
-// container_runtime: ContainerRuntime - runner and builder for job
+// container_runtime: ContainerDrivers - runner and builder for job
 // job_options: JobOptions
 // output_options: OutputOptions
 // -----------------------------------------------------------------------------
-export function jobStart(container_runtime: ContainerRuntime, job_options: JobOptions, output_options: OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
+export function jobStart(container_runtime: ContainerDrivers, job_options: JobOptions, output_options: OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
 {
   const failed_result = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
   // -- 1. build stack and load stack configuration ----------------------------
@@ -175,10 +175,10 @@ function printStatusHeader(message: string, output_options: OutputOptions, line_
 // -- Parameters ---------------------------------------------------------------
 // ids:Array<string> - ids of jobs that should copied
 // stack_path:string - absolite path of project root folder
-// container_runtime:ContainerRuntime -
+// container_runtime:ContainerDrivers -
 // options: CopyOptions
 // -----------------------------------------------------------------------------
-export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyOptions) : ValidatedOutput<undefined>
+export function jobCopy(container_runtime: ContainerDrivers, copy_options: CopyOptions) : ValidatedOutput<undefined>
 {
   printStatusHeader(StatusStrings.JOBSTART.VOLUMECOPY_TOHOST, {verbose: copy_options.verbose, explicit: false, silent: false})
   const result = new ValidatedOutput(true, undefined);
@@ -217,7 +217,7 @@ export function jobCopy(container_runtime: ContainerRuntime, copy_options: CopyO
   return result
 }
 
-export function jobExec(container_runtime:ContainerRuntime, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
+export function jobExec(container_runtime:ContainerDrivers, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, shell_job_options:JobOptions, output_options:OutputOptions={verbose: false, explicit: false, silent: false}) : ValidatedOutput<NewJobInfo>
 {
   const failed_result = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
   const nohost_result = new ValidatedOutput(true, {"id":"", "output": "", "exit-code": 0});
@@ -251,7 +251,7 @@ export function jobExec(container_runtime:ContainerRuntime, parent_job:{"id": st
   return jobStart(container_runtime, shell_job_options, output_options)
 }
 
-export function bundleProject(container_runtime: ContainerRuntime, options: ProjectBundleOptions)
+export function bundleProject(container_runtime: ContainerDrivers, options: ProjectBundleOptions)
 {
   const settings_dir = projectSettingsDirPath(options["bundle-path"])   // directory that stores project settings yml & stack
   // -- ensure directory structure ---------------------------------------------
@@ -263,7 +263,7 @@ export function bundleProject(container_runtime: ContainerRuntime, options: Proj
   return bundleProjectSettings(container_runtime, ps_options)
 }
 
-export function bundleProjectSettings(container_runtime: ContainerRuntime, options: ProjectBundleOptions) : ValidatedOutput<undefined>
+export function bundleProjectSettings(container_runtime: ContainerDrivers, options: ProjectBundleOptions) : ValidatedOutput<undefined>
 {
   printStatusHeader(StatusStrings.BUNDLE.PROJECT_SETTINGS, {verbose: options?.verbose || false, silent: false, explicit: false})
   const result = new ValidatedOutput(true, undefined)
@@ -297,7 +297,7 @@ export function bundleProjectSettings(container_runtime: ContainerRuntime, optio
   return result
 }
 
-export function bundleStack(container_runtime: ContainerRuntime, options: StackBundleOptions) : ValidatedOutput<undefined>
+export function bundleStack(container_runtime: ContainerDrivers, options: StackBundleOptions) : ValidatedOutput<undefined>
 {
   // -- ensure that stack can be loaded ----------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.STACK_BUILD(options['stack-path']), {verbose: options?.verbose || false, silent: false, explicit: false})
@@ -420,7 +420,7 @@ export function nextAvailablePort(runner: RunDriver, port:number=1024) : number
 // hostRoot:string  - Project root folder
 // verbose: boolean - flag for rsync
 // -----------------------------------------------------------------------------
-export function createAndMountFileVolume(container_runtime: ContainerRuntime, configuration: JobConfiguration<StackConfiguration<any>>, hostRoot: string, verbose: boolean=false) : ValidatedOutput<undefined>
+export function createAndMountFileVolume(container_runtime: ContainerDrivers, configuration: JobConfiguration<StackConfiguration<any>>, hostRoot: string, verbose: boolean=false) : ValidatedOutput<undefined>
 {
   // -- create volume ----------------------------------------------------------
   const vc_result = container_runtime.runner.volumeCreate({});
@@ -470,7 +470,7 @@ export function mountFileVolume(configuration: JobConfiguration<StackConfigurati
 // runner: RunDriver - runner that is used to start rsync job
 // copy_options: string - options for file sync
 // -----------------------------------------------------------------------------
-export function syncHostDirAndVolume(container_runtime: ContainerRuntime, copy_options:RsyncOptions, manual_copy:boolean = false) : ValidatedOutput<undefined>
+export function syncHostDirAndVolume(container_runtime: ContainerDrivers, copy_options:RsyncOptions, manual_copy:boolean = false) : ValidatedOutput<undefined>
 {
   if(!copy_options["host-path"]) return new ValidatedOutput(true, undefined)
   if(!copy_options["volume"]) return new ValidatedOutput(true, undefined)

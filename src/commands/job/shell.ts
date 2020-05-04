@@ -1,6 +1,6 @@
 import { flags} from '@oclif/command'
 import { StackCommand } from '../../lib/commands/stack-command'
-import { jobExec, promptUserForJobId, ContainerRuntime, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
+import { jobExec, promptUserForJobId, ContainerDrivers, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
 import { printResultState, initX11 } from '../../lib/functions/misc-functions'
 
 export default class Shell extends StackCommand {
@@ -28,14 +28,14 @@ export default class Shell extends StackCommand {
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- get job id -----------------------------------------------------------
-    const id_str = argv[0] || await promptUserForJobId(c_runtime.runner, flags["visible-stacks"], undefined, !this.settings.get('interactive')) || ""
+    const id_str = argv[0] || await promptUserForJobId(drivers.runner, flags["visible-stacks"], undefined, !this.settings.get('interactive')) || ""
     if(id_str === "") return // exit if user selects empty id or exits interactive dialog
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
@@ -57,6 +57,6 @@ export default class Shell extends StackCommand {
       silent:   false,
       explicit: flags.explicit
     }
-    printResultState(jobExec(c_runtime, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options))
+    printResultState(jobExec(drivers, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options))
   }
 }

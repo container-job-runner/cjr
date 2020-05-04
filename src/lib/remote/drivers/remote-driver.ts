@@ -1,5 +1,5 @@
 import { ValidatedOutput } from "../../validated-output"
-import { JobOptions, ContainerRuntime, CopyOptions, OutputOptions } from "../../functions/run-functions"
+import { JobOptions, ContainerDrivers, CopyOptions, OutputOptions } from "../../functions/run-functions"
 import { Resource } from "../../remote/config/resource-configuration"
 type Dictionary = {[key: string]: any}
 
@@ -50,13 +50,13 @@ export abstract class RemoteDriver
   abstract jobList(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
   abstract jobLog(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
 
-  abstract jobExec(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, exec_options: RemoteExecOptions): ValidatedOutput<any>;
-  abstract jobStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, remote_options:RemoteStartOptions): ValidatedOutput<any>;
+  abstract jobExec(resource: Resource, local_drivers:ContainerDrivers, job_options: JobOptions, exec_options: RemoteExecOptions): ValidatedOutput<any>;
+  abstract jobStart(resource: Resource, local_drivers:ContainerDrivers, job_options: JobOptions, remote_options:RemoteStartOptions): ValidatedOutput<any>;
 
   abstract jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
   abstract jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>): ValidatedOutput<any>;
 
-  abstract jobJupyterStart(resource: Resource, container_runtime:ContainerRuntime, job_options: JobOptions, rjup_options: RemoteJupyterOptions):ValidatedOutput<any>
+  abstract jobJupyterStart(resource: Resource, local_drivers:ContainerDrivers, job_options: JobOptions, rjup_options: RemoteJupyterOptions):ValidatedOutput<any>
   abstract jobJupyterStop(resource: Dictionary, id: string):ValidatedOutput<any>
   abstract jobJupyterList(resource: Dictionary, id: string):ValidatedOutput<any>
   abstract jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary):ValidatedOutput<any>

@@ -1,8 +1,8 @@
-import {BuildDriver} from '../drivers/abstract/build-driver'
-import {ValidatedOutput} from '../validated-output'
-import {ErrorStrings} from '../error-strings'
-import {StackConfiguration} from '../config/stacks/abstract/stack-configuration'
-import { ContainerRuntime } from './run-functions'
+import { BuildDriver } from '../drivers/abstract/build-driver'
+import { ValidatedOutput } from '../validated-output'
+import { ErrorStrings } from '../error-strings'
+import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
+import { ContainerDrivers } from './run-functions'
 
 export type BuildOptions = {
   'never'?: boolean,          // image will never be build
@@ -25,7 +25,7 @@ export type BuildOptions = {
 // stack_path - absolute path to stack folder
 // overloaded_config_paths - absolute paths to any overloading configuration files
 // -----------------------------------------------------------------------------
-export function buildAndLoad(cr: ContainerRuntime, build_options: BuildOptions, stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<StackConfiguration<any>>
+export function buildAndLoad(cr: ContainerDrivers, build_options: BuildOptions, stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<StackConfiguration<any>>
 {
   const configuration = cr.runner.emptyStackConfiguration()
   const result = new ValidatedOutput(true, configuration)
@@ -65,7 +65,7 @@ export function buildIfMissing(builder: BuildDriver, configuration: StackConfigu
   }
 }
 
-export function removeImage(cr: ContainerRuntime, stack_path: string, all_configurations: boolean, overloaded_config_paths: Array<string>=[]) : ValidatedOutput<undefined>
+export function removeImage(cr: ContainerDrivers, stack_path: string, all_configurations: boolean, overloaded_config_paths: Array<string>=[]) : ValidatedOutput<undefined>
 {
   if(all_configurations === true)
     return cr.builder.removeAllImages(stack_path)

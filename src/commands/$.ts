@@ -1,7 +1,7 @@
 import * as chalk from 'chalk'
 import { flags } from '@oclif/command'
 import { StackCommand } from '../lib/commands/stack-command'
-import { jobStart, jobCopy, ContainerRuntime, OutputOptions, JobOptions, CopyOptions } from "../lib/functions/run-functions"
+import { jobStart, jobCopy, ContainerDrivers, OutputOptions, JobOptions, CopyOptions } from "../lib/functions/run-functions"
 import { RunShortcuts } from "../lib/config/run-shortcuts/run-shortcuts"
 import { printResultState, initX11 } from '../lib/functions/misc-functions'
 import { Dictionary } from '../lib/constants'
@@ -49,7 +49,7 @@ export default class Run extends StackCommand {
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.quiet)
     }
@@ -72,7 +72,7 @@ export default class Run extends StackCommand {
       "remove":       (flags['file-access'] === "bind" && !flags["keep-record"]) ? true : false
     }
     // -- start job and extract job id -----------------------------------------
-    const start_result = jobStart(c_runtime, job_options, output_options)
+    const start_result = jobStart(drivers, job_options, output_options)
     if(!start_result.success) return printResultState(start_result)
     // -- print id -------------------------------------------------------------
     const job_id = start_result.value.id
@@ -82,7 +82,7 @@ export default class Run extends StackCommand {
     if(print_condition && !flags.async && this.settings.get('alway-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job_id}`)
     // -- autocopy results -----------------------------------------------------
-    if(this.shouldAutocopy(flags, c_runtime, job_id, stack_path)) {
+    if(this.shouldAutocopy(flags, drivers, job_id, stack_path)) {
       // -- set copy options ---------------------------------------------------
       const copy_options:CopyOptions = {
         "ids": [job_id],
@@ -90,11 +90,11 @@ export default class Run extends StackCommand {
         "mode": "update",
         "verbose": flags.verbose,
       }
-      printResultState(jobCopy(c_runtime, copy_options))
+      printResultState(jobCopy(drivers, copy_options))
     }
   }
 
-  shouldAutocopy(flags: Dictionary, container_runtime: ContainerRuntime, job_id: string, stack_path: string)
+  shouldAutocopy(flags: Dictionary, container_runtime: ContainerDrivers, job_id: string, stack_path: string)
   {
     // -- check that job has stopped -------------------------------------------
     const result = container_runtime.runner.jobInfo({"ids": [job_id], "stack-paths": [stack_path]})

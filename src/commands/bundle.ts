@@ -6,7 +6,7 @@ import { flags } from '@oclif/command'
 import { StackCommand } from '../lib/commands/stack-command'
 import { cli_bundle_dir_name, project_settings_folder, project_settings_file, projectSettingsYMLPath, Dictionary } from '../lib/constants'
 import { printResultState } from '../lib/functions/misc-functions'
-import { bundleStack, bundleProjectSettings, bundleProject, ContainerRuntime, ProjectBundleOptions} from '../lib/functions/run-functions'
+import { bundleStack, bundleProjectSettings, bundleProject, ContainerDrivers, ProjectBundleOptions} from '../lib/functions/run-functions'
 import { ShellCommand } from '../lib/shell-command'
 import { FileTools } from '../lib/fileio/file-tools'
 import { YMLFile } from '../lib/fileio/yml-file'
@@ -36,7 +36,7 @@ export default class Bundle extends StackCommand {
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, true)
     }
@@ -55,9 +55,9 @@ export default class Bundle extends StackCommand {
     if(flags['include-stacks-dir']) options["stacks-dir"] = flags["stacks-dir"]
 
     if(flags['include-files']) // -- bundle all files --------------------------
-      result = bundleProject(c_runtime, options)
+      result = bundleProject(drivers, options)
     else // -- bundle project configuration ------------------------------------
-      result = bundleProjectSettings(c_runtime, options)
+      result = bundleProjectSettings(drivers, options)
     printResultState(result)
 
     // -- copy bundle to user specified location -------------------------------

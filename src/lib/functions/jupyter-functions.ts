@@ -4,7 +4,7 @@ import {ShellCommand} from '../shell-command'
 import {ErrorStrings} from '../error-strings'
 import {ValidatedOutput} from '../validated-output'
 import {JUPYTER_JOB_NAME, name_label} from '../constants'
-import {jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
+import {jobStart, jobExec, ContainerDrivers, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
 import {BuildOptions} from './build-functions'
 import {RunDriver} from '../drivers/abstract/run-driver'
 
@@ -23,7 +23,7 @@ export type JupyterOptions = {
 
 // === Core functions ==========================================================
 
-export function startJupyterInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
+export function startJupyterInProject(container_runtime: ContainerDrivers, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"project-root" : jup_options['project-root'] || ""})
   const job_info_request = container_runtime.runner.jobInfo({
@@ -59,7 +59,7 @@ export function startJupyterInProject(container_runtime: ContainerRuntime, outpu
     return new ValidatedOutput(true, start_output.value.id) // return id of jupyter job
 }
 
-export function startJupyterInJob(container_runtime: ContainerRuntime, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
+export function startJupyterInJob(container_runtime: ContainerDrivers, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : parent_job.id})
   const job_info_request = container_runtime.runner.jobInfo({
@@ -95,7 +95,7 @@ export function startJupyterInJob(container_runtime: ContainerRuntime, parent_jo
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
-export function stopJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+export function stopJupyter(container_runtime: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const job_info_request = firstJobId(
     container_runtime.runner.jobInfo({
@@ -110,7 +110,7 @@ export function stopJupyter(container_runtime: ContainerRuntime, identifier: {"j
     return container_runtime.runner.jobStop([jupyter_job_id])
 }
 
-export function listJupyter(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+export function listJupyter(container_runtime: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const job_info_request = firstJobId(
     container_runtime.runner.jobInfo({
@@ -133,7 +133,7 @@ export function listJupyter(container_runtime: ContainerRuntime, identifier: {"j
 
 // -- extract the url for a jupyter notebook  ----------------------------------
 // function can send repeated requests if the first one fails
-export async function getJupyterUrl(container_runtime: ContainerRuntime, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
+export async function getJupyterUrl(container_runtime: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
 {
   const job_info_request = firstJobId(
     container_runtime.runner.jobInfo({

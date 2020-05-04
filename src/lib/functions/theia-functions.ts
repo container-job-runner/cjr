@@ -4,7 +4,7 @@ import { ShellCommand } from '../shell-command'
 import { ErrorStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
 import { THEIA_JOB_NAME, name_label, Dictionary } from '../constants'
-import { jobStart, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId } from './run-functions'
+import { jobStart, ContainerDrivers, OutputOptions, JobOptions, ports, labels, firstJobId } from './run-functions'
 import { BuildOptions } from './build-functions'
 import { parseJSON } from './misc-functions'
 import { RunDriver } from '../drivers/abstract/run-driver'
@@ -29,7 +29,7 @@ const ENV = {
 
 // === Core functions ==========================================================
 
-export function startTheiaInProject(container_runtime: ContainerRuntime, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
+export function startTheiaInProject(container_runtime: ContainerDrivers, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
   const job_info_request = container_runtime.runner.jobInfo({
@@ -66,7 +66,7 @@ export function startTheiaInProject(container_runtime: ContainerRuntime, output_
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
-export function stopTheia(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
+export function stopTheia(container_runtime: ContainerDrivers, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const job_info_request = firstJobId(
     container_runtime.runner.jobInfo({
@@ -82,7 +82,7 @@ export function stopTheia(container_runtime: ContainerRuntime, identifier: {"pro
 }
 
 // -- extract the url for a theia server  --------------------------------------
-export async function getTheiaUrl(container_runtime: ContainerRuntime, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
+export async function getTheiaUrl(container_runtime: ContainerDrivers, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
 {
   const job_info_request = firstJobId(
     container_runtime.runner.jobInfo({

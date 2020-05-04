@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { StackCommand } from '../lib/commands/stack-command'
 import { RemoteCommand } from '../lib/remote/commands/remote-command'
-import { ContainerRuntime, OutputOptions, JobOptions } from "../lib/functions/run-functions"
+import { ContainerDrivers, OutputOptions, JobOptions } from "../lib/functions/run-functions"
 import { RunShortcuts } from "../lib/config/run-shortcuts/run-shortcuts"
 import { printResultState, initX11 } from '../lib/functions/misc-functions'
 import { Dictionary } from '../lib/constants'
@@ -57,9 +57,9 @@ export default class Run extends RemoteCommand {
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    var driver = this.newRemoteDriver(resource["type"], output_options, false)
+    var remote_driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.quiet)
     }
@@ -80,9 +80,9 @@ export default class Run extends RemoteCommand {
       "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
       "remove":       (flags['file-access'] === "bind") ? true : false
     }
-    result = driver.jobStart(
+    result = remote_driver.jobStart(
       resource,
-      c_runtime,
+      drivers,
       job_options,
       {
         "auto-copy":         this.shouldAutocopy(flags),
@@ -91,7 +91,7 @@ export default class Run extends RemoteCommand {
       }
     )
     printResultState(result)
-    driver.disconnect(resource)
+    remote_driver.disconnect(resource)
   }
 
   shouldAutocopy(flags: Dictionary)

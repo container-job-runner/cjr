@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
-import { OutputOptions, ContainerRuntime, JobOptions, nextAvailablePort } from '../../lib/functions/run-functions'
+import { OutputOptions, ContainerDrivers, JobOptions, nextAvailablePort } from '../../lib/functions/run-functions'
 import { startJupyterApp } from "../../lib/functions/jupyter-functions"
 import { printResultState, initX11 } from '../../lib/functions/misc-functions'
 
@@ -53,7 +53,7 @@ export default class Jupyter extends RemoteCommand {
     if(resource === undefined) return
     const driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- set container runtime options ----------------------------------------
-    const container_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, !flags.verbose),
       runner:  this.newRunner(flags.explicit, flags.verbose)
     }
@@ -61,7 +61,7 @@ export default class Jupyter extends RemoteCommand {
     if(flags['x11'] && args['command'] == 'start') await initX11(this.settings.get('interactive'), flags.explicit)
     // -- select port ----------------------------------------------------------
     if(flags['port'] == 'auto') {
-      const port_number = nextAvailablePort(container_runtime.runner, 7027)
+      const port_number = nextAvailablePort(drivers.runner, 7027)
       const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
       flags['port'] = `${port_address}:${port_number}:${port_number}`
     }
@@ -82,7 +82,7 @@ export default class Jupyter extends RemoteCommand {
         "labels":       [],
         "remove":       false
       }
-      result = driver.jobJupyterStart(resource, container_runtime, job_options, {
+      result = driver.jobJupyterStart(resource, drivers, job_options, {
         id: args['id'],
         tunnel: flags['tunnel'],
         "host-project-root": flags["project-root"] || "",

@@ -4,7 +4,7 @@ import {StackCommand} from '../../lib/commands/stack-command'
 import {} from "../../lib/functions/jupyter-functions"
 import {printResultState, initX11} from '../../lib/functions/misc-functions'
 import {startJupyterInJob, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp} from '../../lib/functions/jupyter-functions'
-import {OutputOptions, ContainerRuntime, nextAvailablePort, firstJobId} from '../../lib/functions/run-functions'
+import {OutputOptions, ContainerDrivers, nextAvailablePort, firstJobId} from '../../lib/functions/run-functions'
 import {ValidatedOutput} from '../../lib/validated-output'
 
 export default class Run extends StackCommand {
@@ -45,12 +45,12 @@ export default class Run extends StackCommand {
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const container_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
     // -- extract full id ------------------------------------------------------
-    const id_request:ValidatedOutput<string> = firstJobId(container_runtime.runner.jobInfo({"ids": [args.id]}))
+    const id_request:ValidatedOutput<string> = firstJobId(drivers.runner.jobInfo({"ids": [args.id]}))
     if(!id_request.success) return printResultState(id_request)
     const job_id = id_request.value
     // -- read settings --------------------------------------------------------
@@ -62,10 +62,10 @@ export default class Run extends StackCommand {
       if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
       // -- select port ----------------------------------------------------------
       if(flags['port'] == 'auto')
-        flags['port'] = `${nextAvailablePort(container_runtime.runner, 7019)}`
+        flags['port'] = `${nextAvailablePort(drivers.runner, 7019)}`
 
       const result = startJupyterInJob(
-        container_runtime,
+        drivers,
         {
           "id": job_id,
           "allowable-stack-paths": parent_stack_paths
@@ -87,23 +87,23 @@ export default class Run extends StackCommand {
     }
     if(args['command'] === 'stop') // -- stop jupyter --------------------------
     {
-      const result = stopJupyter(container_runtime, {"job-id": job_id});
+      const result = stopJupyter(drivers, {"job-id": job_id});
       printResultState(result)
     }
     if(args['command'] === 'list') // -- list jupyter --------------------------
     {
-      const result = listJupyter(container_runtime, {"job-id": job_id})
+      const result = listJupyter(drivers, {"job-id": job_id})
       printResultState(result)
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
     {
-      const url_result = await getJupyterUrl(container_runtime, {"job-id": job_id})
+      const url_result = await getJupyterUrl(drivers, {"job-id": job_id})
       if(url_result.success) console.log(url_result.value)
       else printResultState(url_result)
     }
     if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
     {
-      const url_result = await getJupyterUrl(container_runtime, {"job-id": job_id})
+      const url_result = await getJupyterUrl(drivers, {"job-id": job_id})
       if(url_result.success) startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
       else printResultState(url_result)
     }

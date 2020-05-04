@@ -1,10 +1,8 @@
-import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/commands/stack-command'
-import {JSTools} from '../../lib/js-tools'
-import {ErrorStrings} from '../../lib/error-strings'
-import {printResultState} from '../../lib/functions/misc-functions'
-import {removeImage} from '../../lib/functions/build-functions'
-import { ContainerRuntime } from '../../lib/functions/run-functions'
+import { flags } from '@oclif/command'
+import { StackCommand } from '../../lib/commands/stack-command'
+import { JSTools } from '../../lib/js-tools'
+import { removeImage } from '../../lib/functions/build-functions'
+import { ContainerDrivers } from '../../lib/functions/run-functions'
 
 export default class RMI extends StackCommand {
   static description = 'Delete an image one or more stacks.'
@@ -24,13 +22,13 @@ export default class RMI extends StackCommand {
     const {argv, flags} = this.parse(RMI)
     this.augmentFlagsWithProjectSettings(flags, {stack:false, "stacks-dir": false, "config-files": false})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, flags.quiet),
       runner:  this.newRunner(flags.explicit, flags.quiet)
     }
     stack_list.map((stack_name:string) => {
       const stack_path = this.fullStackPath(stack_name, flags["stacks-dir"])
-      removeImage(c_runtime, stack_path, flags['all-configurations'], flags['config-files'])
+      removeImage(drivers, stack_path, flags['all-configurations'], flags['config-files'])
     });
   }
 

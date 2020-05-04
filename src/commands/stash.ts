@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { StackCommand } from '../lib/commands/stack-command'
-import { jobStart, ContainerRuntime, OutputOptions, JobOptions } from "../lib/functions/run-functions"
+import { jobStart, ContainerDrivers, OutputOptions, JobOptions } from "../lib/functions/run-functions"
 import { printResultState } from '../lib/functions/misc-functions'
 
 export default class Stash extends StackCommand {
@@ -29,7 +29,7 @@ export default class Stash extends StackCommand {
       explicit: flags.explicit
     }
     // -- set container runtime options ----------------------------------------
-    const c_runtime:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit),
       runner:  this.newRunner(flags.explicit)
     }
@@ -47,7 +47,7 @@ export default class Stash extends StackCommand {
       "remove":       false
     }
     // -- start job and extract job id -----------------------------------------
-    var result = jobStart(c_runtime, job_options, output_options)
+    var result = jobStart(drivers, job_options, output_options)
     if(!result.success) return printResultState(result)
     const job_id = result.value.id
     if(job_id != "" && !flags.quiet && this.settings.get('alway-print-job-id'))

@@ -1,7 +1,7 @@
 import { flags} from '@oclif/command'
 import { JSTools} from '../../lib/js-tools'
 import { StackCommand } from '../../lib/commands/stack-command'
-import { jobCopy, promptUserForJobId, CopyOptions, ContainerRuntime } from "../../lib/functions/run-functions"
+import { jobCopy, promptUserForJobId, CopyOptions, ContainerDrivers } from "../../lib/functions/run-functions"
 import { printResultState } from '../../lib/functions/misc-functions'
 
 export default class Copy extends StackCommand {
@@ -26,12 +26,12 @@ export default class Copy extends StackCommand {
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // -- set container runtime options ----------------------------------------
-    const runtime_options:ContainerRuntime = {
+    const drivers:ContainerDrivers = {
       builder: this.newBuilder(flags.explicit, flags.quiet),
       runner:  this.newRunner(flags.explicit, flags.quiet)
     }
     // -- get job ids ----------------------------------------------------------
-    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(runtime_options.runner, stack_paths, undefined, !this.settings.get('interactive')) || [])
+    var ids = (argv.length > 0) ? argv : JSTools.arrayWrap(await promptUserForJobId(drivers.runner, stack_paths, undefined, !this.settings.get('interactive')) || [])
     if(ids.length == 0) return // exit if ids are empty or if user exits interactive dialog
     // -- set copy options -----------------------------------------------------
     const copy_options:CopyOptions = {
@@ -43,7 +43,7 @@ export default class Copy extends StackCommand {
     if(flags?.["copy-path"]) copy_options["host-path"] = flags["copy-path"]
     if(flags?.["manual"]) copy_options["manual"] = true
     // -- copy jobs ------------------------------------------------------------
-    printResultState(jobCopy(runtime_options, copy_options))
+    printResultState(jobCopy(drivers, copy_options))
   }
 
 }

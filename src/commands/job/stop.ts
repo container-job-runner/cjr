@@ -23,7 +23,7 @@ export default class Stop extends StackCommand {
   {
     const {argv, flags} = this.parse(Stop)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner  = this.newRunner(flags.explicit)
+    const runner = this.newRunner(flags.explicit)
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     var job_info:ValidatedOutput<Array<JobInfo>>
     if(flags.all) // -- stop all running jobs ----------------------------------
