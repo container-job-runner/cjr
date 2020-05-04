@@ -272,19 +272,20 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
 
   // == END Helper functions for load() ==========================================
 
-  writeConfigToFile(abs_path: string)
-  {
-    return this.yml_file.validatedWrite(abs_path, this.config)
-  }
 
-  readConfigFromFile(abs_path: string, mode:"overwrite"|"merge"="overwrite") : ValidatedOutput<undefined>
+  // accepts option: "name": string which changes name of config file
+  save(stack_path: string, options?: Dictionary) : ValidatedOutput<undefined> | ValidatedOutput<Error>
   {
-    const read_result = this.loadYMLFile(abs_path)
-    if(read_result.success && mode == "merge")
-      JSTools.rMerge(this.config, read_result.value)
-    else if(read_result.success)
-      this.config = read_result.value
-    return new ValidatedOutput(true, undefined).absorb(read_result)
+    if(!FileTools.existsDir(stack_path))
+      return new ValidatedOutput(false, undefined)
+
+    return this.yml_file.validatedWrite(
+      path.join(
+        stack_path,
+        options?.name || this.config_filename
+      ),
+      this.config
+    )
   }
 
   // == modifiers ==============================================================
@@ -546,36 +547,5 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   getFlags() {
     return this.config?.flags || {}
   }
-
-
-    /// SOME COPY FUNCTIONS THAT SHOULD BE PORTED FROM BUILD
-
-    // copy(stack_path: string, new_stack_path: string, configuration?: DockerStackConfiguration) : ValidatedOutput<undefined>
-    // {
-    //   try
-    //   {
-    //     if(path.isAbsolute(stack_path))
-    //       fs.copySync(stack_path, new_stack_path)
-    //     this.copyConfig(stack_path, new_stack_path, configuration)
-    //   }
-    //   catch(e)
-    //   {
-    //     return new ValidatedOutput(false, e, [e?.message])
-    //   }
-    //   return new ValidatedOutput(true, undefined)
-    // }
-
-    // copyConfig(stack_path: string, new_stack_path: string, configuration?: DockerStackConfiguration) : ValidatedOutput<undefined>|ValidatedOutput<Error>
-    // {
-    //   if(!path.isAbsolute(stack_path)) { // create Dockerfile for nonlocal stack
-    //     const file = (new TextFile(new_stack_path, false))
-    //     file.add_extension = false
-    //     const write_result = file.write('Dockerfile', `FROM ${stack_path}`)
-    //     if(!write_result.success) return (new ValidatedOutput(true, undefined).absorb(write_result))
-    //   }
-    //   if(configuration !== undefined) // write any configurion files
-    //     return configuration.writeToFile(path.join(new_stack_path,this.default_config_name))
-    //   return new ValidatedOutput(true, undefined)
-    // }
 
 }
