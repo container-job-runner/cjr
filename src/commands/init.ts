@@ -86,8 +86,10 @@ export default class Init extends ProjectSettingsCommand {
       include: `../.${cli_name}-download-include`,
       exclude: `../.${cli_name}-download-exclude`
     })
-    project_stack_config.writeConfigToFile(
-      path.join(projectSettingsDirPath(project_root), project_config_name))
+    project_stack_config.save(
+      projectSettingsDirPath(project_root),
+      {'name': project_config_name}
+    )
     // -- add .git .gitignore and .cjr to ignore file --------------------------
     const author = new TextFile(project_root)
     author.add_extension = false;
