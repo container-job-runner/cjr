@@ -5,7 +5,7 @@ import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stac
 // - types ---------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-export class PodmanBuildDriver extends DockerCliBuildDriver
+export class PodmanCliBuildDriver extends DockerCliBuildDriver
 {
     protected base_command = 'podman'
     protected outputParser = parseJSON
