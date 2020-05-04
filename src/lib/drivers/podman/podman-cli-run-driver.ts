@@ -4,7 +4,7 @@
 
 import { ShellCommand } from "../../shell-command"
 import { JobInfo, JobPortInfo } from '../abstract/run-driver'
-import { DockerRunDriver, DockerCreateOptions }  from '../docker/docker-run-driver'
+import { DockerRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
 import { stack_path_label } from '../../constants'

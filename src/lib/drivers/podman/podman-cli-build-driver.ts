@@ -1,4 +1,4 @@
-import { DockerBuildDriver } from '../docker/docker-build-driver'
+import { DockerBuildDriver } from '../docker/docker-cli-build-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 

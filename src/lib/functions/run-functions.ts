@@ -18,7 +18,7 @@ import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
 import { JSTools } from '../js-tools'
 import { ProjectSettings } from '../config/project-settings/project-settings'
 import { JobConfiguration } from '../config/jobs/job-configuration'
-import { PodmanRunDriver } from '../drivers/podman/podman-run-driver'
+import { PodmanRunDriver } from '../drivers/podman/podman-cli-run-driver'
 import { PodmanSocketRunDriver } from '../drivers/podman/podman-socket-run-driver'
 
 // == TYPES ====================================================================
