@@ -1,13 +1,11 @@
 import * as path from 'path'
 import * as os from 'os'
-import { JSTools } from '../js-tools'
 import { ShellCommand } from '../shell-command'
 import { ErrorStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
 import { THEIA_JOB_NAME, name_label, Dictionary } from '../constants'
-import { jobStart, jobExec, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId } from './run-functions'
+import { jobStart, ContainerRuntime, OutputOptions, JobOptions, ports, labels, firstJobId } from './run-functions'
 import { BuildOptions } from './build-functions'
-import { BuildDriver } from '../drivers/abstract/build-driver'
 import { parseJSON } from './misc-functions'
 import { RunDriver } from '../drivers/abstract/run-driver'
 
@@ -133,7 +131,7 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
 // -- command to start theia server --------------------------------------------
 function theiaCommand(runner: RunDriver, theia_options: TheiaOptions) {
   const configuration = runner.emptyStackConfiguration()
-  const load_result = configuration.load(theia_options['stack-path'], theia_options['config-files'] || [])
+  configuration.load(theia_options['stack-path'], theia_options['config-files'] || [])
   const container_root = configuration.getContainerRoot()
   const project_dir = (container_root && theia_options['project-root']) ? path.posix.join(container_root, path.basename(theia_options['project-root'])) : container_root
   return `theia --hostname $${ENV.url} --port $${ENV.port} ${project_dir}`;
