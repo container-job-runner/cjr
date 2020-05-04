@@ -22,7 +22,7 @@ export type DockerCreateOptions = DockerStackConfigObject & {
   "labels": { [key: string] : string}
 }
 
-export class DockerRunDriver extends RunDriver
+export class DockerCliRunDriver extends RunDriver
 {
   protected base_command = 'docker'
   protected selinux: boolean = false

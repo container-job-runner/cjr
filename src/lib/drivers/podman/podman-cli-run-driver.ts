@@ -4,7 +4,7 @@
 
 import { ShellCommand } from "../../shell-command"
 import { JobInfo, JobPortInfo } from '../abstract/run-driver'
-import { DockerRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
+import { DockerCliRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
 import { stack_path_label } from '../../constants'
@@ -14,7 +14,7 @@ import { DockerJobConfiguration } from '../../config/jobs/docker-job-configurati
 // -- types --------------------------------------------------------------------
 type Dictionary = {[key: string]: any}
 
-export class PodmanRunDriver extends DockerRunDriver
+export class PodmanRunDriver extends DockerCliRunDriver
 {
   protected base_command = 'podman'
   protected JSONOutputParser = parseJSON
