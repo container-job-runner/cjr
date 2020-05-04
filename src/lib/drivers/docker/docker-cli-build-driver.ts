@@ -72,7 +72,7 @@ export class DockerCliBuildDriver extends BuildDriver
     protected buildFromDockerfile(configuration: DockerStackConfiguration, options?: Dictionary)
     {
       const command = `${this.base_command} build`;
-      const args = ['.'] // user cwd as context
+      const args = [configuration.build_context] // user cwd as context
       const flags = this.generateDockerBuildFlags(configuration, options)
       const result = this.shell.exec(command, flags, args, {cwd: configuration.stack_path})
       if(!result.success) result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
