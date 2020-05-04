@@ -168,7 +168,6 @@ export abstract class StackCommand extends Command
   {
     const shell = new ShellCommand(explicit, silent)
     const build_cmd = this.settings.get('build-cmd');
-    const tag = this.settings.get('image-tag');
     const socket:string = this.settings.get('socket-path')
 
     switch(build_cmd)
