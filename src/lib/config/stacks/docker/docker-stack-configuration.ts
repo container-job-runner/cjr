@@ -86,6 +86,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   protected stack_name = ""
   readonly config_filename = "config.yml" // name of config file in stack directory
   readonly archive_filename = "image" // name of config file in stack directory
+  readonly build_context:string = "./build" // default build context relative to stack directory
   protected verify_host_bind_path:boolean = true;
 
   protected ERRORSTRINGS = {
@@ -139,7 +140,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     if(!/^[a-zA-z0-9-_]+$/.test(this.stackPathToName(stack_path))) // exit if stack direcotry has invalid characters
       return failure.pushError(this.ERRORSTRINGS["INVALID_NAME"](stack_path))
 
-    if(FileTools.existsFile(path.join(stack_path, 'Dockerfile')))
+    if(FileTools.existsFile(path.join(stack_path, this.build_context, 'Dockerfile')))
       return new ValidatedOutput(true, "dockerfile")
     else if(FileTools.existsFile(path.join(stack_path, `${this.archive_filename}.tar.gz`)))
       return new ValidatedOutput(true, "tar.gz")
