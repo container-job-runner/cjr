@@ -37,7 +37,7 @@ export function buildAndLoad(cr: ContainerRuntime, build_options: BuildOptions, 
     return result
   else if(build_options?.['reuse-image']) // build if image is missing
     result.absorb(
-      buildIfMissing(cr.builder, stack_path, configuration, build_options)
+      buildIfMissing(cr.builder, configuration, build_options)
     )
   else
     result.absorb(
@@ -47,7 +47,7 @@ export function buildAndLoad(cr: ContainerRuntime, build_options: BuildOptions, 
   return new ValidatedOutput(true, configuration)
 }
 
-export function buildIfMissing(builder: BuildDriver, stack_path: string, configuration: StackConfiguration<any>, build_options: BuildOptions) : ValidatedOutput<undefined>
+export function buildIfMissing(builder: BuildDriver, configuration: StackConfiguration<any>, build_options: BuildOptions) : ValidatedOutput<undefined>
 {
   if(builder.isBuilt(configuration))
   {
