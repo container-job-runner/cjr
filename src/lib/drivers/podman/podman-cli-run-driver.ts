@@ -84,7 +84,6 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
 
   protected addResourceFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
-    const keys = Object.keys(run_object?.resources || {})
     const valid_keys:Array<keyof DockerStackResourceConfig> = ["cpus", "gpu", "memory"] // podman does not support memory-swap
     valid_keys?.map((key:keyof DockerStackResourceConfig) => {
       if(run_object?.resources?.[key]) flags[key] = run_object.resources[key]
