@@ -22,6 +22,8 @@ import { ValidatedOutput } from '../validated-output'
 import { loadProjectSettings, scanForSettingsDirectory } from '../functions/run-functions'
 import { BuildOptions } from '../functions/build-functions'
 import { ProjectSettings, ps_fields } from '../config/project-settings/project-settings'
+import { BuildDriver } from '../drivers/abstract/build-driver'
+import { RunDriver } from '../drivers/abstract/run-driver'
 
 export abstract class StackCommand extends Command
 {
@@ -164,7 +166,7 @@ export abstract class StackCommand extends Command
     return build_options;
   }
 
-  newBuilder(explicit: boolean = false, silent: boolean = false)
+  newBuildDriver(explicit: boolean = false, silent: boolean = false) : BuildDriver
   {
     const shell = new ShellCommand(explicit, silent)
     const build_cmd = this.settings.get('build-cmd');
@@ -199,7 +201,7 @@ export abstract class StackCommand extends Command
     }
   }
 
-  newRunner(explicit: boolean = false, silent: boolean = false)
+  newRunDriver(explicit: boolean = false, silent: boolean = false) : RunDriver
   {
     const shell = new ShellCommand(explicit, silent)
     const run_cmd = this.settings.get('run-cmd');
