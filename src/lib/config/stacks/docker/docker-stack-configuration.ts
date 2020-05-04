@@ -3,7 +3,7 @@ import * as path from 'path'
 import { ValidatedOutput } from '../../../validated-output'
 import { StackConfiguration } from '../abstract/stack-configuration'
 import { dsc_vo_validator } from './schema/docker-stack-configuration-schema'
-import { ajvValidatorToValidatedOutput, trim, trimTrailingNewline } from '../../../functions/misc-functions'
+import { trim } from '../../../functions/misc-functions'
 import { DefaultContainerRoot, cli_name, Dictionary } from '../../../constants'
 import { FileTools } from '../../../fileio/file-tools'
 import { PathTools } from '../../../fileio/path-tools'
@@ -11,7 +11,6 @@ import { JSTools } from '../../../js-tools'
 import { YMLFile } from '../../../fileio/yml-file'
 import { ErrorStrings, WarningStrings } from '../../../error-strings'
 import { ShellCommand } from '../../../shell-command'
-import { resource_configuration_schema } from '../../../remote/config/resource-configuration-schema'
 import chalk = require('chalk')
 
 // === START Config types =========================================================
@@ -164,7 +163,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     const result = new ValidatedOutput(true, config)
 
     const stack_config = path.join(stack_path, this.config_filename)
-    const all_config_paths = [path.join(stack_path, this.config_filename)].concat(overloaded_config_paths) // Note: create new array with = to prevent modifying overloaded_config_paths for calling function
+    const all_config_paths = [stack_config].concat(overloaded_config_paths) // Note: create new array with = to prevent modifying overloaded_config_paths for calling function
 
     all_config_paths.map( (path: string) => {
       const read_result = this.loadYMLFile(path)
