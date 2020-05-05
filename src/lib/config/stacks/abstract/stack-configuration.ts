@@ -52,5 +52,9 @@ export abstract class StackConfiguration<T>
   abstract getContainerRoot() : string;
   abstract getRsyncUploadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
   abstract getRsyncDownloadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
-  abstract getFlags(): Dictionary;
+  abstract getFlags(): {[key:string] : string};
+  abstract getBuildArgs(): {[key:string] : string}
+  abstract getEnvironmentVars(): {[key:string] : string}
+  abstract getMounts(): Array<Dictionary>
+  abstract getPorts(): Array<Dictionary>
 }
