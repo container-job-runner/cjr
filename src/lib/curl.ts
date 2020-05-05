@@ -31,14 +31,16 @@ export type CurlOptions = {
   "method"?: method_types,
   "header"?: string,
   "body"?: string|Array<string>
+  "file"?: string
 }
 export type RequestOptions = {
   "url": string,
   "param-encoding"?: "json"|"url",
-  "encoding"?: "json"|"url",
+  "encoding"?: "json"|"url"|"tar",
   "unix-socket"?: string,
   "params"?: any,
   "body"?: any
+  "file"?: string
 }
 export type RequestOutput = {
   "header": {
@@ -80,6 +82,8 @@ export class Curl
       flags['d'] = {value: options['body'], noequals: true}
     if(options['method'])
       flags['X'] = {value: options['method'], noequals: true}
+    if(options['file'])
+      flags['data-binary'] = {value: `@${options['file']}`, noequals: true}
     if(options['output-response-header'])
       flags['i'] = {}
 
@@ -124,6 +128,10 @@ export class Curl
       c_result = this.curl(
         this.postCurlOptions(options, 'Content-Type: application/json', JSON.stringify)
       )
+    else if(options.encoding == "tar") // -- stream tar file -------------------
+      c_result = this.curl(
+        this.postCurlOptions(options, 'Content-Type: application/x-tar', () => "")
+      )
     else // -- url request ------------------------------------------------------
       c_result = this.curl(
         this.postCurlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify)
@@ -148,7 +156,8 @@ export class Curl
         "header": header,
         "method": 'POST',
         "output-response-header": true,
-        "body": dataToStr(options['body'])
+        "body": dataToStr(options['body']),
+        "file": options["file"]
       }
   }
 
