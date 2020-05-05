@@ -553,4 +553,23 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return this.config?.flags || {}
   }
 
+  getBuildArgs() : { [key:string] : string }
+  {
+    return this.config?.build?.args || {}
+  }
+
+  getEnvironmentVars() : { [key:string] : string }
+  {
+    return this.config?.environment || {}
+  }
+
+  getMounts() : Array<DockerStackMountConfig>
+  {
+    return this.config?.mounts || []
+  }
+
+  getPorts() : Array<DockerStackPortConfig> {
+    return this.config?.ports || []
+  }
+
 }
