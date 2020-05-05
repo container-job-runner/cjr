@@ -164,8 +164,11 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     const config: DockerStackConfigObject = {}
     const result = new ValidatedOutput(true, config)
 
-    const stack_config = path.join(stack_path, this.config_filename)
-    const all_config_paths = [stack_config].concat(overloaded_config_paths) // Note: create new array with = to prevent modifying overloaded_config_paths for calling function
+    const all_config_paths = []
+    const primary_stack_config = path.join(stack_path, this.config_filename)
+    if(fs.existsSync(primary_stack_config)) // stack config is optional so it may not exist
+      all_config_paths.push(primary_stack_config)
+    all_config_paths.push(...overloaded_config_paths)
 
     all_config_paths.map( (path: string) => {
       const read_result = this.loadYMLFile(path)
@@ -545,7 +548,8 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return download_settings
   }
 
-  getFlags() {
+  getFlags() : { [key:string] : string }
+  {
     return this.config?.flags || {}
   }
 
