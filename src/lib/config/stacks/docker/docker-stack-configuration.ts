@@ -98,10 +98,10 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     "NON_EXISTANT_BIND_HOSTPATH": (hostPath: string, cfile_path: string) => chalk`{bold Invalid Configuration} - bind mount contains nonexistant host path.\n     {italic configfile}: ${cfile_path}\n  {italic hostPath}: ${hostPath}`
   }
 
-  constructor(image_tag?: string)
+  constructor(options?: {tag?: string})
   {
     super()
-    this.image_tag = image_tag || cli_name
+    this.image_tag = options?.tag || cli_name
   }
 
   // loads stack configuration and sets internal properties "name", and "stack_type"
