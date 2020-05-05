@@ -36,7 +36,7 @@ export type CurlOptions = {
 export type RequestOptions = {
   "url": string,
   "param-encoding"?: "json"|"url",
-  "encoding"?: "json"|"url"|"tar",
+  "encoding"?: "json"|"url"|"tar"|"gzip",
   "unix-socket"?: string,
   "params"?: any,
   "body"?: any
@@ -131,6 +131,10 @@ export class Curl
     else if(options.encoding == "tar") // -- stream tar file -------------------
       c_result = this.curl(
         this.postCurlOptions(options, 'Content-Type: application/x-tar', () => "")
+      )
+    else if(options.encoding == "gzip") // -- stream tar file -------------------
+      c_result = this.curl(
+        this.postCurlOptions(options, 'Content-Type: application/x-gzip', () => "")
       )
     else // -- url request ------------------------------------------------------
       c_result = this.curl(
