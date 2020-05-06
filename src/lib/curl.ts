@@ -172,10 +172,15 @@ export class Curl
     if(!result.success) return blank_output
     const raw_output:string = result.value
 
-    // -- extract header and body -- Note: only supports headers with no blank lines
-    const header:string = (/^HTTP\/\d.\d[\s\S]*(?=\r\n\r\n)/).exec(raw_output)?.pop() || "" // matches HTTP\d.d ... \r\n\r\n
-    const body:string = raw_output.slice(header.length)
-    // -- extract response code and content type
+// -- look for any headers: assumes headers have no blank lines ------------
+    const headers_matches = [ ... raw_output.matchAll(/^HTTP\/\d.\d[\S\s]*?(?=\r\n\r\n)/gm) ] // looks for HTTP\d.d ... \r\n\r\n ; Note /m for multiline mode, and *? for non-greedy matching
+    // -- only look at final header --------------------------------------------
+    const index = headers_matches.length - 1 // only process last header
+    const header = headers_matches?.[index]?.[0] || ""
+    // -- extract remaining response as body -----------------------------------
+    const header_length = header.length + (headers_matches?.[index]?.index || 0)
+    const body:string = raw_output.slice(header_length)
+    // -- extract response code and content type -------------------------------
     const response_code:number = parseInt(/(?<=^HTTP\/\d.\d )\d+/.exec(header)?.pop() || "") // matches X in ^HTTP\d.d X
     const content_type:string = /(?<=Content-Type:\s)\S+/.exec(header)?.pop() || "" // matches X in \nContent-Type: X
 
