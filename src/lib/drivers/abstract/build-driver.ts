@@ -14,7 +14,7 @@ export abstract class BuildDriver
     this.shell = shell;
   }
 
-  abstract build(configuration: StackConfiguration<any>, stdio:"inherit"|"pipe", options?: Dictionary): ValidatedOutput<undefined>;
+  abstract build(configuration: StackConfiguration<any>, stdio:"inherit"|"pipe", options?: Dictionary): ValidatedOutput<string>;
   abstract isBuilt(configuration: StackConfiguration<any>): boolean;
   abstract removeImage(configuration: StackConfiguration<any>): ValidatedOutput<undefined>;
   abstract removeAllImages(stack_path:string): ValidatedOutput<undefined>;
