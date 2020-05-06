@@ -183,6 +183,7 @@ export class Curl
     // -- extract response code and content type -------------------------------
     const response_code:number = parseInt(/(?<=^HTTP\/\d.\d )\d+/.exec(header)?.pop() || "") // matches X in ^HTTP\d.d X
     const content_type:string = /(?<=Content-Type:\s)\S+/.exec(header)?.pop() || "" // matches X in \nContent-Type: X
+    const transfer_encoding:string = /(?<=Transfer-Encoding:\s)\S+/.exec(header)?.pop() || "" // matches X in \nTransfer-Encoding: X
 
     const output:RequestOutput = {
       "header": {
@@ -192,7 +193,14 @@ export class Curl
       "body": ""
     }
 
-    if(content_type == 'application/json') {
+    if(content_type == 'application/json' && transfer_encoding == 'chunked')
+    {
+      const rows = body.split(/(?:\r\n)+/).filter((s:string) => !/^\s*$/.test(s))
+      try { output.body = rows.map((s:string) => JSON.parse(s)) }
+      catch(e) { return blank_output.pushError(this.ERRORSTRINGS.INVALID_JSON) }
+    }
+    else if(content_type == 'application/json')
+    {
       try {
         output.body = JSON.parse(body)
       }
