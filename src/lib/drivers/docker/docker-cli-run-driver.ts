@@ -49,7 +49,7 @@ export class DockerCliRunDriver extends RunDriver
 
   emptyStackConfiguration()
   {
-    return new DockerStackConfiguration(this.tag)
+    return new DockerStackConfiguration({tag: this.tag})
   }
 
   emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
