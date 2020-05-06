@@ -57,7 +57,7 @@ export class Curl
   private unix_socket: string             // unix socket that should be used for get and post requests
 
   private ERRORSTRINGS = {
-    INVALID_JSON: "Curl response contained invalud json."
+    INVALID_JSON: "Curl response contained invalid json."
   }
 
   constructor(shell:ShellCommand, options?: {'base-url'?:string, 'unix-socket'?:string})
