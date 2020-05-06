@@ -33,4 +33,11 @@ export class ValidatedOutput<T>
       this.warning.push(...vo.warning)
       return this
     }
+
+    merge(vo:ValidatedOutput<T>)
+    {
+      this.absorb(vo)
+      this.value = vo.value
+      return this
+    }
 }
