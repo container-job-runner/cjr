@@ -172,7 +172,7 @@ export class Curl
     if(!result.success) return blank_output
     const raw_output:string = result.value
 
-// -- look for any headers: assumes headers have no blank lines ------------
+    // -- look for any headers: assumes headers have no blank lines ------------
     const headers_matches = [ ... raw_output.matchAll(/^HTTP\/\d.\d[\S\s]*?(?=\r\n\r\n)/gm) ] // looks for HTTP\d.d ... \r\n\r\n ; Note /m for multiline mode, and *? for non-greedy matching
     // -- only look at final header --------------------------------------------
     const index = headers_matches.length - 1 // only process last header
@@ -201,12 +201,8 @@ export class Curl
     }
     else if(content_type == 'application/json')
     {
-      try {
-        output.body = JSON.parse(body)
-      }
-      catch(e) {
-        return blank_output.pushError(this.ERRORSTRINGS.INVALID_JSON)
-      }
+      try { output.body = JSON.parse(body) }
+      catch(e) { return blank_output.pushError(this.ERRORSTRINGS.INVALID_JSON) }
     }
     else
       output.body = body
