@@ -213,7 +213,7 @@ export abstract class StackCommand extends Command
 
     switch(run_driver)
     {
-        case "docker":
+        case "docker-cli":
         {
           return new DockerCliRunDriver(shell, {tag: tag, selinux: selinux});
         }
@@ -221,7 +221,7 @@ export abstract class StackCommand extends Command
         {
           return new DockerSocketRunDriver(shell, {tag: tag, selinux: selinux, socket: socket});
         }
-        case "podman":
+        case "podman-cli":
         {
           return new PodmanCliRunDriver(shell, {tag: tag, selinux: selinux});
         }
