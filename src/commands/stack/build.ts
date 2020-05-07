@@ -32,7 +32,7 @@ export default class Build extends StackCommand {
       printResultState(
         buildAndLoad(
           drivers,
-          {"no-cache": flags['no-cache'], "pull": flags['pull']},
+          {"no-cache": flags['no-cache'], "pull": flags['pull'], "verbose": true},
           this.fullStackPath(stack_name, flags["stacks-dir"]),
           flags['config-files']
         )
