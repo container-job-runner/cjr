@@ -5,7 +5,7 @@
 import * as chalk from 'chalk'
 import { ValidatedOutput } from "../../validated-output"
 import { ShellCommand } from "../../shell-command"
-import { RunDriver, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
+import { RunDriver, JobInfo, JobInfoFilter, NewJobInfo, JobState } from '../abstract/run-driver'
 import { DockerStackConfiguration, DockerStackPortConfig, DockerStackMountConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
@@ -123,11 +123,20 @@ export class DockerSocketRunDriver extends RunDriver
       }
     }) || [];
 
-    // -- remove any stopped jobs with invisible-on-stop flag?
-    //"labels": { [stack_path_label] : stack_paths }
+    // -- hide any stopped jobs with invisible-on-stop -------------------------
+    const hidden_filter = {
+      states: ["exited"] as Array<JobState>,
+      labels: {[this.labels['invisible-on-stop']]: ["true"]}
+    }
 
     // -- filter jobs and return -----------------------------------------------
-    return new ValidatedOutput(true, this.jobFilter(job_info, filter))
+    return new ValidatedOutput(true,
+      this.jobFilter(
+        this.jobFilter(job_info, filter),
+        hidden_filter,
+        {blacklist: true, operator: "and"}
+      )
+    )
   }
 
   // NOTE: presently does not support auto removal for async jobs
