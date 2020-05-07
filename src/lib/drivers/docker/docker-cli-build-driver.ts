@@ -1,4 +1,5 @@
 import * as chalk from 'chalk'
+import * as path from 'path'
 import { BuildDriver } from '../abstract/build-driver'
 import { ValidatedOutput } from '../../validated-output'
 import { JSTools } from '../../js-tools'
@@ -6,6 +7,7 @@ import { DockerStackConfiguration} from '../../config/stacks/docker/docker-stack
 import { parseLineJSON } from '../../functions/misc-functions'
 import { Dictionary, cli_name, stack_path_label } from '../../constants'
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration'
+import { ShellCommand } from '../../shell-command'
 
 export class DockerCliBuildDriver extends BuildDriver
 {
@@ -35,9 +37,9 @@ export class DockerCliBuildDriver extends BuildDriver
       return (result.success && !JSTools.isEmpty(result.value)) ? true : false
     }
 
-    build(configuration:StackConfiguration<any>, options?: Dictionary) : ValidatedOutput<undefined>
+    build(configuration:StackConfiguration<any>, stdio:"inherit"|"pipe", options?: Dictionary) : ValidatedOutput<string>
     {
-      const result = new ValidatedOutput(true, undefined)
+      const result = new ValidatedOutput(true, "")
 
       // -- exit if configuration is not a DockerStackConfiguration
       if(!(configuration instanceof DockerStackConfiguration))
@@ -46,20 +48,20 @@ export class DockerCliBuildDriver extends BuildDriver
       switch (configuration.stack_type)
       {
         case 'dockerfile': // -- build docker file -----------------------------
-          result.absorb(
-            this.buildFromDockerfile(configuration, options)
+          result.merge(
+            this.buildFromDockerfile(configuration, stdio, options)
           )
           break;
         case 'tar': // -- load image.tar or image.tar.gz -----------------------
         case 'tar.gz': // -- build image.tar.gz --------------------------------
-          result.absorb(
-            this.loadArchivedImage(configuration, options)
+          result.merge(
+            this.loadArchivedImage(configuration, stdio, options)
           )
           break;
         case 'config':  // -- pull remote image --------------------------------
         case 'remote-image':
-          result.absorb(
-            this.pullImage(configuration, options)
+          result.merge(
+            this.pullImage(configuration, stdio, options)
           )
           break;
         default:
@@ -69,13 +71,19 @@ export class DockerCliBuildDriver extends BuildDriver
       return result
     }
 
-    protected buildFromDockerfile(configuration: DockerStackConfiguration, options?: Dictionary)
+    protected buildFromDockerfile(configuration: DockerStackConfiguration, stdio: "inherit"|"pipe", options?: Dictionary) : ValidatedOutput<string>
     {
+      if(!configuration.stack_path)
+        return new ValidatedOutput(false, "")
+
       const command = `${this.base_command} build`;
-      const args = [configuration.build_context] // user cwd as context
+      const args = ['.'] // user cwd as context
       const flags = this.generateDockerBuildFlags(configuration, options)
-      const result = this.shell.exec(command, flags, args, {cwd: configuration.stack_path})
-      if(!result.success) result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
+      const exec_result = this.shell.exec(command, flags, args, {"cwd": path.join(configuration.stack_path, configuration.build_context), "stdio": stdio})
+      const result = new ValidatedOutput(true, ShellCommand.stdout(exec_result.value))
+      if(!exec_result.success)
+        result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
+
       return result
     }
 
@@ -101,10 +109,10 @@ export class DockerCliBuildDriver extends BuildDriver
         return flags;
     }
 
-    protected loadArchivedImage(configuration: DockerStackConfiguration, options?: Dictionary) : ValidatedOutput<undefined>
+    protected loadArchivedImage(configuration: DockerStackConfiguration, stdio: "inherit"|"pipe", options?: Dictionary) : ValidatedOutput<string>
     {
       // -- exit with failure if stack is not of correct type
-      const result = new ValidatedOutput(true, undefined)
+      const result = new ValidatedOutput(true, "")
       if(!configuration.stack_path)
         return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
       if(!['tar', 'tar.gz'].includes(configuration.stack_type as string))
@@ -122,15 +130,17 @@ export class DockerCliBuildDriver extends BuildDriver
       if(!load_result.success) return result.absorb(load_result)
       // -- extract name and retag -----------------------------------------
       const image_name = load_result.value?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"
-      if(!image_name) return (new ValidatedOutput(false, undefined)).pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
-      return result.absorb(
-        this.shell.exec(`${this.base_command} image tag`, {}, [image_name, configuration.getImage()])
-      )
+      if(!image_name) return result.pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
+      const exec_result = this.shell.exec(`${this.base_command} image tag`, {}, [image_name, configuration.getImage()], {"stdio": stdio})
+
+      result.value = ShellCommand.stdout(exec_result.value)
+      result.absorb(exec_result)
+      return result
     }
 
-    protected pullImage(configuration:DockerStackConfiguration, options?:Dictionary) : ValidatedOutput<undefined>
+    protected pullImage(configuration:DockerStackConfiguration, stdio: "inherit"|"pipe", options?:Dictionary) : ValidatedOutput<string>
     {
-      const result = new ValidatedOutput(true, undefined)
+      const result = new ValidatedOutput(true, "")
       // -- exit with failure if stack is not of correct type
       if(!["remote-image", "config"].includes(configuration.stack_type as string))
         return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
@@ -141,9 +151,11 @@ export class DockerCliBuildDriver extends BuildDriver
       if(this.isBuilt(configuration) && !options?.['pull'])
         return result
 
-      return result.absorb(
-        this.shell.exec(`${this.base_command} pull`, {}, [configuration.getImage()])
-      )
+      const exec_result = this.shell.exec(`${this.base_command} pull`, {}, [configuration.getImage()], {"stdio": stdio})
+      result.value = ShellCommand.stdout(exec_result.value)
+      result.absorb(exec_result)
+      return result
+
     }
 
     removeImage(configuration:DockerStackConfiguration) : ValidatedOutput<undefined>
@@ -155,23 +167,23 @@ export class DockerCliBuildDriver extends BuildDriver
 
       if(this.isBuilt(configuration))
       {
-            const command = `${this.base_command} rmi`;
-            const args = [configuration.getImage()]
-            const flags = {}
-            return result.absorb(this.shell.exec(command, flags, args))
+        const command = `${this.base_command} rmi`;
+        const args = [configuration.getImage()]
+        const flags = {}
+        return result.absorb(this.shell.exec(command, flags, args))
       }
 
       return result.pushWarning(
-          this.WARNINGSTRINGS.IMAGE_NONEXISTANT(configuration.getImage())
-        )
+        this.WARNINGSTRINGS.IMAGE_NONEXISTANT(configuration.getImage())
+      )
     }
 
     removeAllImages(stack_path: string) : ValidatedOutput<undefined>
     {
       if(!stack_path) return new ValidatedOutput(false, undefined)
       const image_id_cmd = this.shell.commandString(
-          `${this.base_command} images`,
-          {q: {}, filter: [`label=${stack_path_label}=${stack_path}`, `label=builder=${cli_name}`]}
+        `${this.base_command} images`,
+        {q: {}, filter: [`label=${stack_path_label}=${stack_path}`, `label=builder=${cli_name}`]}
       )
       const command = `${this.base_command} rmi $(${image_id_cmd})`
       return (new ValidatedOutput(true, undefined)).absorb(this.shell.exec(command))
