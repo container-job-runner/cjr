@@ -24,6 +24,7 @@ export const missingFlagError = (flags: Array<string>) => chalk`The following fl
 export const cli_settings_yml_name = "settings"
 // name of folders in data directory
 export const cli_bundle_dir_name  = "bundle"  // temporarily stores data between container transfer
+export const build_dirname = "build"
 
 // name of optional project settings file that is loaded relative to project project_root
 export const project_settings_folder = `.${cli_name}`
