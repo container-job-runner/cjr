@@ -56,22 +56,22 @@ export const defaultCLISettings = (settings_dir:string) =>
   return {
       // cli-props
       "auto-project-root": true,
-      interactive: true,
+      "interactive": true,
       "stacks-dir": path.join(settings_dir, "stacks"),
       "alway-print-job-id": false,
       "autocopy-sync-job": true,
       "job-default-run-mode": "sync",
       "run-shortcuts-file": "",
-      "build-cmd": cmd,
-      "run-cmd": cmd,
+      "build-driver": cmd,
+      "run-driver": cmd,
       "image-tag": cli_name,
       "socket-path": socket,
       "job-ls-fields": 'id, stackName, command, status',
       // container props
       "container-default-shell": "bash",
-      selinux: false,
+      "selinux": false,
       "jupyter-command": "jupyter lab",
-      webapp: "",
+      "webapp": "",
   }
 }
 

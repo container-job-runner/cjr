@@ -168,11 +168,11 @@ export abstract class StackCommand extends Command
   newBuildDriver(explicit: boolean = false, silent: boolean = false) : BuildDriver
   {
     const shell = new ShellCommand(explicit, silent)
-    const build_cmd = this.settings.get('build-cmd');
+    const build_driver = this.settings.get('build-driver');
     const socket:string = this.settings.get('socket-path')
     const build_dir = path.join(this.config.dataDir, build_dirname)
 
-    switch(build_cmd)
+    switch(build_driver)
     {
         case "docker":
         {
@@ -206,12 +206,12 @@ export abstract class StackCommand extends Command
   newRunDriver(explicit: boolean = false, silent: boolean = false) : RunDriver
   {
     const shell = new ShellCommand(explicit, silent)
-    const run_cmd = this.settings.get('run-cmd');
+    const run_driver = this.settings.get('run-driver');
     const tag:string = this.settings.get('image-tag')
     const selinux:boolean = this.settings.get('selinux')
     const socket:string = this.settings.get('socket-path')
 
-    switch(run_cmd)
+    switch(run_driver)
     {
         case "docker":
         {
