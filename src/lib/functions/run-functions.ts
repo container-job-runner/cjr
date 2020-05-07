@@ -20,6 +20,8 @@ import { ProjectSettings } from '../config/project-settings/project-settings'
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { PodmanCliRunDriver } from '../drivers/podman/podman-cli-run-driver'
 import { PodmanSocketRunDriver } from '../drivers/podman/podman-socket-run-driver'
+import { DockerCliRunDriver } from '../drivers/docker/docker-cli-run-driver'
+import { DockerSocketRunDriver } from '../drivers/docker/docker-socket-run-driver'
 
 // == TYPES ====================================================================
 
@@ -120,7 +122,7 @@ export function jobStart(container_runtime: ContainerDrivers, job_options: JobOp
   printStatusHeader(StatusStrings.JOBSTART.BUILD, output_options)
   const bl_result = buildAndLoad(
     container_runtime,
-    job_options["build-options"],
+    { ... {verbose: output_options.verbose}, ...job_options["build-options"]},
     job_options["stack-path"],
     job_options["config-files"]
   )
@@ -436,10 +438,14 @@ export function createAndMountFileVolume(container_runtime: ContainerDrivers, co
     files: configuration.stack_configuration.getRsyncUploadSettings(true)
   }
   // -- check if runtime is docker and chownvolume flags is active -------------
-  if( (configuration.stack_configuration.getFlags()?.['chown-file-volume'] === true) )  {
-      // -- get user id & set chown property -----------------------------------
-      const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
-      if(id_result.success && id_result.value) copy_options.chown = id_result.value
+  const cfv = configuration.stack_configuration.getFlags()?.['chown-file-volume'];
+  const using_docker = (container_runtime.runner instanceof DockerCliRunDriver) || (container_runtime.runner instanceof DockerSocketRunDriver)
+  if( using_docker && (cfv === 'host-user') ) {
+    const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
+    if(id_result.success && id_result.value) copy_options.chown = id_result.value
+  }
+  else if ( using_docker && !isNaN(parseInt(cfv))) {
+    copy_options.chown = cfv
   }
 
   const result = syncHostDirAndVolume(container_runtime, copy_options)
@@ -472,13 +478,17 @@ export function mountFileVolume(configuration: JobConfiguration<StackConfigurati
 // -----------------------------------------------------------------------------
 export function syncHostDirAndVolume(container_runtime: ContainerDrivers, copy_options:RsyncOptions, manual_copy:boolean = false) : ValidatedOutput<undefined>
 {
-  if(!copy_options["host-path"]) return new ValidatedOutput(true, undefined)
-  if(!copy_options["volume"]) return new ValidatedOutput(true, undefined)
+  const result = new ValidatedOutput(true, undefined)
+
+  if(!copy_options["host-path"]) return result
+  if(!copy_options["volume"]) return result
   // -- create stack configuration for rsync job -------------------------------
   const rsync_stack_configuration = rsyncStackConfiguration(container_runtime.runner, copy_options)
   // -- ensure rsync container is built ----------------------------------------
   if(!container_runtime.builder.isBuilt(rsync_stack_configuration)) {
-    const result = container_runtime.builder.build(rsync_stack_configuration)
+    result.absorb(
+      container_runtime.builder.build(rsync_stack_configuration, copy_options.verbose ? "inherit" : "pipe")
+    )
     if(!result.success) return result
   }
   // -- set rsync flags --------------------------------------------------------
