@@ -5,10 +5,11 @@ import { StackConfiguration } from '../config/stacks/abstract/stack-configuratio
 import { ContainerDrivers } from './run-functions'
 
 export type BuildOptions = {
-  'never'?: boolean,          // image will never be build
-  'reuse-image'?: boolean,     // will not build if image with proper name already exists
-  'no-cache'?: boolean,       // if true will build image without cache
+  'never'?: boolean          // image will never be build
+  'reuse-image'?: boolean     // will not build if image with proper name already exists
+  'no-cache'?: boolean       // if true will build image without cache
   'pull'?:  boolean           // if true will pull all linked images
+  'verbose'?: boolean
 }
 
 // -----------------------------------------------------------------------------
@@ -41,7 +42,7 @@ export function buildAndLoad(cr: ContainerDrivers, build_options: BuildOptions, 
     )
   else
     result.absorb(
-      cr.builder.build(configuration, build_options)
+      cr.builder.build(configuration, (build_options.verbose) ? "inherit" : "pipe", build_options)
     )
   if(!result.success) return result
   return new ValidatedOutput(true, configuration)
@@ -49,20 +50,14 @@ export function buildAndLoad(cr: ContainerDrivers, build_options: BuildOptions, 
 
 export function buildIfMissing(builder: BuildDriver, configuration: StackConfiguration<any>, build_options: BuildOptions) : ValidatedOutput<undefined>
 {
-  if(builder.isBuilt(configuration))
+  const result = new ValidatedOutput(true, undefined)
+  if(!builder.isBuilt(configuration))
   {
-    return new ValidatedOutput(true, undefined);
+    result.absorb(builder.build(configuration, (build_options.verbose) ? "inherit" : "pipe", build_options))
+    if(!result.success) return result
+    if(!builder.isBuilt(configuration)) result.pushError(ErrorStrings.BUILD.FAILED_AUTOBUILD)
   }
-  else
-  {
-    const result = builder.build(configuration, build_options)
-    if(result.success == true)
-    {
-      result.success = builder.isBuilt(configuration)
-      if(result.success == false) result.pushError(ErrorStrings.BUILD.FAILED_AUTOBUILD)
-    }
-    return result;
-  }
+  return result;
 }
 
 export function removeImage(cr: ContainerDrivers, stack_path: string, all_configurations: boolean, overloaded_config_paths: Array<string>=[]) : ValidatedOutput<undefined>
