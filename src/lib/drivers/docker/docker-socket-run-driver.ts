@@ -377,7 +377,7 @@ export class DockerSocketRunDriver extends RunDriver
 
   private validJSONAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
   {
-    if(!this.validAPIResponse(response)) return false
+    if(!this.validAPIResponse(response, code)) return false
     if(response.value.header.type !== "application/json") return false
     return true
   }
