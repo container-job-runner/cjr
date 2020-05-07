@@ -86,7 +86,6 @@ export class DockerSocketRunDriver extends RunDriver
       "unix-socket": options.socket,
       "base-url": "http://v1.24"
     })
-
   }
 
   jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
@@ -147,26 +146,46 @@ export class DockerSocketRunDriver extends RunDriver
     })
 
     // -- check request status -------------------------------------------------
-    if(!this.validJSONAPIResponse(api_request, 200) || !api_request.value.body?.Id)
+    if(!this.validJSONAPIResponse(api_request, 201) || !api_request.value.body?.Id)
       return new ValidatedOutput(false, failure_response)
 
     const id:string = api_request.value.body.Id;
-    // -- run job using docker command (allows for sync) ------------
-    const command = `${this.base_command} start`;
-    const args: Array<string> = [id]
-    const flags = (configuration.synchronous) ? {attach: {}, interactive: {}} : {}
-    const shell_options = {stdio: (stdio == "pipe") ? "pipe" : "inherit"}
-    const exec_result = this.shell.exec(command, flags, args, shell_options)
+    if(configuration.synchronous) // -- use docker cli -------------------------
+    {
+      const command = `${this.base_command} start`;
+      const args: Array<string> = [id]
+      const flags = (configuration.synchronous) ? {attach: {}, interactive: {}} : {}
+      const shell_options = {stdio: (stdio == "pipe") ? "pipe" : "inherit"}
+      const exec_result = this.shell.exec(command, flags, args, shell_options)
 
-    if(configuration.remove_on_exit && configuration.synchronous)
-      this.jobDelete([id])
+      if(configuration.remove_on_exit)
+        this.jobDelete([id])
 
-    return new ValidatedOutput(true, {
+      return new ValidatedOutput(true, {
         "id": id,
         "exit-code": ShellCommand.status(exec_result.value),
         "output": ShellCommand.stdout(exec_result.value)
-    })
+      })
+    }
+    else // --- user docker API ------------------------------------------------
+    {
+      // -- make api request ---------------------------------------------------
+      const api_request = this.curl.post({
+        "url": `/containers/${id}/start`,
+        "encoding": "json",
+        "body": {},
+      })
 
+      // -- check request status -----------------------------------------------
+      if(!this.validAPIResponse(api_request, 204))
+        return new ValidatedOutput(false, failure_response)
+
+      return new ValidatedOutput(true, {
+        "id": id,
+        "exit-code": 0,
+        "output": ""
+      })
+    }
   }
 
   jobLog(id: string, lines: string="all") : ValidatedOutput<string>
@@ -198,7 +217,7 @@ export class DockerSocketRunDriver extends RunDriver
 
   jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
-    if(configuration.synchronous) // -- use docker command ---------------------
+    if(configuration.synchronous) // -- use docker cli -------------------------
     {
       const command = `${this.base_command} exec`
       const flags = ShellCommand.removeEmptyFlags({
