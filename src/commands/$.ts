@@ -50,7 +50,7 @@ export default class Run extends StackCommand {
     }
     // -- set container runtime options ----------------------------------------
     const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
+      builder: this.newBuildDriver(flags.explicit, flags.quiet),
       runner:  this.newRunDriver(flags.explicit, flags.quiet)
     }
     // -- check x11 user settings ----------------------------------------------
