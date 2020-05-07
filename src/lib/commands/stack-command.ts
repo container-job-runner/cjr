@@ -16,7 +16,7 @@ import { DockerSocketRunDriver } from '../drivers/docker/docker-socket-run-drive
 import { PodmanSocketRunDriver } from '../drivers/podman/podman-socket-run-driver'
 import { ShellCommand } from '../shell-command'
 import { JSTools } from '../js-tools'
-import { missingFlagError, Dictionary } from '../constants'
+import { missingFlagError, Dictionary, build_dirname } from '../constants'
 import { ValidatedOutput } from '../validated-output'
 import { loadProjectSettings, scanForSettingsDirectory } from '../functions/run-functions'
 import { BuildOptions } from '../functions/build-functions'
@@ -170,6 +170,7 @@ export abstract class StackCommand extends Command
     const shell = new ShellCommand(explicit, silent)
     const build_cmd = this.settings.get('build-cmd');
     const socket:string = this.settings.get('socket-path')
+    const build_dir = path.join(this.config.dataDir, build_dirname)
 
     switch(build_cmd)
     {
@@ -179,7 +180,10 @@ export abstract class StackCommand extends Command
         }
         case "docker-socket":
         {
-          return new DockerSocketBuildDriver(shell, {socket: socket});
+          return new DockerSocketBuildDriver(shell, {
+            "tmpdir": build_dir,
+            "socket": socket
+          });
         }
         case "podman":
         {
@@ -187,7 +191,10 @@ export abstract class StackCommand extends Command
         }
         case "podman-socket":
         {
-          return new PodmanSocketBuildDriver(shell, {socket: socket});
+          return new PodmanSocketBuildDriver(shell,  {
+            "tmpdir": build_dir,
+            "socket": socket
+          });
         }
         default:
         {
