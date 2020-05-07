@@ -174,7 +174,7 @@ export abstract class StackCommand extends Command
 
     switch(build_driver)
     {
-        case "docker":
+        case "docker-cli":
         {
           return new DockerCliBuildDriver(shell);
         }
@@ -185,7 +185,7 @@ export abstract class StackCommand extends Command
             "socket": socket
           });
         }
-        case "podman":
+        case "podman-cli":
         {
           return new PodmanCliBuildDriver(shell);
         }

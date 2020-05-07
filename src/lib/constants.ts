@@ -39,17 +39,17 @@ export const projectIDPath  = (hostRoot: string) => path.join(hostRoot, project_
 // default cli options that are stored in cli settings json file
 export const defaultCLISettings = (settings_dir:string) =>
 {
-  let cmd
+  let driver
   let socket
   switch(os.platform())
   {
     case "darwin":
     case "win32":
-      cmd = "docker"
+      driver = "docker-cli"
       socket = "/var/run/docker.sock"
       break
     default:
-      cmd = "podman"
+      driver = "podman-cli"
       socket = "$XDG_RUNTIME_DIR/podman/podman.sock"
   }
 
