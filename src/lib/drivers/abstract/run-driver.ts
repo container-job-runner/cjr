@@ -79,8 +79,8 @@ export abstract class RunDriver
   abstract emptyExecConfiguration(options?: ExecConstrutorOptions): ExecConfiguration
 
   // A private helper function that can be used by JobInfo to filter jobs
-  // if blacklist parameter is false or unspecified, filter will whitelist.
-  protected jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter, blacklist?: boolean) : Array<JobInfo>
+  // by default filter is a whitelist with an operator between fields of JobInfoFilter.
+  protected jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter, options?: {blacklist: boolean, operator: "and"|"or"}) : Array<JobInfo>
   {
     if(filter === undefined)
       return job_info
@@ -109,18 +109,19 @@ export abstract class RunDriver
     }
 
     // -- 2. Filter job information --------------------------------------------
-    const failure_condition = (blacklist) ? true : false
-    return job_info.filter((job:JobInfo) => {
-      if(filter_id && id_regex.test(job.id) == failure_condition)
-        return false
-      if(filter_stack_path && !stackF(job.labels?.[stack_path_label]))
-        return false
-      if(filter_state && stateF(job.state) == failure_condition)
-        return false
-      if(filter_labels && labelsF(job.labels) == failure_condition)
-        return false
-      return true
+    const mcs = [ // matching conditions
+      (job: JobInfo) : boolean => (!filter_id || id_regex.test(job.id)),
+      (job: JobInfo) : boolean => (!filter_stack_path || stackF(job.labels?.[stack_path_label])),
+      (job: JobInfo) : boolean => (!filter_state || stateF(job.state)),
+      (job: JobInfo) : boolean => (!filter_labels || labelsF(job.labels))
+    ]
+    const or  = (a: boolean, b: boolean) => a || b
+    const and = (a: boolean, b: boolean) => a && b
+    const op  = (options?.operator == "or") ? or : and  // search operator
+
+    return job_info.filter( (job:JobInfo) => {
+      const match = mcs.reduce((accum: boolean, F:(job: JobInfo) => boolean) => op(accum, F(job)), true)
+      return ( options?.blacklist ) ? !match : match
     })
   }
-
 }
