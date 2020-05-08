@@ -68,7 +68,7 @@ export class DockerSocketRunDriver extends RunDriver
   protected tag: string|undefined
   protected curl: Curl
   protected base_command: string = "docker"
-  protected labels = {"invisible-on-stop": "IOS"}
+  protected labels = {"invisible-on-exit": "cjr-ios"} // jobs with this label will not appear in JobInfo array
 
   protected ERRORSTRINGS = {
     BAD_RESPONSE: chalk`{bold Bad API Response.} Is Docker running?`,
@@ -125,10 +125,10 @@ export class DockerSocketRunDriver extends RunDriver
       }
     }) || [];
 
-    // -- hide any stopped jobs with invisible-on-stop -------------------------
+    // -- hide any stopped jobs with invisible-on-exit -------------------------
     const hidden_filter = {
       states: ["exited"] as Array<JobState>,
-      labels: {[this.labels['invisible-on-stop']]: ["true"]}
+      labels: {[this.labels['invisible-on-exit']]: ["true"]}
     }
 
     // -- filter jobs and return -----------------------------------------------
@@ -147,7 +147,7 @@ export class DockerSocketRunDriver extends RunDriver
     const failure_response = {id: "", "exit-code": 0, output: ""}
     configuration.addLabel("runner", cli_name) // add mandatory label
     if(configuration.remove_on_exit && !configuration.synchronous)
-      configuration.addLabel(this.labels['invisible-on-stop'], "true")
+      configuration.addLabel(this.labels['invisible-on-exit'], "true")
 
     // -- make api request -----------------------------------------------------
     const api_request = this.curl.post({
