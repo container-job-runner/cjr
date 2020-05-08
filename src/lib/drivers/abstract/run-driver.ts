@@ -117,8 +117,7 @@ export abstract class RunDriver
     ]
     const or  = (a: boolean, b: boolean) => a || b
     const and = (a: boolean, b: boolean) => a && b
-    const op  = (options?.operator == "or") ? or : and  // search operator
-    const init = (options?.operator == "or") ? false : true
+    const {op, init}  = (options?.operator == "or") ? {"op": or, "init": false} : {"op": and, "init": true}  // search operator and initial condition
 
     return job_info.filter( (job:JobInfo) => {
       const match = mcs.reduce((accum: boolean, F:(job: JobInfo) => boolean) => op(accum, F(job)), init)
