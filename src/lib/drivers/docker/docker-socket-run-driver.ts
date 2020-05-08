@@ -64,6 +64,7 @@ type DockerAPI_HostPortConfig =
 
 export class DockerSocketRunDriver extends RunDriver
 {
+  protected selinux: boolean
   protected tag: string|undefined
   protected curl: Curl
   protected base_command: string = "docker"
@@ -82,6 +83,7 @@ export class DockerSocketRunDriver extends RunDriver
   {
     super(shell)
     this.tag = options?.tag
+    this.selinux = options?.selinux || false
     this.curl = new Curl(shell, {
       "unix-socket": options.socket,
       "base-url": "http://v1.24"
@@ -451,9 +453,12 @@ export class DockerSocketRunDriver extends RunDriver
       create_object.HostConfig = {}
     if(!create_object.HostConfig.Mounts)
       create_object.HostConfig.Mounts = []
+    if(!create_object.HostConfig.Binds)
+      create_object.HostConfig.Binds = []
 
     // -- add mounts -----------------------------------------------------------
     const mounts = create_object.HostConfig.Mounts
+    const binds  = create_object.HostConfig.Binds
     configuration.config?.mounts?.map((m: DockerStackMountConfig) => {
       // -- volumes ------------------------------------------------------------
       if(m?.type === 'volume' && m?.containerPath && m?.volumeName)
@@ -462,16 +467,25 @@ export class DockerSocketRunDriver extends RunDriver
         if(m.readonly) mount.ReadOnly = true
         mounts.push(mount)
       }
-      // -- binds ------------------------------------------------------------
-      if(m?.type === 'bind' && m?.containerPath && m?.hostPath)
+      // -- binds --------------------------------------------------------------
+      else if(m?.type === 'bind' && m?.containerPath && m?.hostPath)
       {
-        const mount: DockerAPI_Mount = {"Type": "bind", "Source": m.hostPath, "Target": m.containerPath}
-        if(m.readonly) mount.ReadOnly = true
-        if(['consistent', 'delegated', 'cached'].includes(m.consistency || "")) mount.Consistency = m.consistency
-        mounts.push(mount)
+        if(!this.selinux && !m?.selinux) // no-selinux
+        {
+          const mount: DockerAPI_Mount = {"Type": "bind", "Source": m.hostPath, "Target": m.containerPath}
+          if(m.readonly) mount.ReadOnly = true
+          if(['consistent', 'delegated', 'cached'].includes(m.consistency || "")) mount.Consistency = m.consistency
+          mounts.push(mount)
+        }
+        else // se-linux (use binds)
+        {
+          const options:Array<string> = ['z']
+          if(m.readonly) options.push('ro')
+          binds.push(`${m.hostPath}:${m.containerPath}:${options.join(',')}`)
+        }
       }
-      // -- tempfs -----------------------------------------------------------
-      if(m?.type === 'tmpfs' && m?.containerPath)
+      // -- tempfs -------------------------------------------------------------
+      else if(m?.type === 'tmpfs' && m?.containerPath)
       {
         const mount: DockerAPI_Mount = {"Type": "tmpfs", "Source": "", "Target": m.containerPath}
         mounts.push(mount)
