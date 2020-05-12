@@ -5,6 +5,8 @@
 
 import { ValidatedOutput } from '../../../validated-output'
 import { Dictionary } from '../../../constants'
+import { SshShellCommand } from '../../../remote/ssh-shell-command'
+import { ShellCommand } from '../../../shell-command'
 
 export abstract class StackConfiguration<T>
 {
@@ -35,14 +37,14 @@ export abstract class StackConfiguration<T>
   abstract addPort(hostPort: number, containerPort: number, address?:string): boolean;
   abstract removePort(hostPort: number): ValidatedOutput<undefined>;
   // ----> environment variables
-  abstract addEnvironmentVariable(name: string, value: string, dynamic?: boolean): boolean;
+  abstract addEnvironmentVariable(name: string, value: string, evaluate?: boolean, shell?:ShellCommand|SshShellCommand): boolean;
   abstract removeEnvironmentVariable(name: string): boolean;
   // ----> misc flag modifiers
   abstract addFlag(field: string, value: string): boolean;
   abstract removeFlag(field: string): boolean;
   // ----> build Args
-  abstract addBuildArg(name: string, value: string, evaluate?: boolean): boolean;
-  abstract removeBuildArg(name: string, value: string, evaluate?: boolean): boolean;
+  abstract addBuildArg(name: string, value: string, evaluate?: boolean, shell?:ShellCommand|SshShellCommand): boolean;
+  abstract removeBuildArg(name: string, value: string): boolean;
 
   // == access functions =======================================================
   abstract getImage(): string;
