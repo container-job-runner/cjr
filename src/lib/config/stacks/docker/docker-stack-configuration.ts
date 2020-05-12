@@ -12,6 +12,7 @@ import { YMLFile } from '../../../fileio/yml-file'
 import { ErrorStrings, WarningStrings } from '../../../error-strings'
 import { ShellCommand } from '../../../shell-command'
 import chalk = require('chalk')
+import { SshShellCommand } from '../../../remote/ssh-shell-command'
 
 // === START Config types =========================================================
 
@@ -223,7 +224,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
         return
       const env_val = raw_dynamic_env_data[k]
       if(typeof env_val == "string")
-        resolved_env[k] = this.evalDynamicArg(env_val)
+        resolved_env[k] = this.evalDynamicArg(env_val).value
     })
 
     if(raw_env_data instanceof Object) // resolve static properties
@@ -238,9 +239,10 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return resolved_env
   }
 
-  protected evalDynamicArg(value: string)
+  protected evalDynamicArg(value: string, shell?:ShellCommand|SshShellCommand)
   {
-    return trim(new ShellCommand(false, false).output(`echo "${value}"`)).value
+    const sh = shell || new ShellCommand(false, false)
+    return trim(sh.output(`echo "${value}"`))
   }
 
     private replaceRelativePaths(config: DockerStackConfigObject, parent_path: string)
@@ -443,12 +445,13 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
 
   // ---- environment variables ------------------------------------------------
 
-  addEnvironmentVariable(name: string, value: string, dynamic?: boolean)
+  addEnvironmentVariable(name: string, value: string, dynamic?: boolean, shell?: ShellCommand|SshShellCommand)
   {
     if(this.config?.environment === undefined)
       this.config.environment = {}
-    this.config['environment'][name] = (dynamic) ? this.evalDynamicArg(value) : value
-    return true;
+    const result = (dynamic) ? this.evalDynamicArg(value, shell) : new ValidatedOutput<string>(true, value)
+    this.config['environment'][name] = result.value
+    return result.success;
   }
 
   removeEnvironmentVariable(name: string)
@@ -472,13 +475,14 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
 
   // ---- build args -----------------------------------------------------------
 
-  addBuildArg(name: string, value: string, dynamic?: boolean)
+  addBuildArg(name: string, value: string, dynamic?: boolean, shell?: ShellCommand|SshShellCommand)
   {
     if(!this.config?.build) this.config.build = {}
     if(!this.config?.build?.args) this.config.build.args = {}
 
-    this.config.build.args[name] = (dynamic) ? this.evalDynamicArg(value) : value
-    return true;
+    const result = (dynamic) ? this.evalDynamicArg(value, shell) : new ValidatedOutput<string>(true, value)
+    this.config.build.args[name] = result.value
+    return result.success;
   }
 
   removeBuildArg(name: string)
