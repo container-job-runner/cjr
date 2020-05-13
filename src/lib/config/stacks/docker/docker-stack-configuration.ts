@@ -491,6 +491,39 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return true;
   }
 
+  // ---- build flag modifiers -------------------------------------------------------
+
+  addBuildFlag(field: string, value?: string)
+  {
+    if(!["no-cache", "pull"].includes(field))
+      return false
+
+    if(this.config.build == undefined)
+      this.config.build = {}
+
+    if(field == 'no-cache')
+      this.config.build["no-cache"] = true
+    else if(field == 'pull')
+      this.config.build["pull"] = true
+    return true
+  }
+
+  removeBuildFlag(field: string) {
+
+    if(this.config.build == undefined)
+      return true
+
+    if(!["no-cache", "pull"].includes(field))
+      return false
+
+    if(field == 'no-cache')
+      delete this.config.build['no-cache']
+    else if(field == 'pull')
+      delete this.config.build['pull']
+
+    return true
+  }
+
   // == Access Functions =======================================================
 
   getName(): string
