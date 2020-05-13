@@ -1,9 +1,9 @@
 import {flags} from '@oclif/command'
 import {ValidatedOutput} from '../../../lib/validated-output'
 import {RemoteCommand, Dictionary} from '../../../lib/remote/commands/remote-command'
-import {FileTools} from '../../../lib/fileio/file-tools'
 import {SshShellCommand} from '../../../lib/remote/ssh-shell-command'
 import {printResultState, parseJSON} from '../../../lib/functions/misc-functions'
+import { PathTools } from '../../../lib/fileio/path-tools'
 
 export default class Rsync extends RemoteCommand {
   static description = 'rsyncs local stacks-dir with remote resource or vice-versa.'
@@ -45,8 +45,8 @@ export default class Rsync extends RemoteCommand {
     if(flags.mirror) rsync_flags['delete'] = {}
     if(flags.verbose) rsync_flags['v'] = {}
     ssh_shell.rsync(
-      FileTools.addTrailingSeparator(local_stacks_dir),
-      FileTools.addTrailingSeparator(remote_stacks_dir),
+      PathTools.addTrailingSeparator(local_stacks_dir),
+      PathTools.addTrailingSeparator(remote_stacks_dir),
       (flags.direction as "push"|"pull"),
       rsync_flags
     )
