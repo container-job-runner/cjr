@@ -8,13 +8,14 @@ import {FileTools} from "../../fileio/file-tools"
 import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
 import {BuildDriver} from "../../drivers/abstract/build-driver"
 import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions, RemoteJupyterOptions} from "./remote-driver"
-import {cli_bundle_dir_name, projectIDPath, project_idfile, stack_bundle_rsync_file_paths, host_root_label, stack_path_label} from '../../constants'
+import {cli_bundle_dir_name, projectIDPath, project_idfile, stack_bundle_rsync_file_paths, project_root_label, stack_path_label} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'
 import {ensureProjectId, containerWorkingDir, promptUserForId, getProjectId, bundleStack, JobOptions, CopyOptions, OutputOptions, ContainerDrivers, StackBundleOptions} from '../../functions/run-functions'
 import {BuildOptions} from '../../functions/build-functions'
 import {printResultState, parseJSON} from '../../functions/misc-functions'
 import {ErrorStrings, WarningStrings, StatusStrings} from '../error-strings'
 import {Resource} from "../../remote/config/resource-configuration"
+import { PathTools } from '../../fileio/path-tools'
 
 type Dictionary = {[key: string]: any}
 
@@ -51,7 +52,7 @@ export class CJRRemoteDriver extends RemoteDriver
      '$'          : ['explicit', 'async', 'verbose', 'quiet', 'port', 'x11', 'message', 'label', 'autocopy', 'build-mode']
   }
   private ssh_shell: SshShellCommand
-  private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': host_root_label, 'stack-path': stack_path_label}
+  private label_names = {'remote-job-dir': 'remote-job-dir', 'project-id': 'project-id', 'project-root': project_root_label, 'stack-path': stack_path_label}
   private remoteStackName = (remote_job_dir: string, stack_name: string) => `${path.posix.basename(remote_job_dir)}-${stack_name}`
   private remoteStackPath = (remote_job_dir: string, stack_name: string) => path.posix.join(remote_job_dir, this.remoteStackName(remote_job_dir, stack_name))
   private multiplex_options: MultiplexOptions = {"autodisconnect": true, "autoconnect": true, "restart-existing-connection": true}
@@ -604,7 +605,7 @@ export class CJRRemoteDriver extends RemoteDriver
       const rsync_stack_flags:Dictionary = {a:{}, delete: {}}
       if(options.verbose) rsync_stack_flags.v = {}
       result = this.ssh_shell.rsync(
-        FileTools.addTrailingSeparator(options['local-stack-path'], 'posix'), // upload contents
+        PathTools.addTrailingSeparator(options['local-stack-path'], 'posix'), // upload contents
         options['remote-stack-path'],
         'push',
         rsync_stack_flags
@@ -617,7 +618,7 @@ export class CJRRemoteDriver extends RemoteDriver
     const rsync_config_flags:Dictionary = {a:{}}
     if(options.verbose) rsync_config_flags.v = {}
     result = this.ssh_shell.rsync(
-      FileTools.addTrailingSeparator(temp_stack_path, 'posix'), // upload contents
+      PathTools.addTrailingSeparator(temp_stack_path, 'posix'), // upload contents
       options['remote-stack-path'],
       'push',
       rsync_config_flags
@@ -644,7 +645,7 @@ export class CJRRemoteDriver extends RemoteDriver
     if(upload_settings.include && FileTools.existsFile(upload_settings.include)) rsync_flags['include-from'] = upload_settings.include
     if(upload_settings.exclude && FileTools.existsFile(upload_settings.exclude)) rsync_flags['exclude-from'] = upload_settings.exclude
     result = this.ssh_shell.rsync(
-      FileTools.addTrailingSeparator(options["local-project-root"], 'posix'), // upload contents
+      PathTools.addTrailingSeparator(options["local-project-root"], 'posix'), // upload contents
       options["remote-project-root"],
       'push',
       rsync_flags
@@ -679,8 +680,8 @@ export class CJRRemoteDriver extends RemoteDriver
         break
     }
     result = this.ssh_shell.rsync(
-     FileTools.addTrailingSeparator(options['local-project-root']), // pull folder contents
-     FileTools.addTrailingSeparator(options['remote-project-root'], 'posix'),
+     PathTools.addTrailingSeparator(options['local-project-root']), // pull folder contents
+     PathTools.addTrailingSeparator(options['remote-project-root'], 'posix'),
      'pull',
      rsync_flags
     )
@@ -796,7 +797,7 @@ export class CJRRemoteDriver extends RemoteDriver
     if(verbose) flags['v'] = {}
     result = this.ssh_shell.rsync(
       local_tmp_dir,
-      FileTools.addTrailingSeparator(remote_stack_path),
+      PathTools.addTrailingSeparator(remote_stack_path),
       'pull',
       flags
     )
