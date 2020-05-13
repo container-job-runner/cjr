@@ -6,7 +6,7 @@ import {ShellCommand} from "../../shell-command"
 import {SshShellCommand} from "../ssh-shell-command"
 import {FileTools} from "../../fileio/file-tools"
 import {StackConfiguration} from "../../config/stacks/abstract/stack-configuration"
-import {BuildDriver} from "../../drivers/abstract/build-driver"
+import {BuildDriver} from "../../drivers-containers/abstract/build-driver"
 import {RemoteDriver, RemoteStartOptions, RemoteExecOptions, RemoteDeleteOptions, RemoteJupyterOptions} from "./remote-driver"
 import {cli_bundle_dir_name, projectIDPath, project_idfile, stack_bundle_rsync_file_paths, project_root_label, stack_path_label} from '../../constants'
 import {remote_storage_basename, remoteStoragePath, remote_stack_rsync_config_dirname} from '../constants'

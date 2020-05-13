@@ -4,7 +4,7 @@ import { JSTools } from '../../lib/js-tools'
 import { promptUserForJobId, jobIds, volumeIds } from '../../lib/functions/run-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { JobInfo } from '../../lib/drivers/abstract/run-driver'
+import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 
 export default class Delete extends StackCommand {
   static description = 'Delete a job and its associated data; works on both running and completed jobs.'

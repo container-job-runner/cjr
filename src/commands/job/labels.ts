@@ -5,7 +5,7 @@ import { StackCommand } from '../../lib/commands/stack-command'
 import { promptUserForJobId } from '../../lib/functions/run-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { JobInfo } from '../../lib/drivers/abstract/run-driver'
+import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 import { Dictionary } from '../../lib/constants'
 
 export default class Labels extends StackCommand {

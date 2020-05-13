@@ -6,7 +6,7 @@ import {ValidatedOutput} from '../validated-output'
 import {JUPYTER_JOB_NAME, name_label} from '../constants'
 import {jobStart, jobExec, ContainerDrivers, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
 import {BuildOptions} from './build-functions'
-import {RunDriver} from '../drivers/abstract/run-driver'
+import {RunDriver} from '../drivers-containers/abstract/run-driver'
 
 export type JupyterOptions = {
   "stack-path": string,

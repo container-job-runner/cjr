@@ -4,7 +4,7 @@ import { JSTools } from '../../lib/js-tools'
 import { promptUserForJobId, jobIds } from '../../lib/functions/run-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { JobInfo } from '../../lib/drivers/abstract/run-driver'
+import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 
 export default class Stop extends StackCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'

@@ -1,8 +1,10 @@
-import { BuildDriver } from '../drivers/abstract/build-driver'
+import { BuildDriver } from '../drivers-containers/abstract/build-driver'
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings } from '../error-strings'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { ContainerDrivers } from './run-functions'
+import { JobConfiguration } from '../config/jobs/job-configuration'
+import { NewJobInfo } from '../drivers-containers/abstract/run-driver'
 
 export type BuildOptions = {
   'never'?: boolean          // image will never be build

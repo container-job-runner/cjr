@@ -7,7 +7,7 @@ import { THEIA_JOB_NAME, name_label, Dictionary } from '../constants'
 import { jobStart, ContainerDrivers, OutputOptions, JobOptions, ports, labels, firstJobId } from './run-functions'
 import { BuildOptions } from './build-functions'
 import { parseJSON } from './misc-functions'
-import { RunDriver } from '../drivers/abstract/run-driver'
+import { RunDriver } from '../drivers-containers/abstract/run-driver'
 
 export type TheiaOptions = {
   "stack-path": string,
