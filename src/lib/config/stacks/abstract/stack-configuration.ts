@@ -45,6 +45,9 @@ export abstract class StackConfiguration<T>
   // ----> build Args
   abstract addBuildArg(name: string, value: string, evaluate?: boolean, shell?:ShellCommand|SshShellCommand): boolean;
   abstract removeBuildArg(name: string, value: string): boolean;
+  // ----> build flags
+  abstract addBuildFlag(flag: string, value?: string): boolean;
+  abstract removeBuildFlag(flag: string): boolean;
 
   // == access functions =======================================================
   abstract getImage(): string;
