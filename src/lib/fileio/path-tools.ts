@@ -32,4 +32,20 @@ export class PathTools
     return true;
   }
 
+  static addTrailingSeparator(path_str: string, type?:"posix"|"win32")
+  {
+    if(type !== undefined)
+      return (path_str.endsWith(path[type].sep)) ? path_str : `${path_str}${path[type].sep}`
+    else
+      return (path_str.endsWith(path.sep)) ? path_str : `${path_str}${path.sep}`
+  }
+
+  static removeTrailingSeparator(path_str: string, type?:"posix"|"win32")
+  {
+    if(type !== undefined)
+      return (path_str.length > 1 && path_str.endsWith(path[type].sep)) ? path_str.slice(0, -1) : path_str
+    else
+      return (path_str.length > 1 && path_str.endsWith(path.sep)) ? path_str.slice(0, -1) : path_str
+  }
+
 }
