@@ -5,7 +5,7 @@
 import * as chalk from 'chalk'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
-import { RunDriver, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo } from '../abstract/run-driver'
+import { RunDriver, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo, jobFilter } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
 import { DockerStackConfiguration, DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
@@ -223,7 +223,7 @@ export class DockerCliRunDriver extends RunDriver
 
       const info_request = this.extractJobInfo(ps_output.value)
       if(!info_request.success) return new ValidatedOutput(false, [])
-      return new ValidatedOutput(true, this.jobFilter(info_request.value, filter))
+      return new ValidatedOutput(true, jobFilter(info_request.value, filter))
   }
 
   protected extractJobInfo(raw_ps_data: Array<Dictionary>) : ValidatedOutput<Array<JobInfo>>

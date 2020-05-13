@@ -5,7 +5,7 @@
 import * as chalk from 'chalk'
 import { ValidatedOutput } from "../../validated-output"
 import { ShellCommand } from "../../shell-command"
-import { RunDriver, JobInfo, JobInfoFilter, NewJobInfo, JobState } from '../abstract/run-driver'
+import { RunDriver, JobInfo, JobInfoFilter, NewJobInfo, JobState, jobFilter } from '../abstract/run-driver'
 import { DockerStackConfiguration, DockerStackPortConfig, DockerStackMountConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
@@ -133,8 +133,8 @@ export class DockerSocketRunDriver extends RunDriver
 
     // -- filter jobs and return -----------------------------------------------
     return new ValidatedOutput(true,
-      this.jobFilter(
-        this.jobFilter(job_info, filter),
+      jobFilter(
+        jobFilter(job_info, filter),
         hidden_filter,
         {blacklist: true, operator: "and"}
       )
