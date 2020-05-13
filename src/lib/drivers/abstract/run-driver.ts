@@ -78,50 +78,84 @@ export abstract class RunDriver
   abstract emptyStackConfiguration(): StackConfiguration<any>
   abstract emptyExecConfiguration(options?: ExecConstrutorOptions): ExecConfiguration
 
-  // A private helper function that can be used by JobInfo to filter jobs
-  // by default filter is a whitelist with an operator between fields of JobInfoFilter.
-  protected jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter, options?: {blacklist: boolean, operator: "and"|"or"}) : Array<JobInfo>
-  {
-    if(filter === undefined)
-      return job_info
+}
 
-    // -- 1. Initialize filters functions once before search -------------------
-    const filter_id:boolean = filter?.['ids'] !== undefined
-    const id_regex = new RegExp(`^(${filter?.['ids']?.join('|') || ""})`)
+// =============================================================================
+// Helper functions for processing job Output
+// =============================================================================
 
-    const filter_state:boolean = filter?.['states'] !== undefined
-    const stateF = filter?.["states"]?.includes.bind(filter?.["states"]) || ((x:any) => true);
+export function jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter, options?: {blacklist: boolean, operator: "and"|"or"}) : Array<JobInfo>
+{
+  if(filter === undefined)
+    return job_info
 
-    const filter_stack_path:boolean = filter?.['stack-paths'] !== undefined
-    const stackF = filter?.["stack-paths"]?.includes.bind(filter?.["stack-paths"]) || ((x:any) => true);
+  // -- 1. Initialize filters functions once before search -------------------
+  const filter_id:boolean = filter?.['ids'] !== undefined
+  const id_regex = new RegExp(`^(${filter?.['ids']?.join('|') || ""})`)
 
-    const filter_labels:boolean = filter?.['labels'] !== undefined
-    // -- initialize regular expressions for testing labels --------------------
-    const filter_labels_keys = Object.keys(filter?.['labels'] || {}).filter((key:string) => filter?.['labels']?.[key] !== undefined) // filter out any undefined label searches
-    const filter_labels_regex:{ [key:string] : RegExp} = {}
-    filter_labels_keys.map((key: string) => {filter_labels_regex[key] = new RegExp(`^(${filter?.['labels']?.[key]?.join('|') || ""})`)})
-    // -- construct function for testing labels --------------------------------
-    const labelsF = ( labels: { [key:string] : string } ) => {
-      return filter_labels_keys.reduce( (accumulator: boolean, key: string) => {
-        return accumulator && (filter_labels_regex?.[key]?.test(labels?.[key]) || false)
-      },
-      true)
-    }
+  const filter_state:boolean = filter?.['states'] !== undefined
+  const stateF = filter?.["states"]?.includes.bind(filter?.["states"]) || ((x:any) => true);
 
-    // -- 2. Filter job information --------------------------------------------
-    const mcs = [ // matching conditions
-      (job: JobInfo) : boolean => (!filter_id || id_regex.test(job.id)),
-      (job: JobInfo) : boolean => (!filter_stack_path || stackF(job.labels?.[stack_path_label])),
-      (job: JobInfo) : boolean => (!filter_state || stateF(job.state)),
-      (job: JobInfo) : boolean => (!filter_labels || labelsF(job.labels))
-    ]
-    const or  = (a: boolean, b: boolean) => a || b
-    const and = (a: boolean, b: boolean) => a && b
-    const {op, init}  = (options?.operator == "or") ? {"op": or, "init": false} : {"op": and, "init": true}  // search operator and initial condition
+  const filter_stack_path:boolean = filter?.['stack-paths'] !== undefined
+  const stackF = filter?.["stack-paths"]?.includes.bind(filter?.["stack-paths"]) || ((x:any) => true);
 
-    return job_info.filter( (job:JobInfo) => {
-      const match = mcs.reduce((accum: boolean, F:(job: JobInfo) => boolean) => op(accum, F(job)), init)
-      return ( options?.blacklist ) ? !match : match
-    })
+  const filter_labels:boolean = filter?.['labels'] !== undefined
+  // -- initialize regular expressions for testing labels --------------------
+  const filter_labels_keys = Object.keys(filter?.['labels'] || {}).filter((key:string) => filter?.['labels']?.[key] !== undefined) // filter out any undefined label searches
+  const filter_labels_regex:{ [key:string] : RegExp} = {}
+  filter_labels_keys.map((key: string) => {filter_labels_regex[key] = new RegExp(`^(${filter?.['labels']?.[key]?.join('|') || ""})`)})
+  // -- construct function for testing labels --------------------------------
+  const labelsF = ( labels: { [key:string] : string } ) => {
+    return filter_labels_keys.reduce( (accumulator: boolean, key: string) => {
+      return accumulator && (filter_labels_regex?.[key]?.test(labels?.[key]) || false)
+    },
+    true)
   }
+
+  // -- 2. Filter job information --------------------------------------------
+  const mcs = [ // matching conditions
+    (job: JobInfo) : boolean => (!filter_id || id_regex.test(job.id)),
+    (job: JobInfo) : boolean => (!filter_stack_path || stackF(job.labels?.[stack_path_label])),
+    (job: JobInfo) : boolean => (!filter_state || stateF(job.state)),
+    (job: JobInfo) : boolean => (!filter_labels || labelsF(job.labels))
+  ]
+  const or  = (a: boolean, b: boolean) => a || b
+  const and = (a: boolean, b: boolean) => a && b
+  const {op, init}  = (options?.operator == "or") ? {"op": or, "init": false} : {"op": and, "init": true}  // search operator and initial condition
+
+  return job_info.filter( (job:JobInfo) => {
+    const match = mcs.reduce((accum: boolean, F:(job: JobInfo) => boolean) => op(accum, F(job)), init)
+    return ( options?.blacklist ) ? !match : match
+  })
+}
+
+export function jobIds(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<string>>
+{
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true, job_info.value.map((ji:JobInfo) => ji.id))
+}
+
+export function jobLabels(job_info: ValidatedOutput<Array<JobInfo>>, label:string) : ValidatedOutput<Array<string>>
+{
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true,
+    job_info.value
+    .map((ji:JobInfo) => ji.labels?.[label])
+    .filter((s:string|undefined) => s !== undefined)
+  )
+}
+
+export function firstJobId(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<string>
+{
+  if(job_info.value.length < 1)
+    return new ValidatedOutput(false, "")
+  return new ValidatedOutput(true, job_info.value[0].id)
+}
+
+export function firstJob(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<JobInfo>
+{
+  const failure_output:JobInfo = {id: "", names: [], command: "", status: "", state: "dead", stack: "", labels: {}, ports: []}
+  if(job_info.value.length < 1)
+    return new ValidatedOutput(false, failure_output)
+  return new ValidatedOutput(true, job_info.value[0])
 }
