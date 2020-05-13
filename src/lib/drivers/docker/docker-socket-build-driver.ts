@@ -111,7 +111,7 @@ export class DockerSocketBuildDriver extends BuildDriver
       return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD(configuration.stack_path))
 
     // only extract tar if image does not exist, or if no-cache is specified
-    if(this.isBuilt(configuration) && !options?.['no-cache'])
+    if(this.isBuilt(configuration) && !(configuration?.config?.build?.["no-cache"] || options?.['no-cache']))
       return result
 
     // -- make api request -----------------------------------------------------
@@ -159,6 +159,10 @@ export class DockerSocketBuildDriver extends BuildDriver
       return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD(configuration.stack_path || configuration.getImage()))
     if(!configuration.getImage())
       return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD(configuration.stack_path || ""))
+
+    // -- only pull image if image does not exist, or if pull is specified
+    if(this.isBuilt(configuration) && !(configuration?.config?.build?.["pull"] || options?.['pull']))
+      return result
 
     // -- make api request -----------------------------------------------------
     const pull_result = this.curl.post({

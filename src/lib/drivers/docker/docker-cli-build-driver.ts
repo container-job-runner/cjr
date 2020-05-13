@@ -119,7 +119,7 @@ export class DockerCliBuildDriver extends BuildDriver
         return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
 
       // only extract tar if image does not exist, or if no-cache is specified
-      if(this.isBuilt(configuration) && !options?.['no-cache'])
+      if(this.isBuilt(configuration) && !(configuration?.config?.build?.["no-cache"] || options?.['no-cache']))
         return result
 
       const archive_name = `${configuration.archive_filename}.${configuration.stack_type}`
@@ -148,7 +148,7 @@ export class DockerCliBuildDriver extends BuildDriver
         return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
 
       // -- only pull image if image does not exist, or if pull is specified
-      if(this.isBuilt(configuration) && !options?.['pull'])
+      if(this.isBuilt(configuration) && !(configuration?.config?.build?.["pull"] || options?.['pull']))
         return result
 
       const exec_result = this.shell.exec(`${this.base_command} pull`, {}, [configuration.getImage()], {"stdio": stdio})
