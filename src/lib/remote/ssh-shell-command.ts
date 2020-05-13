@@ -58,7 +58,7 @@ export class SshShellCommand
     }
 
     // set post_process format to trim by default
-    output(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {}) : ValidatedOutput<string>
+    output(command: string, flags: Dictionary={}, args: Array<string>=[], options:Dictionary = {}) : ValidatedOutput<string>
     {
       const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
       return trim(this.shell.output('ssh', ssh_flags, ssh_args, options))
