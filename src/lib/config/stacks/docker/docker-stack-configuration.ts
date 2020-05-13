@@ -92,7 +92,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   protected verify_host_bind_path:boolean = true;
 
   protected ERRORSTRINGS = {
-    "MISSING_STACKDIR": (dir: string) => chalk`{bold Nonexistant Stack Directory or Image.}\n  {italic path:} ${dir}`,
+    "MISSING_STACKDIR": (dir: string) => chalk`{bold Nonexistant Stack Directory.}\n  {italic path:} ${dir}`,
     "INVALID_NAME": (path: string) => chalk`{bold Invalid Stack Name} - stack names may contain only lowercase and uppercase letters, digits, underscores, periods and dashes.\n  {italic  path:} ${path}`,
     "INVALID_LOCAL_STACKDIR": (dir: string) => chalk`{bold Invalid Local Stack Directory} - {italic ${dir}} \n  Stack directory must contain at least one of the following: Dockerfile, config.yml, image.tar, or image.tar.gz.`,
     "YML_PARSE_ERROR": (path: string) => chalk`{bold Unable to Parse YML} - {italic ${path}}`,
@@ -137,7 +137,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     const failure = new ValidatedOutput<StackType>(false, "remote-image")
 
     if(!FileTools.existsDir(stack_path)) // exit with failure if stack does not exist
-      return failure;
+      return failure.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path));
 
     if(!/^[a-zA-z0-9-_]+$/.test(this.stackPathToName(stack_path))) // exit if stack direcotry has invalid characters
       return failure.pushError(this.ERRORSTRINGS["INVALID_NAME"](stack_path))
