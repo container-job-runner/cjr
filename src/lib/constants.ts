@@ -11,10 +11,10 @@ export const cli_name = "cjr"
 
 // job labels
 export const name_label = 'name'
-export const stack_path_label  = 'stack'
+export const stack_path_label = 'stack-path'
 export const file_volume_label = 'filevolume'
-export const host_root_label = 'hostRoot'
-export const container_root_label = 'containerRoot'
+export const project_root_label = 'project-root'
+export const container_root_label = 'container-root'
 
 // flag message
 // export const invalid_stack_flag_error = "specify stack flag --stack=stack or set environment variable STACK"
