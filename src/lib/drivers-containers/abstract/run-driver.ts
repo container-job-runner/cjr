@@ -6,7 +6,7 @@ import { stack_path_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { JobConfiguration } from '../../config/jobs/job-configuration'
-import { ExecConfiguration, ExecConstrutorOptions } from '../../config/exec/exec-configuration'
+import { ExecConfiguration } from '../../config/exec/exec-configuration'
 import { ShellCommand } from '../../shell-command'
 
 // -- types --------------------------------------------------------------------
@@ -73,11 +73,6 @@ export abstract class RunDriver
   abstract jobDelete(ids: Array<string>) : ValidatedOutput<undefined>
   abstract volumeCreate(options?:Dictionary): ValidatedOutput<string>
   abstract volumeDelete(ids: Array<string>): ValidatedOutput<undefined>
-
-  abstract emptyJobConfiguration(stack_configuration?: StackConfiguration<any>): JobConfiguration<StackConfiguration<any>>
-  abstract emptyStackConfiguration(): StackConfiguration<any>
-  abstract emptyExecConfiguration(options?: ExecConstrutorOptions): ExecConfiguration
-
 }
 
 // =============================================================================
