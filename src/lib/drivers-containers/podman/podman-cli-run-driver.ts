@@ -5,7 +5,7 @@
 import { ShellCommand } from "../../shell-command"
 import { JobInfo, JobPortInfo } from '../abstract/run-driver'
 import { DockerCliRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
-import { parseJSON } from '../../functions/misc-functions'
+import { parseJSON, parseLineJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
 import { stack_path_label, Dictionary } from '../../constants'
 import { DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
@@ -34,8 +34,8 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
       return new ValidatedOutput(true, [])
 
     const ids = raw_ps_data.map((x:Dictionary) => x.ID)
-    const result = this.JSONOutputParser(
-      this.shell.output(`${this.base_command} inspect`, {}, ids, {})
+    const result = parseLineJSON(
+      this.shell.output(`${this.base_command} inspect`, {format: '{{json .HostConfig.PortBindings}}'}, ids, {})
     )
     if(!result.success) return new ValidatedOutput(false, [])
     // -- function for extracting port information for inspect
@@ -52,9 +52,9 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     }
     // -- extract label & port data -----------------------------------------------
     const inspect_data:Dictionary = {}
-      result.value.map((info:Dictionary) => {
-        const id = info?.['Id'];
-        if(id) inspect_data[id] = {Ports: extractBoundPorts(info?.['HostConfig']['PortBindings'] || {})}
+      result.value.map((info:Dictionary, index: number) => {
+        const id = ids[index];
+        if(id) inspect_data[id] = {Ports: extractBoundPorts(info || {})}
     });
 
     // converts status to one of three states
