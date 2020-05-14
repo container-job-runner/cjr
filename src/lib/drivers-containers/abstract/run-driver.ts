@@ -18,6 +18,7 @@ export type JobPortInfo = {
 export type JobState = "created"|"restarting"|"running"|"exited"|"paused"|"dead"|"unknown"
 export type JobInfo = {
   id:      string,
+  image:   string,
   names:   Array<string>,
   command: string,
   status:  string,
