@@ -18,28 +18,43 @@ import { ShellCommand } from '../shell-command'
 import { JSTools } from '../js-tools'
 import { missingFlagError, Dictionary, build_dirname } from '../constants'
 import { ValidatedOutput } from '../validated-output'
-import { loadProjectSettings, scanForSettingsDirectory } from '../functions/run-functions'
-import { BuildOptions } from '../functions/build-functions'
 import { ProjectSettings, ps_fields } from '../config/project-settings/project-settings'
 import { BuildDriver } from '../drivers-containers/abstract/build-driver'
 import { RunDriver } from '../drivers-containers/abstract/run-driver'
+import { ExecConstructorOptions, ExecConfiguration } from '../config/exec/exec-configuration'
+import { Configurations, ContainerDrivers, JobDriver, OutputOptions, JobRunOptions } from '../drivers-jobs/job-driver'
+import { DockerStackConfiguration } from '../config/stacks/docker/docker-stack-configuration'
+import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
+import { DockerJobConfiguration } from '../config/jobs/docker-job-configuration'
+import { ErrorStrings } from '../error-strings'
+import { printResultState } from '../functions/misc-functions'
+import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
+import { LocalJobDriver } from '../drivers-jobs/local-job-driver'
+import { scanForSettingsDirectory, loadProjectSettings } from '../functions/cli-functions'
+
+export type ContainerSDK = {
+  "output_options": OutputOptions
+  "configurations": Configurations,
+  "container_drivers": ContainerDrivers,
+  "job_driver": JobDriver
+}
+
 
 export abstract class StackCommand extends Command
 {
   protected settings = new Settings(this.config.configDir)
 
-  // if user_path exists, returns user_path
-  // if stack named user_paths exists in cli stack_path returns stacks_path/user_path
-  // otherwise returns user_path
-  fullStackPath(stack_name: string, stacks_path: string = "")
+  newRunShortcuts() : RunShortcuts
   {
-    if(!stack_name) return ""
-    if(!stacks_path) stacks_path = this.settings.get("stacks-dir");
-    if(fs.existsSync(stack_name)) return path.resolve(stack_name)
-    const local_stack_path = path.join(stacks_path, stack_name)
-    if(fs.existsSync(local_stack_path)) return local_stack_path
-    return stack_name
+    const run_shortcuts = new RunShortcuts()
+    const rs_result = run_shortcuts.loadFromFile(this.settings.get('run-shortcuts-file'))
+    if(!rs_result.success) printResultState(rs_result)
+    return run_shortcuts
   }
+
+  // ===========================================================================
+  // Flag Augment Functions
+  // ===========================================================================
 
   augmentFlagsWithHere(flags:Dictionary)
   {
@@ -74,12 +89,54 @@ export abstract class StackCommand extends Command
     return flags
   }
 
-  private equivStackPaths(path_a: string, path_b: string)
+  // ===========================================================================
+  // Stack Configuration Loading Functions
+  // ===========================================================================
+
+
+  fullStackPath(stack_name: string, stacks_path: string = "")
   {
-    path_a = this.fullStackPath(path_a)
-    path_b = this.fullStackPath(path_b)
-    return (path.basename(path_a) == path.basename(path_b) && path.dirname(path_a) == path.dirname(path_b))
+    if(!stack_name) return ""
+    if(!stacks_path) stacks_path = this.settings.get("stacks-dir");
+    if(fs.existsSync(stack_name)) return path.resolve(stack_name)
+    const local_stack_path = path.join(stacks_path, stack_name)
+    if(fs.existsSync(local_stack_path)) return local_stack_path
+    return stack_name
   }
+
+  // if flags['stack'] exists, load from this location
+  // if stack named flags['stack'] exists in stacks-dir, then load from stacks-path/flags['stack']
+  // otherwise assume stack is referencing an image
+  initStackConfiguration(flags: {"stack"?: string, "stacks-dir"?: string, "config-files"?: Array<string>}, configurations: Configurations) : ValidatedOutput<StackConfiguration<any>>
+  {
+    const stack_configuration = configurations.stack()
+    const result = new ValidatedOutput(true, stack_configuration)
+    if(!flags['stack']) return result.pushError(ErrorStrings.STACK.EMPTY)
+
+    const stacks_dir = flags?.['stacks-dir'] || this.settings.get("stacks-dir")
+    const local_stack_path = path.join(stacks_dir, flags['stack'])
+
+    let load_path: string|undefined
+    if(fs.existsSync(flags['stack'])) // check if stack is path
+      load_path = path.resolve(flags['stack'])
+    else if(fs.existsSync(local_stack_path)) // check if stack exists in stacks dir
+      load_path = local_stack_path
+
+    if(load_path) // attempt to load stack
+      return result.absorb(
+        stack_configuration.load(
+          load_path,
+          flags?.['config-files'] || []
+        )
+      )
+    else // interpret input as remote image
+      stack_configuration.setImage(flags['stack'])
+    return result
+  }
+
+  // ===========================================================================
+  // Flag Parsing Functions
+  // ===========================================================================
 
   // ---------------------------------------------------------------------------
   // PARSELABELFLAG parses array of strings "key=value", and returns an array
@@ -90,17 +147,15 @@ export abstract class StackCommand extends Command
   // -- Returns ----------------------------------------------------------------
   //  Array<object> Each object has properties "key" and "value"
   // ---------------------------------------------------------------------------
-  protected parseLabelFlag(raw_labels: Array<string>, message: string="")
+  protected parseLabelFlag(raw_labels: Array<string>, message: string="") : Dictionary
   {
-    const labels = []
+    const labels:Dictionary = {}
     raw_labels.map((l:string) => {
       const split_index = l.search('=')
-      if(split_index >= 1) labels.push({
-        key: l.substring(0, split_index),
-        value:l.substring(split_index + 1)
-      })
+      if(split_index >= 1)
+        labels[l.substring(0, split_index)] = l.substring(split_index + 1)
     })
-    if(message) labels.push({key: 'message', value: message})
+    if(message) labels['message'] = message
     return labels
   }
 
@@ -148,21 +203,61 @@ export abstract class StackCommand extends Command
   // -- Returns ----------------------------------------------------------------
   //  BuildOptions - object that can be used by build-functions
   // ---------------------------------------------------------------------------
-  protected parseBuildModeFlag(build_mode_str: string)
+  protected extractBuildFlags(flags: Dictionary) : Array<string>
   {
-    const build_options:BuildOptions = {}
-    const options = build_mode_str.split(',').map((s:string) => s.trim())
-    if(options?.[0] == 'reuse-image')
-      build_options['reuse-image'] = true;
-    else if(options?.[0] == 'cached')
-      build_options['no-cache'] = false;
-    else if(options?.[0] == 'no-cache')
-        build_options['no-cache'] = true;
+    const build_flags: Array<string> = []
+    const options = flags['build-mode'].split(',').map((s:string) => s.trim()) || []
+    if(options.includes('reuse-image'))
+      return build_flags
+    if(options.includes('pull'))
+      build_flags.push('pull')
+    if(options.includes('no-cache'))
+      build_flags.push('no-cache')
+    return build_flags;
+  }
 
-    if(options?.[1] == 'pull')
-      build_options['pull'] = true
+  protected extractReuseImage(flags: Dictionary) : boolean
+  {
+    const options = flags['build-mode'].split(',').map((s:string) => s.trim()) || []
+    if(options.includes('reuse-image'))
+      return true
+    return false
+  }
 
-    return build_options;
+  // ===========================================================================
+  // Container SDK Functions
+  // ===========================================================================
+
+  initContainerSDK(verbose: boolean, quiet: boolean, explicit: boolean) : ContainerSDK
+  {
+    return {
+      "configurations": this.newConfigurationsObject(),
+      "container_drivers": {
+        "runner": this.newRunDriver(explicit, quiet),
+        "builder": this.newBuildDriver(explicit, quiet)
+      },
+      "output_options": {
+        "verbose": verbose,
+        "quiet": quiet
+      },
+      "job_driver": this.newJobDriver()
+    }
+  }
+
+  newConfigurationsObject() : Configurations
+  {
+    const tag:string = this.settings.get('image-tag')
+    const stack = () => new DockerStackConfiguration({"tag": tag})
+    const job = (stack_configuration?: StackConfiguration<any>) =>
+    {
+      if(stack_configuration instanceof DockerStackConfiguration)
+        return new DockerJobConfiguration(stack_configuration)
+      else
+        return new DockerJobConfiguration(new DockerStackConfiguration())
+    }
+    const exec = (options?:ExecConstructorOptions) => new ExecConfiguration(options)
+
+    return {"stack": stack, "job": job, "exec": exec}
   }
 
   newBuildDriver(explicit: boolean = false, silent: boolean = false) : BuildDriver
@@ -207,7 +302,6 @@ export abstract class StackCommand extends Command
   {
     const shell = new ShellCommand(explicit, silent)
     const run_driver = this.settings.get('run-driver');
-    const tag:string = this.settings.get('image-tag')
     const selinux:boolean = this.settings.get('selinux')
     const socket:string = this.settings.get('socket-path')
 
@@ -215,25 +309,30 @@ export abstract class StackCommand extends Command
     {
         case "docker-cli":
         {
-          return new DockerCliRunDriver(shell, {tag: tag, selinux: selinux});
+          return new DockerCliRunDriver(shell, {selinux: selinux});
         }
         case "docker-socket":
         {
-          return new DockerSocketRunDriver(shell, {tag: tag, selinux: selinux, socket: socket});
+          return new DockerSocketRunDriver(shell, {selinux: selinux, socket: socket});
         }
         case "podman-cli":
         {
-          return new PodmanCliRunDriver(shell, {tag: tag, selinux: selinux});
+          return new PodmanCliRunDriver(shell, {selinux: selinux});
         }
         case "podman-socket":
         {
-          return new PodmanSocketRunDriver(shell, {tag: tag, selinux: selinux, socket: socket});
+          return new PodmanSocketRunDriver(shell, {selinux: selinux, socket: socket});
         }
         default:
         {
           this.error("invalid run command")
         }
     }
+  }
+
+  newJobDriver()
+  {
+    return new LocalJobDriver()
   }
 
 }
