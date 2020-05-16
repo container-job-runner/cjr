@@ -102,14 +102,14 @@ export const DefaultContainerRoot = "/"                                         
 
 // Jupyter options
 export const JUPYTER_JOB_NAME = (identifier: {"job-id"?: string,"project-root"?: string}) => {
-  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "";
-  const job_str  = (identifier['job-id']) ? `:${identifier['job-id']}` : "";
+  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "[EMPTY]";
+  const job_str  = (identifier['job-id']) ? `:${identifier['job-id']}` : "[NONE]";
   return `JUPYTER${job_str}${path_str}`;
 }
 
 // Theia options
 export const THEIA_JOB_NAME = (identifier: {"project-root"?: string}) => {
-  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "";
+  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "[EMPTY]";
   return `THEIA${path_str}`;
 }
 
