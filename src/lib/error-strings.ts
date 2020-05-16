@@ -31,7 +31,7 @@ export const ErrorStrings = {
     INVALIDJSON: chalk`{bold Invalid JSON } - could not parse job json.`
   },
   STACK: {
-    NO_STACK_SPECIFIED: (stack_name:string, stack_path: string) => ` Removing image for stack ${stack_name} (${stack_path})`
+    EMPTY: chalk`{bold Stack empty } - you must specify a stack`
   },
   JUPYTER: {
     RUNNING: (id:string, identifier:{"job-id"?: string,"project-root"?: string}) => {
@@ -69,6 +69,7 @@ export const WarningStrings = {
       INVALID_YML : (yml_path: string) => chalk`{bold Invalid YML} - the open rules yml file listed below was ignored.\n  {italic filePath}: ${yml_path}`,
   },
   X11:{
+    MACFAILEDSTART: chalk`{bold X11 failed to start} - try staring XQuartz manually.`,
     FLAGUNAVALIABLE: chalk`{bold X11 flag ignored} - the X11 flag is not supported on your operating system.`,
     MISSINGDIR: (dir_path: string) => chalk`{bold missing X11 directory} - the directory "${dir_path}" is not present. Is X running?`,
     MACMISSINGSOCKET: (dir_path: string) => chalk`{bold missing X11 socket} - no socket found in directory "${dir_path}". Is XQuartz running?`,
