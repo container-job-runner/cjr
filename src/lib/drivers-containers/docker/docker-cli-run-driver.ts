@@ -11,6 +11,7 @@ import { DockerStackConfiguration, DockerStackConfigObject, DockerStackPortConfi
 import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
+import { fail } from 'assert'
 
 // internal types: used for creating jobs
 export type DockerCreateOptions = DockerStackConfigObject & {
@@ -29,7 +30,7 @@ export class DockerCliRunDriver extends RunDriver
   protected JSONOutputParser = parseLineJSON
 
   protected ERRORSTRINGS = {
-    INVALID_JOB : chalk`{bold job_options object did not pass validation.}`,
+    INVALID_JOB : chalk`{bold job_configuration is not of the proper type.}`,
     EMPTY_CREATE_ID: chalk`{bold Unable to create container.}`,
     FAILED_CREATE_VOLUME: chalk`{bold Unable to create volume.}`
   }
@@ -48,6 +49,8 @@ export class DockerCliRunDriver extends RunDriver
   jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
     const failure_output:ValidatedOutput<NewJobInfo> = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
+    if(!(job_configuration instanceof DockerJobConfiguration))
+      return failure_output.pushError(this.ERRORSTRINGS.INVALID_JOB)
     const job_options = this.generateJobOptions(job_configuration)
     // add mandatory labels
     job_configuration.addLabel("runner", cli_name)
