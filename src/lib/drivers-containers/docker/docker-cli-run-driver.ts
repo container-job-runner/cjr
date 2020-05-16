@@ -10,7 +10,7 @@ import { ShellCommand } from "../../shell-command"
 import { DockerStackConfiguration, DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
-import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec-configuration'
+import { ExecConfiguration } from '../../config/exec/exec-configuration'
 
 // internal types: used for creating jobs
 export type DockerCreateOptions = DockerStackConfigObject & {
@@ -27,7 +27,6 @@ export class DockerCliRunDriver extends RunDriver
   protected base_command = 'docker'
   protected selinux: boolean = false
   protected JSONOutputParser = parseLineJSON
-  protected tag: string|undefined
 
   protected ERRORSTRINGS = {
     INVALID_JOB : chalk`{bold job_options object did not pass validation.}`,
@@ -40,26 +39,10 @@ export class DockerCliRunDriver extends RunDriver
       chalk` copy {green ${container_id}:${container_path}}\n   to {green ${host_path}}`
   }
 
-  constructor(shell: ShellCommand, options: {tag: string, selinux: boolean})
+  constructor(shell: ShellCommand, options: {selinux: boolean})
   {
     super(shell)
-    this.tag = options?.tag
     this.selinux = options.selinux || false
-  }
-
-  emptyStackConfiguration()
-  {
-    return new DockerStackConfiguration({tag: this.tag})
-  }
-
-  emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
-  {
-    return new DockerJobConfiguration(stack_configuration || this.emptyStackConfiguration())
-  }
-
-  emptyExecConfiguration(options?:ExecConstrutorOptions)
-  {
-    return new ExecConfiguration(options)
   }
 
   jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
@@ -276,6 +259,7 @@ export class DockerCliRunDriver extends RunDriver
       raw_ps_data.map((x:Dictionary) => {
         return {
           id: x.ID,
+          image: x.Image,
           names: x.Names,
           command: x.Command,
           state: state(x.Status),
