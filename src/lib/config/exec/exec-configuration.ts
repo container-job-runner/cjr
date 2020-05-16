@@ -1,4 +1,4 @@
-export type ExecConstrutorOptions = {
+export type ExecConstructorOptions = {
   command?:  Array<string>,
   synchronous?: boolean,
   working_directory?: string
@@ -10,7 +10,7 @@ export class ExecConfiguration
   synchronous: boolean;
   working_directory: string;
 
-  constructor(props?: ExecConstrutorOptions)
+  constructor(props?: ExecConstructorOptions)
   {
     this.command = props?.command || [];
     this.synchronous = (props?.synchronous === undefined) ? true : props?.synchronous;
