@@ -1,13 +1,7 @@
-import * as chalk from 'chalk'
-import * as os from 'os'
-import * as fs from 'fs'
-import * as path from 'path'
-import * as inquirer from 'inquirer'
-
+import chalk = require('chalk')
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings, WarningStrings } from '../error-strings'
 import { JSTools } from '../js-tools'
-import { ShellCommand } from '../shell-command'
 import { Dictionary } from '../constants'
 
 export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary) : ValidatedOutput<undefined>
@@ -22,50 +16,6 @@ export function printResultState(result: ValidatedOutput<any>)
 {
   result.warning.forEach( (e:string) => console.log(chalk`{bold.yellow WARNING}: ${e}`))
   result.error.forEach( (e:string) => console.log(chalk`{bold.red ERROR}: ${e}`))
-}
-
-// -----------------------------------------------------------------------------
-// XPrepate: ensures any x11 is ready to run. Only affects mac
-// ensures xquartz is running
-// ensures network connections are set
-// -- Parameters ---------------------------------------------------------------
-// -----------------------------------------------------------------------------
-export async function initX11(interactive: boolean, explicit: boolean) : Promise<ValidatedOutput<undefined>>
-{
-  const platform = os.platform()
-  const shell = new ShellCommand(explicit, false)
-
-  if(platform == "darwin") // -- OSX -------------------------------------------
-  {
-    // 1. check if x11 settings plist file exists
-    const x11_config_path = path.join(os.homedir(), 'Library/Preferences/org.macosforge.xquartz.X11.plist')
-    if(!fs.existsSync(x11_config_path)) return new ValidatedOutput(false, undefined)
-    var result = shell.output(`plutil -extract nolisten_tcp xml1 -o - ${x11_config_path}`) // note extract as xml1 instead of json since json exits in error
-    if(!result.success) return new ValidatedOutput(false, undefined)
-    var response: { flag: any; } & { flag: any; } = {flag: false}
-    if((new RegExp('<true/>')).test(result.value))
-    {
-      if(interactive) {
-        printResultState(new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
-        var response = await inquirer.prompt([
-          {
-            name: "flag",
-            message: `Should cjr automatically change this setting?`,
-            type: "confirm",
-          }
-        ])
-        if(!response.flag) return new ValidatedOutput(false, undefined)
-      }
-      // change setting
-      if(!interactive || response?.flag == true)
-        shell.output(`plutil -replace nolisten_tcp -bool NO ${x11_config_path}`)
-    }
-    // 2. start x11 if it's not already running
-    var result = shell.output('xset', {q: {}})
-    if(!result.success) return new ValidatedOutput(false, undefined)
-  }
-
-  return new ValidatedOutput(true, undefined)
 }
 
  // checks if ValidatedOutput contains valid json and returns parsed json data or returns failed result
@@ -185,7 +135,7 @@ export function printHorizontalTable(configuration: Dictionary)
           )
         })
       }
-      if(data_index != configuration.value.length - 1) console.log()
+      if(data_index != configuration.data.length - 1) console.log()
   }
 
   // -- print title ------------------------------------------------------------
