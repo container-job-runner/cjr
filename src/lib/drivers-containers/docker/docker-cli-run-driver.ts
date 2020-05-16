@@ -7,11 +7,10 @@ import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
 import { RunDriver, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo, jobFilter } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
-import { DockerStackConfiguration, DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
-import { fail } from 'assert'
 
 // internal types: used for creating jobs
 export type DockerCreateOptions = DockerStackConfigObject & {
