@@ -96,7 +96,8 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     "INVALID_NAME": (path: string) => chalk`{bold Invalid Stack Name} - stack names may contain only lowercase and uppercase letters, digits, underscores, periods and dashes.\n  {italic  path:} ${path}`,
     "INVALID_LOCAL_STACKDIR": (dir: string) => chalk`{bold Invalid Local Stack Directory} - {italic ${dir}} \n  Stack directory must contain at least one of the following: Dockerfile, config.yml, image.tar, or image.tar.gz.`,
     "YML_PARSE_ERROR": (path: string) => chalk`{bold Unable to Parse YML} - {italic ${path}}`,
-    "NON_EXISTANT_BIND_HOSTPATH": (hostPath: string, cfile_path: string) => chalk`{bold Invalid Configuration} - bind mount contains nonexistant host path.\n     {italic configfile}: ${cfile_path}\n  {italic hostPath}: ${hostPath}`
+    "NON_EXISTANT_BIND_HOSTPATH": (hostPath: string, cfile_path: string) => chalk`{bold Invalid Configuration} - bind mount contains nonexistant host path.\n     {italic configfile}: ${cfile_path}\n  {italic hostPath}: ${hostPath}`,
+    "CONFIG_STACK_MISSING_IMAGE": (dir: string) => chalk`{bold Invalid Local Stack} - {italic ${dir}} \n  Stacks with no build directory must specify an image in config.yml`
   }
 
   constructor(options?: {tag?: string})
@@ -115,14 +116,17 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     const stk_type = this.identifyLocalStackType(stack_path)
     if(!stk_type.success)
       return failure.absorb(stk_type)
-    this.stack_type = stk_type.value
 
     // -- load configuration files -------------------------------------------
     const result = this.loadStackConfigFiles(stack_path, overloaded_config_paths)
-    if(!result.success) return failure.absorb(result)
-    this.config = result.value
+    if(!result.success)
+      return failure.absorb(result)
+    if(stk_type.value === 'config' && result.value?.build?.image === undefined)
+      return failure.pushError(this.ERRORSTRINGS.CONFIG_STACK_MISSING_IMAGE(stack_path))
 
-    // -- set additional properties ------------------------------------------
+    // -- set stack properties -----------------------------------------------
+    this.stack_type = stk_type.value
+    this.config = result.value
     this.stack_name = this.stackPathToName(stack_path)
     this.stack_path = stack_path
 
