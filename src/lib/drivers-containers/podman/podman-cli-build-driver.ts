@@ -8,7 +8,7 @@ export class PodmanCliBuildDriver extends DockerCliBuildDriver
     protected base_command = 'podman'
     protected outputParser = parseJSON
 
-    isBuilt(configuration:DockerStackConfiguration)
+    isBuilt(configuration:DockerStackConfiguration) : boolean
     {
       const image_name = configuration.getImage()
       const command = `${this.base_command} images`;
@@ -20,9 +20,12 @@ export class PodmanCliBuildDriver extends DockerCliBuildDriver
       var result = this.outputParser(this.shell.output(command, flags, args, {}))
       if(!result.success) return false
       // extra logic since podman images --reference=name:tag is equivalent to docker images --reference=*name:tag
-      return result.value.some((image_data:Dictionary) =>
-        image_data.names.some((name: string) =>
-          (new RegExp(`/${image_name}$`)).test(name)))
+      if(image_name.indexOf("/") !== -1 && result.value?.length > 0)
+        return true // if image name contains / assume full name was found
+      else
+        return result.value?.some((image_data:Dictionary) =>
+          image_data?.names?.some((name: string) =>
+            (new RegExp(`/${image_name}$`))?.test(name))) || false
     }
 
     protected addJSONFormatFlag(flags: Dictionary)
