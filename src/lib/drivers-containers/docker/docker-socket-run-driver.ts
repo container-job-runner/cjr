@@ -10,7 +10,7 @@ import { DockerStackConfiguration, DockerStackPortConfig, DockerStackMountConfig
 import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
-import { ExecConstrutorOptions, ExecConfiguration } from '../../config/exec/exec-configuration'
+import { ExecConfiguration } from '../../config/exec/exec-configuration'
 
 // === START API TYPES =========================================================
 
@@ -65,7 +65,6 @@ type DockerAPI_HostPortConfig =
 export class DockerSocketRunDriver extends RunDriver
 {
   protected selinux: boolean
-  protected tag: string|undefined
   protected curl: Curl
   protected base_command: string = "docker"
   protected labels = {"invisible-on-exit": "cjr-ios"} // jobs with this label will not appear in JobInfo array
@@ -79,10 +78,9 @@ export class DockerSocketRunDriver extends RunDriver
     FAILED_DELETE: (id:string) => chalk`{bold Unable to delete job ${id}}`
   }
 
-  constructor(shell: ShellCommand, options: {tag: string, selinux: boolean, socket: string})
+  constructor(shell: ShellCommand, options: {selinux: boolean, socket: string})
   {
     super(shell)
-    this.tag = options?.tag
     this.selinux = options?.selinux || false
     this.curl = new Curl(shell, {
       "unix-socket": options.socket,
@@ -106,9 +104,10 @@ export class DockerSocketRunDriver extends RunDriver
       return new ValidatedOutput(false, [])
 
     // -- convert API response into Array<JobInfo> -----------------------------
-    const job_info: Array<JobInfo> = api_result.value.body?.map( (cntr: Dictionary) => {
+    const job_info: Array<JobInfo> = api_result.value.body?.map( (cntr: Dictionary):JobInfo => {
       return {
         id:      cntr.Id,
+        image:   cntr.Image,
         names:   cntr.Names,
         command: cntr.Command,
         status:  cntr.Status,
@@ -381,21 +380,6 @@ export class DockerSocketRunDriver extends RunDriver
     })
 
     return result
-  }
-
-  emptyStackConfiguration()
-  {
-    return new DockerStackConfiguration({tag: this.tag})
-  }
-
-  emptyJobConfiguration(stack_configuration?: DockerStackConfiguration)
-  {
-    return new DockerJobConfiguration(stack_configuration || this.emptyStackConfiguration())
-  }
-
-  emptyExecConfiguration(options?:ExecConstrutorOptions)
-  {
-    return new ExecConfiguration(options)
   }
 
   private validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
