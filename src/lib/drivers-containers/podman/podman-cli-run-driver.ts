@@ -70,6 +70,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
       raw_ps_data.map((x:Dictionary) => {
         return {
           id: x.ID,
+          image: x.Image,
           names: x.Names,
           command: x.Command,
           state: state(x.Status),
