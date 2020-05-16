@@ -1,7 +1,7 @@
-import * as path from 'path'
-import * as os from 'os'
-import * as chalk from 'chalk'
-import * as crypto from 'crypto'
+import path = require('path')
+import os = require('os')
+import chalk = require('chalk')
+import { JSTools } from './js-tools'
 
 // types
 export type Dictionary = { [key:string] : any }
@@ -15,6 +15,7 @@ export const stack_path_label = 'stack-path'
 export const file_volume_label = 'filevolume'
 export const project_root_label = 'project-root'
 export const container_root_label = 'container-root'
+export const stash_label = 'stash'
 
 // flag message
 // export const invalid_stack_flag_error = "specify stack flag --stack=stack or set environment variable STACK"
@@ -98,19 +99,21 @@ export const stack_bundle_rsync_file_paths = {
 }
 
 // stack run options
-export const DefaultContainerRoot = "/"                                         // Note: though this choice may lead to collisions, it always works docker cp which does not create subfolders.
+export const DefaultContainerRoot = "/"
 
 // Jupyter options
 export const JUPYTER_JOB_NAME = (identifier: {"job-id"?: string,"project-root"?: string}) => {
-  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "[EMPTY]";
-  const job_str  = (identifier['job-id']) ? `:${identifier['job-id']}` : "[NONE]";
-  return `JUPYTER${job_str}${path_str}`;
+  const prefix = "JUPYTER"
+  if(identifier['project-root']) return `${prefix}-${JSTools.md5(identifier['project-root'])}`
+  if(identifier['job-id']) return `${prefix}-${JSTools.md5(identifier['job-id'])}`
+  return `${prefix}[NONE]`;
 }
 
 // Theia options
 export const THEIA_JOB_NAME = (identifier: {"project-root"?: string}) => {
-  const path_str = (identifier['project-root']) ? `-${crypto.createHash('md5').update(identifier['project-root']).digest('hex')}` : "[EMPTY]";
-  return `THEIA${path_str}`;
+  const prefix = "THEIA"
+  if(identifier['project-root']) return `${prefix}-${JSTools.md5(identifier['project-root'])}`
+  return `${prefix}[NONE]`;
 }
 
 // X11 options
