@@ -4,22 +4,18 @@ import { ShellCommand } from '../shell-command'
 import { ErrorStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
 import { THEIA_JOB_NAME, name_label, Dictionary } from '../constants'
-import { jobStart, ContainerDrivers, OutputOptions, JobOptions, ports, labels, firstJobId } from './run-functions'
-import { BuildOptions } from './build-functions'
 import { parseJSON } from './misc-functions'
-import { RunDriver } from '../drivers-containers/abstract/run-driver'
+import { RunDriver, firstJobId } from '../drivers-containers/abstract/run-driver'
+import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
+import { JobDriver, ContainerDrivers, Configurations, OutputOptions } from '../drivers-jobs/job-driver'
 
 export type TheiaOptions = {
-  "stack-path": string,
-  "build-options"?: BuildOptions,
-  "config-files"?: Array<string>,
-  "project-root"?: string,
-  "ports": ports,
-  "hostname": string,
-  "labels": labels,
-  "args": Array<string>,
-  "sync"?: boolean,
-  "x11"?: boolean
+  "stack_configuration": StackConfiguration<any> // stack configuration in which jupyter will be run
+  "port": {hostPort: number, containerPort: number, address?: string} // port configuration for running jupyter
+  "project-root"?: string     // host project root
+  "reuse-image"?: boolean     // specifies if image should be reused if already build
+  "args"?: Array<string>      // additional args for jupyter command
+  "x11"?: boolean             // optional x11 command
 }
 
 const ENV = {
@@ -29,10 +25,10 @@ const ENV = {
 
 // === Core functions ==========================================================
 
-export function startTheiaInProject(container_runtime: ContainerDrivers, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
+export function startTheiaInProject(job_driver: JobDriver, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
-  const job_info_request = container_runtime.runner.jobInfo({
+  const job_info_request = container_drivers.runner.jobInfo({
     'labels': { [name_label] : [theia_job_name] },
     'states': ['running']
   })
@@ -42,34 +38,40 @@ export function startTheiaInProject(container_runtime: ContainerDrivers, output_
   const theia_job_id = firstJobId(job_info_request).value
   if(theia_job_id !== "")
     return (new ValidatedOutput(true, theia_job_id)).pushWarning(ErrorStrings.THEIA.RUNNING(theia_job_id, theia_options['project-root'] || ""))
-  // -- start new theia job ----------------------------------------------------
-  const job_options:JobOptions = {
-      "stack-path":   theia_options["stack-path"],
-      "config-files": theia_options["config-files"] || [],
-      "build-options":theia_options["build-options"] || {'reuse-image': true},
-      "command":      theiaCommand(container_runtime.runner, theia_options),
-      "environment":  theiaEnvironment(theia_options),
-      //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line socket based driver is developed
-      "host-root":    theia_options["project-root"] || "",
-      "cwd":          theia_options["project-root"] || "",
-      "file-access":  "bind",
-      "synchronous":  theia_options['sync'] || false,
-      "x11":          theia_options['x11'] || false,
-      "ports":        theia_options['ports'],
-      "labels":       theia_options['labels'].concat([{key: name_label, "value": theia_job_name}]),
-      "remove":       true
+  // -- add port to jupyter stack ----------------------------------------------
+  const stack_configuration = theia_options["stack_configuration"]
+  stack_configuration.addPort(theia_options['port'].hostPort, theia_options['port'].containerPort, theia_options['port'].address)
+  setEnvironment(stack_configuration, theia_options)
+  //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
+  // -- create new jupyter job -------------------------------------------------
+  const job_configuration = configurations.job(stack_configuration)
+  job_configuration.addLabel(name_label, theia_job_name)
+  job_configuration.remove_on_exit = true
+  job_configuration.synchronous = false
+  job_configuration.command = [theiaCommand(stack_configuration, theia_options)]
+  // -- start jupyter job -------------------------------------------------------
+  const job = job_driver.run(
+    job_configuration,
+    container_drivers,
+    configurations,
+    output_options,
+    {
+      "project-root": theia_options["project-root"],
+      "cwd": theia_options["project-root"],
+      "x11": theia_options["x11"],
+      "reuse-image": theia_options["reuse-image"] || true,
+      "project-root-file-access": "bind"
     }
-    // -- start job and extract job id -----------------------------------------
-    const start_output = jobStart(container_runtime, job_options, output_options)
-    if(!start_output.success) return new ValidatedOutput(false, "").absorb(start_output)
-    return new ValidatedOutput(true, start_output.value.id) // return id of theia job
+  )
+  if(!job.success) return new ValidatedOutput(false, "").absorb(job)
+  return new ValidatedOutput(true, job.value.id)
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
-export function stopTheia(container_runtime: ContainerDrivers, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
+export function stopTheia(drivers: ContainerDrivers, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const job_info_request = firstJobId(
-    container_runtime.runner.jobInfo({
+    drivers.runner.jobInfo({
       'labels': { [name_label]: [THEIA_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -78,14 +80,14 @@ export function stopTheia(container_runtime: ContainerDrivers, identifier: {"pro
   if(theia_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   else
-    return container_runtime.runner.jobStop([theia_job_id])
+    return drivers.runner.jobStop([theia_job_id])
 }
 
 // -- extract the url for a theia server  --------------------------------------
-export async function getTheiaUrl(container_runtime: ContainerDrivers, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
+export async function getTheiaUrl(drivers: ContainerDrivers, configurations: Configurations, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
 {
   const job_info_request = firstJobId(
-    container_runtime.runner.jobInfo({
+    drivers.runner.jobInfo({
       'labels': { [name_label]: [THEIA_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -93,13 +95,9 @@ export async function getTheiaUrl(container_runtime: ContainerDrivers, identifie
   const theia_job_id = job_info_request.value
   if(theia_job_id == "")
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
-  const exec_output = container_runtime.runner.jobExec(
-    theia_job_id,
-    container_runtime.runner.emptyExecConfiguration({
-      command: ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
-    }),
-    "pipe"
-  )
+  const exec_configuration = configurations.exec()
+  exec_configuration.command = ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
+  const exec_output = drivers.runner.jobExec(theia_job_id, exec_configuration, "pipe")
   const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
   if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
   return new ValidatedOutput(true, `http://${json_output.value?.url}:${json_output.value?.port}`);
@@ -129,18 +127,16 @@ export function startTheiaApp(url: string, app_path: string, explicit: boolean =
 // === Helper functions ========================================================
 
 // -- command to start theia server --------------------------------------------
-function theiaCommand(runner: RunDriver, theia_options: TheiaOptions) {
-  const configuration = runner.emptyStackConfiguration()
-  configuration.load(theia_options['stack-path'], theia_options['config-files'] || [])
-  const container_root = configuration.getContainerRoot()
+function theiaCommand(stack_configuration: StackConfiguration<any>, theia_options: TheiaOptions) {
+  const container_root = stack_configuration.getContainerRoot()
   const project_dir = (container_root && theia_options['project-root']) ? path.posix.join(container_root, path.basename(theia_options['project-root'])) : container_root
   return `theia --hostname $${ENV.url} --port $${ENV.port} ${project_dir}`;
 }
 
 // -- environment variables for THEIA ------------------------------------------
-function theiaEnvironment(theia_options: TheiaOptions) {
+function setEnvironment(stack_configuration: StackConfiguration<any>, theia_options: TheiaOptions) {
   const env:Dictionary = {}
-  env[ENV.port] = `${theia_options['ports']?.[0]?.containerPort || "8888"}`;
-  env[ENV.url]  = theia_options['hostname'] || '0.0.0.0'
+  env[ENV.port] = `${theia_options['port'].containerPort}`;
+  env[ENV.url]  = '0.0.0.0'
   return env;
 }

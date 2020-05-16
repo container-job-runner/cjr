@@ -1,32 +1,35 @@
-import * as os from 'os'
-import {JSTools} from '../js-tools'
-import {ShellCommand} from '../shell-command'
-import {ErrorStrings} from '../error-strings'
-import {ValidatedOutput} from '../validated-output'
-import {JUPYTER_JOB_NAME, name_label} from '../constants'
-import {jobStart, jobExec, ContainerDrivers, OutputOptions, JobOptions, ports, labels, firstJobId} from './run-functions'
-import {BuildOptions} from './build-functions'
-import {RunDriver} from '../drivers-containers/abstract/run-driver'
+import os = require('os')
+import { JSTools } from '../js-tools'
+import { ShellCommand } from '../shell-command'
+import { ErrorStrings } from '../error-strings'
+import { ValidatedOutput } from '../validated-output'
+import { JUPYTER_JOB_NAME, name_label } from '../constants'
+import { firstJobId } from '../drivers-containers/abstract/run-driver'
+import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
+import { JobDriver, Configurations, OutputOptions, ContainerDrivers } from '../drivers-jobs/job-driver'
 
-export type JupyterOptions = {
-  "stack-path": string,
-  "build-options"?: BuildOptions,
-  "config-files"?: Array<string>,
-  "project-root"?: string,
-  "ports": ports,
-  "labels": labels,
-  "command": string,
-  "args": Array<string>,
-  "sync"?: boolean,
-  "x11"?: boolean
+type JupyterOptions = {
+  "stack_configuration": StackConfiguration<any> // stack configuration in which jupyter will be run
+  "mode": "lab"|"notebook"    // lab or notebook
+  "port": {hostPort: number, containerPort: number, address?: string} // port configuration for running jupyter
+  "reuse-image"?: boolean     // specifies if image should be reused if already build
+  "args"?: Array<string>      // additional args for jupyter command
+  "x11"?: boolean             // optional x11 command
 }
 
-// === Core functions ==========================================================
+export type JupyterProjectOptions = JupyterOptions & {
+  "project-root"?: string     // host project root
+}
 
-export function startJupyterInProject(container_runtime: ContainerDrivers, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
+export type JupyterJobOptions = JupyterOptions & {
+  "job-id": string      // host project root
+}
+
+export function startJupyterInProject(job_driver: JobDriver, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterProjectOptions) : ValidatedOutput<string>
 {
-  const jupyter_job_name = JUPYTER_JOB_NAME({"project-root" : jup_options['project-root'] || ""})
-  const job_info_request = container_runtime.runner.jobInfo({
+  const identifier = {"project-root" : jupyter_options['project-root'] || ""}
+  const jupyter_job_name = JUPYTER_JOB_NAME(identifier)
+  const job_info_request = container_drivers.runner.jobInfo({
     'labels': { [name_label]: [jupyter_job_name]},
     'states': ['running']
   })
@@ -36,33 +39,39 @@ export function startJupyterInProject(container_runtime: ContainerDrivers, outpu
   // -- exit if jupyter is already running -------------------------------------
   const jupyter_job_id = firstJobId(job_info_request).value
   if(jupyter_job_id)
-    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'project-root': jup_options['project-root'] || ""}))
-  // -- start new jupyter job --------------------------------------------------
-  const job_options:JobOptions = {
-      "stack-path":   jup_options["stack-path"],
-      "config-files": jup_options["config-files"] || [],
-      "build-options":jup_options["build-options"] || {'reuse-image': true},
-      "command":      jupyterCommand(jup_options),
-      //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line socket based driver is developed
-      "host-root":    jup_options["project-root"] || "",
-      "cwd":          jup_options["project-root"] || "",
-      "file-access":  "bind",
-      "synchronous":  jup_options['sync'] || false,
-      "x11":          jup_options['x11'] || false,
-      "ports":        jup_options['ports'],
-      "labels":       jup_options['labels'].concat([{key: name_label, "value": jupyter_job_name}]),
-      "remove":       true
+    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, identifier))
+  // -- add port to jupyter stack ----------------------------------------------
+  const stack_configuration = jupyter_options["stack_configuration"]
+  stack_configuration.addPort(jupyter_options['port'].hostPort, jupyter_options['port'].containerPort, jupyter_options['port'].address)
+  //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
+  // -- create new jupyter job -------------------------------------------------
+  const job_configuration = configurations.job(stack_configuration)
+  job_configuration.addLabel(name_label, jupyter_job_name)
+  job_configuration.remove_on_exit = true
+  job_configuration.synchronous = false
+  job_configuration.command = [jupyterCommand(jupyter_options)]
+  // -- start jupyter job -------------------------------------------------------
+  const job = job_driver.run(
+    job_configuration,
+    container_drivers,
+    configurations,
+    output_options,
+    {
+      "project-root": jupyter_options["project-root"],
+      "cwd": jupyter_options["project-root"],
+      "x11": jupyter_options["x11"],
+      "reuse-image": jupyter_options["reuse-image"] || true,
+      "project-root-file-access": "bind"
     }
-    // -- start job and extract job id -----------------------------------------
-    const start_output = jobStart(container_runtime, job_options, output_options)
-    if(!start_output.success) return new ValidatedOutput(false, "").absorb(start_output)
-    return new ValidatedOutput(true, start_output.value.id) // return id of jupyter job
+  )
+  if(!job.success) return new ValidatedOutput(false, "").absorb(job)
+  return new ValidatedOutput(true, job.value.id)
 }
 
-export function startJupyterInJob(container_runtime: ContainerDrivers, parent_job:{"id": string, "allowable-stack-paths"?: Array<string>}, output_options: OutputOptions, jup_options: JupyterOptions) : ValidatedOutput<string>
+export function startJupyterInJob(job_driver: JobDriver, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterJobOptions) : ValidatedOutput<string>
 {
-  const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : parent_job.id})
-  const job_info_request = container_runtime.runner.jobInfo({
+  const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : jupyter_options["job-id"]})
+  const job_info_request = container_drivers.runner.jobInfo({
     'labels': { [name_label]: [jupyter_job_name]},
     'states': ['running']
   })
@@ -72,33 +81,37 @@ export function startJupyterInJob(container_runtime: ContainerDrivers, parent_jo
   // -- exit if jupyter is already running -------------------------------------
   const jupyter_job_id = firstJobId(job_info_request).value
   if(jupyter_job_id)
-    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': parent_job.id}))
-  // -- start new jupyter job --------------------------------------------------
-  const job_options:JobOptions = {
-    "stack-path":   jup_options["stack-path"],
-    "config-files": jup_options["config-files"] || [],
-    "build-options":jup_options["build-options"] || {'reuse-image': true},
-    "command":      jupyterCommand(jup_options),
-    //"entrypoint": '["/bin/bash", "-c"]', // Uncomment this line once socket based driver is developed
-    "cwd":          jup_options["project-root"] || "",
-    "file-access":  "volume",
-    "synchronous":  jup_options['sync'] || false,
-    "x11":          jup_options['x11'] || false,
-    "ports":        jup_options['ports'],
-    "labels":       jup_options['labels'].concat([{key: name_label, "value": jupyter_job_name}]),
-    "remove":       true
-  }
-  // -- start job and extract job id -------------------------------------------
-  const exec_output = jobExec(container_runtime, parent_job, job_options, output_options)
-  if(!exec_output.success) return new ValidatedOutput(false, "").absorb(exec_output)
-  return new ValidatedOutput(true, exec_output.value.id) // return id of jupyter job
+    return (new ValidatedOutput(true, jupyter_job_id)).pushWarning(ErrorStrings.JUPYTER.RUNNING(jupyter_job_id, {'job-id': jupyter_options["job-id"]}))
+  // -- add port to jupyter stack ----------------------------------------------
+  const stack_configuration = jupyter_options["stack_configuration"]
+  stack_configuration.addPort(jupyter_options['port'].hostPort, jupyter_options['port'].containerPort, jupyter_options['port'].address)
+  //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
+  // -- create new jupyter job -------------------------------------------------
+  const job_configuration = configurations.job(stack_configuration)
+  job_configuration.addLabel(name_label, jupyter_job_name)
+  job_configuration.remove_on_exit = true
+  job_configuration.synchronous = false
+  job_configuration.command = [jupyterCommand(jupyter_options)]
+  // -- start jupyter job -------------------------------------------------------
+  const job = job_driver.exec(
+    job_configuration,
+    container_drivers,
+    output_options,
+    {
+      "parent-id": jupyter_options["job-id"],
+      "x11": jupyter_options["x11"],
+      "reuse-image": jupyter_options["reuse-image"] || true
+    }
+  )
+  if(!job.success) return new ValidatedOutput(false, "").absorb(job)
+  return new ValidatedOutput(true, job.value.id)
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
-export function stopJupyter(container_runtime: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+export function stopJupyter(drivers: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const job_info_request = firstJobId(
-    container_runtime.runner.jobInfo({
+    drivers.runner.jobInfo({
       'labels': { [name_label]: [JUPYTER_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -107,13 +120,14 @@ export function stopJupyter(container_runtime: ContainerDrivers, identifier: {"j
   if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
-    return container_runtime.runner.jobStop([jupyter_job_id])
+    return drivers.runner.jobStop([jupyter_job_id])
 }
 
-export function listJupyter(container_runtime: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+export function listJupyter(drivers: ContainerDrivers, configurations: Configurations, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
+  console.log(JUPYTER_JOB_NAME(identifier))
   const job_info_request = firstJobId(
-    container_runtime.runner.jobInfo({
+    drivers.runner.jobInfo({
       'labels': { [name_label]: [JUPYTER_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -122,21 +136,20 @@ export function listJupyter(container_runtime: ContainerDrivers, identifier: {"j
   if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else {
+    const exec_configuration = configurations.exec()
+    exec_configuration.command = ['jupyter', 'notebook', 'list']
     return new ValidatedOutput(true, undefined).absorb(
-      container_runtime.runner.jobExec(jupyter_job_id,
-        container_runtime.runner.emptyExecConfiguration( { command: ['jupyter', 'notebook', 'list'] } ),
-        'inherit'
-      )
+      drivers.runner.jobExec(jupyter_job_id, exec_configuration, 'inherit')
     )
   }
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
 // function can send repeated requests if the first one fails
-export async function getJupyterUrl(container_runtime: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
+export async function getJupyterUrl(drivers: ContainerDrivers, configurations: Configurations, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
 {
   const job_info_request = firstJobId(
-    container_runtime.runner.jobInfo({
+    drivers.runner.jobInfo({
       'labels': { [name_label]: [JUPYTER_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -146,7 +159,7 @@ export async function getJupyterUrl(container_runtime: ContainerDrivers, identif
   var result = new ValidatedOutput(false, "").pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
-    result = parseNotebookListCommand(container_runtime.runner, jupyter_job_id)
+    result = parseNotebookListCommand(drivers, configurations, jupyter_job_id)
     if(result.success) break
   }
   return result
@@ -175,21 +188,19 @@ export function startJupyterApp(url: string, app_path: string, explicit: boolean
 // === Helper functions ========================================================
 
 // -- command to start jupyter
-function jupyterCommand(jup_options: JupyterOptions) {
-  const port = jup_options['ports']?.[0]?.containerPort || "";
-  const has_args = jup_options['args'].length > 0;
-  return `${jup_options['command']} ${(port) ? `--port=${port}` : ""}${(has_args) ? " " : ""}${jup_options['args'].join(" ")}`;
+function jupyterCommand(jupyter_options: JupyterOptions) {
+  const port = jupyter_options['port'].containerPort;
+  const has_args = jupyter_options?.args !== undefined && jupyter_options?.args.length > 0
+  return `jupyter ${jupyter_options['mode'] == 'lab' ? 'lab' : 'notebook'} --ip=0.0.0.0 ${(port) ? `--port=${port}` : ""}${(has_args) ? [" "].concat(jupyter_options.args || []).join(" ") : ""}`;
 }
 
 // -- extracts jupyter url from container (helper)
-function parseNotebookListCommand(runner: RunDriver, jupyter_id: string) : ValidatedOutput<string>
+function parseNotebookListCommand(drivers: ContainerDrivers, configurations: Configurations, jupyter_id: string) : ValidatedOutput<string>
 {
   // -- get output from jupyter ------------------------------------------------
-  const exec_result = runner.jobExec(
-    jupyter_id,
-    runner.emptyExecConfiguration( { command: ['jupyter', 'notebook', 'list'] } ),
-    'pipe'
-  )
+  const exec_configuration = configurations.exec()
+  exec_configuration.command = ['jupyter', 'notebook', 'list']
+  const exec_result = drivers.runner.jobExec(jupyter_id, exec_configuration, 'pipe')
   if(!exec_result.success) return new ValidatedOutput(false, "").absorb(exec_result)
   const raw_output = exec_result.value.output.trim().split("\n").pop() // get last non-empty line of output
   if(!raw_output) return new ValidatedOutput(false, "")
