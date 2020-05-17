@@ -5,9 +5,9 @@ import { ErrorStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
 import { THEIA_JOB_NAME, name_label, Dictionary } from '../constants'
 import { parseJSON } from './misc-functions'
-import { RunDriver, firstJobId } from '../drivers-containers/abstract/run-driver'
+import { firstJobId } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
-import { JobDriver, ContainerDrivers, Configurations, OutputOptions } from '../drivers-jobs/job-driver'
+import { JobManager, ContainerDrivers, Configurations, OutputOptions } from '../job-managers/job-manager'
 
 export type TheiaOptions = {
   "stack_configuration": StackConfiguration<any> // stack configuration in which jupyter will be run
@@ -25,7 +25,7 @@ const ENV = {
 
 // === Core functions ==========================================================
 
-export function startTheiaInProject(job_driver: JobDriver, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
+export function startTheiaInProject(job_manager: JobManager, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
   const job_info_request = container_drivers.runner.jobInfo({
@@ -50,7 +50,7 @@ export function startTheiaInProject(job_driver: JobDriver, container_drivers: Co
   job_configuration.synchronous = false
   job_configuration.command = [theiaCommand(stack_configuration, theia_options)]
   // -- start jupyter job -------------------------------------------------------
-  const job = job_driver.run(
+  const job = job_manager.run(
     job_configuration,
     container_drivers,
     configurations,

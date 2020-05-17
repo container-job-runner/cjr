@@ -1,7 +1,7 @@
 import { StackCommand, ContainerSDK } from './stack-command'
 import { updateStackConfig, updateJobConfig } from '../functions/config-functions'
 import { ValidatedOutput } from '../validated-output'
-import { JobRunOptions, Configurations, ContainerDrivers, JobDriver, OutputOptions } from '../drivers-jobs/job-driver'
+import { JobRunOptions,  ContainerDrivers } from '../job-managers/job-manager'
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
@@ -62,7 +62,7 @@ export abstract class RunCommand extends StackCommand
   createStack(flags: CLIJobFlags) : ValidatedOutput<StackData>
   {
     // -- init Container SDK components ----------------------------------------
-    const {configurations, container_drivers, job_driver, output_options} = this.initContainerSDK(
+    const {configurations, container_drivers, job_manager, output_options} = this.initContainerSDK(
       flags["verbose"] || false,
       flags["quiet"] || false,
       flags["explicit"] || false
@@ -82,7 +82,7 @@ export abstract class RunCommand extends StackCommand
       "stack_configuration": stack_configuration,
       "configurations": configurations,
       "container_drivers": container_drivers,
-      "job_driver": job_driver,
+      "job_manager": job_manager,
       "output_options": output_options
     }).absorb(load)
   }
@@ -92,7 +92,7 @@ export abstract class RunCommand extends StackCommand
   {
     // -- init Container SDK components ----------------------------------------
     const load = this.createStack(flags)
-    const {stack_configuration, configurations, container_drivers, job_driver, output_options} = load.value
+    const {stack_configuration, configurations, container_drivers, job_manager, output_options} = load.value
     // -- load run-shortcuts ---------------------------------------------------
     const run_shortcuts = this.newRunShortcuts()
     // -- set job options ------------------------------------------------------
@@ -110,7 +110,7 @@ export abstract class RunCommand extends StackCommand
       "stack_configuration": stack_configuration,
       "configurations": configurations,
       "container_drivers": container_drivers,
-      "job_driver": job_driver,
+      "job_manager": job_manager,
       "output_options": output_options
     }).absorb(load)
   }
@@ -136,9 +136,9 @@ export abstract class RunCommand extends StackCommand
     const job_data = this.createJob(flags, command)
     if(!job_data.success)
       return {"job": failure, "job_data": job_data}
-    const {job_configuration, configurations, container_drivers, output_options, job_driver} = job_data.value
+    const {job_configuration, configurations, container_drivers, output_options, job_manager} = job_data.value
     // -- run basic job --------------------------------------------------------
-    const job = job_driver.run(
+    const job = job_manager.run(
       job_configuration,
       container_drivers,
       configurations,
@@ -156,11 +156,11 @@ export abstract class RunCommand extends StackCommand
 
     if(!job.success || !job_data.success) return {"job": job, "job_data": job_data}
     // -- copy back results ----------------------------------------------------
-    const {job_driver, configurations, container_drivers, output_options} = job_data.value
+    const {job_manager, configurations, container_drivers, output_options} = job_data.value
     const job_id = job.value.id
     if(this.shouldAutocopy(flags, container_drivers, job_id))
       printResultState(
-        job_driver.copy(
+        job_manager.copy(
           container_drivers,
           configurations,
           output_options,

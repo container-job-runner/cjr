@@ -5,7 +5,7 @@ import os = require('os')
 import fs = require('fs-extra')
 
 import { JobState, JobInfo, JobPortInfo} from '../drivers-containers/abstract/run-driver'
-import { ContainerDrivers, Configurations } from '../drivers-jobs/job-driver'
+import { ContainerDrivers, Configurations } from '../job-managers/job-manager'
 import { Dictionary, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths, project_settings_file, X11_POSIX_BIND } from '../constants'
 import { JSTools } from '../js-tools'
 import { ValidatedOutput } from '../validated-output'

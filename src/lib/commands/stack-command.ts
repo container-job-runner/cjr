@@ -22,21 +22,21 @@ import { ProjectSettings, ps_fields } from '../config/project-settings/project-s
 import { BuildDriver } from '../drivers-containers/abstract/build-driver'
 import { RunDriver } from '../drivers-containers/abstract/run-driver'
 import { ExecConstructorOptions, ExecConfiguration } from '../config/exec/exec-configuration'
-import { Configurations, ContainerDrivers, JobDriver, OutputOptions, JobRunOptions } from '../drivers-jobs/job-driver'
+import { Configurations, ContainerDrivers, OutputOptions, JobManager } from '../job-managers/job-manager'
 import { DockerStackConfiguration } from '../config/stacks/docker/docker-stack-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { DockerJobConfiguration } from '../config/jobs/docker-job-configuration'
 import { ErrorStrings } from '../error-strings'
 import { printResultState } from '../functions/misc-functions'
 import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
-import { LocalJobDriver } from '../drivers-jobs/local-job-driver'
+import { LocalJobManager } from '../job-managers/local-job-manager'
 import { scanForSettingsDirectory, loadProjectSettings } from '../functions/cli-functions'
 
 export type ContainerSDK = {
   "output_options": OutputOptions
   "configurations": Configurations,
   "container_drivers": ContainerDrivers,
-  "job_driver": JobDriver
+  "job_manager": JobManager
 }
 
 
@@ -230,17 +230,22 @@ export abstract class StackCommand extends Command
 
   initContainerSDK(verbose: boolean, quiet: boolean, explicit: boolean) : ContainerSDK
   {
+    const container_drivers = {
+      "runner": this.newRunDriver(explicit, quiet),
+      "builder": this.newBuildDriver(explicit, quiet)
+    }
+    const configurations = this.newConfigurationsObject()
+    const output_options = {
+      "verbose": verbose,
+      "quiet": quiet
+    }
+    const job_manager = this.newJobManager(container_drivers, configurations, output_options)
+
     return {
-      "configurations": this.newConfigurationsObject(),
-      "container_drivers": {
-        "runner": this.newRunDriver(explicit, quiet),
-        "builder": this.newBuildDriver(explicit, quiet)
-      },
-      "output_options": {
-        "verbose": verbose,
-        "quiet": quiet
-      },
-      "job_driver": this.newJobDriver()
+      "configurations": configurations,
+      "container_drivers": container_drivers,
+      "output_options": output_options,
+      "job_manager": job_manager
     }
   }
 
@@ -330,9 +335,10 @@ export abstract class StackCommand extends Command
     }
   }
 
-  newJobDriver()
+  newJobManager(container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions)
   {
-    return new LocalJobDriver()
+    const copy_dir = path.join(this.config.dataDir, build_dirname)
+    return new LocalJobManager(container_drivers, configurations, output_options, { "tmpdir": copy_dir})
   }
 
 }

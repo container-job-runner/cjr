@@ -6,7 +6,7 @@ import { ValidatedOutput } from '../validated-output'
 import { JUPYTER_JOB_NAME, name_label } from '../constants'
 import { firstJobId } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
-import { JobDriver, Configurations, OutputOptions, ContainerDrivers } from '../drivers-jobs/job-driver'
+import { JobManager, Configurations, OutputOptions, ContainerDrivers } from '../job-managers/job-manager'
 
 type JupyterOptions = {
   "stack_configuration": StackConfiguration<any> // stack configuration in which jupyter will be run
@@ -25,7 +25,7 @@ export type JupyterJobOptions = JupyterOptions & {
   "job-id": string      // host project root
 }
 
-export function startJupyterInProject(job_driver: JobDriver, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterProjectOptions) : ValidatedOutput<string>
+export function startJupyterInProject(job_manager: JobManager, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterProjectOptions) : ValidatedOutput<string>
 {
   const identifier = {"project-root" : jupyter_options['project-root'] || ""}
   const jupyter_job_name = JUPYTER_JOB_NAME(identifier)
@@ -51,7 +51,7 @@ export function startJupyterInProject(job_driver: JobDriver, container_drivers: 
   job_configuration.synchronous = false
   job_configuration.command = [jupyterCommand(jupyter_options)]
   // -- start jupyter job -------------------------------------------------------
-  const job = job_driver.run(
+  const job = job_manager.run(
     job_configuration,
     container_drivers,
     configurations,
@@ -68,7 +68,7 @@ export function startJupyterInProject(job_driver: JobDriver, container_drivers: 
   return new ValidatedOutput(true, job.value.id)
 }
 
-export function startJupyterInJob(job_driver: JobDriver, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterJobOptions) : ValidatedOutput<string>
+export function startJupyterInJob(job_manager: JobManager, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterJobOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : jupyter_options["job-id"]})
   const job_info_request = container_drivers.runner.jobInfo({
@@ -93,7 +93,7 @@ export function startJupyterInJob(job_driver: JobDriver, container_drivers: Cont
   job_configuration.synchronous = false
   job_configuration.command = [jupyterCommand(jupyter_options)]
   // -- start jupyter job -------------------------------------------------------
-  const job = job_driver.exec(
+  const job = job_manager.exec(
     job_configuration,
     container_drivers,
     output_options,
