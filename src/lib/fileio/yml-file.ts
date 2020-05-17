@@ -27,4 +27,9 @@ export class YMLFile extends TextFile
     return result
   }
 
+  validatedRead(name:string) : ValidatedOutput<any>
+  {
+    return super.validatedRead(name)
+  }
+
 }
