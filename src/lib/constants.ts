@@ -16,6 +16,8 @@ export const file_volume_label = 'filevolume'
 export const project_root_label = 'project-root'
 export const container_root_label = 'container-root'
 export const stash_label = 'stash'
+export const download_include_label = 'rsync-include'
+export const download_exclude_label = 'rsync-exclude'
 
 // flag message
 // export const invalid_stack_flag_error = "specify stack flag --stack=stack or set environment variable STACK"
@@ -26,6 +28,7 @@ export const cli_settings_yml_name = "settings"
 // name of folders in data directory
 export const cli_bundle_dir_name  = "bundle"  // temporarily stores data between container transfer
 export const build_dirname = "build"
+export const job_copy_dirname = 'job-copy'
 
 // name of optional project settings file that is loaded relative to project project_root
 export const project_settings_folder = `.${cli_name}`
