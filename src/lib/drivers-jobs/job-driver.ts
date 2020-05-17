@@ -61,6 +61,17 @@ export type JobStateOptions = {
 export abstract class JobDriver // High-Level Job Driver
 {
 
+  drivers: ContainerDrivers
+  output_options: OutputOptions
+  configurations: Configurations
+
+  constructor(drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions,)
+  {
+    this.drivers = drivers;
+    this.configurations = configurations
+    this.output_options = output_options
+  }
+
   abstract run(
     job_configuration: JobConfiguration<StackConfiguration<any>>,
     drivers: ContainerDrivers,
