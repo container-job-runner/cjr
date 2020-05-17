@@ -25,10 +25,10 @@ const ENV = {
 
 // === Core functions ==========================================================
 
-export function startTheiaInProject(job_manager: JobManager, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, theia_options: TheiaOptions) : ValidatedOutput<string>
+export function startTheiaInProject(job_manager: JobManager, theia_options: TheiaOptions) : ValidatedOutput<string>
 {
   const theia_job_name = THEIA_JOB_NAME({"project-root" : theia_options['project-root'] || ""})
-  const job_info_request = container_drivers.runner.jobInfo({
+  const job_info_request = job_manager.container_drivers.runner.jobInfo({
     'labels': { [name_label] : [theia_job_name] },
     'states': ['running']
   })
@@ -44,7 +44,7 @@ export function startTheiaInProject(job_manager: JobManager, container_drivers: 
   setEnvironment(stack_configuration, theia_options)
   //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
   // -- create new jupyter job -------------------------------------------------
-  const job_configuration = configurations.job(stack_configuration)
+  const job_configuration = job_manager.configurations.job(stack_configuration)
   job_configuration.addLabel(name_label, theia_job_name)
   job_configuration.remove_on_exit = true
   job_configuration.synchronous = false
@@ -52,9 +52,6 @@ export function startTheiaInProject(job_manager: JobManager, container_drivers: 
   // -- start jupyter job -------------------------------------------------------
   const job = job_manager.run(
     job_configuration,
-    container_drivers,
-    configurations,
-    output_options,
     {
       "project-root": theia_options["project-root"],
       "cwd": theia_options["project-root"],

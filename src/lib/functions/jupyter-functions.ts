@@ -25,11 +25,11 @@ export type JupyterJobOptions = JupyterOptions & {
   "job-id": string      // host project root
 }
 
-export function startJupyterInProject(job_manager: JobManager, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterProjectOptions) : ValidatedOutput<string>
+export function startJupyterInProject(job_manager: JobManager, jupyter_options: JupyterProjectOptions) : ValidatedOutput<string>
 {
   const identifier = {"project-root" : jupyter_options['project-root'] || ""}
   const jupyter_job_name = JUPYTER_JOB_NAME(identifier)
-  const job_info_request = container_drivers.runner.jobInfo({
+  const job_info_request = job_manager.container_drivers.runner.jobInfo({
     'labels': { [name_label]: [jupyter_job_name]},
     'states': ['running']
   })
@@ -45,7 +45,7 @@ export function startJupyterInProject(job_manager: JobManager, container_drivers
   stack_configuration.addPort(jupyter_options['port'].hostPort, jupyter_options['port'].containerPort, jupyter_options['port'].address)
   //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
   // -- create new jupyter job -------------------------------------------------
-  const job_configuration = configurations.job(stack_configuration)
+  const job_configuration = job_manager.configurations.job(stack_configuration)
   job_configuration.addLabel(name_label, jupyter_job_name)
   job_configuration.remove_on_exit = true
   job_configuration.synchronous = false
@@ -53,9 +53,6 @@ export function startJupyterInProject(job_manager: JobManager, container_drivers
   // -- start jupyter job -------------------------------------------------------
   const job = job_manager.run(
     job_configuration,
-    container_drivers,
-    configurations,
-    output_options,
     {
       "project-root": jupyter_options["project-root"],
       "cwd": jupyter_options["project-root"],
@@ -95,8 +92,6 @@ export function startJupyterInJob(job_manager: JobManager, container_drivers: Co
   // -- start jupyter job -------------------------------------------------------
   const job = job_manager.exec(
     job_configuration,
-    container_drivers,
-    output_options,
     {
       "parent-id": jupyter_options["job-id"],
       "x11": jupyter_options["x11"],

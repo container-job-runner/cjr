@@ -136,13 +136,10 @@ export abstract class RunCommand extends StackCommand
     const job_data = this.createJob(flags, command)
     if(!job_data.success)
       return {"job": failure, "job_data": job_data}
-    const {job_configuration, configurations, container_drivers, output_options, job_manager} = job_data.value
+    const {job_configuration, job_manager} = job_data.value
     // -- run basic job --------------------------------------------------------
     const job = job_manager.run(
       job_configuration,
-      container_drivers,
-      configurations,
-      output_options,
       this.runOptions(flags)
     )
     this.printJobId(job, flags)
@@ -160,15 +157,10 @@ export abstract class RunCommand extends StackCommand
     const job_id = job.value.id
     if(this.shouldAutocopy(flags, container_drivers, job_id))
       printResultState(
-        job_manager.copy(
-          container_drivers,
-          configurations,
-          output_options,
-          {
-            "ids": [job_id],
-            "mode": "update"
-          }
-        )
+        job_manager.copy({
+          "ids": [job_id],
+          "mode": "update"
+        })
       )
     return result
 
