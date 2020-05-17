@@ -26,11 +26,13 @@ export class ValidatedOutput<T>
       return this
     }
 
-    absorb(vo:ValidatedOutput<any>)
+    absorb( ... args: ValidatedOutput<any>[])
     {
-      this.success = this.success && vo.success
-      this.error.push(...vo.error)
-      this.warning.push(...vo.warning)
+      args.map((vo:ValidatedOutput<any>) => {
+        this.success = this.success && vo.success
+        this.error.push( ... vo.error)
+        this.warning.push( ... vo.warning)
+      })
       return this
     }
 
