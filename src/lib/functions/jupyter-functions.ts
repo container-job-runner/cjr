@@ -65,10 +65,10 @@ export function startJupyterInProject(job_manager: JobManager, jupyter_options: 
   return new ValidatedOutput(true, job.value.id)
 }
 
-export function startJupyterInJob(job_manager: JobManager, container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, jupyter_options: JupyterJobOptions) : ValidatedOutput<string>
+export function startJupyterInJob(job_manager: JobManager, jupyter_options: JupyterJobOptions) : ValidatedOutput<string>
 {
   const jupyter_job_name = JUPYTER_JOB_NAME({"job-id" : jupyter_options["job-id"]})
-  const job_info_request = container_drivers.runner.jobInfo({
+  const job_info_request = job_manager.container_drivers.runner.jobInfo({
     'labels': { [name_label]: [jupyter_job_name]},
     'states': ['running']
   })
@@ -84,7 +84,7 @@ export function startJupyterInJob(job_manager: JobManager, container_drivers: Co
   stack_configuration.addPort(jupyter_options['port'].hostPort, jupyter_options['port'].containerPort, jupyter_options['port'].address)
   //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
   // -- create new jupyter job -------------------------------------------------
-  const job_configuration = configurations.job(stack_configuration)
+  const job_configuration = job_manager.configurations.job(stack_configuration)
   job_configuration.addLabel(name_label, jupyter_job_name)
   job_configuration.remove_on_exit = true
   job_configuration.synchronous = false
@@ -103,10 +103,11 @@ export function startJupyterInJob(job_manager: JobManager, container_drivers: Co
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
-export function stopJupyter(drivers: ContainerDrivers, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+export function stopJupyter(job_manager: JobManager, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
+  const runner = job_manager.container_drivers.runner
   const job_info_request = firstJobId(
-    drivers.runner.jobInfo({
+    runner.jobInfo({
       'labels': { [name_label]: [JUPYTER_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -115,14 +116,14 @@ export function stopJupyter(drivers: ContainerDrivers, identifier: {"job-id"?: s
   if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
-    return drivers.runner.jobStop([jupyter_job_id])
+    return runner.jobStop([jupyter_job_id])
 }
 
-export function listJupyter(drivers: ContainerDrivers, configurations: Configurations, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+export function listJupyter(job_manager: JobManager, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
 {
-  console.log(JUPYTER_JOB_NAME(identifier))
+  const runner = job_manager.container_drivers.runner
   const job_info_request = firstJobId(
-    drivers.runner.jobInfo({
+    runner.jobInfo({
       'labels': { [name_label]: [JUPYTER_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -131,20 +132,21 @@ export function listJupyter(drivers: ContainerDrivers, configurations: Configura
   if(jupyter_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else {
-    const exec_configuration = configurations.exec()
+    const exec_configuration = job_manager.configurations.exec()
     exec_configuration.command = ['jupyter', 'notebook', 'list']
     return new ValidatedOutput(true, undefined).absorb(
-      drivers.runner.jobExec(jupyter_job_id, exec_configuration, 'inherit')
+      runner.jobExec(jupyter_job_id, exec_configuration, 'inherit')
     )
   }
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
 // function can send repeated requests if the first one fails
-export async function getJupyterUrl(drivers: ContainerDrivers, configurations: Configurations, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
+export async function getJupyterUrl(job_manager: JobManager, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
 {
+  const runner = job_manager.container_drivers.runner
   const job_info_request = firstJobId(
-    drivers.runner.jobInfo({
+    runner.jobInfo({
       'labels': { [name_label]: [JUPYTER_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -154,7 +156,7 @@ export async function getJupyterUrl(drivers: ContainerDrivers, configurations: C
   var result = new ValidatedOutput(false, "").pushError(ErrorStrings.JUPYTER.NOURL)
   for(var i = 0; i < max_tries; i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
-    result = parseNotebookListCommand(drivers, configurations, jupyter_job_id)
+    result = parseNotebookListCommand(job_manager, jupyter_job_id)
     if(result.success) break
   }
   return result
@@ -190,12 +192,12 @@ function jupyterCommand(jupyter_options: JupyterOptions) {
 }
 
 // -- extracts jupyter url from container (helper)
-function parseNotebookListCommand(drivers: ContainerDrivers, configurations: Configurations, jupyter_id: string) : ValidatedOutput<string>
+function parseNotebookListCommand(job_manager: JobManager, jupyter_id: string) : ValidatedOutput<string>
 {
   // -- get output from jupyter ------------------------------------------------
-  const exec_configuration = configurations.exec()
+  const exec_configuration = job_manager.configurations.exec()
   exec_configuration.command = ['jupyter', 'notebook', 'list']
-  const exec_result = drivers.runner.jobExec(jupyter_id, exec_configuration, 'pipe')
+  const exec_result = job_manager.container_drivers.runner.jobExec(jupyter_id, exec_configuration, 'pipe')
   if(!exec_result.success) return new ValidatedOutput(false, "").absorb(exec_result)
   const raw_output = exec_result.value.output.trim().split("\n").pop() // get last non-empty line of output
   if(!raw_output) return new ValidatedOutput(false, "")

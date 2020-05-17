@@ -65,10 +65,11 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
-export function stopTheia(drivers: ContainerDrivers, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
+export function stopTheia(job_manager: JobManager, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
+  const runner = job_manager.container_drivers.runner
   const job_info_request = firstJobId(
-    drivers.runner.jobInfo({
+    runner.jobInfo({
       'labels': { [name_label]: [THEIA_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -77,14 +78,15 @@ export function stopTheia(drivers: ContainerDrivers, identifier: {"project-root"
   if(theia_job_id == "")
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   else
-    return drivers.runner.jobStop([theia_job_id])
+    return runner.jobStop([theia_job_id])
 }
 
 // -- extract the url for a theia server  --------------------------------------
-export async function getTheiaUrl(drivers: ContainerDrivers, configurations: Configurations, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
+export async function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
 {
+  const runner = job_manager.container_drivers.runner
   const job_info_request = firstJobId(
-    drivers.runner.jobInfo({
+    runner.jobInfo({
       'labels': { [name_label]: [THEIA_JOB_NAME(identifier)]},
       'states': ['running']
     })
@@ -92,9 +94,9 @@ export async function getTheiaUrl(drivers: ContainerDrivers, configurations: Con
   const theia_job_id = job_info_request.value
   if(theia_job_id == "")
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
-  const exec_configuration = configurations.exec()
+  const exec_configuration = job_manager.configurations.exec()
   exec_configuration.command = ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
-  const exec_output = drivers.runner.jobExec(theia_job_id, exec_configuration, "pipe")
+  const exec_output = runner.jobExec(theia_job_id, exec_configuration, "pipe")
   const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
   if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
   return new ValidatedOutput(true, `http://${json_output.value?.url}:${json_output.value?.port}`);
