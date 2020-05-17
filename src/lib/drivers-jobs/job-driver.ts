@@ -1,10 +1,9 @@
 import { JobConfiguration } from "../config/jobs/job-configuration";
 import { ValidatedOutput } from '../validated-output';
-import { RunDriver, NewJobInfo } from '../drivers-containers/abstract/run-driver';
+import { RunDriver, NewJobInfo, JobState } from '../drivers-containers/abstract/run-driver';
 import { BuildDriver } from '../drivers-containers/abstract/build-driver';
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration';
 import { ExecConfiguration, ExecConstructorOptions } from '../config/exec/exec-configuration';
-import { Dictionary } from '../constants';
 
 export type ContainerDrivers = {
   "runner": RunDriver
@@ -46,6 +45,19 @@ export type JobCopyOptions = {
   "force"?: boolean                                  // always copy
 }
 
+export type JobDeleteOptions = {
+  "ids": Array<string>                               // job ids that should be copied
+  "stack-paths"?: Array<string>                      // only select jobs that pertain to this stack
+  "selecter"?: "all"|"all-running"|"all-exited"       // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
+}
+
+export type JobStopOptions = JobDeleteOptions
+
+export type JobStateOptions = {
+  "ids": Array<string>                               // job ids that should be copied
+  "stack-paths"?: Array<string>                      // only select jobs that pertain to this stack
+}
+
 export abstract class JobDriver // High-Level Job Driver
 {
 
@@ -70,5 +82,23 @@ export abstract class JobDriver // High-Level Job Driver
     output_settings: OutputOptions,
     options: JobCopyOptions
   ) : ValidatedOutput<undefined>
+
+  abstract delete(
+    drivers: ContainerDrivers,
+    output_settings: OutputOptions,
+    options: JobDeleteOptions
+  ) : ValidatedOutput<undefined>
+
+  abstract stop(
+    drivers: ContainerDrivers,
+    output_settings: OutputOptions,
+    options: JobStopOptions
+  ) : ValidatedOutput<undefined>
+
+  abstract state(
+    drivers: ContainerDrivers,
+    output_settings: OutputOptions,
+    options: JobStateOptions
+  ) : ValidatedOutput<JobState[]>
 
 }
