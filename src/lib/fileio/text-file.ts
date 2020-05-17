@@ -39,7 +39,7 @@ export class TextFile
     }
   }
 
-  read(name:string) : ValidatedOutput<any>
+  read(name:string) : ValidatedOutput<string>
   {
     try {
       return new ValidatedOutput(
@@ -52,7 +52,7 @@ export class TextFile
     }
   }
 
-  validatedRead(name:string) : ValidatedOutput<any>
+  validatedRead(name:string) : ValidatedOutput<string>
   {
     var result = this.read(name)
     if(result.success) result.absorb(this.validator(result.value))
