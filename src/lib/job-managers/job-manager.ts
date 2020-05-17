@@ -61,55 +61,33 @@ export type JobStateOptions = {
 export abstract class JobManager // High-Level Job Driver
 {
 
-  drivers: ContainerDrivers
+  container_drivers: ContainerDrivers
   output_options: OutputOptions
   configurations: Configurations
 
-  constructor(drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions)
+  constructor(container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions)
   {
-    this.drivers = drivers;
+    this.container_drivers = container_drivers;
     this.configurations = configurations
     this.output_options = output_options
   }
 
   abstract run(
     job_configuration: JobConfiguration<StackConfiguration<any>>,
-    drivers: ContainerDrivers,
-    config: Configurations,
-    output_settings: OutputOptions,
     options: JobRunOptions
   ) : ValidatedOutput<NewJobInfo>
 
   abstract exec(
     job_configuration: JobConfiguration<StackConfiguration<any>>,
-    drivers: ContainerDrivers,
-    output_settings: OutputOptions,
     options: JobExecOptions
   ) : ValidatedOutput<NewJobInfo>
 
-  abstract copy(
-    drivers: ContainerDrivers,
-    config: Configurations,
-    output_settings: OutputOptions,
-    options: JobCopyOptions
-  ) : ValidatedOutput<undefined>
+  abstract copy( options: JobCopyOptions ) : ValidatedOutput<undefined>
 
-  abstract delete(
-    drivers: ContainerDrivers,
-    output_settings: OutputOptions,
-    options: JobDeleteOptions
-  ) : ValidatedOutput<undefined>
+  abstract delete( options: JobDeleteOptions ) : ValidatedOutput<undefined>
 
-  abstract stop(
-    drivers: ContainerDrivers,
-    output_settings: OutputOptions,
-    options: JobStopOptions
-  ) : ValidatedOutput<undefined>
+  abstract stop( options: JobStopOptions ) : ValidatedOutput<undefined>
 
-  abstract state(
-    drivers: ContainerDrivers,
-    output_settings: OutputOptions,
-    options: JobStateOptions
-  ) : ValidatedOutput<JobState[]>
+  abstract state( options: JobStateOptions ) : ValidatedOutput<JobState[]>
 
 }

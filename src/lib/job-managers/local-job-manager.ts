@@ -59,23 +59,37 @@ export class LocalJobManager extends JobManager
 
   protected failed_nji:NewJobInfo = {"id": "", "exit-code": 0, "output": ""} // value that will be returned if start or exec fail
 
-  run(job_configuration: JobConfiguration<StackConfiguration<any>>, drivers: ContainerDrivers, config: Configurations, output_options: OutputOptions, job_options: JobRunOptions) : ValidatedOutput<NewJobInfo>
+  run(job_configuration: JobConfiguration<StackConfiguration<any>>, job_options: JobRunOptions) : ValidatedOutput<NewJobInfo>
   {
     const failed_result = new ValidatedOutput(false, this.failed_nji);
 
     const stack_configuration = job_configuration.stack_configuration
     // -- 1. build stack and load stack configuration ---------------------------
-    this.printStatus({"header": this.STATUSHEADERS.BUILD}, output_options)
-    const build_result = buildImage(job_configuration.stack_configuration, drivers, {"reuse-image": job_options['reuse-image'], "verbose": output_options.verbose})
+    this.printStatus({"header": this.STATUSHEADERS.BUILD}, this.output_options)
+    const build_result = buildImage(
+      job_configuration.stack_configuration,
+      this.container_drivers,
+      {
+        "reuse-image": job_options['reuse-image'],
+        "verbose": this.output_options.verbose
+      }
+    )
     if(!build_result.success) return failed_result.absorb(build_result)
     // -- 2. mount project files ------------------------------------------------
     if(job_options["project-root"] && job_options["project-root-file-access"] === "bind")
       bindProjectRoot(stack_configuration, job_options["project-root"])
     else if(job_options["project-root"] && job_options["project-root-file-access"] === "volume")
     {
-      this.printStatus({header: this.STATUSHEADERS.COPY_TO_VOLUME}, output_options)
-      const create_file_volume = createFileVolume(drivers, config, stack_configuration, job_options["project-root"], output_options.verbose)
-      if(!create_file_volume.success) return failed_result.absorb(create_file_volume)
+      this.printStatus({header: this.STATUSHEADERS.COPY_TO_VOLUME}, this.output_options)
+      const create_file_volume = createFileVolume(
+        this.container_drivers,
+        this.configurations,
+        stack_configuration,
+        job_options["project-root"],
+        this.output_options.verbose
+      )
+      if(!create_file_volume.success)
+        return failed_result.absorb(create_file_volume)
       const file_volume_id = create_file_volume.value
       mountFileVolume(stack_configuration, job_options["project-root"], file_volume_id)
       job_configuration.addLabel(file_volume_label, file_volume_id)
@@ -84,21 +98,24 @@ export class LocalJobManager extends JobManager
     setRelativeWorkDir(job_configuration, job_options["project-root"] || "", job_options["cwd"])
     addGenericLabels(job_configuration, job_options["project-root"] || "")
     // -- 3. start job -----------------------------------------------------------
-    this.printStatus({"header": this.STATUSHEADERS.START}, output_options)
-    const job = drivers.runner.jobStart(job_configuration, job_configuration.synchronous ? 'inherit' : 'pipe')
+    this.printStatus({"header": this.STATUSHEADERS.START}, this.output_options)
+    const job = this.container_drivers.runner.jobStart(
+      job_configuration,
+      job_configuration.synchronous ? 'inherit' : 'pipe'
+    )
     // -- print id ---------------------------------------------------------------
     if(!job.success) job.pushError(this.ERRORSTRINGS.FAILED_START)
-    else this.printStatus({header: this.STATUSHEADERS.JOB_ID, message: job.value.id}, output_options)
+    else this.printStatus({header: this.STATUSHEADERS.JOB_ID, message: job.value.id}, this.output_options)
     return job
   }
 
-  exec(job_configuration: JobConfiguration<StackConfiguration<any>>, drivers: ContainerDrivers, output_options: OutputOptions, exec_options: JobExecOptions) : ValidatedOutput<NewJobInfo>
+  exec(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions) : ValidatedOutput<NewJobInfo>
   {
     const failed_result = new ValidatedOutput(false, this.failed_nji);
 
     // -- get parent job information -------------------------------------------
     const job_info_request = firstJob(
-      drivers.runner.jobInfo({"ids": [exec_options["parent-id"]]})
+      this.container_drivers.runner.jobInfo({"ids": [exec_options["parent-id"]]})
     )
     if(!job_info_request.success)
       return failed_result.absorb(job_info_request).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
@@ -111,25 +128,25 @@ export class LocalJobManager extends JobManager
     // -- configure job & stack properties --------------------------------------
     setRelativeWorkDir(job_configuration, parent_project_root, exec_options["cwd"])
     if(exec_options.x11)
-      addX11(job_configuration, drivers)
+      addX11(job_configuration, this.container_drivers)
     const stack_configuration = job_configuration.stack_configuration
     if(parent_file_volume_id) // -- bind parent job volume ----------------------
       mountFileVolume(stack_configuration, parent_project_root, parent_file_volume_id)  // check with run options.
     else // -- bind parent job hostRoot -----------------------------------------
       bindProjectRoot(stack_configuration, parent_project_root)
     // -- start job -------------------------------------------------------------
-    return buildAndRun(job_configuration, drivers, {
+    return buildAndRun(job_configuration, this.container_drivers, {
       "reuse-image": exec_options["reuse-image"],
-      "verbose": output_options.verbose
+      "verbose": this.output_options.verbose
     })
   }
 
-  copy(drivers: ContainerDrivers, config: Configurations, output_settings: OutputOptions, copy_options: JobCopyOptions) : ValidatedOutput<undefined>
+  copy(copy_options: JobCopyOptions) : ValidatedOutput<undefined>
   {
-    this.printStatus({header: this.STATUSHEADERS.COPY_TO_HOST}, output_settings)
+    this.printStatus({header: this.STATUSHEADERS.COPY_TO_HOST}, this.output_options)
     const result = new ValidatedOutput(true, undefined);
     // -- get information on all matching jobs -----------------------------------
-    var ji_result = drivers.runner.jobInfo({
+    var ji_result = this.container_drivers.runner.jobInfo({
       "ids": copy_options['ids'],
       "stack-paths": copy_options["stack-paths"]
     })
@@ -155,10 +172,10 @@ export class LocalJobManager extends JobManager
         "volume": file_volume_id,
         "direction": "to-host",
         "mode": copy_options.mode,
-        "verbose": output_settings.verbose,
+        "verbose": this.output_options.verbose,
         "files": {"include": rsync_files.value["include-from"], "exclude": rsync_files.value["exclude-from"]}
       }
-      result.absorb(syncHostDirAndVolume(drivers, config, rsync_options))
+      result.absorb(syncHostDirAndVolume(this.container_drivers, this.configurations, rsync_options))
       // -- 4. remote tmp dir ----------------------------------------------------
       if(rsync_files.value["tmp-dir"])
         fs.removeSync(rsync_files.value["tmp-dir"])
@@ -172,32 +189,32 @@ export class LocalJobManager extends JobManager
     if(contents?.message) console.log(contents.message)
   }
 
-  delete(container_drivers: ContainerDrivers, output_options: OutputOptions, options: JobDeleteOptions) : ValidatedOutput<undefined>
+  delete(options: JobDeleteOptions) : ValidatedOutput<undefined>
   {
     const result = new ValidatedOutput(true, undefined)
-    const job_info = this.jobSelector(container_drivers, options)
+    const job_info = this.jobSelector(this.container_drivers, options)
     if(!job_info.success)
       return new ValidatedOutput(false, undefined)
 
     const job_ids = jobIds(job_info).value
     const volume_ids = volumeIds(job_info).value
 
-    if(!output_options.verbose)
+    if(!this.output_options.verbose)
       return result.absorb(
-        container_drivers.runner.jobDelete(job_ids),
-        container_drivers.runner.volumeDelete(volume_ids)
+        this.container_drivers.runner.jobDelete(job_ids),
+        this.container_drivers.runner.volumeDelete(volume_ids)
       )
 
     // -- delete jobs ----------------------------------------------------
     job_ids.map( (id:string) => {
-      const delete_result = container_drivers.runner.jobDelete(job_ids)
+      const delete_result = this.container_drivers.runner.jobDelete(job_ids)
       result.absorb(delete_result)
       if(delete_result.success)
         console.log(` deleted job ${id}.`)
     })
     // -- delete volumes -------------------------------------------------
     volume_ids.map( (id:string) => {
-      const delete_result = container_drivers.runner.volumeDelete(job_ids)
+      const delete_result = this.container_drivers.runner.volumeDelete(job_ids)
       result.absorb(delete_result)
       if(delete_result.success)
         console.log(` deleted volume ${id}.`)
@@ -205,23 +222,23 @@ export class LocalJobManager extends JobManager
     return result
   }
 
-  stop(container_drivers: ContainerDrivers, output_options: OutputOptions, options: JobStopOptions) : ValidatedOutput<undefined>
+  stop(options: JobStopOptions) : ValidatedOutput<undefined>
   {
     const result = new ValidatedOutput(true, undefined)
-    const job_info = this.jobSelector(container_drivers, options)
+    const job_info = this.jobSelector(this.container_drivers, options)
     if(!job_info.success)
       return new ValidatedOutput(false, undefined)
 
     const job_ids = jobIds(job_info).value
 
-    if(!output_options.verbose)
+    if(!this.output_options.verbose)
       return result.absorb(
-        container_drivers.runner.jobStop(job_ids)
+        this.container_drivers.runner.jobStop(job_ids)
       )
 
     // -- stop jobs ----------------------------------------------------
     job_ids.map( (id:string) => {
-      const delete_result = container_drivers.runner.jobDelete(job_ids)
+      const delete_result = this.container_drivers.runner.jobDelete(job_ids)
       result.absorb(delete_result)
       if(delete_result.success)
         console.log(` stopped job ${id}.`)
@@ -229,10 +246,10 @@ export class LocalJobManager extends JobManager
     return result
   }
 
-  state(container_drivers: ContainerDrivers, output_options: OutputOptions, options: JobStateOptions) : ValidatedOutput<JobState[]>
+  state(options: JobStateOptions) : ValidatedOutput<JobState[]>
   {
     return jobStates(
-      container_drivers.runner.jobInfo({
+      this.container_drivers.runner.jobInfo({
         'ids': options["ids"],
         'stack-paths': options["stack-paths"]
       })
