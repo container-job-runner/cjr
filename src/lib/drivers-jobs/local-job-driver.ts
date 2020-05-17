@@ -1,22 +1,37 @@
 import chalk = require('chalk');
 import path = require('path');
-import { JobDriver, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations } from './job-driver'
+import fs = require('fs-extra')
+import { JobDriver, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions } from './job-manager'
 import { JobConfiguration } from '../config/jobs/job-configuration';
 import { ValidatedOutput } from '../validated-output';
-import { firstJob, RunDriver, NewJobInfo } from '../drivers-containers/abstract/run-driver';
-import { file_volume_label, Dictionary, rsync_constants, project_root_label, stack_path_label } from '../constants';
+import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState } from '../drivers-containers/abstract/run-driver';
+import { file_volume_label, Dictionary, rsync_constants, project_root_label, download_exclude_label, download_include_label } from '../constants';
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot } from '../functions/config-functions';
 import { ShellCommand } from '../shell-command';
 import { FileTools } from '../fileio/file-tools';
 import { DockerCliRunDriver } from '../drivers-containers/docker/docker-cli-run-driver';
 import { DockerSocketRunDriver } from '../drivers-containers/docker/docker-socket-run-driver';
-import { trim } from '../functions/misc-functions';
+import { trim, printResultState } from '../functions/misc-functions';
 import { buildAndRun, buildImage } from '../functions/build-functions';
-import { loadProjectSettings } from '../functions/run-functions';
+import { TextFile } from '../fileio/text-file';
+
+type IncludeExcludeFiles ={
+  "include-from"?: string
+  "exclude-from"?: string
+  "tmp-dir"?: string
+}
 
 export class LocalJobDriver extends JobDriver
 {
+
+  protected tmpdir: string
+
+  constructor(drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, options: {tmpdir: string})
+  {
+    super(drivers, configurations, output_options)
+    this.tmpdir = options.tmpdir
+  }
 
   protected ERRORSTRINGS = {
     NO_MATCHING_ID: chalk`{bold No Matching Job ID}`,
@@ -116,7 +131,7 @@ export class LocalJobDriver extends JobDriver
     // -- get information on all matching jobs -----------------------------------
     var ji_result = drivers.runner.jobInfo({
       "ids": copy_options['ids'],
-      "stack-paths": copy_options["stack-paths"] || undefined
+      "stack-paths": copy_options["stack-paths"]
     })
     if(!ji_result.success) return result.absorb(ji_result)
     const job_info_array = ji_result.value
@@ -126,24 +141,27 @@ export class LocalJobDriver extends JobDriver
       const id = job.id;
       const projectRoot = job.labels?.[project_root_label] || ""
       const file_volume_id = job.labels?.[file_volume_label] || ""
-      const stack_path = job.labels?.[stack_path_label] || ""
-      const host_path  = copy_options?.["host-path"] || projectRoot // set copy-path to job hostRoot if it's not specified
+      const download_exclude = job.label?.[download_exclude_label] || ""
+      const download_include = job.label?.[download_include_label] || ""
       if(!projectRoot) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_PROJECTROOT(id))
       if(!file_volume_id) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_VOLUME(id))
-      // -- 2. load stack configuration & get download settings ------------------
-      const load_result = loadProjectSettings(host_path) // check settings in copy path (not hostRoot) in case user wants to copy into folder that is not hostRoot
-      const configuration = config.stack()
-      configuration.load(stack_path, (load_result.value.get('config-files') as Array<string>) || [])
+      // -- 2. write include & exclude settings to files -------------------------
+      const rsync_files = this.writeDownloadIncludeExcludeFiles(download_include, download_exclude)
+      if(!rsync_files)
+        return result.absorb(rsync_files)
       // -- 3. copy files --------------------------------------------------------
       const rsync_options: RsyncOptions = {
-        "host-path": host_path,
+        "host-path": copy_options?.["host-path"] || projectRoot, // set copy-path to job hostRoot if it's not specified
         "volume": file_volume_id,
         "direction": "to-host",
         "mode": copy_options.mode,
         "verbose": output_settings.verbose,
-        "files": configuration.getRsyncDownloadSettings(true)
+        "files": {"include": rsync_files.value["include-from"], "exclude": rsync_files.value["exclude-from"]}
       }
-      result.absorb(syncHostDirAndVolume(drivers, config, rsync_options, copy_options?.manual || false))
+      result.absorb(syncHostDirAndVolume(drivers, config, rsync_options))
+      // -- 4. remote tmp dir ----------------------------------------------------
+      if(rsync_files.value["tmp-dir"])
+        fs.removeSync(rsync_files.value["tmp-dir"])
     })
     return result
   }
@@ -154,6 +172,132 @@ export class LocalJobDriver extends JobDriver
     if(contents?.message) console.log(contents.message)
   }
 
+  delete(container_drivers: ContainerDrivers, output_options: OutputOptions, options: JobDeleteOptions) : ValidatedOutput<undefined>
+  {
+    const result = new ValidatedOutput(true, undefined)
+    const job_info = this.jobSelector(container_drivers, options)
+    if(!job_info.success)
+      return new ValidatedOutput(false, undefined)
+
+    const job_ids = jobIds(job_info).value
+    const volume_ids = volumeIds(job_info).value
+
+    if(!output_options.verbose)
+      return result.absorb(
+        container_drivers.runner.jobDelete(job_ids),
+        container_drivers.runner.volumeDelete(volume_ids)
+      )
+
+    // -- delete jobs ----------------------------------------------------
+    job_ids.map( (id:string) => {
+      const delete_result = container_drivers.runner.jobDelete(job_ids)
+      result.absorb(delete_result)
+      if(delete_result.success)
+        console.log(` deleted job ${id}.`)
+    })
+    // -- delete volumes -------------------------------------------------
+    volume_ids.map( (id:string) => {
+      const delete_result = container_drivers.runner.volumeDelete(job_ids)
+      result.absorb(delete_result)
+      if(delete_result.success)
+        console.log(` deleted volume ${id}.`)
+    })
+    return result
+  }
+
+  stop(container_drivers: ContainerDrivers, output_options: OutputOptions, options: JobStopOptions) : ValidatedOutput<undefined>
+  {
+    const result = new ValidatedOutput(true, undefined)
+    const job_info = this.jobSelector(container_drivers, options)
+    if(!job_info.success)
+      return new ValidatedOutput(false, undefined)
+
+    const job_ids = jobIds(job_info).value
+
+    if(!output_options.verbose)
+      return result.absorb(
+        container_drivers.runner.jobStop(job_ids)
+      )
+
+    // -- stop jobs ----------------------------------------------------
+    job_ids.map( (id:string) => {
+      const delete_result = container_drivers.runner.jobDelete(job_ids)
+      result.absorb(delete_result)
+      if(delete_result.success)
+        console.log(` stopped job ${id}.`)
+    })
+    return result
+  }
+
+  state(container_drivers: ContainerDrivers, output_options: OutputOptions, options: JobStateOptions) : ValidatedOutput<JobState[]>
+  {
+    return jobStates(
+      container_drivers.runner.jobInfo({
+        'ids': options["ids"],
+        'stack-paths': options["stack-paths"]
+      })
+    )
+  }
+
+  private jobSelector(container_drivers: ContainerDrivers, options: JobStopOptions|JobDeleteOptions) : ValidatedOutput<JobInfo[]>
+  {
+    let job_info: ValidatedOutput<JobInfo[]>
+    if(options.selecter == "all") // -- delete all jobs ----------------------------------------
+      job_info = container_drivers.runner.jobInfo({
+        'stack-paths': options['stack-paths']
+      })
+    else if(options.selecter == "all-exited") // -- delete all jobs ----------------------------
+      job_info = container_drivers.runner.jobInfo({
+        'stack-paths': options['stack-paths'],
+        'states': ["exited"]
+      })
+    else if(options.selecter == "all-running")
+      job_info = container_drivers.runner.jobInfo({
+        'stack-paths': options['stack-paths'],
+        'states': ["running"]
+      })
+    else  // -- remove only specific jobs ------------------------------------------------------
+      job_info = container_drivers.runner.jobInfo({
+        'ids': options['ids'],
+        'stack-paths': options['stack-paths']
+      })
+    return job_info
+  }
+
+  // creates files for rsync --include-from and --excluded from that are used when copying from volume back to host
+
+  private writeDownloadIncludeExcludeFiles(include_label: string|undefined, exclude_label: string|undefined) : ValidatedOutput<IncludeExcludeFiles>
+  {
+    const result:ValidatedOutput<IncludeExcludeFiles> = new ValidatedOutput(true, {})
+    if(!include_label && !exclude_label)
+      return result
+
+    // -- create tmp dir in scratch dir ----------------------------------------
+    const mktemp = FileTools.mktempDir(this.tmpdir)
+    if(!mktemp.success)
+      return result.absorb(mktemp)
+    const tmp_path = mktemp.value
+    result.value["tmp-dir"] = tmp_path
+
+    // -- write files ----------------------------------------------------------
+    const author = new TextFile(tmp_path, false)
+    author.add_extension = false
+
+    type FI = {path: string, data?: string, key: keyof IncludeExcludeFiles}
+    const file_info: Array<FI> = [
+      {key: 'include-from', path: path.join(tmp_path, "download_include"), data: include_label},
+      {key: 'exclude-from', path: path.join(tmp_path, "download_exclude"), data: exclude_label}
+    ]
+
+    file_info.map( (f:FI) => {
+      if(!f.data) return
+      result.absorb(author.write(f.path, f.data))
+      result.value[f.key] = f.path
+    })
+
+    return result
+  }
+
 }
 
 // == FILE VOLUME FUNCTIONS ====================================================
@@ -162,13 +306,13 @@ export class LocalJobDriver extends JobDriver
 // =============================================================================
 
 // -- used by functions jobCopy and syncHostDirAndVolume
-export type RsyncOptions = {
+type RsyncOptions = {
   "host-path": string                                                           // path on host where files should be copied to
   "volume": string                                                              // id of volume that contains files
   "direction": "to-volume"|"to-host"                                            // specifies direction of sync
   "mode": "update"|"overwrite"|"mirror"                                         // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
   "verbose"?: boolean                                                           // if true rsync will by run with -v flag
-  "files"?: {include: string, exclude: string}                                  // rsync include-from and rsync exclude-from
+  "files"?: {include?: string, exclude?: string}                                // rsync include-from and rsync exclude-from
   "chown"?: string                                                              // string that specifies the username or id to use with command chown
   "manual"?: boolean                                                            // if true starts interactive shell instead of rsync job
 }
@@ -186,7 +330,7 @@ export type RsyncOptions = {
 // hostRoot:string  - Project root folder
 // verbose: boolean - flag for rsync
 // -----------------------------------------------------------------------------
-export function createFileVolume(drivers: ContainerDrivers, config: Configurations, stack_configuration: StackConfiguration<any>, hostRoot: string, verbose: boolean=false) : ValidatedOutput<string>
+function createFileVolume(drivers: ContainerDrivers, config: Configurations, stack_configuration: StackConfiguration<any>, hostRoot: string, verbose: boolean=false) : ValidatedOutput<string>
 {
   const failure = new ValidatedOutput(false, "")
   // -- create volume ----------------------------------------------------------
@@ -226,7 +370,7 @@ export function createFileVolume(drivers: ContainerDrivers, config: Configuratio
 // hostRoot:string - Project root folder
 // volume_id:string - volume id
 // -----------------------------------------------------------------------------
-export function mountFileVolume(stack_configuration: StackConfiguration<any>, hostRoot: string, volume_id: string)
+function mountFileVolume(stack_configuration: StackConfiguration<any>, hostRoot: string, volume_id: string)
 {
   const hostRoot_basename = path.basename(hostRoot)
   stack_configuration.addVolume(volume_id, path.posix.join(stack_configuration.getContainerRoot(), hostRoot_basename))
@@ -238,7 +382,7 @@ export function mountFileVolume(stack_configuration: StackConfiguration<any>, ho
 // runner: RunDriver - runner that is used to start rsync job
 // copy_options: string - options for file sync
 // -----------------------------------------------------------------------------
-export function syncHostDirAndVolume(drivers: ContainerDrivers, config: Configurations, copy_options:RsyncOptions, manual_copy:boolean = false) : ValidatedOutput<undefined>
+function syncHostDirAndVolume(drivers: ContainerDrivers, config: Configurations, copy_options:RsyncOptions) : ValidatedOutput<undefined>
 {
   const result = new ValidatedOutput(true, undefined)
 
@@ -334,7 +478,7 @@ function rsyncStackConfiguration(runner: RunDriver, config:Configurations, copy_
 // rsync_flags: Dictionary - flags that will be passed to rsyncCommandString
 // files: object containing absoluve paths include and exclude files for rsync job
 // -----------------------------------------------------------------------------
-function addrsyncIncludeExclude(rsync_configuration: StackConfiguration<any>, rsync_flags: Dictionary, files: {include: string, exclude: string})
+function addrsyncIncludeExclude(rsync_configuration: StackConfiguration<any>, rsync_flags: Dictionary, files: {include?: string, exclude?: string})
 {
   const mount_rsync_configfile = (type:"include"|"exclude") => {
     const host_file_path = files[type]
@@ -350,9 +494,27 @@ function addrsyncIncludeExclude(rsync_configuration: StackConfiguration<any>, rs
   mount_rsync_configfile('exclude')
 }
 
-export function rsyncCommandString(source: string, destination: string, flags: Dictionary)
+function rsyncCommandString(source: string, destination: string, flags: Dictionary)
 {
   const shell = new ShellCommand(false, false)
   const args  = [source, destination]
   return shell.commandString('rsync', flags, args)
+}
+
+function volumeIds(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<string>>
+{
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true,
+    job_info.value
+    .map((ji:JobInfo) => ji.labels?.[file_volume_label] || "")
+    .filter((s:string) => s !== "")
+  )
+}
+
+function jobStates(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<JobState>>
+{
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true,
+    job_info.value.map( ( job:JobInfo ) => job.state)
+  )
 }
