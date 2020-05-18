@@ -1,8 +1,8 @@
 import {flags} from '@oclif/command'
 import {RemoteCommand} from '../../lib/remote/commands/remote-command'
 import {printResultState} from '../../lib/functions/misc-functions'
-import {OutputOptions, CopyOptions} from '../../lib/functions/run-functions'
 import {JSTools} from '../../lib/js-tools'
+import { OutputOptions, CopyOptions } from '../../lib/remote/compatibility'
 
 export default class Copy extends RemoteCommand {
   static description = 'Copy remote job files back into the host directories. Works with both running and completed jobs.'

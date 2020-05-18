@@ -1,21 +1,22 @@
-import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../lib/remote/commands/remote-command'
-import {OutputOptions, ContainerDrivers, JobOptions} from '../../lib/functions/run-functions'
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { RemoteCommand } from '../../lib/remote/commands/remote-command'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { OutputOptions, JobOptions, compat_parseBuildModeFlag, compat_parseLabelFlag } from '../../lib/remote/compatibility'
+import { ContainerDrivers } from '../../lib/job-managers/job-manager'
 
 export default class Shell extends RemoteCommand {
   static description = 'Start an interactive shell to view or modify a remote job\'s files or outputs.'
   static args = [{name: 'id', required: false}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}),
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    verbose: flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
-    explicit: flags.boolean({default: false}),
-    port: flags.string({default: [], multiple: true}),
-    x11: flags.boolean({default: false}),
-    label: flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
+    "explicit": flags.boolean({default: false}),
+    "port": flags.string({default: [], multiple: true}),
+    "x11": flags.boolean({default: false}),
+    "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     "stack-upload-mode": flags.string({default: "uncached", options: ["cached", "uncached"], description: 'specifies how stack is uploaded. "uncached" uploads to new tmp folder while "cached" syncs to a fixed file'}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "protocol": flags.string({exclusive: ['stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying stack-upload-mode, build-mode'}),
@@ -61,19 +62,20 @@ export default class Shell extends RemoteCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-options":this.parseBuildModeFlag(flags["build-mode"]),
+      "build-options":compat_parseBuildModeFlag(flags["build-mode"]),
       "command":      this.settings.get("container-default-shell"), // NOTE: NO EFFECT for cjr driver (command is overridden by remote cjr)
       "cwd":          flags["working-directory"],
       "file-access":  "volume",
       "synchronous":  true,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
-      "labels":       this.parseLabelFlag(flags.label),
+      "labels":       compat_parseLabelFlag(flags.label),
       "remove":       true // NOTE: NO EFFECT for cjr driver
     }
     result = driver.jobExec(
       resource,
       drivers,
+      this.newConfigurationsObject(),
       job_options,
       {
         id: id,

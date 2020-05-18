@@ -1,23 +1,23 @@
-import {flags} from '@oclif/command'
-import {RemoteCommand, Dictionary} from '../../lib/remote/commands/remote-command'
-import {JSTools} from '../../lib/js-tools'
-import {printResultState} from '../../lib/functions/misc-functions'
-import {OutputOptions} from '../../lib/functions/run-functions'
-import {RemoteDeleteOptions} from '../../lib/remote/drivers/remote-driver'
+import { flags } from '@oclif/command'
+import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-command'
+import { JSTools } from '../../lib/js-tools'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { RemoteDeleteOptions } from '../../lib/remote/drivers/remote-driver'
 import { ValidatedOutput } from '../../lib/validated-output'
+import { OutputOptions } from '../../lib/remote/compatibility'
 
 export default class Delete extends RemoteCommand {
   static description = 'Delete a job and its associated data including the image; works on both running and completed jobs'
   static args = [{name: 'id'}]
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
-    all: flags.boolean({default: false}),
+    "all": flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
     "all-running": flags.boolean({default: false}),
     "delete-images": flags.boolean({default: true}),
     "delete-files": flags.boolean({default: true}),
-    explicit: flags.boolean({default: false}),
-    quiet: flags.boolean({default: false, char: 'q'})
+    "explicit": flags.boolean({default: false}),
+    "quiet": flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
 

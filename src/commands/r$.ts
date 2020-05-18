@@ -1,10 +1,11 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../lib/commands/stack-command'
 import { RemoteCommand } from '../lib/remote/commands/remote-command'
-import { ContainerDrivers, OutputOptions, JobOptions } from "../lib/functions/run-functions"
 import { RunShortcuts } from "../lib/config/run-shortcuts/run-shortcuts"
-import { printResultState, initX11 } from '../lib/functions/misc-functions'
+import { printResultState } from '../lib/functions/misc-functions'
 import { Dictionary } from '../lib/constants'
+import { ContainerDrivers } from '../lib/job-managers/job-manager'
+import { OutputOptions, JobOptions, compat_parseLabelFlag, compat_parseBuildModeFlag } from '../lib/remote/compatibility'
+import { initX11 } from '../lib/functions/cli-functions'
 
 export default class Run extends RemoteCommand {
   static description = 'Start a job that runs a shell command on a remote resource.'
@@ -69,7 +70,7 @@ export default class Run extends RemoteCommand {
     var job_options:JobOptions = {
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "build-options":this.parseBuildModeFlag(flags["build-mode"]),
+      "build-options":compat_parseBuildModeFlag(flags["build-mode"]),
       "command":      run_shortcut.apply(argv).join(" "),
       "host-root":    flags["project-root"] || "",
       "cwd":          process.cwd(),
@@ -77,12 +78,13 @@ export default class Run extends RemoteCommand {
       "synchronous":  !flags.async,
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
-      "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
+      "labels":       compat_parseLabelFlag(flags.label, flags.message || ""),
       "remove":       (flags['file-access'] === "bind") ? true : false
     }
     result = remote_driver.jobStart(
       resource,
       drivers,
+      this.newConfigurationsObject(),
       job_options,
       {
         "auto-copy":         this.shouldAutocopy(flags),

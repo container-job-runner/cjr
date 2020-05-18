@@ -1,8 +1,10 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
-import { OutputOptions, ContainerDrivers, JobOptions, nextAvailablePort } from '../../lib/functions/run-functions'
 import { startJupyterApp } from "../../lib/functions/jupyter-functions"
-import { printResultState, initX11 } from '../../lib/functions/misc-functions'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { compat_parseBuildModeFlag, OutputOptions, JobOptions } from '../../lib/remote/compatibility'
+import { ContainerDrivers } from '../../lib/job-managers/job-manager'
+import { nextAvailablePort, initX11 } from '../../lib/functions/cli-functions'
 
 export default class Jupyter extends RemoteCommand {
   static description = 'Start a jupiter server for viewing or modifying job\'s files or outputs'
@@ -61,7 +63,7 @@ export default class Jupyter extends RemoteCommand {
     if(flags['x11'] && args['command'] == 'start') await initX11(this.settings.get('interactive'), flags.explicit)
     // -- select port ----------------------------------------------------------
     if(flags['port'] == 'auto') {
-      const port_number = nextAvailablePort(drivers.runner, 7027)
+      const port_number = nextAvailablePort(drivers, 7027)
       const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
       flags['port'] = `${port_address}:${port_number}:${port_number}`
     }
@@ -72,7 +74,7 @@ export default class Jupyter extends RemoteCommand {
       const job_options:JobOptions = {
         "stack-path":   stack_path,
         "config-files": flags["config-files"],
-        "build-options":this.parseBuildModeFlag(flags["build-mode"]),
+        "build-options":compat_parseBuildModeFlag(flags["build-mode"]),
         "command":      argv.splice(2).join(" "),
         "cwd":          "",
         "file-access":  "volume",
@@ -82,7 +84,7 @@ export default class Jupyter extends RemoteCommand {
         "labels":       [],
         "remove":       false
       }
-      result = driver.jobJupyterStart(resource, drivers, job_options, {
+      result = driver.jobJupyterStart(resource, drivers,  this.newConfigurationsObject(), job_options, {
         id: args['id'],
         tunnel: flags['tunnel'],
         "host-project-root": flags["project-root"] || "",
