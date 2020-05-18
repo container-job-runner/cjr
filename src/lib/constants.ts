@@ -29,6 +29,7 @@ export const cli_settings_yml_name = "settings"
 export const cli_bundle_dir_name  = "bundle"  // temporarily stores data between container transfer
 export const build_dirname = "build"
 export const job_copy_dirname = 'job-copy'
+export const podman_socket = 'podman-socket'
 
 // name of optional project settings file that is loaded relative to project project_root
 export const project_settings_folder = `.${cli_name}`
@@ -41,7 +42,7 @@ export const project_idfile = "project-id.json"
 export const projectIDPath  = (hostRoot: string) => path.join(hostRoot, project_settings_folder, project_idfile)
 
 // default cli options that are stored in cli settings json file
-export const defaultCLISettings = (settings_dir:string) =>
+export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir: string) =>
 {
   let driver
   let socket
@@ -54,14 +55,14 @@ export const defaultCLISettings = (settings_dir:string) =>
       break
     default:
       driver = "podman-cli"
-      socket = "$XDG_RUNTIME_DIR/podman/podman.sock"
+      socket = path.join(data_dir, podman_socket, "podman.sock")
   }
 
   return {
       // cli-props
       "auto-project-root": true,
       "interactive": true,
-      "stacks-dir": path.join(settings_dir, "stacks"),
+      "stacks-dir": path.join(config_dir, "stacks"),
       "alway-print-job-id": false,
       "autocopy-sync-job": true,
       "job-default-run-mode": "sync",
