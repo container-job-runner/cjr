@@ -480,8 +480,10 @@ function syncHostDirAndVolume(drivers: ContainerDrivers, config: Configurations,
   const rsync_job_configuration = config.job(rsync_stack_configuration)
   rsync_job_configuration.remove_on_exit = true
   rsync_job_configuration.synchronous = true
-  if(copy_options['manual'])
+  if(copy_options['manual']) {
     rsync_job_configuration.command = ['sh']
+    rsync_job_configuration.working_directory = rsync_constants.manual_working_dir
+  }
   else if(copy_options['chown'])
     rsync_job_configuration.command = [`${rsync_base_command} && chown -R ${copy_options['chown']}:${copy_options['chown']} ${rsync_constants.dest_dir}`]
   else
