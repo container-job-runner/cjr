@@ -41,7 +41,7 @@ export type ContainerSDK = {
 
 export abstract class StackCommand extends Command
 {
-  protected settings = new Settings(this.config.configDir)
+  protected settings = new Settings(this.config.configDir, this.config.dataDir, this.config.cacheDir)
 
   // helper functions for exec commands that require id
   async getJobIds( argv: Array<string>, flags: {'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean} , states?: Array<JobState>) : Promise<string[]|false>

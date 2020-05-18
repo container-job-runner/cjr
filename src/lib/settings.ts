@@ -17,10 +17,10 @@ export class Settings
   private JSON_file: JSONFile
   private defaults: object = {}
 
-  constructor(settings_dir: string)
+  constructor(config_dir: string, data_dir:string, cache_dir: string)
   {
-    this.defaults = defaultCLISettings(settings_dir)
-    this.JSON_file = new JSONFile(settings_dir, true)
+    this.defaults = defaultCLISettings(config_dir, data_dir, cache_dir)
+    this.JSON_file = new JSONFile(config_dir, true)
   }
 
   set(field: string, value: any)
