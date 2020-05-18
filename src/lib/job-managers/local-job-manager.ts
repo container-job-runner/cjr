@@ -1,10 +1,10 @@
 import chalk = require('chalk');
 import path = require('path');
 import fs = require('fs-extra')
-import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions } from './job-manager'
+import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions } from './job-manager'
 import { JobConfiguration } from '../config/jobs/job-configuration';
 import { ValidatedOutput } from '../validated-output';
-import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState } from '../drivers-containers/abstract/run-driver';
+import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../drivers-containers/abstract/run-driver';
 import { file_volume_label, Dictionary, rsync_constants, project_root_label, download_exclude_label, download_include_label } from '../constants';
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot } from '../functions/config-functions';
@@ -115,7 +115,10 @@ export class LocalJobManager extends JobManager
 
     // -- get parent job information -------------------------------------------
     const job_info_request = firstJob(
-      this.container_drivers.runner.jobInfo({"ids": [exec_options["parent-id"]]})
+      this.container_drivers.runner.jobInfo({
+        "ids": [exec_options["parent-id"]],
+        "stack-paths": exec_options["stack-paths"]
+      })
     )
     if(!job_info_request.success)
       return failed_result.absorb(job_info_request).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
@@ -254,6 +257,35 @@ export class LocalJobManager extends JobManager
         'stack-paths': options["stack-paths"]
       })
     )
+  }
+
+  attach(options: JobAttachOptions) : ValidatedOutput<undefined>
+  {
+    // match with existing container ids
+    const result = firstJobId(
+      this.container_drivers.runner.jobInfo({
+        "ids": [options['id']],
+        "stack-paths": options['stack-paths'],
+        "states": ["running"]
+      }))
+    if(result.success)
+      return this.container_drivers.runner.jobAttach(result.value)
+    else
+      return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
+  }
+
+  log(options: JobLogOptions) : ValidatedOutput<string>
+  {
+    // match with existing container ids
+    const result = firstJobId(
+      this.container_drivers.runner.jobInfo({
+        "ids": [options['id']],
+        "stack-paths": options['stack-paths']
+      }))
+    if(result.success)
+      return this.container_drivers.runner.jobLog(result.value, options["lines"])
+    else
+      return new ValidatedOutput(false, "").pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
   }
 
   private jobSelector(container_drivers: ContainerDrivers, options: JobStopOptions|JobDeleteOptions) : ValidatedOutput<JobInfo[]>
