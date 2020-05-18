@@ -198,6 +198,8 @@ export class LocalJobManager extends JobManager
     const job_info = this.jobSelector(this.container_drivers, options)
     if(!job_info.success)
       return new ValidatedOutput(false, undefined)
+    if(job_info.value.length == 0)
+      return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
 
     const job_ids = jobIds(job_info).value
     const volume_ids = volumeIds(job_info).value
@@ -231,6 +233,8 @@ export class LocalJobManager extends JobManager
     const job_info = this.jobSelector(this.container_drivers, options)
     if(!job_info.success)
       return new ValidatedOutput(false, undefined)
+    if(job_info.value.length == 0)
+      return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
 
     const job_ids = jobIds(job_info).value
 
