@@ -14,10 +14,10 @@ import { WarningStrings } from '../error-strings'
 import { X11_POSIX_BIND, container_root_label, stack_path_label, project_root_label, download_include_label, download_exclude_label } from '../constants'
 import { trim } from './misc-functions'
 import { PathTools } from '../fileio/path-tools'
-import { ContainerDrivers } from './run-functions'
 import { PodmanCliRunDriver } from '../drivers-containers/podman/podman-cli-run-driver'
 import { PodmanSocketRunDriver } from '../drivers-containers/podman/podman-socket-run-driver'
 import { TextFile } from '../fileio/text-file'
+import { ContainerDrivers } from '../job-managers/job-manager'
 
 type StackConfigOptions = {
   "image"?: string
