@@ -1,13 +1,13 @@
-import {flags} from '@oclif/command'
-import {RemoteCommand, Dictionary} from '../../lib/remote/commands/remote-command'
-import {printResultState, printVerticalTable, printHorizontalTable} from '../../lib/functions/misc-functions'
-import {Resource} from '../../lib/remote/config/resource-configuration'
+import { flags } from '@oclif/command'
+import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-command'
+import { printVerticalTable, printHorizontalTable } from '../../lib/functions/misc-functions'
+import { Resource } from '../../lib/remote/config/resource-configuration'
 
 export default class List extends RemoteCommand {
   static description = 'List all remote resources.'
   static args   = []
   static flags  = {
-    verbose: flags.boolean({default: false, char: 'v', description: "show all properties for each remote resource."})
+    "verbose": flags.boolean({default: false, char: 'v', description: "show all properties for each remote resource."})
   }
   static strict = true;
 

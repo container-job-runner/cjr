@@ -1,8 +1,7 @@
 import { flags } from '@oclif/command'
 import { StackCommand } from '../../lib/commands/stack-command'
 import { JSTools } from '../../lib/js-tools'
-import { removeImage } from '../../lib/functions/build-functions'
-import { ContainerDrivers } from '../../lib/functions/run-functions'
+import { printResultState } from '../../lib/functions/misc-functions'
 
 export default class RMI extends StackCommand {
   static description = 'Delete an image one or more stacks.'
@@ -19,16 +18,27 @@ export default class RMI extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(RMI)
+    const { argv, flags } = this.parse(RMI)
     this.augmentFlagsWithProjectSettings(flags, {stack:false, "stacks-dir": false, "config-files": false})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit, flags.quiet),
-      runner:  this.newRunDriver(flags.explicit, flags.quiet)
-    }
+    const { container_drivers, configurations } = this.initContainerSDK(true, flags.quiet, flags.explicit)
+    // -- map through list and remove ------------------------------------------
     stack_list.map((stack_name:string) => {
       const stack_path = this.fullStackPath(stack_name, flags["stacks-dir"])
-      removeImage(drivers, stack_path, flags['all-configurations'], flags['config-files'])
+      if(flags["all-configurations"]) // -- remove based on stack_path ---------
+        container_drivers.builder.removeAllImages(stack_path)
+      else { // -- remove only current configuration ---------------------------
+        const init_stack = this.initStackConfiguration({
+          "stack": stack_name,
+          "config-files": flags["config-files"],
+          "stacks-dir": flags["stacks-dir"],
+          },
+          configurations
+        )
+        if(!init_stack.success)
+          return printResultState(init_stack)
+        printResultState(container_drivers.builder.removeImage(init_stack.value))
+      }
     });
   }
 

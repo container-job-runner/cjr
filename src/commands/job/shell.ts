@@ -1,9 +1,9 @@
 import { flags} from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
-import { jobExec, promptUserForJobId, ContainerDrivers, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
-import { printResultState, initX11 } from '../../lib/functions/misc-functions'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { RunCommand } from '../../lib/commands/newjob-command'
+import { initX11 } from '../../lib/functions/cli-functions'
 
-export default class Shell extends StackCommand {
+export default class Shell extends RunCommand {
   static description = 'Start an interactive shell to view or modify a job\'s files or outputs.'
   static args = [{name: 'id', required: false}]
   static flags = {
@@ -13,6 +13,7 @@ export default class Shell extends StackCommand {
     "port": flags.string({default: [], multiple: true}),
     "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     "explicit": flags.boolean({default: false}),
+    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
@@ -23,40 +24,19 @@ export default class Shell extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Shell)
-    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "visible-stacks":false, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
-    const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
-    // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit),
-      runner:  this.newRunDriver(flags.explicit)
-    }
+    const { argv, flags } = this.parse(Shell)
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- get job id -----------------------------------------------------------
-    const id_str = argv[0] || await promptUserForJobId(drivers.runner, flags["visible-stacks"], undefined, !this.settings.get('interactive')) || ""
-    if(id_str === "") return // exit if user selects empty id or exits interactive dialog
-    // -- set job options ------------------------------------------------------
-    var job_options:JobOptions = {
-      "stack-path":   stack_path,
-      "config-files": flags["config-files"],
-      "build-options":this.parseBuildModeFlag(flags["build-mode"]),
-      "command":      this.settings.get("container-default-shell"),
-      "cwd":          flags['working-directory'],
-      "file-access":  "volume",
-      "synchronous":  true,
-      "x11":          flags.x11,
-      "ports":        this.parsePortFlag(flags.port),
-      "labels":       this.parseLabelFlag(flags.label),
-      "remove":       true
-    }
-    // -- set output options ---------------------------------------------------
-    const output_options:OutputOptions = {
-      verbose:  false,
-      silent:   false,
-      explicit: flags.explicit
-    }
-    printResultState(jobExec(drivers, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options))
+    const parent_id = await this.getJobId(argv, flags)
+    if(parent_id === false) return // exit if user selects empty id or exits interactive dialog
+    // -- run basic exec -------------------------------------------------------
+    const { job } = this.runSimpleExec(
+      parent_id,
+      { ...flags, ... {quiet: false}},
+      this.settings.get("container-default-shell")
+    )
+    printResultState(job)
   }
+
 }

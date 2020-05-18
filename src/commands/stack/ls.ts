@@ -1,9 +1,9 @@
-import * as fs from 'fs-extra'
-import * as path from 'path'
-import * as chalk from 'chalk'
-import {flags} from '@oclif/command'
-import {FileTools} from '../../lib/fileio/file-tools'
-import {StackCommand} from '../../lib/commands/stack-command'
+import fs = require('fs-extra')
+import path = require('path')
+import chalk = require('chalk')
+import { flags } from '@oclif/command'
+import { FileTools } from '../../lib/fileio/file-tools'
+import { StackCommand } from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
   static description = 'List all the stacks in the stacks directory.'
@@ -15,7 +15,7 @@ export default class List extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(List)
+    const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": false})
     const stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
     fs.ensureDirSync(stacks_path)

@@ -1,9 +1,8 @@
 import { flags } from '@oclif/command'
 import { StackCommand } from '../../lib/commands/stack-command'
 import { JSTools } from '../../lib/js-tools'
-import { buildAndLoad } from '../../lib/functions/build-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
-import { ContainerDrivers } from '../../lib/functions/run-functions'
+import { buildImage } from '../../lib/functions/build-functions'
 
 export default class Build extends StackCommand {
   static description = 'Manually build images for one or more stacks.'
@@ -22,20 +21,24 @@ export default class Build extends StackCommand {
   async run()
   {
     const {argv, flags} = this.parse(Build)
-    this.augmentFlagsWithProjectSettings(flags, {stack:false, "config-files": false, "stacks-dir": true})
+    this.augmentFlagsWithProjectSettings(flags, {"stack": false, "config-files": false, "stacks-dir": true})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit, flags.quiet),
-      runner:  this.newRunDriver(flags.explicit, flags.quiet)
-    }
+    const { container_drivers, configurations } = this.initContainerSDK(true, flags.quiet, flags.explicit)
     stack_list.map((stack_name:string) => {
+      const init_stack = this.initStackConfiguration({
+        "stack": stack_name,
+        "config-files": flags["config-files"],
+        "stacks-dir": flags["stacks-dir"],
+        },
+        configurations
+      )
+      if(!init_stack.success)
+        return printResultState(init_stack)
+      const stack_configuration = init_stack.value
+      if(flags["pull"]) stack_configuration.addBuildFlag('pull')
+      if(flags["no-cache"]) stack_configuration.addBuildFlag('no-cache')
       printResultState(
-        buildAndLoad(
-          drivers,
-          {"no-cache": flags['no-cache'], "pull": flags['pull'], "verbose": true},
-          this.fullStackPath(stack_name, flags["stacks-dir"]),
-          flags['config-files']
-        )
+        buildImage(stack_configuration, container_drivers, {"reuse-image": false, verbose: true})
       )
     });
   }

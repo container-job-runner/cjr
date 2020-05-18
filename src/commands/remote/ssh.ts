@@ -8,9 +8,9 @@ export default class Ssh extends RemoteCommand {
   static description = 'ssh into a remote resource.'
   static args   = [{name: 'remote-name'}]
   static flags = {
-    'remote-name': flags.string({env: 'REMOTENAME'}),
-    x11: flags.boolean({default: false, char: 'X'}),
-    explicit: flags.boolean({default: false})
+    "remote-name": flags.string({env: 'REMOTENAME'}),
+    "x11": flags.boolean({default: false, char: 'X'}),
+    "explicit": flags.boolean({default: false})
   }
   static strict = false;
 

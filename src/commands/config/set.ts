@@ -1,7 +1,7 @@
+import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { StackCommand } from '../../lib/commands/stack-command'
 import { printResultState } from '../../lib/functions/misc-functions'
-import * as chalk from 'chalk'
 import { Dictionary } from '../../lib/constants'
 
 export default class Set extends StackCommand {
@@ -69,7 +69,7 @@ export default class Set extends StackCommand {
   static strict = true;
 
   async run() {
-    const {args, flags} = this.parse(Set)
+    const { flags } = this.parse(Set)
     Object.keys(flags).filter((key:string) => key != "quiet").sort().map((key:string) => {
       const value = (flags as Dictionary)[key]
       const result = this.settings.set(key, value)

@@ -1,11 +1,9 @@
-import {flags} from '@oclif/command'
 import {RemoteCommand} from '../../lib/remote/commands/remote-command'
 import {printResultState} from '../../lib/functions/misc-functions'
 
 export default class Delete extends RemoteCommand {
   static description = 'Remove a remote resource.'
   static args   = [{name: 'remote-name', required: true}]
-  static flags  = {}
   static strict = true;
 
   async run() {

@@ -1,9 +1,6 @@
 import { flags } from '@oclif/command'
 import { StackCommand } from '../../lib/commands/stack-command'
-import { promptUserForJobId, firstJobId } from '../../lib/functions/run-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
-import { ValidatedOutput } from '../../lib/validated-output'
-import { ErrorStrings } from '../../lib/error-strings'
 
 export default class Attach extends StackCommand {
   static description = 'Attach to a running job.'
@@ -12,32 +9,28 @@ export default class Attach extends StackCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    explicit: flags.boolean({default: false})
+    "explicit": flags.boolean({default: false})
   }
   static strict = true;
 
   async run()
   {
-    const {argv, flags} = this.parse(Attach)
-    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunDriver(flags.explicit)
-    const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
-    var id = argv[0] || await promptUserForJobId(runner, stack_paths, ["running"], !this.settings.get('interactive')) || ""
-    if(id === "") return // exit if user selects empty
-    // match with existing container ids
-    var result = firstJobId(
-      runner.jobInfo({
-        "ids": [id],
-        "stack-paths": stack_paths,
-        "states": ["running"]
-      }))
-    if(result.success)
-      runner.jobAttach(result.value[0])
-    else
-      printResultState(
-        new ValidatedOutput(false, undefined)
-          .pushError(ErrorStrings.ATTACH.NO_MATCHING_ID)
-      )
+    const { argv, flags } = this.parse(Attach)
+    this.augmentFlagsWithProjectSettings(flags, {
+      "visible-stacks":false,
+      "stacks-dir": false,
+    })
+    // -- get job id -----------------------------------------------------------
+    const job_id = await this.getJobId(argv, flags, ["running"])
+    if(job_id === false) return // exit if user selects empty id or exits interactive dialog
+    // -- attach ---------------------------------------------------------------
+    const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
+    printResultState(
+      job_manager.attach({
+        "id": job_id,
+        "stack-paths": this.extractVisibleStacks(flags)
+      })
+    )
   }
 
 }

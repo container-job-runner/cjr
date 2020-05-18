@@ -9,26 +9,30 @@ export default class State extends StackCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    explicit: flags.boolean({default: false})
+    "explicit": flags.boolean({default: false})
   }
   static strict = true;
 
   async run()
   {
-    const {args, flags} = this.parse(State)
-    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunDriver(flags.explicit)
-    const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
-    const result = runner.jobInfo({'ids': [args.id], 'stack-paths': stack_paths})
-    if(!result.success) return console.log('non-existent')
-    const job_info = result.value
-    console.log(job_info[0].state)
+    const { argv, flags } = this.parse(State)
+    this.augmentFlagsWithProjectSettings(flags, {
+      "visible-stacks":false,
+      "stacks-dir": false
+    })
+
+    const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
+    const states = job_manager.state({
+      "ids": argv,
+      "stack-paths": this.extractVisibleStacks(flags)
+    })
+
+    if(!states.success)
+      return printResultState(states)
+    if(states.value.length == 0)
+      console.log('non-existent')
+    else
+      console.log(states.value.pop())
   }
 
 }
-
-// Changes:
-// 1. remove matchingJobId
-// 2. set all visible-stacks parameter default to empty.
-// 3. replace stack_paths with
-// const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))

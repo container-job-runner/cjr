@@ -1,10 +1,9 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../lib/commands/stack-command'
-import { jobStart, jobToImage, ContainerDrivers, OutputOptions, JobOptions } from "../lib/functions/run-functions"
-import { printResultState, initX11 } from '../lib/functions/misc-functions'
-import { ValidatedOutput } from '../lib/validated-output'
+import { printResultState, } from '../lib/functions/misc-functions'
+import { jobToImage, initX11 } from '../lib/functions/cli-functions'
+import { RunCommand } from '../lib/commands/newjob-command'
 
-export default class Shell extends StackCommand {
+export default class Shell extends RunCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
   static args = []
   static flags = {
@@ -26,49 +25,33 @@ export default class Shell extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Shell)
-    this.augmentFlagsWithHere(flags)
-    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "stacks-dir": false})
-    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
-    // -- set output options ---------------------------------------------------
-    const output_options:OutputOptions = {
-      verbose:  flags.verbose,
-      silent:   false,
-      explicit: flags.explicit
-    }
-    // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit),
-      runner:  this.newRunDriver(flags.explicit)
-    }
+    const {flags} = this.parse(Shell)
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
-    // -- set job options ------------------------------------------------------
-    var job_options:JobOptions = {
-      "stack-path":    stack_path,
-      "config-files":  flags["config-files"],
-      "build-options": this.parseBuildModeFlag(flags["build-mode"]),
-      "command":       this.settings.get("container-default-shell"),
-      "host-root":     flags["project-root"] || "",
-      "cwd":           flags["working-directory"],
-      "file-access":   "bind",
-      "synchronous":   true,
-      "x11":           flags.x11,
-      "ports":         this.parsePortFlag(flags.port),
-      "remove":        (flags.save !== undefined) ? false : true
+    // -- run basic job --------------------------------------------------------
+    const shell_flags = {
+      "quiet": false,
+      "file-access": "bind",
+      "label": [],
+      "sync": true,
+      "remove-on-exit": (flags.save !== undefined) ? false : true
     }
-
-    const start_result = jobStart(drivers, job_options, output_options)
-    if(!start_result.success) return printResultState(start_result)
-
-    if(flags.save !== undefined) await jobToImage(
-      drivers.runner,
-      new ValidatedOutput(start_result.success, start_result.value.id), // wrap id into ValidatedOutput<string>
-      flags.save,
-      true,
-      this.settings.get('interactive')
+    const {job, job_data} = await this.runSimpleJob(
+      { ... flags, ... shell_flags},
+      [this.settings.get("container-default-shell")]
     )
-    printResultState(start_result);
+    if(!job.success) return printResultState(job)
+    if(!job_data.success) return printResultState(job)
+    // -- save image -----------------------------------------------------------
+    const job_id = job.value.id
+    if(flags.save !== undefined)
+      await jobToImage(
+        job_data.value.container_drivers,
+        job_id,
+        flags.save,
+        true,
+        this.settings.get('interactive')
+      )
   }
 
 }

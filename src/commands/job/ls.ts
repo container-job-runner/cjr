@@ -2,7 +2,7 @@ import * as path from 'path'
 import { flags} from '@oclif/command'
 import { printVerticalTable, printHorizontalTable, printResultState } from '../../lib/functions/misc-functions'
 import { StackCommand } from '../../lib/commands/stack-command'
-import { Dictionary } from '../../lib/constants'
+import { Dictionary, stash_label } from '../../lib/constants'
 
 export default class List extends StackCommand {
   static description = 'List all running and completed jobs.'
@@ -21,11 +21,12 @@ export default class List extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(List)
+    const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const runner  = this.newRunDriver(flags.explicit)
-    const stack_paths = (flags['all']) ? undefined : flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
-    const job_info = runner.jobInfo({'stack-paths': stack_paths})
+    const job_info = runner.jobInfo({
+      'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags)
+    })
     if(!job_info.success) return printResultState(job_info)
     const jobs = job_info.value
 
@@ -41,12 +42,12 @@ export default class List extends StackCommand {
     if(flags.verbose)  // -- Verbose Output ------------------------------------
     {
       table_parameters = {
-          row_headers:    ["ID", "STACK", "COMMAND", "STATUS", "MESSAGE"],
+          row_headers:    ["ID", "IMAGE", "STACK", "COMMAND", "STATUS", "MESSAGE"],
           column_widths:  [9, 103],
           text_widths:    [8, 102],
           silent_clip:    [true, true]
       }
-      toArray = (e:Dictionary) => [e.id, e.stack, e.command, e.status, e?.labels?.message || ""]
+      toArray = (e:Dictionary) => [e.id, e.image, e.stack, e.command, e.status, e?.labels?.message || ""]
       printTable = printHorizontalTable
     }
     else // -- Standard Output -------------------------------------------------
@@ -126,13 +127,13 @@ export default class List extends StackCommand {
 
     printTable({ ...table_parameters, ...{
         title:  "Completed Jobs",
-        data:   jobs.filter((j:Dictionary) => (j.state === "exited" && j?.labels?.jobtype !== "stash")).map((e:Dictionary) => toArray(e)),
+        data:   jobs.filter((j:Dictionary) => (j.state === "exited" && j?.labels?.[stash_label] !== "true")).map((e:Dictionary) => toArray(e)),
     }})
 
     if(flags['show-stashes'] || flags['all'])
       printTable({ ...table_parameters, ...{
           title:  "Stashes",
-          data:   jobs.filter((j:Dictionary) => (j?.labels?.jobtype === "stash")).map((e:Dictionary) => toArray(e)),
+          data:   jobs.filter((j:Dictionary) => (j?.labels?.[stash_label] === "true")).map((e:Dictionary) => toArray(e)),
       }})
 
   }

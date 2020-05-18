@@ -1,11 +1,9 @@
-import * as chalk from 'chalk'
-import { flags} from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
-import { jobExec, ContainerDrivers, JobOptions, OutputOptions } from '../../lib/functions/run-functions'
-import { RunShortcuts } from "../../lib/config/run-shortcuts/run-shortcuts"
-import { printResultState, initX11 } from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { printResultState } from '../../lib/functions/misc-functions'
+import { RunCommand } from '../../lib/commands/newjob-command'
+import { initX11 } from '../../lib/functions/cli-functions'
 
-export default class Shell extends StackCommand {
+export default class Exec extends RunCommand {
   static description = 'Start a new job using files from a completed or currently running job.'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
@@ -30,44 +28,14 @@ export default class Shell extends StackCommand {
 
   async run()
   {
-    const {args, argv, flags} = this.parse(Shell)
-    this.augmentFlagsWithProjectSettings(flags, {"stack":true, "config-files": false, "visible-stacks":false})
-    const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
-    const parent_stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"])) // parent job be run using one of these stacks
-    const run_shortcut = new RunShortcuts()
-    // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit, (flags.quiet) ? true : !flags.verbose),
-      runner:  this.newRunDriver(flags.explicit, (flags.quiet) ? true : false)
-    }
+    const {argv, flags} = this.parse(Exec)
+    // -- get job id -----------------------------------------------------------
+    const parent_job_id = await this.getJobId(argv, flags)
+    if(parent_job_id === false) return // exit if user selects empty id or exits interactive dialog
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
-    // -- get job id -----------------------------------------------------------
-    const id_str = argv[0]
-    const command = run_shortcut.apply(argv.splice(1)).join(" ")
-    // -- set job options ------------------------------------------------------
-    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))) ? true : false
-    var job_options:JobOptions = {
-      "stack-path":   stack_path,
-      "config-files": flags["config-files"],
-      "build-options":this.parseBuildModeFlag(flags["build-mode"]),
-      "command":      command,
-      "cwd":          flags["working-directory"],
-      "file-access":  "volume",
-      "synchronous":  synchronous,
-      "x11":          flags.x11,
-      "ports":        this.parsePortFlag(flags.port),
-      "labels":       this.parseLabelFlag(flags.label, flags.message || ""),
-      "remove":       true
-    }
-    // -- set output options ---------------------------------------------------
-    const output_options:OutputOptions = {
-      verbose:  flags.verbose,
-      silent:   flags.quiet,
-      explicit: flags.explicit
-    }
-    printResultState(
-      jobExec(drivers, {"id": id_str, "allowable-stack-paths": parent_stack_paths}, job_options, output_options)
-    )
+    // -- run basic exec -------------------------------------------------------
+    const { job } = this.runSimpleExec(parent_job_id, flags, argv.slice(1))
+    printResultState(job)
   }
 }

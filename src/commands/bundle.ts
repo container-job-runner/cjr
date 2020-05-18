@@ -1,28 +1,27 @@
-import * as chalk from 'chalk'
-import * as fs from 'fs-extra'
-import * as path from 'path'
-import * as inquirer from 'inquirer'
+import fs = require('fs-extra')
+import path = require('path')
+import inquirer = require('inquirer')
+
 import { flags } from '@oclif/command'
 import { StackCommand } from '../lib/commands/stack-command'
-import { cli_bundle_dir_name, project_settings_folder, project_settings_file, projectSettingsYMLPath, Dictionary } from '../lib/constants'
+import { cli_bundle_dir_name, project_settings_folder, Dictionary } from '../lib/constants'
 import { printResultState } from '../lib/functions/misc-functions'
-import { bundleStack, bundleProjectSettings, bundleProject, ContainerDrivers, ProjectBundleOptions} from '../lib/functions/run-functions'
+import { bundleProjectSettings, bundleProject, ProjectBundleOptions } from '../lib/functions/cli-functions'
 import { ShellCommand } from '../lib/shell-command'
 import { FileTools } from '../lib/fileio/file-tools'
-import { YMLFile } from '../lib/fileio/yml-file'
 import { ValidatedOutput } from '../lib/validated-output'
 
 export default class Bundle extends StackCommand {
   static description = 'Bundle a stack or project into a zip or tar for sharing.'
   static args = [{name: 'save_dir', required: true}]
   static flags = {
-    stack: flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false}),
-    zip: flags.boolean({default: false, exclusive: ['tar'], description: 'produces a zip output file (requires gzip)'}),
-    tar:  flags.boolean({default: false, exclusive: ['zip'], description: 'produces a tar.gz output file (requires zip)'}),
+    "explicit": flags.boolean({default: false}),
+    "verbose": flags.boolean({default: false}),
+    "zip": flags.boolean({default: false, exclusive: ['tar'], description: 'produces a zip output file (requires gzip)'}),
+    "tar": flags.boolean({default: false, exclusive: ['zip'], description: 'produces a tar.gz output file (requires zip)'}),
     "include-files": flags.boolean({default: false, description: 'include project files in bundle'}),
     "include-stacks-dir": flags.boolean({default: false, description: 'include all stacks in stacks directory'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
@@ -36,10 +35,7 @@ export default class Bundle extends StackCommand {
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
-      runner:  this.newRunDriver(flags.explicit, true)
-    }
+    const {container_drivers, configurations} = this.initContainerSDK(flags.verbose, false, flags.explicit)
     // -- create tmp dir for bundle --------------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name))
     if(!result.success) return printResultState(result)
@@ -55,9 +51,9 @@ export default class Bundle extends StackCommand {
     if(flags['include-stacks-dir']) options["stacks-dir"] = flags["stacks-dir"]
 
     if(flags['include-files']) // -- bundle all files --------------------------
-      result = bundleProject(drivers, options)
+      result = bundleProject(container_drivers, configurations, options)
     else // -- bundle project configuration ------------------------------------
-      result = bundleProjectSettings(drivers, options)
+      result = bundleProjectSettings(container_drivers, configurations, options)
     printResultState(result)
 
     // -- copy bundle to user specified location -------------------------------

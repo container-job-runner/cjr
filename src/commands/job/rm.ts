@@ -1,21 +1,19 @@
 import { flags } from '@oclif/command'
 import { StackCommand } from '../../lib/commands/stack-command'
-import { JSTools } from '../../lib/js-tools'
-import { promptUserForJobId, jobIds, volumeIds } from '../../lib/functions/run-functions'
+import { Dictionary } from '../../lib/constants'
 import { printResultState } from '../../lib/functions/misc-functions'
-import { ValidatedOutput } from '../../lib/validated-output'
-import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 
 export default class Delete extends StackCommand {
   static description = 'Delete a job and its associated data; works on both running and completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
     "all": flags.boolean({default: false}),
-    "all-completed": flags.boolean({default: false}),
-    "all-running": flags.boolean({default: false}),
+    "all-completed": flags.boolean({default: false, exclusive: ['all', 'all-running']}),
+    "all-running": flags.boolean({default: false, exclusive: ['all', 'all-complete']}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
+    "verbose": flags.boolean({default: false, char: 'v', exclusive: ['quiet']}),
     "explicit": flags.boolean({default: false}),
     "quiet":flags.boolean({default: false, char: 'q'})
   }
@@ -23,31 +21,33 @@ export default class Delete extends StackCommand {
 
   async run()
   {
-    const {argv, flags} = this.parse(Delete)
-    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner = this.newRunDriver(flags.explicit)
-    const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
-    var job_info:ValidatedOutput<Array<JobInfo>>
-    if(flags.all) // -- delete all jobs ----------------------------------------
-      job_info = runner.jobInfo({'stack-paths': stack_paths})
-    else if(flags["all-completed"]) // -- delete all jobs ----------------------
-      job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["exited"]})
-    else if(flags["all-running"])
-      job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["running"]})
-    else  // -- stop only jobs specified by user -------------------------------
-    {
-      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, undefined, !this.settings.get('interactive')) || "")
-      if(ids === "") return // exit if user selects empty
-      job_info = runner.jobInfo({'ids': JSTools.arrayWrap(ids), 'stack-paths': stack_paths})
-    }
-    // -- delete jobs ----------------------------------------------------------
-    if(!job_info.success)
-      return printResultState(job_info)
-    const job_ids = jobIds(job_info).value
-    const volume_ids = volumeIds(job_info).value
-    if(!flags.quiet) job_ids.map((x:string) => console.log(` Deleting ${x}`))
-    runner.jobDelete(job_ids)
-    runner.volumeDelete(volume_ids)
+    const { argv, flags } = this.parse(Delete)
+    this.augmentFlagsWithProjectSettings(flags, {
+      "visible-stacks":false,
+      "stacks-dir": false
+    })
+
+    // -- get job id -----------------------------------------------------------
+    const ids = await this.getJobIds(argv, flags)
+    if(ids === false) return // exit if user selects empty id or exits interactive dialog
+
+    // -- delete job -----------------------------------------------------------
+    const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+    printResultState(
+      job_manager.delete({
+        "ids": ids,
+        "selecter": this.parseSelector(flags),
+        "stack-paths": this.extractVisibleStacks(flags)
+      })
+    )
+  }
+
+  parseSelector(flags: Dictionary) : undefined|"all"|"all-exited"|"all-running"
+  {
+    if(flags['all']) return "all"
+    if(flags["all-exited"]) return "all-exited"
+    if(flags["all-running"]) return "all-running"
+    return undefined
   }
 
 }

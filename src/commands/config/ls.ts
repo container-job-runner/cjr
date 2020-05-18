@@ -1,12 +1,11 @@
-import {flags} from '@oclif/command'
-import {StackCommand} from '../../lib/commands/stack-command'
-import {cli_settings_yml_name} from '../../lib/constants'
-import * as chalk from 'chalk'
+import chalk = require('chalk');
+import { flags } from '@oclif/command'
+import { StackCommand } from '../../lib/commands/stack-command'
 
 export default class List extends StackCommand {
   static description = 'List all cli parameters and data directories.'
   static flags = {
-    json: flags.boolean({default: false}),
+    "json": flags.boolean({default: false}),
   }
   static strict = true;
 

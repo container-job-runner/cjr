@@ -1,12 +1,11 @@
-import * as chalk from 'chalk'
 import { flags } from '@oclif/command'
-import { StackCommand } from '../lib/commands/stack-command'
-import { printResultState, initX11 } from '../lib/functions/misc-functions'
+import { printResultState } from '../lib/functions/misc-functions'
 import { startJupyterInProject, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp } from '../lib/functions/jupyter-functions'
-import { OutputOptions, ContainerDrivers, nextAvailablePort } from '../lib/functions/run-functions'
-import { ValidatedOutput } from '../lib/validated-output'
+import { RunCommand } from '../lib/commands/newjob-command'
+import { nextAvailablePort, initX11 } from '../lib/functions/cli-functions'
+import { ContainerDrivers } from '../lib/job-managers/job-manager'
 
-export default class Run extends StackCommand {
+export default class Run extends RunCommand {
   static description = 'Start a jupiter server'
   static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
@@ -16,91 +15,98 @@ export default class Run extends StackCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "x11": flags.boolean({default: false}),
-    "port": flags.string({default: "auto"}),
+    "port": flags.string({default: [], multiple: true}),
+    "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
+    "server-port": flags.string({default: "auto", description: "default port for the jupyter server"}),
     "expose": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
-    "explicit": flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
+    "explicit": flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
+    "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
   }
   static strict = false;
 
   async run()
   {
     const {args, argv, flags} = this.parse(Run)
-    this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {
-      "stack": (args?.['command'] === 'start'),
-      "config-files": false,
-      "project-root": false,
-      "stacks-dir": false
+      "project-root":false
     })
-    const stack_path = this.fullStackPath(flags.stack || "", flags["stacks-dir"] || "")
-    // -- set output options ---------------------------------------------------
-    const output_options:OutputOptions = {
-      verbose:  flags.verbose,
-      silent:   false,
-      explicit: flags.explicit
-    }
-    // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit),
-      runner:  this.newRunDriver(flags.explicit)
-    }
+    this.augmentFlagsWithHere(flags)
 
     const project_root = flags['project-root'] || "";
     const webapp_path = this.settings.get('webapp');
-    if(args['command'] === 'start') // -- start jupyter ------------------------
-    {
-      // -- check x11 user settings ----------------------------------------------
-      if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
-          // -- select port ----------------------------------------------------------
-      if(flags['port'] == 'auto') {
-        const port_number = nextAvailablePort(drivers.runner, 7013)
-        const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
-        flags['port'] = `${port_address}:${port_number}:${port_number}`
-      }
 
+    if(args['command'] === 'start') // == start jupyter ========================
+    {
+      // -- create stack for running jupyter -----------------------------------
+      this.augmentFlagsForJob(flags)
+      const create_stack = this.createStack(flags)
+      if(!create_stack.success) return printResultState(create_stack)
+      const {stack_configuration, container_drivers, job_manager} = create_stack.value
+      // -- check x11 user settings --------------------------------------------
+      if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+      // -- select port --------------------------------------------------------
+      const jupyter_port = this.defaultPort(container_drivers, flags["server-port"], flags["expose"])
+      // -- select lab or notebook ---------------------------------------------
+      const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
+      // -- start jupyter ------------------------------------------------------
       const result = startJupyterInProject(
-        drivers,
-        output_options,
+        job_manager,
         {
-          "stack-path": stack_path,
-          "build-options":this.parseBuildModeFlag(flags["build-mode"]),
-          "config-files": flags['config-files'],
-          "project-root": project_root,
-          "ports": this.parsePortFlag([flags.port]),
-          "command": this.settings.get('jupyter-command'),
+          "stack_configuration": stack_configuration,
           "args": argv.slice(1),
-          "labels": [],
-          "sync": false,
-          "x11": flags.x11
-        });
-        printResultState(result)
-    }
-    if(args['command'] === 'stop') // -- stop jupyter --------------------------
-    {
-      const result = stopJupyter(drivers, {"project-root": project_root});
+          "reuse-image" : this.extractReuseImage(flags),
+          "mode": mode,
+          "project-root": flags["project-root"],
+          "port": jupyter_port,
+          "x11": flags['x11']
+        }
+      )
       printResultState(result)
     }
-    if(args['command'] === 'list') // -- list jupyter --------------------------
+    if(args['command'] === 'stop') // == stop jupyter ==========================
     {
-      const result = listJupyter(drivers, {"project-root": project_root})
+      const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+      const result = stopJupyter(job_manager, {"project-root": project_root});
       printResultState(result)
     }
-    if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // -- list jupyter url
+    if(args['command'] === 'list') // == list jupyter ==========================
     {
-      const url_result = await getJupyterUrl(drivers, {"project-root": project_root})
+      const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+      const result = listJupyter(job_manager, {"project-root": project_root})
+      printResultState(result)
+    }
+    if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // == print jupyter url
+    {
+      const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+      const url_result = await getJupyterUrl(job_manager, {"project-root": project_root})
       if(url_result.success) console.log(url_result.value)
       printResultState(url_result)
     }
-    if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // -- start electron app
+    if(args['command'] === 'app' || (!flags['quiet'] && args['command'] === 'start' && webapp_path)) // == start electron app
     {
-      const url_result = await getJupyterUrl(drivers, {"project-root": project_root})
+      const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+      const url_result = await getJupyterUrl(job_manager, {"project-root": project_root})
       if(url_result.success) startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
       printResultState(url_result)
     }
+  }
+
+  defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean)
+  {
+    const default_address = (expose) ? '0.0.0.0' : '127.0.0.1'
+    const port = this.parsePortFlag([server_port_flag]).pop()
+    if(port !== undefined && port.address)
+      return port
+    if(port !== undefined) {
+      port.address = default_address
+      return port
+    }
+    const default_port = nextAvailablePort(drivers, 7013)
+    return {"hostPort": default_port, "containerPort": default_port, "address": default_address}
   }
 
 }

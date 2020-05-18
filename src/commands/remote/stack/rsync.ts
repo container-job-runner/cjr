@@ -1,21 +1,21 @@
-import {flags} from '@oclif/command'
-import {ValidatedOutput} from '../../../lib/validated-output'
-import {RemoteCommand, Dictionary} from '../../../lib/remote/commands/remote-command'
-import {SshShellCommand} from '../../../lib/remote/ssh-shell-command'
-import {printResultState, parseJSON} from '../../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { ValidatedOutput } from '../../../lib/validated-output'
+import { RemoteCommand, Dictionary } from '../../../lib/remote/commands/remote-command'
+import { SshShellCommand } from '../../../lib/remote/ssh-shell-command'
+import { printResultState, parseJSON } from '../../../lib/functions/misc-functions'
 import { PathTools } from '../../../lib/fileio/path-tools'
 
 export default class Rsync extends RemoteCommand {
   static description = 'rsyncs local stacks-dir with remote resource or vice-versa.'
   static args = [{name: 'remote-name'}]
   static flags = {
-    'remote-name': flags.string({env: 'REMOTENAME'}),
-    direction: flags.string({options: ['push', 'pull'], required: true, description: 'push syncs local stacks to remote, pull sync remote stacks to local'}),
-    mirror: flags.boolean({default: false, description: 'if selected all files on destination that are not also on the source will be deleted'}),
+    "remote-name": flags.string({env: 'REMOTENAME'}),
+    "direction": flags.string({options: ['push', 'pull'], required: true, description: 'push syncs local stacks to remote, pull sync remote stacks to local'}),
+    "mirror": flags.boolean({default: false, description: 'if selected all files on destination that are not also on the source will be deleted'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    explicit: flags.boolean({default: false}),
-    verbose: flags.boolean({default: false, char: 'v', description: "shows rsync output."})
+    "explicit": flags.boolean({default: false}),
+    "verbose": flags.boolean({default: false, char: 'v', description: "shows rsync output."})
   }
   static strict = false;
 

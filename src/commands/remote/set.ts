@@ -1,8 +1,7 @@
-import {flags} from '@oclif/command'
-import {RemoteCommand, Dictionary} from '../../lib/remote/commands/remote-command'
-import {JSTools} from '../../lib/js-tools'
-import {printResultState} from '../../lib/functions/misc-functions'
-import {Resource, ResourceField} from '../../lib/remote/config/resource-configuration'
+import { flags } from '@oclif/command'
+import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-command'
+import { JSTools } from '../../lib/js-tools'
+import { printResultState } from '../../lib/functions/misc-functions'
 
 export default class Set extends RemoteCommand {
   static description = 'Set a remote resource parameter.'
