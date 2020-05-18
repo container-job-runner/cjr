@@ -2,8 +2,8 @@
 // Base Command: Abstract Class
 // ===========================================================================
 
-import * as fs from 'fs'
-import * as path from 'path'
+import fs = require('fs')
+import path = require('path')
 import Command from '@oclif/command'
 import { Settings } from '../settings'
 import { DockerCliBuildDriver } from '../drivers-containers/docker/docker-cli-build-driver'
@@ -20,7 +20,7 @@ import { missingFlagError, Dictionary, build_dirname } from '../constants'
 import { ValidatedOutput } from '../validated-output'
 import { ProjectSettings, ps_fields } from '../config/project-settings/project-settings'
 import { BuildDriver } from '../drivers-containers/abstract/build-driver'
-import { RunDriver } from '../drivers-containers/abstract/run-driver'
+import { RunDriver, JobState } from '../drivers-containers/abstract/run-driver'
 import { ExecConstructorOptions, ExecConfiguration } from '../config/exec/exec-configuration'
 import { Configurations, ContainerDrivers, OutputOptions, JobManager } from '../job-managers/job-manager'
 import { DockerStackConfiguration } from '../config/stacks/docker/docker-stack-configuration'
@@ -30,7 +30,7 @@ import { ErrorStrings } from '../error-strings'
 import { printResultState } from '../functions/misc-functions'
 import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
 import { LocalJobManager } from '../job-managers/local-job-manager'
-import { scanForSettingsDirectory, loadProjectSettings } from '../functions/cli-functions'
+import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId } from '../functions/cli-functions'
 
 export type ContainerSDK = {
   "output_options": OutputOptions
@@ -39,17 +39,33 @@ export type ContainerSDK = {
   "job_manager": JobManager
 }
 
-
 export abstract class StackCommand extends Command
 {
   protected settings = new Settings(this.config.configDir)
 
-  newRunShortcuts() : RunShortcuts
+  // helper functions for exec commands that require id
+  async getJobIds( argv: Array<string>, flags: {'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean} , states?: Array<JobState>) : Promise<string[]|false>
   {
-    const run_shortcuts = new RunShortcuts()
-    const rs_result = run_shortcuts.loadFromFile(this.settings.get('run-shortcuts-file'))
-    if(!rs_result.success) printResultState(rs_result)
-    return run_shortcuts
+    const non_empty_ids = argv.filter((id:string) => id !== "")
+    if(non_empty_ids.length > 0)
+      return non_empty_ids
+    else if(this.settings.get('interactive'))
+    {
+      const visible_stack_paths = this.extractVisibleStacks(flags)
+      const { container_drivers } = this.initContainerSDK(false, false, flags['explicit'])
+      const id = await promptUserForJobId(container_drivers, visible_stack_paths, states, false)
+      if(!id) return false
+      return [id]
+    }
+    else
+      return false
+  }
+
+  async getJobId(argv: Array<string>, flags: {'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean},  states?: Array<JobState>) : Promise<string|false>
+  {
+    const ids = await this.getJobIds(argv, flags, states)
+    if(ids === false) return false
+    return ids?.pop() || false
   }
 
   // ===========================================================================
@@ -190,6 +206,16 @@ export abstract class StackCommand extends Command
       }
     })
     return ports
+  }
+
+  // ---------------------------------------------------------------------------
+  // EXTRACTVISIBLESTACKS parses flags and pulls out fill paths for any stacks
+  // listed in the visible-stacks field
+  // ---------------------------------------------------------------------------
+  extractVisibleStacks(flags: {'visible-stacks'?: Array<string>, 'stacks-dir': string}) : Array<string>|undefined
+  {
+    return flags?.['visible-stacks']?.map( (stack:string) =>
+      this.fullStackPath(stack, flags["stacks-dir"]) )
   }
 
   // ---------------------------------------------------------------------------
@@ -339,6 +365,14 @@ export abstract class StackCommand extends Command
   {
     const copy_dir = path.join(this.config.dataDir, build_dirname)
     return new LocalJobManager(container_drivers, configurations, output_options, { "tmpdir": copy_dir})
+  }
+
+  newRunShortcuts() : RunShortcuts
+  {
+    const run_shortcuts = new RunShortcuts()
+    const rs_result = run_shortcuts.loadFromFile(this.settings.get('run-shortcuts-file'))
+    if(!rs_result.success) printResultState(rs_result)
+    return run_shortcuts
   }
 
 }
