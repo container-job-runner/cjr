@@ -1,12 +1,12 @@
 {
   "name": "cjr",
   "description": "Runs jobs in linux containers",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": "buvoli",
   "bin": {
-    "penguin": "./bin/run"
+    "cjr": "./bin/run"
   },
-  "bugs": "https://github.com/buvoli/cjr/issues",
+  "bugs": "hhttps://github.com/container-job-runner/cjr/issues",
   "dependencies": {
     "@oclif/command": "^1.5.19",
     "@oclif/config": "^1.13.3",
@@ -39,11 +39,11 @@
     "/npm-shrinkwrap.json",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/buvoli/cjr",
+  "homepage": "https://container-job-runner.github.io/",
   "keywords": [
     "oclif"
   ],
-  "license": "MIT",
+  "license": "Apache 2.0",
   "main": "lib/index.js",
   "oclif": {
     "commands": "./lib/commands",
@@ -78,7 +78,7 @@
       }
     }
   },
-  "repository": "https://github.com/buvoli/cjr",
+  "repository": "https://github.com/container-job-runner/cjr/",
   "scripts": {
     "postpack": "rm -f oclif.manifest.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev manifest && oclif-dev readme",
