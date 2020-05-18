@@ -2,11 +2,11 @@ import * as chalk from 'chalk'
 import { flags } from '@oclif/command'
 import { JSTools } from '../../lib/js-tools'
 import { StackCommand } from '../../lib/commands/stack-command'
-import { promptUserForJobId } from '../../lib/functions/run-functions'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 import { Dictionary } from '../../lib/constants'
+import { promptUserForJobId } from '../../lib/functions/cli-functions'
 
 export default class Labels extends StackCommand {
   static description = 'Retrieve labels for a job.'
@@ -28,6 +28,7 @@ export default class Labels extends StackCommand {
   {
     const {argv, flags} = this.parse(Labels)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
+    const builder = this.newBuildDriver(flags.explicit)
     const runner = this.newRunDriver(flags.explicit)
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // get id and stack_path
@@ -40,7 +41,7 @@ export default class Labels extends StackCommand {
       job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["running"]})
     else
     {
-      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(runner, stack_paths, undefined, !this.settings.get('interactive')) || "")
+      const ids = (argv.length > 0) ? argv : (await promptUserForJobId({runner: runner, builder: builder}, stack_paths, undefined, !this.settings.get('interactive')) || "")
       if(ids === "") return // exit if user selects empty
       job_info = runner.jobInfo({'ids': JSTools.arrayWrap(ids), 'stack-paths': stack_paths})
     }
