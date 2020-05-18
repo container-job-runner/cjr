@@ -34,11 +34,12 @@ export type JobExecOptions = {
   "cwd"?: string
   "parent-id": string
   "x11"?: boolean
+  "stack-paths"?: Array<string>                      // if specified, then the stack path of parent-job must be included in stack-paths or exec will fail
 }
 
 export type JobCopyOptions = {
   "ids": Array<string>                               // job ids that should be copied
-  "stack-paths"?: Array<string>                      // only copy jobs that pertain to this stack
+  "stack-paths"?: Array<string>                      // if specified, then the stack path of the jobs must be included in stack-paths or copy will fail
   "mode": "update"|"overwrite"|"mirror"              // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
   "host-path"?: string                               // location where files should be copied. if specified this setting overrides job hostDir
   "manual"?: boolean                                 // manually copy - runs sh shell instead of rsync command
@@ -47,8 +48,8 @@ export type JobCopyOptions = {
 
 export type JobDeleteOptions = {
   "ids": Array<string>                               // job ids that should be copied
-  "stack-paths"?: Array<string>                      // only select jobs that pertain to this stack
-  "selecter"?: "all"|"all-running"|"all-exited"       // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
+  "stack-paths"?: Array<string>                      // if specified, then the stack path of the jobs must be included in stack-paths or delete will fail
+  "selecter"?: "all"|"all-running"|"all-exited"      // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
 }
 
 export type JobStopOptions = JobDeleteOptions
@@ -56,6 +57,15 @@ export type JobStopOptions = JobDeleteOptions
 export type JobStateOptions = {
   "ids": Array<string>                               // job ids that should be copied
   "stack-paths"?: Array<string>                      // only select jobs that pertain to this stack
+}
+
+type ID_OSTACK = {
+  "id": string                               // job ids that should be copied
+  "stack-paths"?: Array<string>                      // only select jobs that pertain to this stack
+}
+export type JobAttachOptions = ID_OSTACK
+export type JobLogOptions = ID_OSTACK & {
+  "lines": string
 }
 
 export abstract class JobManager // High-Level Job Driver
@@ -89,5 +99,9 @@ export abstract class JobManager // High-Level Job Driver
   abstract stop( options: JobStopOptions ) : ValidatedOutput<undefined>
 
   abstract state( options: JobStateOptions ) : ValidatedOutput<JobState[]>
+
+  abstract attach( options: JobAttachOptions ) : ValidatedOutput<undefined>
+
+  abstract log( options: JobLogOptions ) : ValidatedOutput<string>
 
 }
