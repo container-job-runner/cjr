@@ -1,12 +1,13 @@
 import { StackCommand, ContainerSDK } from './stack-command'
 import { updateStackConfig, updateJobConfig } from '../functions/config-functions'
 import { ValidatedOutput } from '../validated-output'
-import { JobRunOptions,  ContainerDrivers } from '../job-managers/job-manager'
+import { JobRunOptions,  ContainerDrivers, JobExecOptions } from '../job-managers/job-manager'
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
 import chalk = require('chalk')
 import { printResultState } from '../functions/misc-functions'
+import { promptUserForJobId } from '../functions/cli-functions'
 
 // ===========================================================================
 // NewJobCommand: An abstract Class for cli commands that start new jobs.
@@ -34,6 +35,7 @@ type CLIJobFlags = {
     "working-directory": string
     "remove-on-exit"?: boolean
     "autocopy"?:boolean
+    "visible-stacks"?: Array<string>
 }
 
 type StackData = ContainerSDK & {
@@ -46,6 +48,7 @@ type JobData = StackData & {
 
 export abstract class RunCommand extends StackCommand
 {
+
   // alters flags based on --here and local project settings
   augmentFlagsForJob(flags: CLIJobFlags)
   {
@@ -188,6 +191,37 @@ export abstract class RunCommand extends StackCommand
       console.log(job.value.id)
     else if(!flags.async && this.settings.get('alway-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job.value.id}`)
+  }
+
+  // generates JobExecOptions based on cli flags
+  execOptions(parent_id: string, flags: CLIJobFlags): JobExecOptions
+  {
+    return {
+        "reuse-image": this.extractReuseImage(flags),
+        "parent-id": parent_id,
+        "x11": flags["x11"],
+        "cwd": flags['working-directory'],
+        "stack-paths": this.extractVisibleStacks(flags)
+      }
+  }
+
+  runSimpleExec(parent_id: string, flags: CLIJobFlags, command: Array<string>) : {job: ValidatedOutput<NewJobInfo>, job_data: ValidatedOutput<JobData>}
+  {
+    const failure = new ValidatedOutput(false, {"id": "", "exit-code": NaN, "output": ""})
+    // -- augment flags --------------------------------------------------------
+    this.augmentFlagsForJob(flags)
+    // -- initialize job data and exit if failed -------------------------------
+    const job_data = this.createJob(flags, command)
+    if(!job_data.success)
+      return {"job": failure, "job_data": job_data}
+    const {job_configuration, job_manager} = job_data.value
+    // -- run basic job --------------------------------------------------------
+    const job = job_manager.exec(
+      job_configuration,
+      this.execOptions(parent_id, flags)
+    )
+    this.printJobId(job, flags)
+    return {"job": job, "job_data": job_data}
   }
 
 }
