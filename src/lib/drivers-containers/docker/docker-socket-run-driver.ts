@@ -65,6 +65,7 @@ type DockerAPI_HostPortConfig =
 export class DockerSocketRunDriver extends RunDriver
 {
   protected selinux: boolean
+  protected socket: string
   protected curl: Curl
   protected base_command: string = "docker"
   protected labels = {"invisible-on-exit": "cjr-ios"} // jobs with this label will not appear in JobInfo array
@@ -82,6 +83,7 @@ export class DockerSocketRunDriver extends RunDriver
   {
     super(shell)
     this.selinux = options?.selinux || false
+    this.socket = options.socket
     this.curl = new Curl(shell, {
       "unix-socket": options.socket,
       "base-url": "http://v1.24"
