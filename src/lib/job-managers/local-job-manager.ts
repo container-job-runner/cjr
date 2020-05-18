@@ -176,7 +176,8 @@ export class LocalJobManager extends JobManager
         "direction": "to-host",
         "mode": copy_options.mode,
         "verbose": this.output_options.verbose,
-        "files": {"include": rsync_files.value["include-from"], "exclude": rsync_files.value["exclude-from"]}
+        "files": {"include": rsync_files.value["include-from"], "exclude": rsync_files.value["exclude-from"]},
+        "manual": copy_options["manual"]
       }
       result.absorb(syncHostDirAndVolume(this.container_drivers, this.configurations, rsync_options))
       // -- 4. remote tmp dir ----------------------------------------------------
