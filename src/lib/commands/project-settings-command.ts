@@ -2,13 +2,13 @@
 // Project Settings Command: Abstract Class
 // ===========================================================================
 
-import { StackCommand } from './stack-command'
+import { BasicCommand } from './basic-command'
 import * as chalk from 'chalk'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
 import { ProjectSettings } from '../config/project-settings/project-settings'
 
-export abstract class ProjectSettingsCommand extends StackCommand
+export abstract class ProjectSettingsCommand extends BasicCommand
 {
     printProjectSettings(project_settings: ProjectSettings, project_root: string)
     {
