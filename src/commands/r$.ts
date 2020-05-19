@@ -79,7 +79,7 @@ export default class Run extends RemoteCommand {
       "x11":          flags.x11,
       "ports":        this.parsePortFlag(flags.port),
       "labels":       compat_parseLabelFlag(flags.label, flags.message || ""),
-      "remove":       (flags['file-access'] === "bind") ? true : false
+      "remove":       (flags['file-access'] === "bind")
     }
     result = remote_driver.jobStart(
       resource,

@@ -100,7 +100,7 @@ export abstract class RunCommand extends StackCommand
     const run_shortcuts = this.newRunShortcuts()
     // -- set job options ------------------------------------------------------
     const job_configuration = configurations.job(stack_configuration)
-    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))) ? true : false
+    const synchronous = flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))
     updateJobConfig(job_configuration, {
       "synchronous": synchronous,
       "command": run_shortcuts.apply(command),

@@ -35,7 +35,7 @@ export default class Run extends RunCommand {
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- run basic job --------------------------------------------------------
-    const fixed_flags = {"remove-on-exit": (flags['file-access'] === "bind") ? true : false}
+    const fixed_flags = {"remove-on-exit": (flags['file-access'] === "bind")}
     const { job } = this.runSimpleJobAndCopy({ ... flags, ... fixed_flags }, argv)
     printResultState(job)
   }
