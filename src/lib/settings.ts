@@ -28,7 +28,9 @@ export class Settings
     if(Settings.raw_data === undefined) this.load();
     if(Object.keys(this.defaults).includes(field) == false)
       return new ValidatedOutput(false, [], [ErrorStrings.CLI_SETTINGS.INVALID_FIELD(field)]);
-    if(value === "true" || value === "false") value = (value === "true") ? true : false // automatically convert strings "true" and "false" too booleans
+    // automatically convert strings "true" and "false" too booleans
+    if(value === "true") value = true
+    else if (value == "false") value = false
     if(Settings?.raw_data) Settings.raw_data[field] = value
     return this.JSON_file.write(this.config_name, Settings.raw_data)
   }
