@@ -5,7 +5,7 @@
 import * as chalk from 'chalk'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
-import { RunDriver, JobPortInfo, JobInfo, JobInfoFilter, NewJobInfo, jobFilter } from '../abstract/run-driver'
+import { RunDriver, JobPortInfo, JobInfo, JobState, JobInfoFilter, NewJobInfo, jobFilter } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
 import { DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
@@ -195,83 +195,119 @@ export class DockerCliRunDriver extends RunDriver
   //                             job_states=[] or job_states=[""] then jobs with any state will be returned.
   jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
   {
-      const command = `${this.base_command} ps`;
-      const args: Array<string> = []
-      const flags: Dictionary = {
-        "a" : {},
-        "no-trunc": {},
-        "filter": [`label=runner=${cli_name}`]
-      };
-      this.addJSONFormatFlag(flags)
-      const ps_output = this.JSONOutputParser(this.shell.output(command, flags, args, {}))
-      if(!ps_output.success) return new ValidatedOutput(false, [])
-
-      const info_request = this.extractJobInfo(ps_output.value)
-      if(!info_request.success) return new ValidatedOutput(false, [])
-      return new ValidatedOutput(true, jobFilter(info_request.value, filter))
+      // -- extract job info using docker ps -----------------------------------
+      const ps_result = this.psToJobInfo()
+      if(!ps_result.success)
+        return new ValidatedOutput(false, [])
+      const jobs = ps_result.value
+      console.log(jobs)
+      // -- extract remaining job info using docker inspect --------------------
+      const inspect_result = this.addInspectData(jobs)
+      if(!inspect_result.success)
+        return new ValidatedOutput(false, [])
+      console.log(jobs)
+      // -- return filtered list of jobs ---------------------------------------
+      return new ValidatedOutput(true, jobFilter(jobs, filter))
   }
 
-  protected extractJobInfo(raw_ps_data: Array<Dictionary>) : ValidatedOutput<Array<JobInfo>>
+  protected ps() : ValidatedOutput<Array<Dictionary>>
   {
-    // NOTE: docker ps does not correctly format labels with --format {{json .}}
-    // This Function calls docker inspect to extract properly formatted labels
-    if(raw_ps_data.length == 0)
-      return new ValidatedOutput(true, [])
+    const command = `${this.base_command} ps`;
+    const args: Array<string> = []
+    const flags: Dictionary = {
+      "a" : {},
+      "no-trunc": {},
+      "filter": [`label=runner=${cli_name}`]
+    };
+    this.addJSONFormatFlag(flags)
+    const ps_output = this.JSONOutputParser(this.shell.output(command, flags, args, {}))
+    if(!ps_output.success) return new ValidatedOutput(false, [])
+    return ps_output
+  }
 
-    const ids = raw_ps_data.map((x:Dictionary) => x.ID)
+  // converts data from docker ps into a JobObject
+  protected psToJobInfo() : ValidatedOutput<Array<JobInfo>>
+  {
+    const ps_result = this.ps()
+    if(!ps_result.success)
+      return new ValidatedOutput(false, [])
+
+    const jobs:Array<JobInfo> = ps_result.value.map( (x:Dictionary) : JobInfo => {
+      return {
+        id: x.ID,
+        image: x.Image,
+        names: x.Names,
+        command: x.Command,
+        state: this.psStatusToJobInfoState(x.Status),
+        status: x.Status,
+        stack: "",  // info for this field is not provided from docker ps
+        labels: {}, // info for this field is not provided from docker ps
+        ports: []   // info for this field is not provided from docker ps
+      }
+    })
+    return new ValidatedOutput(true, jobs)
+  }
+
+  // converts statusMessage to one of three states
+  protected psStatusToJobInfoState(x: String) : JobState
+  {
+    if(x.match(/^Exited/)) return "exited"
+    if(x.match(/^Created/)) return "created"
+    if(x.match(/^Up/)) return "running"
+    return "unknown"
+  }
+
+  // fills in jobInfo data that can be only accessed by docker inspect
+  protected addInspectData(jobs: Array<JobInfo>) : ValidatedOutput<Array<JobInfo>>
+  {
+    if(jobs.length == 0)
+      return new ValidatedOutput(true, jobs)
+
+    const ids = jobs.map((x:JobInfo) => x.id)
     const result = this.JSONOutputParser(this.shell.output(
       `${this.base_command} inspect`,
       {format: '{{"{\\\"ID\\\":"}}{{json .Id}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Labels\\\":"}}{{json .Config.Labels}}{{"}"}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ}
       ids,
       {})
     )
-    if(!result.success) return new ValidatedOutput(false, [])
-    // -- function for extracting port information for inspect
-    const extractBoundPorts = (PortBindings:Dictionary) => { // entries are of the form {"PORT/tcp"|"PORT/udp": [{HostPort: string, HostIp: String}], "PORTKEY": [{hostPort: "NUMBER"}]}
-      const port_info: Array<JobPortInfo> = [];
-      Object.keys(PortBindings).map((k:string) => { // key is of the form "PORT/tcp"|"PORT/udp
-        const container_port = parseInt(/^\d*/.exec(k)?.pop() || "");
-        const host_port = parseInt(PortBindings[k]?.[0]?.HostPort || "");
-        const host_ip = PortBindings[k]?.[0]?.HostIp || "";
-        if(!isNaN(container_port) && !isNaN(host_port))
-          port_info.push({hostPort: host_port, containerPort: container_port, hostIp: host_ip})
-      })
-      return port_info
-    }
-    // -- extract label & port data -----------------------------------------------
+    if(!result.success)
+      return new ValidatedOutput(false, jobs)
+
+    // -- extract label & port data and index by id ---------------------------
     const inspect_data:Dictionary = {}
     result.value.map((info:Dictionary) => {
       if(info.ID)
         inspect_data[info.ID] = {
           'Labels': info?.['Labels'] || {},
-          'Ports': extractBoundPorts(info?.['PortBindings'] || {})
+          'Ports': this.PortBindingsToJobPortInfo(info?.['PortBindings'] || {})
         }
     });
 
-    // converts statusMessage to one of three states
-    const state = (x: String) => {
-      if(x.match(/^Exited/)) return "exited"
-      if(x.match(/^Created/)) return "created"
-      if(x.match(/^Up/)) return "running"
-      return "unknown"
-    }
+    // add data to job array
+    jobs.map( (job:JobInfo):void => {
+      const id = job.id
+      if(inspect_data[id] !== undefined) {
+        job.stack  = inspect_data[id]?.Labels?.[stack_path_label] || "",
+        job.labels = inspect_data[id]?.Labels || {}
+        job.ports = inspect_data[id]?.Ports || []
+      }
+    })
+    return new ValidatedOutput(true, jobs)
+  }
 
-    return new ValidatedOutput(
-      true,
-      raw_ps_data.map((x:Dictionary) => {
-        return {
-          id: x.ID,
-          image: x.Image,
-          names: x.Names,
-          command: x.Command,
-          state: state(x.Status),
-          stack: inspect_data?.[x.ID]?.Labels?.[stack_path_label] || "",
-          labels: inspect_data?.[x.ID]?.Labels || {},
-          ports: inspect_data?.[x.ID]?.Ports || [],
-          status: x.Status
-        }
-      })
-    )
+  // -- function for extracting port information from docker inspect PortBindings object -----------------
+  // Assumes PortBindings is of the form {"PORT/tcp"|"PORT/udp": [{HostPort: string, HostIp: String}], "PORTKEY": [{hostPort: "NUMBER"}]}
+  protected PortBindingsToJobPortInfo(PortBindings:Dictionary) : Array<JobPortInfo>
+  {
+    const port_info: Array<JobPortInfo> = [];
+    Object.keys(PortBindings).map((k:string) => { // key is of the form "PORT/tcp"|"PORT/udp
+      const container_port = parseInt(/^\d*/.exec(k)?.pop() || "");
+      const host_port = parseInt(PortBindings[k]?.[0]?.HostPort || "");
+      const host_ip = PortBindings[k]?.[0]?.HostIp || "";
+      if(!isNaN(container_port) && !isNaN(host_port))
+        port_info.push({hostPort: host_port, containerPort: container_port, hostIp: host_ip})
+    })
+    return port_info
   }
 
   jobToImage(id: string, image_name: string) : ValidatedOutput<string>

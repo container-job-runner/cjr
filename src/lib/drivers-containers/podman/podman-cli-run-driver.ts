@@ -26,63 +26,57 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     flags["format"] = 'json'
   }
 
-  protected extractJobInfo(raw_ps_data: Array<Dictionary>) : ValidatedOutput<Array<JobInfo>>
+  // converts data from docker ps into a JobObject
+  protected psToJobInfo() : ValidatedOutput<Array<JobInfo>>
   {
-    // NOTE: podman ps has a bad format for determining open ports.
-    // This Function calls podman inspect to extract port information
-    if(raw_ps_data.length == 0)
-      return new ValidatedOutput(true, [])
+    const ps_result = this.ps()
+    if(!ps_result.success)
+      return new ValidatedOutput(false, [])
 
-    const ids = raw_ps_data.map((x:Dictionary) => x.ID)
+    const jobs:Array<JobInfo> = ps_result.value.map( (x:Dictionary) : JobInfo => {
+      return {
+        id: x.ID,
+        image: x.Image,
+        names: x.Names,
+        command: x.Command,
+        state: this.psStatusToJobInfoState(x.Status),
+        stack: x?.Labels?.[stack_path_label] || "",
+        labels: x?.Labels || {},
+        ports: [], // info for this field is not provided from podman ps
+        status: x.Status
+      }
+    })
+    return new ValidatedOutput(true, jobs)
+  }
+
+   // fills in jobInfo data that can be only accessed by docker inspect
+  protected addInspectData(jobs: Array<JobInfo>) : ValidatedOutput<Array<JobInfo>>
+  {
+    if(jobs.length == 0)
+      return new ValidatedOutput(true, jobs)
+
+    const ids = jobs.map((x:JobInfo) => x.id)
     const result = parseLineJSON(
       this.shell.output(`${this.base_command} inspect`, {format: '{{json .HostConfig.PortBindings}}'}, ids, {})
     )
     if(!result.success) return new ValidatedOutput(false, [])
-    // -- function for extracting port information for inspect
-    const extractBoundPorts = (PortBindings:Dictionary) => { // entries are of the form {"PORT/tcp"|"PORT/udp": [{HostPort: string, HostIp: String}], "PORTKEY": [{hostPort: "NUMBER"}]}
-      const port_info: Array<JobPortInfo> = [];
-      Object.keys(PortBindings).map((k:string) => { // key is of the form "PORT/tcp"|"PORT/udp
-        const container_port = parseInt(/^\d*/.exec(k)?.pop() || "");
-        const host_port = parseInt(PortBindings[k]?.[0]?.HostPort || "");
-        const host_ip = PortBindings[k]?.[0]?.HostIp || "";
-        if(!isNaN(container_port) && !isNaN(host_port))
-          port_info.push({hostPort: host_port, containerPort: container_port, hostIp: host_ip})
-      })
-      return port_info
-    }
-    // -- extract label & port data -----------------------------------------------
+
+    // -- extract port data and index by id ------------------------------------
     const inspect_data:Dictionary = {}
       result.value.map((info:Dictionary, index: number) => {
         const id = ids[index];
-        if(id) inspect_data[id] = {Ports: extractBoundPorts(info || {})}
+        if(id) inspect_data[id] = {ports: this.PortBindingsToJobPortInfo(info || {})}
     });
 
-    // converts status to one of three states
-    const state = (x: String) => {
-      if(x.match(/^Exited/)) return "exited"
-      if(x.match(/^Created/)) return "created"
-      if(x.match(/^Up/)) return "running"
-      return "unknown"
-    }
-
-    return new ValidatedOutput(
-      true,
-      raw_ps_data.map((x:Dictionary) => {
-        return {
-          id: x.ID,
-          image: x.Image,
-          names: x.Names,
-          command: x.Command,
-          state: state(x.Status),
-          stack: x?.Labels?.[stack_path_label] || "",
-          labels: x?.Labels || {},
-          ports: inspect_data?.[x.ID]?.Ports || [],
-          status: x.Status
-        }
-      })
-    )
+    // -- add data to job array ------------------------------------------------
+    jobs.map( (job:JobInfo):void => {
+      const id = job.id
+      if(inspect_data[id] !== undefined) {
+        job.ports = inspect_data[id]?.ports || []
+      }
+    })
+    return new ValidatedOutput(true, jobs)
   }
-
   protected addResourceFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     const valid_keys:Array<keyof DockerStackResourceConfig> = ["cpus", "gpu", "memory"] // podman does not support memory-swap
