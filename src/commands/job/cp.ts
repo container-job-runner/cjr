@@ -1,8 +1,8 @@
 import { flags} from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { printResultState } from '../../lib/functions/misc-functions'
 
-export default class Copy extends StackCommand {
+export default class Copy extends BasicCommand {
   static description = 'Copy job files back into the host directories; works on both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {

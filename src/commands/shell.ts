@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
 import { printResultState, } from '../lib/functions/misc-functions'
 import { jobToImage, initX11 } from '../lib/functions/cli-functions'
-import { RunCommand } from '../lib/commands/newjob-command'
+import { NewJobCommand } from '../lib/commands/new-job-command'
 
-export default class Shell extends RunCommand {
+export default class Shell extends NewJobCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
   static args = []
   static flags = {

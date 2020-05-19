@@ -1,12 +1,12 @@
 import { flags } from '@oclif/command'
 import { printResultState } from '../lib/functions/misc-functions'
 import { startTheiaInProject, stopTheia, getTheiaUrl, startTheiaApp } from '../lib/functions/theia-functions'
-import { RunCommand } from '../lib/commands/newjob-command'
+import { NewJobCommand } from '../lib/commands/new-job-command'
 import { nextAvailablePort, initX11 } from '../lib/functions/cli-functions'
 import { ContainerDrivers } from '../lib/job-managers/job-manager'
 import { JSTools } from '../lib/js-tools'
 
-export default class Run extends RunCommand {
+export default class Run extends NewJobCommand {
   static description = 'Start a Theia IDE.'
   static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {

@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary } from '../../lib/constants'
 import { printResultState } from '../../lib/functions/misc-functions'
 
-export default class Stop extends StackCommand {
+export default class Stop extends BasicCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'
   static args = [{name: 'id'}]
   static flags = {

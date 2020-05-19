@@ -1,8 +1,8 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { printResultState } from '../../lib/functions/misc-functions'
 
-export default class State extends StackCommand {
+export default class State extends BasicCommand {
   static description = 'Get the current state of a job.'
   static args = [{name: 'id', required: true}]
   static flags = {

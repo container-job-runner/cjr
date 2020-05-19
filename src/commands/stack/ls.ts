@@ -3,9 +3,9 @@ import path = require('path')
 import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { FileTools } from '../../lib/fileio/file-tools'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 
-export default class List extends StackCommand {
+export default class List extends BasicCommand {
   static description = 'List all the stacks in the stacks directory.'
   static args = []
   static flags = {

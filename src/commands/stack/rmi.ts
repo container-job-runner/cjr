@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { JSTools } from '../../lib/js-tools'
 import { printResultState } from '../../lib/functions/misc-functions'
 
-export default class RMI extends StackCommand {
+export default class RMI extends BasicCommand {
   static description = 'Delete an image one or more stacks.'
   static args = [{name:'stack'}]
   static flags = {

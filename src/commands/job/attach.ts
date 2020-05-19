@@ -1,8 +1,8 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { printResultState } from '../../lib/functions/misc-functions'
 
-export default class Attach extends StackCommand {
+export default class Attach extends BasicCommand {
   static description = 'Attach to a running job.'
   static args = [{name: 'id', required: false}]
   static flags = {

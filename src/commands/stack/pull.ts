@@ -1,13 +1,13 @@
 import * as path from 'path'
 import * as fs from 'fs-extra'
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { ShellCommand } from '../../lib/shell-command'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { FileTools } from '../../lib/fileio/file-tools'
 import { printResultState } from '../../lib/functions/misc-functions'
 
-export default class Pull extends StackCommand {
+export default class Pull extends BasicCommand {
   static description = 'Clones or pulls a stack using git directly into the stack folder.'
   static args = [{name: 'url', required: true}]
   static flags = {

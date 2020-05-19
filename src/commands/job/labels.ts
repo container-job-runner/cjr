@@ -1,14 +1,14 @@
 import * as chalk from 'chalk'
 import { flags } from '@oclif/command'
 import { JSTools } from '../../lib/js-tools'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 import { Dictionary } from '../../lib/constants'
 import { promptUserForJobId } from '../../lib/functions/cli-functions'
 
-export default class Labels extends StackCommand {
+export default class Labels extends BasicCommand {
   static description = 'Retrieve labels for a job.'
   static args = [{name: 'id'}]
   static flags = {

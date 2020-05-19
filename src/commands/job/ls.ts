@@ -1,10 +1,10 @@
 import * as path from 'path'
 import { flags} from '@oclif/command'
 import { printVerticalTable, printHorizontalTable, printResultState } from '../../lib/functions/misc-functions'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary, stash_label } from '../../lib/constants'
 
-export default class List extends StackCommand {
+export default class List extends BasicCommand {
   static description = 'List all running and completed jobs.'
   static args = []
   static flags = {

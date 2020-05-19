@@ -3,7 +3,7 @@ import path = require('path')
 import inquirer = require('inquirer')
 
 import { flags } from '@oclif/command'
-import { StackCommand } from '../lib/commands/stack-command'
+import { BasicCommand } from '../lib/commands/basic-command'
 import { cli_bundle_dir_name, project_settings_folder, Dictionary } from '../lib/constants'
 import { printResultState } from '../lib/functions/misc-functions'
 import { bundleProjectSettings, bundleProject, ProjectBundleOptions } from '../lib/functions/cli-functions'
@@ -11,7 +11,7 @@ import { ShellCommand } from '../lib/shell-command'
 import { FileTools } from '../lib/fileio/file-tools'
 import { ValidatedOutput } from '../lib/validated-output'
 
-export default class Bundle extends StackCommand {
+export default class Bundle extends BasicCommand {
   static description = 'Bundle a stack or project into a zip or tar for sharing.'
   static args = [{name: 'save_dir', required: true}]
   static flags = {

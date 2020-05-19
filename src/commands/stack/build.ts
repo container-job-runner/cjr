@@ -1,10 +1,10 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { JSTools } from '../../lib/js-tools'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { buildImage } from '../../lib/functions/build-functions'
 
-export default class Build extends StackCommand {
+export default class Build extends BasicCommand {
   static description = 'Manually build images for one or more stacks.'
   static args = [{name: 'stack'}]
   static flags = {

@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
 import { printResultState } from '../../lib/functions/misc-functions'
-import { RunCommand } from '../../lib/commands/newjob-command'
+import { NewJobCommand } from '../../lib/commands/new-job-command'
 import { initX11 } from '../../lib/functions/cli-functions'
 
-export default class Exec extends RunCommand {
+export default class Exec extends NewJobCommand {
   static description = 'Start a new job using files from a completed or currently running job.'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {

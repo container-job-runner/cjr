@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary } from '../../lib/constants'
 import { printResultState } from '../../lib/functions/misc-functions'
 
-export default class Delete extends StackCommand {
+export default class Delete extends BasicCommand {
   static description = 'Delete a job and its associated data; works on both running and completed jobs.'
   static args = [{name: 'id'}]
   static flags = {

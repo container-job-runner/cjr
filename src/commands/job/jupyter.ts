@@ -1,13 +1,11 @@
 import { flags } from '@oclif/command'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { stopJupyter, listJupyter, getJupyterUrl, startJupyterApp, startJupyterInProject, startJupyterInJob } from '../../lib/functions/jupyter-functions'
-import { RunCommand } from '../../lib/commands/newjob-command'
+import { NewJobCommand } from '../../lib/commands/new-job-command'
 import { initX11, nextAvailablePort } from '../../lib/functions/cli-functions'
 import { ContainerDrivers } from '../../lib/job-managers/job-manager'
-import { ValidatedOutput } from '../../lib/validated-output'
-import { firstJobId } from '../../lib/drivers-containers/abstract/run-driver'
 
-export default class Run extends RunCommand {
+export default class Run extends NewJobCommand {
   static description = 'Start a jupiter server for viewing or modifying job\'s files or outputs.'
   static args = [{name: 'id', default: ""}, {name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {

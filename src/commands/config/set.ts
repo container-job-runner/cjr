@@ -1,10 +1,10 @@
 import chalk = require('chalk')
 import { flags } from '@oclif/command'
-import { StackCommand } from '../../lib/commands/stack-command'
+import { BasicCommand } from '../../lib/commands/basic-command'
 import { printResultState } from '../../lib/functions/misc-functions'
 import { Dictionary } from '../../lib/constants'
 
-export default class Set extends StackCommand {
+export default class Set extends BasicCommand {
   static description = 'Set one or multiple cli parameters.'
   static flags = {
     "auto-project-root": flags.string({
