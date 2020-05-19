@@ -34,7 +34,7 @@ export class DockerCliBuildDriver extends BuildDriver
       }
       this.addJSONFormatFlag(flags);
       var result = this.outputParser(this.shell.output(command, flags, args, {}))
-      return (result.success && !JSTools.isEmpty(result.value)) ? true : false
+      return (result.success && !JSTools.isEmpty(result.value))
     }
 
     build(configuration:StackConfiguration<any>, stdio:"inherit"|"pipe", options?: Dictionary) : ValidatedOutput<string>
