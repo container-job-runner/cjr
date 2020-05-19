@@ -14,7 +14,7 @@ import { ExecConfiguration } from '../../config/exec/exec-configuration'
 
 // === START API TYPES =========================================================
 
-type DockerAPI_CreateObject =
+export type DockerAPI_CreateObject =
 {
   "Image"?: string,
   "Entrypoint"?: Array<string>,
@@ -384,21 +384,21 @@ export class DockerSocketRunDriver extends RunDriver
     return result
   }
 
-  private validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
+  protected validAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
   {
     if(!response.success) return false
     if(code !== undefined && response.value.header.code !== code) return false
     return true
   }
 
-  private validJSONAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
+  protected validJSONAPIResponse(response: ValidatedOutput<RequestOutput>, code?:number) : boolean
   {
     if(!this.validAPIResponse(response, code)) return false
     if(response.value.header.type !== "application/json") return false
     return true
   }
 
-  private generateCreateData(job_configuration: DockerJobConfiguration) : DockerAPI_CreateObject
+  protected generateCreateData(job_configuration: DockerJobConfiguration) : DockerAPI_CreateObject
   {
     const create_object: DockerAPI_CreateObject = {}
 
@@ -428,7 +428,7 @@ export class DockerSocketRunDriver extends RunDriver
 
   // === START API Functions for generating CreateObject ===================================================
 
-  private addApiCreateObjectMounts(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  protected addApiCreateObjectMounts(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
   {
     // -- exit if no mounts are present in configuration  ----------------------
     if(!configuration.config?.mounts)
@@ -479,7 +479,7 @@ export class DockerSocketRunDriver extends RunDriver
     })
   }
 
-  private addApiCreateObjectPorts(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  protected addApiCreateObjectPorts(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
   {
     // -- exit if no ports are present in configuration  ----------------------
     if(!configuration.config?.ports)
@@ -508,7 +508,7 @@ export class DockerSocketRunDriver extends RunDriver
     })
   }
 
-  private addApiCreateObjectEnvironment(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  protected addApiCreateObjectEnvironment(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
   {
     // -- exit if no environment are present in configuration  -----------------
     if(configuration.config?.environment == undefined)
@@ -526,7 +526,7 @@ export class DockerSocketRunDriver extends RunDriver
     })
   }
 
-  private addApiCreateObjectResourceLimits(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  protected addApiCreateObjectResourceLimits(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
   {
     // -- exit if no mounts are present in configuration  ----------------------
     if(!configuration.config?.resources)
@@ -575,7 +575,7 @@ export class DockerSocketRunDriver extends RunDriver
 
   }
 
-  private addApiCreateObjectMisc(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
+  protected addApiCreateObjectMisc(configuration: DockerStackConfiguration, create_object: DockerAPI_CreateObject)
   {
     // -- Network Mode ---------------------------------------------------------
     if(["bridge", "host", "none"].includes(configuration.config?.flags?.network || "")) {
