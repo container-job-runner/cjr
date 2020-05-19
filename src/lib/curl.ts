@@ -45,7 +45,8 @@ export type RequestOptions = {
 export type RequestOutput = {
   "header": {
     "code": number,
-    "type": string
+    "type": string,
+    "transfer-encoding": undefined|string
   },
   "body": any
 }
@@ -55,10 +56,6 @@ export class Curl
   private shell:ShellCommand              // executes curl shell command
   private base_url: string                // base url that will be prepended to url provide
   private unix_socket: string             // unix socket that should be used for get and post requests
-
-  private ERRORSTRINGS = {
-    INVALID_JSON: "Curl response contained invalid json."
-  }
 
   constructor(shell:ShellCommand, options?: {'base-url'?:string, 'unix-socket'?:string})
   {
@@ -167,7 +164,7 @@ export class Curl
 
   private processCurlOutput(result:ValidatedOutput<string>) : ValidatedOutput<RequestOutput>
   {
-    const blank_output = new ValidatedOutput(false, {header: {code: NaN, type: ""}, body: ""})
+    const blank_output = new ValidatedOutput(false, {header: {code: NaN, type: "", "transfer-encoding": undefined}, body: ""})
 
     if(!result.success) return blank_output
     const raw_output:string = result.value
@@ -188,24 +185,11 @@ export class Curl
     const output:RequestOutput = {
       "header": {
         "code": response_code,
-        "type": content_type
+        "type": content_type,
+        "transfer-encoding": transfer_encoding
       },
-      "body": ""
+      "body": body
     }
-
-    if(content_type == 'application/json' && transfer_encoding == 'chunked')
-    {
-      const rows = body.split(/(?:\r\n)+/).filter((s:string) => !/^\s*$/.test(s))
-      try { output.body = rows.map((s:string) => JSON.parse(s)) }
-      catch(e) { return blank_output.pushError(this.ERRORSTRINGS.INVALID_JSON) }
-    }
-    else if(content_type == 'application/json')
-    {
-      try { output.body = JSON.parse(body) }
-      catch(e) { return blank_output.pushError(this.ERRORSTRINGS.INVALID_JSON) }
-    }
-    else
-      output.body = body
 
     return new ValidatedOutput(true, output)
   }
