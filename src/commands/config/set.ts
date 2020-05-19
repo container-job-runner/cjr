@@ -34,11 +34,11 @@ export default class Set extends StackCommand {
       description: "location of a yml file that can be used to specify run shortcuts for `cjr $` command; To disable set value to ''"
     }),
     "build-driver": flags.string({
-      options: ['podman-cli', 'docker-cli', 'docker-socket'],
+      options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
       description: "container environment used to build images"
     }),
     "run-driver": flags.string({
-      options: ['podman-cli', 'docker-cli', 'docker-socket'],
+      options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
       description: "container environment used to run images"
     }),
     "image-tag": flags.string({
@@ -61,7 +61,6 @@ export default class Set extends StackCommand {
       description: 'determines if new jobs run sync or async by default.'
     }),
     "socket-path": flags.string({
-      options: ['sync', 'async'],
       description: 'location of container runtime socket'
     }),
     "quiet":flags.boolean({default: false, char: 'q'})
