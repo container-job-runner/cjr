@@ -11,6 +11,7 @@ import { Curl, RequestOutput } from '../../curl'
 import { cli_name, stack_path_label, Dictionary } from '../../constants'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
+import { DockerAPIPostProcessor } from './docker-socket-build-driver'
 
 // === START API TYPES =========================================================
 
@@ -69,6 +70,7 @@ export class DockerSocketRunDriver extends RunDriver
   protected curl: Curl
   protected base_command: string = "docker"
   protected labels = {"invisible-on-exit": "cjr-ios"} // jobs with this label will not appear in JobInfo array
+  protected curlPostProcessor = DockerAPIPostProcessor
 
   protected ERRORSTRINGS = {
     BAD_RESPONSE: chalk`{bold Bad API Response.} Is Docker running?`,
@@ -93,13 +95,15 @@ export class DockerSocketRunDriver extends RunDriver
   jobInfo(filter?: JobInfoFilter) : ValidatedOutput<Array<JobInfo>>
   {
     // -- make api request -----------------------------------------------------
-    const api_result = this.curl.get({
-      "url": "/containers/json",
-      "params": {
-        all: true,
-        filters: JSON.stringify({"label": [`runner=${cli_name}`]})
-      }
-    });
+    const api_result = this.curlPostProcessor(
+      this.curl.get({
+        "url": "/containers/json",
+        "params": {
+          all: true,
+          filters: JSON.stringify({"label": [`runner=${cli_name}`]})
+        }
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validJSONAPIResponse(api_result, 200))
@@ -151,11 +155,13 @@ export class DockerSocketRunDriver extends RunDriver
       configuration.addLabel(this.labels['invisible-on-exit'], "true")
 
     // -- make api request -----------------------------------------------------
-    const api_request = this.curl.post({
-      "url": "/containers/create",
-      "encoding": "json",
-      "body": this.generateCreateData(configuration),
-    })
+    const api_request = this.curlPostProcessor(
+      this.curl.post({
+        "url": "/containers/create",
+        "encoding": "json",
+        "body": this.generateCreateData(configuration),
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validJSONAPIResponse(api_request, 201) || !api_request.value.body?.Id)
@@ -182,11 +188,13 @@ export class DockerSocketRunDriver extends RunDriver
     else // --- user docker API ------------------------------------------------
     {
       // -- make api request ---------------------------------------------------
-      const api_request = this.curl.post({
-        "url": `/containers/${id}/start`,
-        "encoding": "json",
-        "body": {},
-      })
+      const api_request = this.curlPostProcessor(
+        this.curl.post({
+          "url": `/containers/${id}/start`,
+          "encoding": "json",
+          "body": {},
+        })
+      )
 
       // -- check request status -----------------------------------------------
       if(!this.validAPIResponse(api_request, 204))
@@ -203,14 +211,16 @@ export class DockerSocketRunDriver extends RunDriver
   jobLog(id: string, lines: string="all") : ValidatedOutput<string>
   {
     // -- make api request -----------------------------------------------------
-    var api_result = this.curl.get({
-      "url": `/containers/${id}/logs`,
-      "params": {
-        "tail":   lines,
-        "stdout": true,
-        "stderr": true
-      }
-    })
+    var api_result = this.curlPostProcessor(
+      this.curl.get({
+        "url": `/containers/${id}/logs`,
+        "params": {
+          "tail":   lines,
+          "stdout": true,
+          "stderr": true
+        }
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validAPIResponse(api_result, 200))
@@ -251,30 +261,34 @@ export class DockerSocketRunDriver extends RunDriver
     else // --- user docker API ------------------------------------------------
     {
       const failure_response = {id: "", "exit-code": 0, output: ""}
-      const api_create_request = this.curl.post({
-        "url": `/containers/${id}/exec`,
-        "encoding": "json",
-        "body": {
-          "AttachStdin": true,
-          "AttachStdout": true,
-          "AttachStderr": true,
-          "OpenStdin": true,
-          "Tty": true,
-          "Cmd": configuration.command,
-          "WorkingDir": configuration.working_directory,
-        }
-      })
+      const api_create_request = this.curlPostProcessor(
+        this.curl.post({
+          "url": `/containers/${id}/exec`,
+          "encoding": "json",
+          "body": {
+            "AttachStdin": true,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "OpenStdin": true,
+            "Tty": true,
+            "Cmd": configuration.command,
+            "WorkingDir": configuration.working_directory,
+          }
+        })
+      )
 
       // -- check request status -------------------------------------------------
       if(!this.validAPIResponse(api_create_request, 201) || !api_create_request.value.body?.Id)
         return new ValidatedOutput(false, failure_response)
 
       const exec_id:string = api_create_request.value.body?.Id
-      const api_start_request = this.curl.post({
-        "url": `/exec/${exec_id}/start`,
-        "encoding": "json",
-        "body": {tty: true, detach: true},
-      })
+      const api_start_request = this.curlPostProcessor(
+        this.curl.post({
+          "url": `/exec/${exec_id}/start`,
+          "encoding": "json",
+          "body": {tty: true, detach: true},
+        })
+      )
 
       // -- check request status -------------------------------------------------
       if(!this.validAPIResponse(api_start_request, 200))
@@ -295,12 +309,14 @@ export class DockerSocketRunDriver extends RunDriver
     if(repo) params["repo"] = repo
     if(tag) params["tag"] = image_name
 
-    const api_request = this.curl.post({
-      "url": "/commit",
-      "params": params,
-      "encoding": "json",
-      "body": {},
-    })
+    const api_request = this.curlPostProcessor(
+      this.curl.post({
+        "url": "/commit",
+        "params": params,
+        "encoding": "json",
+        "body": {},
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validAPIResponse(api_request, 201) || !api_request.value?.body?.Id)
@@ -314,10 +330,12 @@ export class DockerSocketRunDriver extends RunDriver
     const result = new ValidatedOutput<undefined>(true, undefined)
 
     ids.map((id:string) => {
-      const api_request = this.curl.post({
+      const api_request = this.curlPostProcessor(
+        this.curl.post({
           "url": `/containers/${id}/stop`,
           "body": {t: 10}
         })
+      )
       result.absorb(api_request);
       if(!this.validAPIResponse(api_request, 204))
         result.pushError(this.ERRORSTRINGS.FAILED_STOP(id))
@@ -332,9 +350,11 @@ export class DockerSocketRunDriver extends RunDriver
 
     ids.map((id:string) => {
       // -- make api request -----------------------------------------------------
-      const api_result = this.curl.delete({
-        "url": `/containers/${id}`,
-      })
+      const api_result = this.curlPostProcessor(
+        this.curl.delete({
+          "url": `/containers/${id}`,
+        })
+      )
       // -- check request status -------------------------------------------------
       result.absorb(api_result)
       if(!this.validAPIResponse(api_result, 204))
@@ -352,13 +372,15 @@ export class DockerSocketRunDriver extends RunDriver
     if(options?.labels) data.Labels = options.labels
 
     // -- make api request -----------------------------------------------------
-    const api_request = this.curl.post({
-      "url": "/volumes/create",
-      "encoding": "json",
-      "body": data
-    })
+    const api_request = this.curlPostProcessor(
+      this.curl.post({
+        "url": "/volumes/create",
+        "encoding": "json",
+        "body": data
+      })
+    )
 
-       // -- check request status -------------------------------------------------
+    // -- check request status -------------------------------------------------
     if(!this.validJSONAPIResponse(api_request, 201) || !api_request.value.body?.Name)
       return new ValidatedOutput(false, "")
 
@@ -372,9 +394,11 @@ export class DockerSocketRunDriver extends RunDriver
 
     ids.map((id:string) => {
       // -- make api request -----------------------------------------------------
-      const api_result = this.curl.delete({
-        "url": `/volumes/${id}`,
-      })
+      const api_result = this.curlPostProcessor(
+        this.curl.delete({
+          "url": `/volumes/${id}`,
+        })
+      )
       // -- check request status -------------------------------------------------
       result.absorb(api_result)
       if(!this.validAPIResponse(api_result, 204))

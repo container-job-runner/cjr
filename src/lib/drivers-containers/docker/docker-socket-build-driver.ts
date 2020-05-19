@@ -18,6 +18,7 @@ export class DockerSocketBuildDriver extends BuildDriver
   protected socket: string // path to socket
   protected tmpdir: string // path to tmp directory for saving tar files
   protected curl: Curl
+  protected curlPostProcessor = DockerAPIPostProcessor
 
   protected ERRORSTRINGS = {
     "INVALID_CONFIGURATION": chalk`{bold Invalid Configuration} - This build driver requires a DockerStackConfiguration.`,
@@ -44,14 +45,16 @@ export class DockerSocketBuildDriver extends BuildDriver
   isBuilt(configuration: StackConfiguration<any>): boolean
   {
     // -- make api request -----------------------------------------------------
-    const api_result = this.curl.get({
-      "url": "/images/json",
-      "params": {
-        "filters": JSON.stringify({
-          "reference": [configuration.getImage()]
-        })
-      }
-    });
+    const api_result = this.curlPostProcessor(
+      this.curl.get({
+        "url": "/images/json",
+        "params": {
+          "filters": JSON.stringify({
+            "reference": [configuration.getImage()]
+          })
+        }
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validJSONAPIResponse(api_result, 200))
@@ -116,12 +119,14 @@ export class DockerSocketBuildDriver extends BuildDriver
     // -- make api request -----------------------------------------------------
     const archive = path.join(configuration.stack_path, `${configuration.archive_filename}.${configuration.stack_type}`)
     const encoding = (configuration.stack_type == 'tar.gz') ? 'gzip' : 'tar'
-    const api_load_result = this.curl.post({
-      "url": "/images/load",
-      "encoding": encoding,
-      "params": {},
-      "file": archive
-    });
+    const api_load_result = this.curlPostProcessor(
+      this.curl.post({
+        "url": "/images/load",
+        "encoding": encoding,
+        "params": {},
+        "file": archive
+      })
+    )
     result.value = this.chunkedJsonStreamStr(api_load_result.value.body)
 
     // -- check request status -------------------------------------------------
@@ -134,14 +139,16 @@ export class DockerSocketBuildDriver extends BuildDriver
 
     // -- retag image ----------------------------------------------------------
     const [repo, tag] = configuration.getImage().split(":")
-    const api_tag_result = this.curl.post({
-      "url": `/images/${id}/tag`,
-      "encoding": "json",
-      "params": {
-        "repo": repo,
-        "tag": tag
-      }
-    });
+    const api_tag_result = this.curlPostProcessor(
+      this.curl.post({
+        "url": `/images/${id}/tag`,
+        "encoding": "json",
+        "params": {
+          "repo": repo,
+          "tag": tag
+        }
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validAPIResponse(api_tag_result, 201))
@@ -164,12 +171,14 @@ export class DockerSocketBuildDriver extends BuildDriver
       return result
 
     // -- make api request -----------------------------------------------------
-    const pull_result = this.curl.post({
-      "url": "/images/create",
-      "params": {
-        "fromImage": configuration.getImage()
-      }
-    });
+    const pull_result = this.curlPostProcessor(
+      this.curl.post({
+        "url": "/images/create",
+        "params": {
+          "fromImage": configuration.getImage()
+        }
+      })
+    )
 
     result.value = this.chunkedJsonStreamStr(pull_result.value.body)
     result.absorb(pull_result)
@@ -224,18 +233,20 @@ export class DockerSocketBuildDriver extends BuildDriver
 
   protected buildArchive(options: {archive: string, imageName?: string, encoding: "tar"|"gzip", buildargs?: {[key: string] : string}, pull?: boolean, nocache?: boolean}) : ValidatedOutput<RequestOutput>
   {
-    const build_result = this.curl.post({
-      "url": `/build`,
-      "encoding": options.encoding,
-      "params": JSTools.rRemoveEmpty({
-        "buildargs": JSON.stringify(options?.buildargs || {}),
-        "labels" : JSON.stringify({"builder": cli_name}),
-        "nocache": options?.nocache || false,
-        "pull": options?.pull || false,
-        "t": options.imageName
-      }),
-      "file": options.archive
-    });
+    const build_result = this.curlPostProcessor(
+      this.curl.post({
+        "url": `/build`,
+        "encoding": options.encoding,
+        "params": JSTools.rRemoveEmpty({
+          "buildargs": JSON.stringify(options?.buildargs || {}),
+          "labels" : JSON.stringify({"builder": cli_name}),
+          "nocache": options?.nocache || false,
+          "pull": options?.pull || false,
+          "t": options.imageName
+        }),
+        "file": options.archive
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validAPIResponse(build_result, 200))
@@ -254,12 +265,14 @@ export class DockerSocketBuildDriver extends BuildDriver
     const result = new ValidatedOutput(true, undefined)
 
     // -- make api request -----------------------------------------------------
-    const api_list = this.curl.get({
-      "url": `/images/json`,
-      "params": {
-        "filters": JSON.stringify({"label": [`builder=${cli_name}`, `stack=${stack_path}`]})
-      }
-    });
+    const api_list = this.curlPostProcessor(
+      this.curl.get({
+        "url": `/images/json`,
+        "params": {
+          "filters": JSON.stringify({"label": [`builder=${cli_name}`, `stack=${stack_path}`]})
+        }
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validJSONAPIResponse(api_list, 200))
@@ -281,10 +294,12 @@ export class DockerSocketBuildDriver extends BuildDriver
     const result = new ValidatedOutput(true, undefined)
 
     // -- make api request -----------------------------------------------------
-    const api_result = this.curl.delete({
-      "url": `/images/${id}`,
-      "params": {}
-    });
+    const api_result = this.curlPostProcessor(
+      this.curl.delete({
+        "url": `/images/${id}`,
+        "params": {}
+      })
+    )
 
     // -- check request status -------------------------------------------------
     if(!this.validJSONAPIResponse(api_result, 200))
@@ -324,4 +339,23 @@ export class DockerSocketBuildDriver extends BuildDriver
     return true
   }
 
+}
+
+export function DockerAPIPostProcessor(curl_result: ValidatedOutput<RequestOutput>) : ValidatedOutput<RequestOutput>
+{
+    const ERRORSTRINGS_INVALID_JSON = chalk`{bold Docker API Returned Invalid JSON}`
+    const response = curl_result.value
+    const header = response.header
+    if(header.type == 'application/json' && header["transfer-encoding"] == 'chunked')
+    {
+      const rows = response.body.split(/(?:\r\n)+/).filter((s:string) => !/^\s*$/.test(s))
+      try { response.body = rows.map((s:string) => JSON.parse(s)) }
+      catch(e) { return curl_result.pushError(ERRORSTRINGS_INVALID_JSON) }
+    }
+    else if(header.type == 'application/json')
+    {
+      try { response.body = JSON.parse(response.body) }
+      catch(e) { return curl_result.pushError(ERRORSTRINGS_INVALID_JSON) }
+    }
+    return curl_result
 }
