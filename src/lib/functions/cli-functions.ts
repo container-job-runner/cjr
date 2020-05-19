@@ -12,10 +12,11 @@ import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
 import { JSONFile } from '../fileio/json-file'
 import { ProjectSettings } from '../config/project-settings/project-settings'
-import { printResultState } from './misc-functions'
+import { printResultState, trim } from './misc-functions'
 import { ShellCommand } from '../shell-command'
 import { BuildOptions } from './build-functions'
 import { FileTools } from '../fileio/file-tools'
+import { ChildProcess } from 'child_process'
 
 // == TYPES ====================================================================
 
@@ -356,3 +357,20 @@ export async function jobToImage(drivers: ContainerDrivers, job_id: string, imag
   if(!interactive || response?.flag == true) drivers.runner.jobToImage(job_id, image_name)
   if(remove_job) drivers.runner.jobDelete([job_id])
 }
+
+  // == Helper Functions for Podman Socket ===========================================
+
+  export function socketExists(shell: ShellCommand, socket: string) : boolean
+  {
+    const result = trim(shell.output(`if [ -S ${ShellCommand.bashEscape(socket)} ] ; then echo "TRUE"; fi`))
+    if(result.value == "TRUE") return true
+    return false
+  }
+
+  export function startPodmanSocket(shell: ShellCommand, socket: string) : ValidatedOutput<ChildProcess>
+  {
+    shell.exec('mkdir', {p:{}}, [path.posix.dirname(socket)])
+    const result = shell.execAsync('podman system service', {t: '20'}, [`unix:${socket}`], {detached: true, stdio: 'ignore'})
+    if(result.success) result.value.unref()
+    return result
+  }
