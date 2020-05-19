@@ -30,7 +30,7 @@ import { ErrorStrings } from '../error-strings'
 import { printResultState } from '../functions/misc-functions'
 import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
 import { LocalJobManager } from '../job-managers/local-job-manager'
-import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId } from '../functions/cli-functions'
+import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId, socketExists, startPodmanSocket } from '../functions/cli-functions'
 
 export type ContainerSDK = {
   "output_options": OutputOptions
@@ -42,6 +42,7 @@ export type ContainerSDK = {
 export abstract class StackCommand extends Command
 {
   protected settings = new Settings(this.config.configDir, this.config.dataDir, this.config.cacheDir)
+  private podman_socket_started: boolean = false
 
   // helper functions for exec commands that require id
   async getJobIds( argv: Array<string>, flags: {'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean} , states?: Array<JobState>) : Promise<string[]|false>
@@ -317,6 +318,7 @@ export abstract class StackCommand extends Command
         }
         case "podman-socket":
         {
+          this.startPodmanSocketOnce(shell, socket)
           return new PodmanSocketBuildDriver(shell,  {
             "tmpdir": build_dir,
             "socket": socket
@@ -340,19 +342,23 @@ export abstract class StackCommand extends Command
     {
         case "docker-cli":
         {
-          return new DockerCliRunDriver(shell, {selinux: selinux});
+          return new DockerCliRunDriver(shell, {"selinux": selinux});
         }
         case "docker-socket":
         {
-          return new DockerSocketRunDriver(shell, {selinux: selinux, socket: socket});
+          return new DockerSocketRunDriver(shell, {"selinux": selinux, "socket": socket});
         }
         case "podman-cli":
         {
-          return new PodmanCliRunDriver(shell, {selinux: selinux});
+          return new PodmanCliRunDriver(shell, {"selinux": selinux});
         }
         case "podman-socket":
         {
-          return new PodmanSocketRunDriver(shell, {selinux: selinux, socket: socket});
+          this.startPodmanSocketOnce(shell, socket)
+          return new PodmanSocketRunDriver(shell, {
+            "selinux": selinux,
+            "socket": socket
+          });
         }
         default:
         {
@@ -373,6 +379,15 @@ export abstract class StackCommand extends Command
     const rs_result = run_shortcuts.loadFromFile(this.settings.get('run-shortcuts-file'))
     if(!rs_result.success) printResultState(rs_result)
     return run_shortcuts
+  }
+
+  // == Podman Socket Functions ================================================
+  private startPodmanSocketOnce(shell: ShellCommand, socket: string)
+  {
+    if(this.podman_socket_started) return
+    if(!socketExists(shell, socket))
+      startPodmanSocket(shell, socket)
+    this.podman_socket_started = true
   }
 
 }
