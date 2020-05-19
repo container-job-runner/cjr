@@ -200,12 +200,10 @@ export class DockerCliRunDriver extends RunDriver
       if(!ps_result.success)
         return new ValidatedOutput(false, [])
       const jobs = ps_result.value
-      console.log(jobs)
       // -- extract remaining job info using docker inspect --------------------
       const inspect_result = this.addInspectData(jobs)
       if(!inspect_result.success)
         return new ValidatedOutput(false, [])
-      console.log(jobs)
       // -- return filtered list of jobs ---------------------------------------
       return new ValidatedOutput(true, jobFilter(jobs, filter))
   }
