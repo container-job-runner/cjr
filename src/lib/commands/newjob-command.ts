@@ -178,7 +178,7 @@ export abstract class RunCommand extends StackCommand
     const result = firstJob(drivers.runner.jobInfo({"ids": [job_id], "states": ['exited']}))
     if(!result.success) return false
     if(flags["autocopy"]) return true
-    const synchronous = (flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))) ? true : false
+    const synchronous = flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))
     if(synchronous && this.settings.get('autocopy-sync-job')) return true
     return false
   }
