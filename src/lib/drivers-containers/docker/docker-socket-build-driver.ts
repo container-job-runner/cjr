@@ -1,7 +1,7 @@
 
 import chalk = require('chalk')
-import * as path from 'path'
-import * as fs from 'fs-extra'
+import path = require('path')
+import fs = require('fs-extra')
 
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
@@ -12,12 +12,11 @@ import { Dictionary, cli_name } from '../../constants'
 import { RequestOutput, Curl } from '../../curl'
 import { FileTools } from '../../fileio/file-tools'
 import { JSTools } from '../../js-tools'
-import { resolveTxt } from 'dns'
 
 export class DockerSocketBuildDriver extends BuildDriver
 {
-  protected socket:string // path to socket
-  protected tmpdir:string // path to tmp directory for saving tar files
+  protected socket: string // path to socket
+  protected tmpdir: string // path to tmp directory for saving tar files
   protected curl: Curl
 
   protected ERRORSTRINGS = {

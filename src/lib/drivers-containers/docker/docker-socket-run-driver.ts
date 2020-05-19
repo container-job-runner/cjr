@@ -2,7 +2,7 @@
 // Docker-Socket-Run-Driver: Controls Docker Socket For Running containers
 // ===========================================================================
 
-import * as chalk from 'chalk'
+import chalk = require('chalk')
 import { ValidatedOutput } from "../../validated-output"
 import { ShellCommand } from "../../shell-command"
 import { RunDriver, JobInfo, JobInfoFilter, NewJobInfo, JobState, jobFilter } from '../abstract/run-driver'
