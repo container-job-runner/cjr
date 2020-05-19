@@ -3,7 +3,7 @@
 // ===========================================================================
 
 import { ShellCommand } from "../../shell-command"
-import { JobInfo, JobPortInfo } from '../abstract/run-driver'
+import { JobInfo, JobPortInfo, JobInfoFilter } from '../abstract/run-driver'
 import { DockerCliRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
 import { parseJSON, parseLineJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
@@ -49,7 +49,13 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     return new ValidatedOutput(true, jobs)
   }
 
-   // fills in jobInfo data that can be only accessed by docker inspect
+  // filters that can be immediately applied after running ps
+  protected psFilter(filter?: JobInfoFilter) : JobInfoFilter|undefined
+  {
+    return filter
+  }
+
+  // fills in jobInfo data that can be only accessed by docker inspect
   protected addInspectData(jobs: Array<JobInfo>) : ValidatedOutput<Array<JobInfo>>
   {
     if(jobs.length == 0)

@@ -199,7 +199,7 @@ export class DockerCliRunDriver extends RunDriver
       const ps_result = this.psToJobInfo()
       if(!ps_result.success)
         return new ValidatedOutput(false, [])
-      const jobs = ps_result.value
+      const jobs = jobFilter(ps_result.value, this.psFilter(filter))
       // -- extract remaining job info using docker inspect --------------------
       const inspect_result = this.addInspectData(jobs)
       if(!inspect_result.success)
@@ -253,6 +253,17 @@ export class DockerCliRunDriver extends RunDriver
     if(x.match(/^Created/)) return "created"
     if(x.match(/^Up/)) return "running"
     return "unknown"
+  }
+
+  // filters that can be immediately applied after running ps
+  protected psFilter(filter?: JobInfoFilter) : JobInfoFilter|undefined
+  {
+    if(!(filter?.ids || filter?.states))
+      return undefined
+    return {
+      "ids": filter?.ids,
+      "states": filter?.states
+    }
   }
 
   // fills in jobInfo data that can be only accessed by docker inspect
