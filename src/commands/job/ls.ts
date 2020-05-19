@@ -23,8 +23,8 @@ export default class List extends StackCommand {
   {
     const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const runner  = this.newRunDriver(flags.explicit)
-    const job_info = runner.jobInfo({
+    const { container_drivers }  = this.initContainerSDK(flags.verbose, false, flags.explicit)
+    const job_info = container_drivers.runner.jobInfo({
       'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags)
     })
     if(!job_info.success) return printResultState(job_info)
