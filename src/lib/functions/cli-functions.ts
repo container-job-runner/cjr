@@ -367,10 +367,12 @@ export async function jobToImage(drivers: ContainerDrivers, job_id: string, imag
     return false
   }
 
-  export function startPodmanSocket(shell: ShellCommand, socket: string) : ValidatedOutput<ChildProcess>
+  export function startPodmanSocket(shell: ShellCommand, socket: string, sleep_seconds:number = 1) : ValidatedOutput<ChildProcess>
   {
     shell.exec('mkdir', {p:{}}, [path.posix.dirname(socket)])
-    const result = shell.execAsync('podman system service', {t: '20'}, [`unix:${socket}`], {detached: true, stdio: 'ignore'})
+    const result = shell.execAsync('podman system service', {t: '0'}, [`unix:${socket}`], {detached: true, stdio: 'ignore'})
     if(result.success) result.value.unref()
+    // sleep to allow socket to start
+    shell.exec('sleep', {}, [`${sleep_seconds}`])
     return result
   }
