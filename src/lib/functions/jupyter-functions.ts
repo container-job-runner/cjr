@@ -27,13 +27,6 @@ export type JupyterJobOptions = JupyterOptions & {
 
 type JobIdentifer = {"job-id"?: string,"project-root"?: string}
 
-const JUPYTER_JOB_PREFIX = "JUPYTER-"
-const JUPYTER_JOB_NAME = (identifier: {"job-id"?: string,"project-root"?: string}) => {
-  if(identifier['project-root']) return `${JUPYTER_JOB_PREFIX}${JSTools.md5(identifier['project-root'])}`
-  if(identifier['job-id']) return `${JUPYTER_JOB_PREFIX}${JSTools.md5(identifier['job-id'])}`
-  return `${JUPYTER_JOB_PREFIX}[NONE]`;
-}
-
 export function startJupyterInProject(job_manager: JobManager, jupyter_options: JupyterProjectOptions) : ValidatedOutput<string>
 {
   const identifier:JobIdentifer = {"project-root" : jupyter_options['project-root'] || ""}
@@ -163,10 +156,10 @@ function jobId(identifier: JobIdentifer, job_manager: JobManager,) : ValidatedOu
     'labels': { [name_label]: [jupyter_job_name]},
     'states': ['running']
   })
-  // -- exit if request fails --------------------------------------------------
+  // -- return false if request fails ------------------------------------------
   if(!job_info_request.success)
     return new ValidatedOutput(false, "")
-  // -- exit if jupyter is already running -------------------------------------
+  // -- return success if id exists --------------------------------------------
   const jupyter_job_id = firstJobId(job_info_request).value
   if(jupyter_job_id)
     return (new ValidatedOutput(true, jupyter_job_id))
@@ -196,4 +189,11 @@ function parseNotebookListCommand(job_manager: JobManager, jupyter_id: string) :
   const url = raw_output.match(re)?.[0] || ""
   if(!url) return new ValidatedOutput(false, "")
   return new ValidatedOutput(true, url)
+}
+
+const JUPYTER_JOB_PREFIX = "JUPYTER-"
+const JUPYTER_JOB_NAME = (identifier: JobIdentifer) => {
+  if(identifier['project-root']) return `${JUPYTER_JOB_PREFIX}${JSTools.md5(identifier['project-root'])}`
+  if(identifier['job-id']) return `${JUPYTER_JOB_PREFIX}${JSTools.md5(identifier['job-id'])}`
+  return `${JUPYTER_JOB_PREFIX}[NONE]`;
 }
