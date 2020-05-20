@@ -106,20 +106,5 @@ export const stack_bundle_rsync_file_paths = {
 // stack run options
 export const DefaultContainerRoot = "/"
 
-// Jupyter options
-export const JUPYTER_JOB_NAME = (identifier: {"job-id"?: string,"project-root"?: string}) => {
-  const prefix = "JUPYTER"
-  if(identifier['project-root']) return `${prefix}-${JSTools.md5(identifier['project-root'])}`
-  if(identifier['job-id']) return `${prefix}-${JSTools.md5(identifier['job-id'])}`
-  return `${prefix}[NONE]`;
-}
-
-// Theia options
-export const THEIA_JOB_NAME = (identifier: {"project-root"?: string}) => {
-  const prefix = "THEIA"
-  if(identifier['project-root']) return `${prefix}-${JSTools.md5(identifier['project-root'])}`
-  return `${prefix}[NONE]`;
-}
-
 // X11 options
 export const X11_POSIX_BIND = "/tmp/.X11-unix"
