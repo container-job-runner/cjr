@@ -142,7 +142,7 @@ function printStatusHeader(message: string, verbose: boolean, line_width:number 
 
 export function nextAvailablePort(drivers: ContainerDrivers, port:number=1024) : number
 {
-  const job_info = drivers.runner.jobInfo() // get all jobs
+  const job_info = drivers.runner.jobInfo({states: ["running"]}) // get all jobs
   if(!job_info.success) return port
   // -- extract port and order ascending ---------------------------------------
   const ports:Array<number> = []
