@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
-import { printResultState } from '../lib/functions/misc-functions'
-import { startJupyterInProject, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp } from '../lib/functions/jupyter-functions'
-import { NewJobCommand } from '../lib/commands/new-job-command'
-import { nextAvailablePort, initX11 } from '../lib/functions/cli-functions'
-import { ContainerDrivers } from '../lib/job-managers/job-manager'
+import { printResultState, printHorizontalTable } from '../lib/functions/misc-functions'
+import { startJupyterInProject, stopJupyter, listJupyter, getJupyterUrl, startJupyterApp, JupyterJobInfo } from '../lib/functions/jupyter-functions'
+import { initX11 } from '../lib/functions/cli-functions'
+import chalk = require('chalk')
+import { ServerCommand } from '../lib/commands/server-command'
 
-export default class Run extends NewJobCommand {
+export default class Run extends ServerCommand {
   static description = 'Start a jupiter server'
   static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
@@ -76,8 +76,21 @@ export default class Run extends NewJobCommand {
     if(args['command'] === 'list') // == list jupyter ==========================
     {
       const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
-      const result = listJupyter(job_manager, {"project-root": project_root})
-      printResultState(result)
+      const result = listJupyter(job_manager, "in-project")
+      if(!result.success)
+        return printResultState(result)
+
+      const table_parameters = {
+          row_headers:    ["ID", "URL", "PROJECT"],
+          column_widths:  [9, 100],
+          text_widths:    [7, 100],
+          silent_clip:    [true, false]
+      }
+      const toArray = (e:JupyterJobInfo) => [e.id, chalk`{blue ${e.url}}`, chalk`{green ${e["project-root"]}}`]
+      printHorizontalTable({ ...table_parameters, ...{
+        title:  "",
+        data:   result.value.map(toArray)
+      }})
     }
     if(args['command'] === 'url' || (!flags['quiet'] && args['command'] === 'start' && !webapp_path)) // == print jupyter url
     {
@@ -93,20 +106,6 @@ export default class Run extends NewJobCommand {
       if(url_result.success) startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
       printResultState(url_result)
     }
-  }
-
-  defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean)
-  {
-    const default_address = (expose) ? '0.0.0.0' : '127.0.0.1'
-    const port = this.parsePortFlag([server_port_flag]).pop()
-    if(port !== undefined && port.address)
-      return port
-    if(port !== undefined) {
-      port.address = default_address
-      return port
-    }
-    const default_port = nextAvailablePort(drivers, 7013)
-    return {"hostPort": default_port, "containerPort": default_port, "address": default_address}
   }
 
 }
