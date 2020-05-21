@@ -130,6 +130,8 @@ export class LocalJobManager extends JobManager
       return failed_result.pushWarning(this.WARNINGSTRINGS.JOBEXEC.NO_PROJECTROOT(parent_job_info.id))
     // -- configure job & stack properties --------------------------------------
     setRelativeWorkDir(job_configuration, parent_project_root, exec_options["cwd"])
+    job_configuration.addLabel(label_strings.job["parent-job-id"], parent_job_info.id)
+    job_configuration.addLabel(label_strings.job["type"], "exec")
     if(exec_options.x11)
       addX11(job_configuration, this.container_drivers)
     const stack_configuration = job_configuration.stack_configuration
