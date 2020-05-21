@@ -15,7 +15,7 @@ export const label_strings = {
     "project-root": "project-root",               // project-root
     "container-root": "container-root",           // linux path that cooresponds to container root where project-root is mounted
     "file-volume": "file-volume",                 // id of any associated file volume
-    "parent-job": "parent-job",                   // id of parent job for exec
+    "parent-job-id": "parent-job",                 // id of parent job for exec
     "name": "job-name",                           // a string that contains an optional job name
     "stack-path": "stack-path",                   // string containg path on host where underlying stack is located
     "download-include": 'rsync-include',          // contents of the file passed to rsync through the flag --include-from used when downloading files to host
