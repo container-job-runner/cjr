@@ -26,6 +26,6 @@ export function buildAndRun(job_configuration: JobConfiguration<StackConfigurati
   const build_result = buildImage(job_configuration.stack_configuration, drivers, build_options)
   if(!build_result.success)
     return failed_result
-  return drivers.runner.jobStart(job_configuration, "inherit")
+  return drivers.runner.jobStart(job_configuration, job_configuration.synchronous ? 'inherit' : 'pipe')
 }
 
