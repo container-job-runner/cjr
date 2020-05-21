@@ -23,7 +23,8 @@ export default class Start extends ServerCommand {
     "explicit": flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
-    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
+    "override-entrypoint": flags.boolean({default: false, description: 'forces container entrypoint to be sh shell. This may be useful for images that where not designed for cjr.'})
   }
   static strict = false;
 
@@ -50,7 +51,8 @@ export default class Start extends ServerCommand {
         "reuse-image" : this.extractReuseImage(flags),
         "project-root": flags["project-root"],
         "port": theia_port,
-        "x11": flags['x11']
+        "x11": flags['x11'],
+        "override-entrypoint": flags['override-entrypoint']
       }
     )
     await JSTools.sleep(5000) // wait for server to start

@@ -24,7 +24,8 @@ export default class Start extends ServerCommand {
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
-    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"})
+    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
+    "override-entrypoint": flags.boolean({default: false, description: 'forces container entrypoint to be sh shell. This may be useful for images that where not designed for cjr.'})
   }
   static strict = false;
 
@@ -56,7 +57,8 @@ export default class Start extends ServerCommand {
         "mode": mode,
         "job-id": job_id,
         "port": jupyter_port,
-        "x11": flags['x11']
+        "x11": flags['x11'],
+        "override-entrypoint": flags['override-entrypoint']
       }
     )
     printResultState(result)
