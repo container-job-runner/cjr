@@ -10,24 +10,17 @@ export type Dictionary = { [key:string] : any }
 export const cli_name = "cjr"
 
 // job labels
-//export const name_label = 'name'
-// export const stack_path_label = 'stack-path'
-// export const file_volume_label = 'filevolume'
-// export const project_root_label = 'project-root'
-// export const container_root_label = 'container-root'
-// export const stash_label = 'stash'
-// export const download_include_label = 'rsync-include'
-// export const download_exclude_label = 'rsync-exclude'
 export const label_strings = {
   "job" : {
-    "type": "job-type",
-    "project-root": "project-root",
-    "container-root": "container-root",
-    "file-volume": "file-volume",
-    "name": "job-name",
-    "stack-path": "stack-path",
-    "download-include": 'rsync-include',
-    "download-exclude": 'rsync-exclude'
+    "type": "job-type",                           // label for special types of jobs (e.g. stash, exec)
+    "project-root": "project-root",               // project-root
+    "container-root": "container-root",           // linux path that cooresponds to container root where project-root is mounted
+    "file-volume": "file-volume",                 // id of any associated file volume
+    "parent-job": "parent-job",                   // id of parent job for exec
+    "name": "job-name",                           // a string that contains an optional job name
+    "stack-path": "stack-path",                   // string containg path on host where underlying stack is located
+    "download-include": 'rsync-include',          // contents of the file passed to rsync through the flag --include-from used when downloading files to host
+    "download-exclude": 'rsync-exclude'           // contents of the file passed to rsync through the flag --exclude-from used when downloading files to host
   }
 }
 
