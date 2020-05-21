@@ -5,7 +5,7 @@ import { ErrorStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
 import { label_strings, Dictionary } from '../constants'
 import { parseJSON } from './misc-functions'
-import { firstJobId } from '../drivers-containers/abstract/run-driver'
+import { firstJobId, JobInfo } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { JobManager } from '../job-managers/job-manager'
 import { JSTools } from '../js-tools'
@@ -17,6 +17,12 @@ export type TheiaOptions = {
   "reuse-image"?: boolean     // specifies if image should be reused if already build
   "args"?: Array<string>      // additional args for jupyter command
   "x11"?: boolean             // optional x11 command
+}
+
+export type TheiaJobInfo = {
+  "id": string,
+  "url": string,
+  "project-root"?: string
 }
 
 const ENV = {
@@ -66,19 +72,35 @@ export function stopTheia(job_manager: JobManager, identifier: {"project-root"?:
   return runner.jobStop([job_id.value])
 }
 
-// -- extract the url for a theia server  --------------------------------------
-export async function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"?: string}) : Promise<ValidatedOutput<string>>
+export function listTheia(job_manager: JobManager) : ValidatedOutput<TheiaJobInfo[]>
 {
-  const runner = job_manager.container_drivers.runner
+  const theia_jobs: Array<TheiaJobInfo> = []
+  const result = new ValidatedOutput(true, theia_jobs)
+  const job_info_request = job_manager.container_drivers.runner.jobInfo({
+    'labels': { [label_strings.job.name]: [THEIA_JOB_PREFIX]},
+    'states': ['running']
+  })
+  if(!job_info_request.success)
+    return result.absorb(job_info_request)
+
+  job_info_request.value.map( (job:JobInfo) => {
+    theia_jobs.push({
+      "id": job.id,
+      "url": extractUrlEnvVar(job_manager, job.id).value,
+      "project-root": job.labels?.[label_strings.job["project-root"]] || ""
+    })
+  })
+
+  return result
+}
+
+// -- extract the url for a theia server  --------------------------------------
+export function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"?: string}) : ValidatedOutput<string>
+{
   const job_id = jobId(identifier, job_manager)
   if(!job_id.success)
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
-  const exec_configuration = job_manager.configurations.exec()
-  exec_configuration.command = ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
-  const exec_output = runner.jobExec(job_id.value, exec_configuration, "pipe")
-  const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
-  if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
-  return new ValidatedOutput(true, `http://${json_output.value?.url}:${json_output.value?.port}`);
+  return extractUrlEnvVar(job_manager, job_id.value)
 }
 
 // -- starts the Theia Electron app  -------------------------------------------
@@ -146,8 +168,17 @@ function theiaCommand(stack_configuration: StackConfiguration<any>, theia_option
 
 // -- environment variables for THEIA ------------------------------------------
 function setEnvironment(stack_configuration: StackConfiguration<any>, theia_options: TheiaOptions) {
-  const env:Dictionary = {}
-  env[ENV.port] = `${theia_options['port'].containerPort}`;
-  env[ENV.url]  = '0.0.0.0'
-  return env;
+  stack_configuration.addEnvironmentVariable(ENV.port, `${theia_options['port'].containerPort}`)
+  stack_configuration.addEnvironmentVariable(ENV.url, '0.0.0.0')
+}
+
+function  extractUrlEnvVar(job_manager: JobManager, job_id: string)
+{
+  const runner = job_manager.container_drivers.runner
+  const exec_configuration = job_manager.configurations.exec()
+  exec_configuration.command = ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
+  const exec_output = runner.jobExec(job_id, exec_configuration, "pipe")
+  const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
+  if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
+  return new ValidatedOutput(true, `http://${json_output.value?.url}:${json_output.value?.port}`);
 }
