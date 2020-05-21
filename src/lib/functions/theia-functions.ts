@@ -17,6 +17,7 @@ export type TheiaOptions = {
   "reuse-image"?: boolean     // specifies if image should be reused if already build
   "args"?: Array<string>      // additional args for jupyter command
   "x11"?: boolean             // optional x11 command
+  "override-entrypoint"?: boolean // sets entrypoint to /bin/sh -c
 }
 
 export type TheiaJobInfo = {
@@ -132,7 +133,8 @@ function createJob(identifier: JobIdentifer, job_manager: JobManager, theia_opti
   const stack_configuration = theia_options["stack_configuration"]
   stack_configuration.addPort(theia_options['port'].hostPort, theia_options['port'].containerPort, theia_options['port'].address)
   setEnvironment(stack_configuration, theia_options)
-  //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
+  if(theia_options["override-entrypoint"])
+    stack_configuration.setEntrypoint(["/bin/sh", "-c"])
   // -- create new jupyter job -------------------------------------------------
   const job_configuration = job_manager.configurations.job(stack_configuration)
   job_configuration.addLabel(label_strings.job.name, THEIA_JOB_NAME(identifier))

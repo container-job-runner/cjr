@@ -16,6 +16,7 @@ type JupyterOptions = {
   "reuse-image"?: boolean     // specifies if image should be reused if already build
   "args"?: Array<string>      // additional args for jupyter command
   "x11"?: boolean             // optional x11 command
+  "override-entrypoint"?: boolean // sets entrypoint to /bin/sh -c
 }
 
 export type JupyterProjectOptions = JupyterOptions & {
@@ -165,7 +166,8 @@ function createJob(identifier: JobIdentifer, job_manager: JobManager, jupyter_op
   const jupyter_job_name = JUPYTER_JOB_NAME(identifier)
   const stack_configuration = jupyter_options["stack_configuration"]
   stack_configuration.addPort(jupyter_options['port'].hostPort, jupyter_options['port'].containerPort, jupyter_options['port'].address)
-  //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
+  if(jupyter_options["override-entrypoint"])
+    stack_configuration.setEntrypoint(["/bin/sh", "-c"])
   // -- create new jupyter job -------------------------------------------------
   const job_configuration = job_manager.configurations.job(stack_configuration)
   job_configuration.addLabel(label_strings.job.name, jupyter_job_name)
