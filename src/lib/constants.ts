@@ -1,7 +1,6 @@
 import path = require('path')
 import os = require('os')
 import chalk = require('chalk')
-import { JSTools } from './js-tools'
 
 // types
 export type Dictionary = { [key:string] : any }
