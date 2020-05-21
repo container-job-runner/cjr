@@ -3,10 +3,11 @@ import { JSTools } from '../js-tools'
 import { ShellCommand } from '../shell-command'
 import { ErrorStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
-import { name_label } from '../constants'
-import { firstJobId } from '../drivers-containers/abstract/run-driver'
+import { label_strings } from '../constants'
+import { firstJobId, JobInfo } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { JobManager } from '../job-managers/job-manager'
+import { string } from '@oclif/command/lib/flags'
 
 type JupyterOptions = {
   "stack_configuration": StackConfiguration<any> // stack configuration in which jupyter will be run
@@ -23,6 +24,13 @@ export type JupyterProjectOptions = JupyterOptions & {
 
 export type JupyterJobOptions = JupyterOptions & {
   "job-id": string      // host project root
+}
+
+export type JupyterJobInfo = {
+  "id": string,
+  "url": string,
+  "project-root"?: string
+  "parent-job-id"?: string
 }
 
 type JobIdentifer = {"job-id"?: string,"project-root"?: string}
@@ -80,24 +88,43 @@ export function stopJupyter(job_manager: JobManager, identifier: {"job-id"?: str
     return runner.jobStop([job_id.value])
 }
 
-export function listJupyter(job_manager: JobManager, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+// -- list all currently running jupyter servers --------------------------------
+export function listJupyter(job_manager: JobManager, filter:"all"|"in-project"|"in-job") : ValidatedOutput<JupyterJobInfo[]>
 {
-  const runner = job_manager.container_drivers.runner
-  const job_id = jobId(identifier, job_manager)
-  if(!job_id.success)
-    return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
-  else {
-    const exec_configuration = job_manager.configurations.exec()
-    exec_configuration.command = ['jupyter', 'notebook', 'list']
-    return new ValidatedOutput(true, undefined).absorb(
-      runner.jobExec(job_id.value, exec_configuration, 'inherit')
-    )
-  }
+  const jupyter_jobs: Array<JupyterJobInfo> = []
+  const result = new ValidatedOutput(true, jupyter_jobs)
+  const job_info_request = job_manager.container_drivers.runner.jobInfo({
+    'labels': { [label_strings.job.name]: [JUPYTER_JOB_PREFIX]},
+    'states': ['running']
+  })
+  if(!job_info_request.success)
+    return result.absorb(job_info_request)
+
+  const include_injob = ( (filter === "all") || (filter === "in-job") )
+  const include_inproject = ( (filter === "all") || (filter === "in-project") )
+
+  job_info_request.value.map( (job:JobInfo) => {
+    const job_type = job.labels?.[label_strings.job.type]
+    if(job_type === "exec" && include_injob)
+      jupyter_jobs.push({
+          "id": job.id,
+          "url": parseNotebookListCommand(job_manager, job.id).value,
+          "parent-job-id": job.labels?.[label_strings.job["parent-job-id"]]
+      })
+    else if(job_type !== "exec" && include_inproject)
+      jupyter_jobs.push({
+        "id": job.id,
+        "url": parseNotebookListCommand(job_manager, job.id).value,
+        "project-root": job.labels?.[label_strings.job["project-root"]] || ""
+      })
+  })
+
+  return result
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
 // function can send repeated requests if the first one fails
-export async function getJupyterUrl(job_manager: JobManager, identifier: {"job-id"?: string,"project-root"?: string}, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
+export async function getJupyterUrl(job_manager: JobManager, identifier: JobIdentifer, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
 {
   const job_id = jobId(identifier, job_manager)
   if(!job_id.success)
@@ -141,7 +168,7 @@ function createJob(identifier: JobIdentifer, job_manager: JobManager, jupyter_op
   //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
   // -- create new jupyter job -------------------------------------------------
   const job_configuration = job_manager.configurations.job(stack_configuration)
-  job_configuration.addLabel(name_label, jupyter_job_name)
+  job_configuration.addLabel(label_strings.job.name, jupyter_job_name)
   job_configuration.remove_on_exit = true
   job_configuration.synchronous = false
   job_configuration.command = [jupyterCommand(jupyter_options)]
@@ -153,7 +180,7 @@ function jobId(identifier: JobIdentifer, job_manager: JobManager,) : ValidatedOu
 {
   const jupyter_job_name = JUPYTER_JOB_NAME(identifier)
   const job_info_request = job_manager.container_drivers.runner.jobInfo({
-    'labels': { [name_label]: [jupyter_job_name]},
+    'labels': { [label_strings.job.name]: [jupyter_job_name]},
     'states': ['running']
   })
   // -- return false if request fails ------------------------------------------
