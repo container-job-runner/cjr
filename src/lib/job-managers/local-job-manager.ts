@@ -5,14 +5,14 @@ import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOpti
 import { JobConfiguration } from '../config/jobs/job-configuration';
 import { ValidatedOutput } from '../validated-output';
 import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../drivers-containers/abstract/run-driver';
-import { file_volume_label, Dictionary, rsync_constants, project_root_label, download_exclude_label, download_include_label } from '../constants';
+import { Dictionary, rsync_constants, label_strings } from '../constants';
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot } from '../functions/config-functions';
 import { ShellCommand } from '../shell-command';
 import { FileTools } from '../fileio/file-tools';
 import { DockerCliRunDriver } from '../drivers-containers/docker/docker-cli-run-driver';
 import { DockerSocketRunDriver } from '../drivers-containers/docker/docker-socket-run-driver';
-import { trim, printResultState } from '../functions/misc-functions';
+import { trim } from '../functions/misc-functions';
 import { buildAndRun, buildImage } from '../functions/build-functions';
 import { TextFile } from '../fileio/text-file';
 
@@ -92,7 +92,7 @@ export class LocalJobManager extends JobManager
         return failed_result.absorb(create_file_volume)
       const file_volume_id = create_file_volume.value
       mountFileVolume(stack_configuration, job_options["project-root"], file_volume_id)
-      job_configuration.addLabel(file_volume_label, file_volume_id)
+      job_configuration.addLabel(label_strings.job["file-volume"], file_volume_id)
     }
     // -- 1. update job properties: apply options --------------------------------
     setRelativeWorkDir(job_configuration, job_options["project-root"] || "", job_options["cwd"])
@@ -124,8 +124,8 @@ export class LocalJobManager extends JobManager
       return failed_result.absorb(job_info_request).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
     const parent_job_info = job_info_request.value
     // -- extract parent-job hostRoot and file_volume_id -----------------------
-    const parent_project_root = parent_job_info.labels?.[project_root_label] || ""
-    const parent_file_volume_id = parent_job_info.labels?.[file_volume_label] || ""
+    const parent_project_root = parent_job_info.labels?.[label_strings.job["project-root"]] || ""
+    const parent_file_volume_id = parent_job_info.labels?.[label_strings.job["file-volume"]] || ""
     if(!parent_project_root)
       return failed_result.pushWarning(this.WARNINGSTRINGS.JOBEXEC.NO_PROJECTROOT(parent_job_info.id))
     // -- configure job & stack properties --------------------------------------
@@ -159,10 +159,10 @@ export class LocalJobManager extends JobManager
     job_info_array.map((job:Dictionary) => {
       // -- 1. extract label information -----------------------------------------
       const id = job.id;
-      const projectRoot = job.labels?.[project_root_label] || ""
-      const file_volume_id = job.labels?.[file_volume_label] || ""
-      const download_exclude = job.label?.[download_exclude_label] || ""
-      const download_include = job.label?.[download_include_label] || ""
+      const projectRoot = job.labels?.[label_strings.job["project-root"]] || ""
+      const file_volume_id = job.labels?.[label_strings.job["file-volume"]] || ""
+      const download_exclude = job.label?.[label_strings.job["download-exclude"]] || ""
+      const download_include = job.label?.[label_strings.job["download-include"]] || ""
       if(!projectRoot) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_PROJECTROOT(id))
       if(!file_volume_id) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_VOLUME(id))
       // -- 2. write include & exclude settings to files -------------------------
@@ -562,7 +562,7 @@ function volumeIds(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<
   if(!job_info.success) return new ValidatedOutput(false, [])
   return new ValidatedOutput(true,
     job_info.value
-    .map((ji:JobInfo) => ji.labels?.[file_volume_label] || "")
+    .map((ji:JobInfo) => ji.labels?.[label_strings.job["file-volume"]] || "")
     .filter((s:string) => s !== "")
   )
 }

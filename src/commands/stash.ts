@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { printResultState } from '../lib/functions/misc-functions'
 import { NewJobCommand } from '../lib/commands/new-job-command'
-import { stash_label } from '../lib/constants'
+import { label_strings } from '../lib/constants'
 
 export default class Stash extends NewJobCommand {
   static description = 'Save current project state as a result.'
@@ -29,7 +29,7 @@ export default class Stash extends NewJobCommand {
       "file-access":  "volume",
       "working-directory": process.cwd(),
       "remove-on-exit": false,
-      "label": [`${stash_label}=true`]
+      "label": [`${label_strings.job.type}=stash`]
     }
     const { job } = this.runSimpleJob({ ... flags, ... fixed_flags }, ['exit'])
     printResultState(job)

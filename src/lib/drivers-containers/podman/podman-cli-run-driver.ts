@@ -3,11 +3,11 @@
 // ===========================================================================
 
 import { ShellCommand } from "../../shell-command"
-import { JobInfo, JobPortInfo, JobInfoFilter } from '../abstract/run-driver'
+import { JobInfo, JobInfoFilter } from '../abstract/run-driver'
 import { DockerCliRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
 import { parseJSON, parseLineJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
-import { stack_path_label, Dictionary } from '../../constants'
+import { label_strings, Dictionary } from '../../constants'
 import { DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 
@@ -40,7 +40,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
         names: x.Names,
         command: x.Command,
         state: this.psStatusToJobInfoState(x.Status),
-        stack: x?.Labels?.[stack_path_label] || "",
+        stack: x?.Labels?.[label_strings.job["stack-path"]] || "",
         labels: x?.Labels || {},
         ports: [], // info for this field is not provided from podman ps
         status: x.Status

@@ -2,7 +2,7 @@
 // RunDriver: Abstract class for running jobs and accessing their info
 // ===========================================================================
 
-import { stack_path_label, Dictionary } from '../../constants'
+import { Dictionary, label_strings } from '../../constants'
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { JobConfiguration } from '../../config/jobs/job-configuration'
@@ -113,7 +113,7 @@ export function jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter, optio
   // -- 2. Filter job information --------------------------------------------
   const mcs = [ // matching conditions
     (job: JobInfo) : boolean => (!filter_id || id_regex.test(job.id)),
-    (job: JobInfo) : boolean => (!filter_stack_path || stackF(job.labels?.[stack_path_label])),
+    (job: JobInfo) : boolean => (!filter_stack_path || stackF(job.labels?.[label_strings.job["stack-path"]])),
     (job: JobInfo) : boolean => (!filter_state || stateF(job.state)),
     (job: JobInfo) : boolean => (!filter_labels || labelsF(job.labels))
   ]

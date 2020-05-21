@@ -5,7 +5,7 @@ import { ValidatedOutput } from '../../validated-output'
 import { JSTools } from '../../js-tools'
 import { DockerStackConfiguration} from '../../config/stacks/docker/docker-stack-configuration'
 import { parseLineJSON } from '../../functions/misc-functions'
-import { Dictionary, cli_name, stack_path_label } from '../../constants'
+import { Dictionary, cli_name, label_strings } from '../../constants'
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration'
 import { ShellCommand } from '../../shell-command'
 
@@ -104,9 +104,9 @@ export class DockerCliBuildDriver extends BuildDriver
       if(configuration?.config?.build?.["pull"] || options?.['pull'])
         flags["pull"] = {}
       // -- add labels ---------------------------------------------------------
-      flags["label"] = [`${stack_path_label}=${configuration.stack_path}`, `builder=${cli_name}`]
+      flags["label"] = [`${label_strings.job["stack-path"]}=${configuration.stack_path}`, `builder=${cli_name}`]
 
-        return flags;
+      return flags;
     }
 
     protected loadArchivedImage(configuration: DockerStackConfiguration, stdio: "inherit"|"pipe", options?: Dictionary) : ValidatedOutput<string>
@@ -183,7 +183,7 @@ export class DockerCliBuildDriver extends BuildDriver
       if(!stack_path) return new ValidatedOutput(false, undefined)
       const image_id_cmd = this.shell.commandString(
         `${this.base_command} images`,
-        {q: {}, filter: [`label=${stack_path_label}=${stack_path}`, `label=builder=${cli_name}`]}
+        {q: {}, filter: [`label=${label_strings.job["stack-path"]}=${stack_path}`, `label=builder=${cli_name}`]}
       )
       const command = `${this.base_command} rmi $(${image_id_cmd})`
       return (new ValidatedOutput(true, undefined)).absorb(this.shell.exec(command))

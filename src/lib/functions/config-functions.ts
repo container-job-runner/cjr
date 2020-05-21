@@ -11,7 +11,7 @@ import { ShellCommand } from '../shell-command'
 import { SshShellCommand } from '../remote/ssh-shell-command'
 import { ValidatedOutput } from '../validated-output'
 import { WarningStrings } from '../error-strings'
-import { X11_POSIX_BIND, container_root_label, stack_path_label, project_root_label, download_include_label, download_exclude_label } from '../constants'
+import { X11_POSIX_BIND, label_strings } from '../constants'
 import { trim } from './misc-functions'
 import { PathTools } from '../fileio/path-tools'
 import { PodmanCliRunDriver } from '../drivers-containers/podman/podman-cli-run-driver'
@@ -107,21 +107,21 @@ export function bindProjectRoot(configuration: StackConfiguration<any>, projectR
 // -----------------------------------------------------------------------------
 export function addGenericLabels(configuration: JobConfiguration<StackConfiguration<any>>, projectRoot: string)
 {
-  configuration.addLabel(container_root_label, configuration.stack_configuration.getContainerRoot())
+  configuration.addLabel(label_strings.job["container-root"], configuration.stack_configuration.getContainerRoot())
   if(projectRoot)
-    configuration.addLabel(project_root_label, projectRoot)
+    configuration.addLabel(label_strings.job["project-root"], projectRoot)
   if(configuration.stack_configuration.stack_path)
-    configuration.addLabel(stack_path_label, configuration.stack_configuration.stack_path)
+    configuration.addLabel(label_strings.job["stack-path"], configuration.stack_configuration.stack_path)
   // -- add download settings --------------------------------------------------
   const author = new TextFile()
   const download_settings = configuration.stack_configuration.getRsyncDownloadSettings(true)
   if( download_settings.include ) {
     const contents = author.read(download_settings.include)
-    configuration.addLabel(download_include_label, contents.value)
+    configuration.addLabel(label_strings.job["download-include"], contents.value)
   }
-  if( download_settings.exclude) {
+  if( download_settings.exclude ) {
     const contents = author.read(download_settings.exclude)
-    configuration.addLabel(download_exclude_label, contents.value)
+    configuration.addLabel(label_strings.job["download-exclude"], contents.value)
   }
 }
 

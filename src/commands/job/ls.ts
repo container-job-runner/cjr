@@ -2,7 +2,7 @@ import * as path from 'path'
 import { flags} from '@oclif/command'
 import { printVerticalTable, printHorizontalTable, printResultState } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { Dictionary, stash_label } from '../../lib/constants'
+import { Dictionary, label_strings } from '../../lib/constants'
 
 export default class List extends BasicCommand {
   static description = 'List all running and completed jobs.'
@@ -127,13 +127,13 @@ export default class List extends BasicCommand {
 
     printTable({ ...table_parameters, ...{
         title:  "Completed Jobs",
-        data:   jobs.filter((j:Dictionary) => (j.state === "exited" && j?.labels?.[stash_label] !== "true")).map((e:Dictionary) => toArray(e)),
+        data:   jobs.filter((j:Dictionary) => (j.state === "exited" && j?.labels?.[label_strings.job.type] !== "stash")).map((e:Dictionary) => toArray(e)),
     }})
 
     if(flags['show-stashes'] || flags['all'])
       printTable({ ...table_parameters, ...{
           title:  "Stashes",
-          data:   jobs.filter((j:Dictionary) => (j?.labels?.[stash_label] === "true")).map((e:Dictionary) => toArray(e)),
+          data:   jobs.filter((j:Dictionary) => (j?.labels?.[label_strings.job.type] === "stash")).map((e:Dictionary) => toArray(e)),
       }})
 
   }

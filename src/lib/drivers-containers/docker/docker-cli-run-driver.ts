@@ -3,7 +3,7 @@
 // ===========================================================================
 
 import * as chalk from 'chalk'
-import { cli_name, stack_path_label, Dictionary } from '../../constants'
+import { label_strings, cli_name, Dictionary } from '../../constants'
 import { ValidatedOutput } from '../../validated-output'
 import { RunDriver, JobPortInfo, JobInfo, JobState, JobInfoFilter, NewJobInfo, jobFilter } from '../abstract/run-driver'
 import { ShellCommand } from "../../shell-command"
@@ -296,7 +296,7 @@ export class DockerCliRunDriver extends RunDriver
     jobs.map( (job:JobInfo):void => {
       const id = job.id
       if(inspect_data[id] !== undefined) {
-        job.stack  = inspect_data[id]?.Labels?.[stack_path_label] || "",
+        job.stack  = inspect_data[id]?.Labels?.[label_strings.job["stack-path"]] || "",
         job.labels = inspect_data[id]?.Labels || {}
         job.ports = inspect_data[id]?.Ports || []
       }

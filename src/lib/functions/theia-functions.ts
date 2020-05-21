@@ -3,7 +3,7 @@ import os = require('os')
 import { ShellCommand } from '../shell-command'
 import { ErrorStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
-import { name_label, Dictionary } from '../constants'
+import { label_strings, Dictionary } from '../constants'
 import { parseJSON } from './misc-functions'
 import { firstJobId } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
@@ -75,7 +75,7 @@ export async function getTheiaUrl(job_manager: JobManager, identifier: {"project
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   const exec_configuration = job_manager.configurations.exec()
   exec_configuration.command = ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
-  const exec_output = runner.jobExec(theia_job_id, exec_configuration, "pipe")
+  const exec_output = runner.jobExec(job_id.value, exec_configuration, "pipe")
   const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
   if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
   return new ValidatedOutput(true, `http://${json_output.value?.url}:${json_output.value?.port}`);
@@ -113,7 +113,7 @@ function createJob(identifier: JobIdentifer, job_manager: JobManager, theia_opti
   //stack_configuration.setEntrypoint(["/bin/sh", "-c"])
   // -- create new jupyter job -------------------------------------------------
   const job_configuration = job_manager.configurations.job(stack_configuration)
-  job_configuration.addLabel(name_label, THEIA_JOB_NAME(identifier))
+  job_configuration.addLabel(label_strings.job.name, THEIA_JOB_NAME(identifier))
   job_configuration.remove_on_exit = true
   job_configuration.synchronous = false
   job_configuration.command = [theiaCommand(stack_configuration, theia_options)]
@@ -124,7 +124,7 @@ function jobId(identifier: JobIdentifer, job_manager: JobManager,) : ValidatedOu
 {
   const theia_job_name = THEIA_JOB_NAME(identifier)
   const job_info_request = job_manager.container_drivers.runner.jobInfo({
-    'labels': { [name_label]: [theia_job_name]},
+    'labels': { [label_strings.job.name]: [theia_job_name]},
     'states': ['running']
   })
   // -- return false if request fails ------------------------------------------
