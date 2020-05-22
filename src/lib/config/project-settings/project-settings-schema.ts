@@ -12,6 +12,7 @@ export const project_settings_schema = {
     "stack": {"type": "string"},
     "visible-stacks": {"$ref": "#/definitions/array-of-strings"},
     "config-files": {"$ref": "#/definitions/array-of-strings"},
+    "stack-specific-config-files":  {"$ref": "#/definitions/array-of-sscf"},
     "stacks-dir": {"type": "string"},
     "remote-name": {"type": "string"}
   },
@@ -25,6 +26,21 @@ export const project_settings_schema = {
       "items": {
         "anyOf" : [ {"type": "string"} ]
       }
+    },
+    "array-of-sscf": {
+      "type": "array",
+      "items": {
+        "anyOf" : [ {"$ref": "#/definitions/stack-specific-config-file"} ]
+      }
+    },
+    "stack-specific-config-file": {
+      "type": "object",
+      "properties": {
+        "stacks": {"$ref": "#/definitions/array-of-strings"},
+        "config-files": {"$ref": "#/definitions/array-of-strings"}
+      },
+      "required": ["stacks", "config-files"],
+      "additionalProperties": false
     }
   }
 }
