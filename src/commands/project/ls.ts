@@ -15,11 +15,11 @@ export default class ls extends ProjectSettingsCommand {
   async run()
   {
     const {flags} = this.parse(ls)
-    this.augmentFlagsWithProjectSettings(flags, {"project-root":true})
+    this.augmentFlagsWithProjectSettings(flags, {"project-root": true})
     const project_root: string = (flags["project-root"] as string)
     const load_result = loadProjectSettings(project_root)
     if(!load_result.success) return printResultState(load_result)
-    this.printProjectSettings(load_result.value, project_root)
+    this.listProject(load_result.value, project_root)
   }
 
 }
