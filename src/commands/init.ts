@@ -6,7 +6,7 @@ import { ProjectSettingsCommand } from '../lib/commands/project-settings-command
 import { loadProjectSettings } from "../lib/functions/cli-functions"
 import { cli_name, projectSettingsDirPath, projectSettingsYMLPath } from "../lib/constants"
 import { printResultState } from '../lib/functions/misc-functions'
-import { ProjectSettings, ps_fields, ps_props } from '../lib/config/project-settings/project-settings'
+import { ProjectSettings, ps_props } from '../lib/config/project-settings/project-settings'
 import { DockerStackConfiguration } from '../lib/config/stacks/docker/docker-stack-configuration'
 import { TextFile } from '../lib/fileio/text-file'
 
@@ -14,7 +14,7 @@ export default class Init extends ProjectSettingsCommand {
   static description = 'Initialize a project in the current directory.'
   static args = []
   static flags = {
-    template: flags.string({default: 'default', options: ['empty', 'default', 'project-stacks']}),
+    "template": flags.string({default: 'default', options: ['empty', 'default', 'project-stacks']}),
     "stack": flags.string({env: 'STACK', description: "default stack for project"}),
     "project-root-auto": flags.boolean({}),
     "remote-name": flags.string({env: 'REMOTENAME', description: "default remote resource for project"}),
@@ -50,30 +50,32 @@ export default class Init extends ProjectSettingsCommand {
           break
       }
       // -- add any user specified settings ------------------------------------
-      const fields:Array<ps_fields> = ['stack', 'remote-name', 'stacks-dir', 'visible-stacks']
-      project_settings.set((JSTools.oSubset(flags, fields) as ps_props))
+      if(flags['stack']) project_settings.setStack(flags['stack'])
+      if(flags['remote-name']) project_settings.setRemoteName(flags['remote-name'])
+      if(flags['stacks-dir']) project_settings.setStacksDir(flags['stacks-dir'])
+      if(flags['visible-stacks']) project_settings.setVisibleStacks(flags['visible-stacks'])
       if(flags['project-root-auto'])
-        project_settings.set({'project-root': 'auto'})
+        project_settings.setProjectRoot('auto')
       if(flags['config-files']?.length > 0)
-        project_settings.set({'config-files': ((project_settings.get('config-files') || []) as Array<string>).concat(flags['config-files'])})
+        flags['config-files'].map( (file:string) => project_settings.addConfigFile(path.resolve(file)) )
       // -- write files --------------------------------------------------------
       const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
       if(!result.success) return printResultState(result)
       console.log(`Initialized cjr project in ${projectSettingsDirPath(project_root)}`)
-      this.printProjectSettings(project_settings, project_root)
+      this.listProject(project_settings, project_root)
     }
   }
 
   emptyTemplate(project_settings: ProjectSettings, project_root: string)
   {
-    project_settings.set({'project-root': 'auto'})
+    project_settings.setProjectRoot('auto')
   }
 
   defaultTemplate(project_settings: ProjectSettings, project_root: string)
   {
     this.emptyTemplate(project_settings, project_root)
     const project_config_name = 'project-stack-config.yml';
-    project_settings.set({'config-files': [project_config_name]})
+    project_settings.setConfigFiles([project_config_name])
     // -- create project-stack-config.yml file ---------------------------------
     const project_stack_config = new DockerStackConfiguration()
     project_stack_config.setRsyncUploadSettings({
@@ -109,7 +111,7 @@ export default class Init extends ProjectSettingsCommand {
   {
     this.defaultTemplate(project_settings, project_root)
     const project_stack_dirname = 'project-stacks';
-    project_settings.set({'stacks-dir': project_stack_dirname})
+    project_settings.setStacksDir(project_stack_dirname)
     fs.ensureDirSync(path.join(projectSettingsDirPath(project_root), project_stack_dirname))
   }
 
