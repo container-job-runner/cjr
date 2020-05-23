@@ -29,21 +29,28 @@ export const missingFlagError = (flags: Array<string>) => chalk`The following fl
 
 // name of files and directories in cli settings directory
 export const cli_settings_yml_name = "settings"
+export const project_settings = {
+    "dirname": `.${cli_name}`,
+    "filenames": { // names of important files in project settings directory
+      "project-settings": "project-settings.yml",
+      "id": "project-id.json"
+    },
+    "subdirectories" : {  // names of important folders in project settings directory
+      "config": "config",
+      "stacks": "stacks"
+    }
+}
+
+// functions for quickly accessing filenames from project_root
+export const projectSettingsDirPath  = (project_root: string) => path.join(project_root, project_settings.dirname)
+export const projectSettingsYMLPath  = (project_root: string) => path.join(project_root, project_settings.dirname, project_settings.filenames["project-settings"])
+export const projectIDPath  = (hostRoot: string) => path.join(hostRoot, project_settings.dirname, project_settings.filenames.id)
+
 // name of folders in data directory
 export const cli_bundle_dir_name  = "bundle"  // temporarily stores data between container transfer
 export const build_dirname = "build"
 export const job_copy_dirname = 'job-copy'
 export const podman_socket = 'podman-socket'
-
-// name of optional project settings file that is loaded relative to project project_root
-export const project_settings_folder = `.${cli_name}`
-export const project_settings_file   = "project-settings.yml"
-export const projectSettingsDirPath  = (project_root: string) => path.join(project_root, project_settings_folder)
-export const projectSettingsYMLPath  = (project_root: string) => path.join(project_root, project_settings_folder, project_settings_file)
-
-// name of optional id file in settings folder
-export const project_idfile = "project-id.json"
-export const projectIDPath  = (hostRoot: string) => path.join(hostRoot, project_settings_folder, project_idfile)
 
 // default cli options that are stored in cli settings json file
 export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir: string) =>
