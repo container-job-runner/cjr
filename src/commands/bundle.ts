@@ -5,7 +5,7 @@ import constants = require('../lib/constants')
 
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../lib/commands/basic-command'
-import { cli_bundle_dir_name, Dictionary } from '../lib/constants'
+import { Dictionary } from '../lib/constants'
 import { printResultState } from '../lib/functions/misc-functions'
 import { bundleProjectSettings, bundleProject, ProjectBundleOptions } from '../lib/functions/cli-functions'
 import { ShellCommand } from '../lib/shell-command'
@@ -38,7 +38,7 @@ export default class Bundle extends BasicCommand {
     // -- set container runtime options ----------------------------------------
     const {container_drivers, configurations} = this.initContainerSDK(flags.verbose, false, flags.explicit)
     // -- create tmp dir for bundle --------------------------------------------
-    var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, cli_bundle_dir_name))
+    var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, constants.subdirectories.data.bundle))
     if(!result.success) return printResultState(result)
     const tmp_dir = result.value
     // -- set copy options -----------------------------------------------------

@@ -4,6 +4,7 @@
 
 import fs = require('fs')
 import path = require('path')
+import constants = require('../constants')
 import Command from '@oclif/command'
 import { Settings } from '../settings'
 import { DockerCliBuildDriver } from '../drivers-containers/docker/docker-cli-build-driver'
@@ -16,7 +17,7 @@ import { DockerSocketRunDriver } from '../drivers-containers/docker/docker-socke
 import { PodmanSocketRunDriver } from '../drivers-containers/podman/podman-socket-run-driver'
 import { ShellCommand } from '../shell-command'
 import { JSTools } from '../js-tools'
-import { missingFlagError, Dictionary, build_dirname } from '../constants'
+import { missingFlagError, Dictionary } from '../constants'
 import { ValidatedOutput } from '../validated-output'
 import { ProjectSettings, ps_prop_keys } from '../config/project-settings/project-settings'
 import { BuildDriver } from '../drivers-containers/abstract/build-driver'
@@ -303,7 +304,7 @@ export abstract class BasicCommand extends Command
     const shell = new ShellCommand(explicit, silent)
     const build_driver = this.settings.get('build-driver');
     const socket:string = this.settings.get('socket-path')
-    const build_dir = path.join(this.config.dataDir, build_dirname)
+    const build_dir = path.join(this.config.dataDir, constants.subdirectories.data.build)
 
     switch(build_driver)
     {
@@ -375,7 +376,7 @@ export abstract class BasicCommand extends Command
 
   newJobManager(container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions)
   {
-    const copy_dir = path.join(this.config.dataDir, build_dirname)
+    const copy_dir = path.join(this.config.dataDir, constants.subdirectories.data["job-copy"])
     return new LocalJobManager(container_drivers, configurations, output_options, { "tmpdir": copy_dir})
   }
 
