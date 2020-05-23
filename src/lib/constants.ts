@@ -46,11 +46,16 @@ export const projectSettingsDirPath  = (project_root: string) => path.join(proje
 export const projectSettingsYMLPath  = (project_root: string) => path.join(project_root, project_settings.dirname, project_settings.filenames["project-settings"])
 export const projectIDPath  = (hostRoot: string) => path.join(hostRoot, project_settings.dirname, project_settings.filenames.id)
 
-// name of folders in data directory
-export const cli_bundle_dir_name  = "bundle"  // temporarily stores data between container transfer
-export const build_dirname = "build"
-export const job_copy_dirname = 'job-copy'
-export const podman_socket = 'podman-socket'
+// name of subfolders in data directory
+export const subdirectories =
+{
+  "data": {
+    "bundle": "bundle",                         // used by bundle functions to store tmp data
+    "build": "build",                           // used by socket drivers for storing tar and tar.gz files for building
+    'job-copy': 'job-copy',                     // used as tmp data when copying results
+    'podman-socket': 'podman-socket'            // used to store podman socket
+  }
+}
 
 // default cli options that are stored in cli settings json file
 export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir: string) =>
@@ -66,7 +71,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       break
     default:
       driver = "podman-cli"
-      socket = path.join(data_dir, podman_socket, "podman.sock")
+      socket = path.join(data_dir, subdirectories.data["podman-socket"], "podman.sock")
   }
 
   return {
