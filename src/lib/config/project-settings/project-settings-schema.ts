@@ -36,10 +36,10 @@ export const project_settings_schema = {
     "stack-specific-config-file": {
       "type": "object",
       "properties": {
-        "stacks": {"$ref": "#/definitions/array-of-strings"},
-        "config-files": {"$ref": "#/definitions/array-of-strings"}
+        "path": {"type": "string"},
+        "stacks": {"$ref": "#/definitions/array-of-strings"}
       },
-      "required": ["stacks", "config-files"],
+      "required": ["stacks", "path"],
       "additionalProperties": false
     }
   }
