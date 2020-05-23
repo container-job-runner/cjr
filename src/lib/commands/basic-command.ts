@@ -18,7 +18,7 @@ import { ShellCommand } from '../shell-command'
 import { JSTools } from '../js-tools'
 import { missingFlagError, Dictionary, build_dirname } from '../constants'
 import { ValidatedOutput } from '../validated-output'
-import { ProjectSettings, ps_fields } from '../config/project-settings/project-settings'
+import { ProjectSettings, ps_prop_keys } from '../config/project-settings/project-settings'
 import { BuildDriver } from '../drivers-containers/abstract/build-driver'
 import { RunDriver, JobState } from '../drivers-containers/abstract/run-driver'
 import { ExecConstructorOptions, ExecConfiguration } from '../config/exec/exec-configuration'
@@ -79,7 +79,7 @@ export abstract class BasicCommand extends Command
       flags['project-root'] = process.cwd()
   }
 
-  augmentFlagsWithProjectSettings(flags:Dictionary, flag_props: {[key in ps_fields]+?: boolean}) // overload parse command to allow for auto setting of stack flag
+  augmentFlagsWithProjectSettings(flags:Dictionary, flag_props: {[key in ps_prop_keys]+?: boolean}) // overload parse command to allow for auto setting of stack flag
   {
     // -- exit if no-autoload flag is enabled ----------------------------------
     if(flags?.['no-autoload']) return flags
@@ -94,13 +94,19 @@ export abstract class BasicCommand extends Command
 
     // -- merge flags if load was successful -----------------------------------
     if(load_result.success) {
-      const mergeable_fields:Array<ps_fields> = Object.keys(flag_props) as Array<ps_fields>
+      const mergeable_fields:Array<ps_prop_keys> = Object.keys(flag_props) as Array<ps_prop_keys>
       JSTools.rMergeOnEmpty(
         flags,
-        load_result.value.getMultiple(mergeable_fields))
+        load_result.value.get(mergeable_fields))
+    }
+    // process config-files separatly (since we must load stack-specific config files)
+    if(flag_props['config-files'] !== undefined) {
+      const result = load_result.value.processedConfigFiles(flags['stack'])
+      flags['config-files'] = result.value
+      printResultState(result) // print any errors
     }
     // -- exit with error if required flags are missing ------------------------
-    const required_flags = (Object.keys(flag_props) as Array<ps_fields>).filter((name:ps_fields) => flag_props[name])
+    const required_flags = (Object.keys(flag_props) as Array<ps_prop_keys>).filter((name:ps_prop_keys) => flag_props[name])
     const missing_flags  = required_flags.filter((name:string) => !flags.hasOwnProperty(name))
     if(missing_flags.length != 0) this.error(missingFlagError(missing_flags))
     return flags
