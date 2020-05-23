@@ -1,5 +1,6 @@
 import * as fs from 'fs-extra'
 import * as path from 'path'
+import constants = require('../lib/constants')
 import { flags } from '@oclif/command'
 import { JSTools } from '../lib/js-tools'
 import { ProjectSettingsCommand } from '../lib/commands/project-settings-command'
@@ -54,10 +55,10 @@ export default class Init extends ProjectSettingsCommand {
       if(flags['remote-name']) project_settings.setRemoteName(flags['remote-name'])
       if(flags['stacks-dir']) project_settings.setStacksDir(flags['stacks-dir'])
       if(flags['visible-stacks']) project_settings.setVisibleStacks(flags['visible-stacks'])
-      if(flags['project-root-auto'])
-        project_settings.setProjectRoot('auto')
-      if(flags['config-files']?.length > 0)
-        flags['config-files'].map( (file:string) => project_settings.addConfigFile(path.resolve(file)) )
+      if(flags['project-root-auto']) project_settings.setProjectRoot('auto')
+      if(flags['config-files']?.length > 0) flags['config-files'].map(
+        (file:string) => project_settings.addConfigFile(path.resolve(file))
+      )
       // -- write files --------------------------------------------------------
       const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
       if(!result.success) return printResultState(result)
@@ -110,7 +111,7 @@ export default class Init extends ProjectSettingsCommand {
   projectStacksTemplate(project_settings: ProjectSettings, project_root: string)
   {
     this.defaultTemplate(project_settings, project_root)
-    const project_stack_dirname = 'project-stacks';
+    const project_stack_dirname = constants.project_settings.subdirectories.stacks
     project_settings.setStacksDir(project_stack_dirname)
     fs.ensureDirSync(path.join(projectSettingsDirPath(project_root), project_stack_dirname))
   }
