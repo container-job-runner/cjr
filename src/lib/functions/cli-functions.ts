@@ -3,10 +3,11 @@ import chalk = require('chalk')
 import path = require('path')
 import os = require('os')
 import fs = require('fs-extra')
+import constants = require('../constants')
 
 import { JobState, JobInfo, JobPortInfo} from '../drivers-containers/abstract/run-driver'
 import { ContainerDrivers, Configurations } from '../job-managers/job-manager'
-import { Dictionary, project_idfile, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths, project_settings_file, X11_POSIX_BIND } from '../constants'
+import { Dictionary, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths } from '../constants'
 import { JSTools } from '../js-tools'
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
@@ -68,9 +69,9 @@ export function bundleProjectSettings(container_runtime: ContainerDrivers, confi
   project_settings.remove('stacks-dir')
   project_settings.remove('config-files')
   project_settings.remove('remote-name')
-  project_settings.set({stack: `./stacks/${path.basename(options["stack-path"])}`})
-  if(options?.["stacks-dir"]) project_settings.set({'stacks-dir': 'stacks'})
-  const wf_result = project_settings.writeToFile(path.join(options['bundle-path'], project_settings_file))
+  project_settings.setStack(`./stacks/${path.basename(options["stack-path"])}`)
+  if(options?.["stacks-dir"]) project_settings.setStacksDir('stacks')
+  const wf_result = project_settings.writeToFile(path.join(options['bundle-path'], constants.project_settings.filenames["project-settings"]))
   if(!wf_result.success) return new ValidatedOutput(false, undefined).absorb(wf_result)
   // -- copy stacks into bundle ------------------------------------------------
   const stacks = ((options?.["stacks-dir"]) ? listStackNames(options["stacks-dir"], true) : []).concat(options["stack-path"])
@@ -199,11 +200,11 @@ export async function initX11(interactive: boolean, explicit: boolean) : Promise
     var result = shell.output('xset', {q: {}})
     if(!result.success) return new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.MACFAILEDSTART)
     // -- 3. verify socket exists ----------------------------------------------
-    if(!FileTools.existsDir(X11_POSIX_BIND)) // -- nonexistant X11 folder ------
-      return new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.MISSINGDIR(X11_POSIX_BIND))
-    const sockets = fs.readdirSync(X11_POSIX_BIND)?.filter(file_name => new RegExp(/^X\d+$/)?.test(file_name))?.sort();
+    if(!FileTools.existsDir(constants.X11_POSIX_BIND)) // -- nonexistant X11 folder ------
+      return new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.MISSINGDIR(constants.X11_POSIX_BIND))
+    const sockets = fs.readdirSync(constants.X11_POSIX_BIND)?.filter(file_name => new RegExp(/^X\d+$/)?.test(file_name))?.sort();
     if(sockets.length < 1) // -- no sockets ------------------------------------
-      return new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.MACMISSINGSOCKET(X11_POSIX_BIND))
+      return new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.MACMISSINGSOCKET(constants.X11_POSIX_BIND))
   }
 
   return new ValidatedOutput(true, undefined)
@@ -237,8 +238,8 @@ export function scanForSettingsDirectory(dirpath: string):ValidatedOutput<Projec
     // -- exit if settings file is invalid -------------------------------------
     const load_result = loadProjectSettings(dirpath)
     printResultState(load_result) // print any warnings if file is invalid
-    if(load_result.success && load_result.value.get("project-root") == 'auto') {
-      load_result.value.set({"project-root": dirpath})
+    if(load_result.success && load_result.value.getProjectRoot() == 'auto') {
+      load_result.value.setProjectRoot(dirpath)
       return load_result
     }
   } while(dirpath != dirpath_parent)
@@ -279,7 +280,7 @@ export function ensureProjectId(hostRoot: string) : ValidatedOutput<string>
   if(result.success) return result
   const file = new JSONFile(projectSettingsDirPath(hostRoot), true)
   const id = `${path.basename(hostRoot)}-${new Date().getTime()}`
-  file.write(project_idfile, id)
+  file.write(constants.project_settings.filenames.id, id)
   return getProjectId(hostRoot)
 }
 
@@ -294,10 +295,10 @@ export function getProjectId(hostRoot: string) : ValidatedOutput<string>
   if(!hostRoot) return new ValidatedOutput(false, "")
   const proj_settings_abspath = projectSettingsDirPath(hostRoot)
   const file = new JSONFile(proj_settings_abspath, false)
-  const result = file.read(project_idfile)
+  const result = file.read(constants.project_settings.filenames.id)
   if(result.success && result.value == "") // -- check if data is empty -----
     return new ValidatedOutput(false, "").pushError(
-      ErrorStrings.PROJECTIDFILE.EMPTY(path.join(proj_settings_abspath, project_idfile))
+      ErrorStrings.PROJECTIDFILE.EMPTY(path.join(proj_settings_abspath, constants.project_settings.filenames.id))
     )
   return result
 }
@@ -358,21 +359,21 @@ export async function jobToImage(drivers: ContainerDrivers, job_id: string, imag
   if(remove_job) drivers.runner.jobDelete([job_id])
 }
 
-  // == Helper Functions for Podman Socket ===========================================
+// == Helper Functions for Podman Socket ===========================================
 
-  export function socketExists(shell: ShellCommand, socket: string) : boolean
-  {
-    const result = trim(shell.output(`if [ -S ${ShellCommand.bashEscape(socket)} ] ; then echo "TRUE"; fi`))
-    if(result.value == "TRUE") return true
-    return false
-  }
+export function socketExists(shell: ShellCommand, socket: string) : boolean
+{
+  const result = trim(shell.output(`if [ -S ${ShellCommand.bashEscape(socket)} ] ; then echo "TRUE"; fi`))
+  if(result.value == "TRUE") return true
+  return false
+}
 
-  export function startPodmanSocket(shell: ShellCommand, socket: string, sleep_seconds:number = 1) : ValidatedOutput<ChildProcess>
-  {
-    shell.exec('mkdir', {p:{}}, [path.posix.dirname(socket)])
-    const result = shell.execAsync('podman system service', {t: '0'}, [`unix:${socket}`], {detached: true, stdio: 'ignore'})
-    if(result.success) result.value.unref()
-    // sleep to allow socket to start
-    shell.exec('sleep', {}, [`${sleep_seconds}`])
-    return result
-  }
+export function startPodmanSocket(shell: ShellCommand, socket: string, sleep_seconds:number = 1) : ValidatedOutput<ChildProcess>
+{
+  shell.exec('mkdir', {p:{}}, [path.posix.dirname(socket)])
+  const result = shell.execAsync('podman system service', {t: '0'}, [`unix:${socket}`], {detached: true, stdio: 'ignore'})
+  if(result.success) result.value.unref()
+  // sleep to allow socket to start
+  shell.exec('sleep', {}, [`${sleep_seconds}`])
+  return result
+}

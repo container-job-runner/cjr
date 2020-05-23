@@ -1,10 +1,11 @@
 import fs = require('fs-extra')
 import path = require('path')
 import inquirer = require('inquirer')
+import constants = require('../lib/constants')
 
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../lib/commands/basic-command'
-import { cli_bundle_dir_name, project_settings_folder, Dictionary } from '../lib/constants'
+import { cli_bundle_dir_name, Dictionary } from '../lib/constants'
 import { printResultState } from '../lib/functions/misc-functions'
 import { bundleProjectSettings, bundleProject, ProjectBundleOptions } from '../lib/functions/cli-functions'
 import { ShellCommand } from '../lib/shell-command'
@@ -45,7 +46,7 @@ export default class Bundle extends BasicCommand {
       "project-root": (flags["project-root"] as string),
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "bundle-path":  (flags['include-files']) ? path.join(tmp_dir, path.basename(flags['project-root'] as string)) : path.join(tmp_dir, project_settings_folder),
+      "bundle-path":  (flags['include-files']) ? path.join(tmp_dir, path.basename(flags['project-root'] as string)) : path.join(tmp_dir, constants.project_settings.dirname),
       "verbose":      flags.verbose
     }
     if(flags['include-stacks-dir']) options["stacks-dir"] = flags["stacks-dir"]
