@@ -18,6 +18,7 @@ type CLIJobFlags = {
     "stack"?: string,
     "project-root"?: string,
     "here"?: boolean,
+    "profile"?: string,
     "config-files": Array<string>,
     "explicit": boolean,
     "verbose": boolean,
