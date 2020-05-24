@@ -8,6 +8,7 @@ export default class Shell extends NewJobCommand {
   static args = [{name: 'id', required: false}]
   static flags = {
     "stack": flags.string({env: 'STACK'}),
+    "profile": flags.string({description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "x11": flags.boolean({default: false}),
     "port": flags.string({default: [], multiple: true}),

@@ -8,6 +8,7 @@ export default class Exec extends NewJobCommand {
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
     "stack": flags.string({env: 'STACK'}),
+    "profile": flags.string({description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "async": flags.boolean({exclusive: ['sync']}),
     "sync": flags.boolean({exclusive: ['async']}),

@@ -10,6 +10,7 @@ export default class Shell extends NewJobCommand {
     "stack": flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
+    "profile": flags.string({description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
     "explicit": flags.boolean({default: false}),
