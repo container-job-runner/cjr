@@ -40,6 +40,8 @@ export type ContainerSDK = {
   "job_manager": JobManager
 }
 
+export type ProjectSettingsFlags = "project-root" | "stack" | "stacks-dir" | "remote-name" | "visible-stacks" | "config-files" | "profile"
+
 export abstract class BasicCommand extends Command
 {
   protected settings = new Settings(this.config.configDir, this.config.dataDir, this.config.cacheDir)
@@ -80,7 +82,7 @@ export abstract class BasicCommand extends Command
       flags['project-root'] = process.cwd()
   }
 
-  augmentFlagsWithProjectSettings(flags:Dictionary, flag_props: {[key in ps_prop_keys]+?: boolean}) // overload parse command to allow for auto setting of stack flag
+  augmentFlagsWithProjectSettings(flags:Dictionary, flag_props: {[key in ProjectSettingsFlags]?: boolean}) // overload parse command to allow for auto setting of stack flag
   {
     // -- exit if no-autoload flag is enabled ----------------------------------
     if(flags?.['no-autoload']) return flags
@@ -95,19 +97,18 @@ export abstract class BasicCommand extends Command
 
     // -- merge flags if load was successful -----------------------------------
     if(load_result.success) {
-      const mergeable_fields:Array<ps_prop_keys> = Object.keys(flag_props) as Array<ps_prop_keys>
-      JSTools.rMergeOnEmpty(
-        flags,
-        load_result.value.get(mergeable_fields))
-    }
-    // process config-files separatly (since we must load stack-specific config files)
-    if(flag_props['config-files'] !== undefined) {
-      const result = load_result.value.processedConfigFiles(flags['stack'])
-      flags['config-files'] = result.value
-      printResultState(result) // print any errors
+      const project_settings = load_result.value
+      const valid_keys: Array<ps_prop_keys> = ["project-root", "stack", "stacks-dir", "remote-name", "visible-stacks"]
+      const mergeable_fields:Array<ps_prop_keys> = Object.keys(flag_props).filter((key:string) => valid_keys.includes(key as ps_prop_keys)) as Array<ps_prop_keys>
+      const project_flags:Dictionary = project_settings.get(mergeable_fields)
+      if(flag_props['config-files'] !== undefined)
+        project_flags['config-files'] = project_settings.processedConfigFiles()
+      if(flag_props['profile'] !== undefined)
+        flags['profile'] = project_settings.getActiveProfiles(flags['stack'] || project_flags['stack'] || "")
+      JSTools.rMergeOnEmpty(flags, project_flags)
     }
     // -- exit with error if required flags are missing ------------------------
-    const required_flags = (Object.keys(flag_props) as Array<ps_prop_keys>).filter((name:ps_prop_keys) => flag_props[name])
+    const required_flags = (Object.keys(flag_props) as Array<ProjectSettingsFlags>).filter((name:ProjectSettingsFlags) => flag_props[name])
     const missing_flags  = required_flags.filter((name:string) => !flags.hasOwnProperty(name))
     if(missing_flags.length != 0) this.error(missingFlagError(missing_flags))
     return flags
