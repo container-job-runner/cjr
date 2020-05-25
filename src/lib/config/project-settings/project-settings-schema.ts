@@ -12,9 +12,9 @@ export const project_settings_schema = {
     "stack": {"type": "string"},
     "visible-stacks": {"$ref": "#/definitions/array-of-strings"},
     "config-files": {"$ref": "#/definitions/array-of-strings"},
-    "stack-specific-config-files":  {"$ref": "#/definitions/array-of-sscf"},
     "stacks-dir": {"type": "string"},
-    "remote-name": {"type": "string"}
+    "remote-name": {"type": "string"},
+    "default-profiles": {"$ref": "#/definitions/default-profiles"}
   },
   "definitions": {
     "project-root": {
@@ -27,22 +27,12 @@ export const project_settings_schema = {
         "anyOf" : [ {"type": "string"} ]
       }
     },
-    "array-of-sscf": {
-      "type": "array",
-      "items": {
-        "anyOf" : [ {"$ref": "#/definitions/stack-specific-config-file"} ]
-      }
-    },
-    "stack-specific-config-file": {
+    "default-profiles": {
       "type": "object",
-      "properties": {
-        "path": {"type": "string"},
-        "stacks": {"$ref": "#/definitions/array-of-strings"}
-      },
-      "required": ["stacks", "path"],
-      "additionalProperties": false
+      "additionalProperties": { "$ref": "#/definitions/array-of-strings" },
     }
-  }
+  },
+  "additionalProperties": false
 }
 
 // Ajv validator for validating schema
