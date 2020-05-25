@@ -11,7 +11,7 @@ export default class Start extends ServerCommand {
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "stack": flags.string({env: 'STACK'}),
-    "profile": flags.string({description: "set stack profile"}),
+    "profile": flags.string({multiple: true, description: "set stack profile"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "x11": flags.boolean({default: false}),
