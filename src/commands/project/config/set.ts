@@ -13,12 +13,10 @@ export default class Set extends ProjectSettingsCommand {
     "remote-name": flags.string({env: 'REMOTENAME', description: "default remote resource for project"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
     "config-files": flags.string({multiple: true}),
-    "stack-selector": flags.string({multiple: true, dependsOn: ['config-file'], description: "config file will only apply to stacks matching this name"}),
-    "copy-config": flags.boolean({dependsOn: ['config-files'], description: "copies config file into .cjr folder"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "quiet": flags.boolean({default: false, char: 'q'})
   }
-  static strict = false;
+  static strict = true;
 
   async run()
   {
