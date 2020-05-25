@@ -15,7 +15,7 @@ export default class Delete extends ProjectSettingsCommand {
     "project-root-auto": flags.boolean({description: "remove auto load for project"}),
     "remote-name": flags.boolean({env: 'REMOTENAME', description: "remote remote resource for project"}),
     "config-files": flags.boolean({description: "remove all overriding configuration files for project stack"}),
-    "stack-specific-config-files": flags.boolean({description: "remove all additional overriding configuration files for project stack"}),
+    "default-profiles": flags.boolean({description: "remove all additional overriding configuration files for project stack"}),
     "stacks-dir": flags.boolean({description: "remove any overriding default stack directory for project"}),
     "visible-stacks": flags.boolean({description: "if specified only these stacks will be affected by this command"}),
     "quiet": flags.boolean({default: false, char: 'q'})
@@ -33,7 +33,7 @@ export default class Delete extends ProjectSettingsCommand {
     const project_root:string = (prflag['project-root'] as string)
     // -------------------------------------------------------------------------
     const project_settings = loadProjectSettings(project_root).value
-    const fields:Array<ps_prop_keys> = ['stack', 'remote-name', 'config-files', 'stacks-dir', 'visible-stacks', 'stack-specific-config-files']
+    const fields:Array<ps_prop_keys> = ['stack', 'remote-name', 'config-files', 'stacks-dir', 'visible-stacks', 'default-profiles']
     fields.map( ( prop: ps_prop_keys ) => {
       if((flags as Dictionary)?.[prop] === true) project_settings.remove(prop)
     })
