@@ -31,7 +31,8 @@ export default class Stash extends NewJobCommand {
       "remove-on-exit": false,
       "label": [`${label_strings.job.type}=stash`]
     }
-    const { job } = this.runSimpleJob({ ... flags, ... fixed_flags }, ['exit'])
+    const { job, job_data } = this.runSimpleJob({ ... flags, ... fixed_flags }, ['exit'])
+    printResultState(job_data)
     printResultState(job)
   }
 
