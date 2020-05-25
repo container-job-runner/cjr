@@ -1,4 +1,3 @@
-import path = require('path')
 import { flags } from '@oclif/command'
 import { ProjectSettingsCommand } from '../../../lib/commands/project-settings-command'
 import { projectSettingsYMLPath} from "../../../lib/constants"
@@ -10,10 +9,10 @@ export default class Set extends ProjectSettingsCommand {
   static args = []
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
-    "config-file": flags.string(),
-    "stack": flags.string({multiple: true, dependsOn: ['config-file'], description: "config file will only apply to stacks matching this name. If this flag is not supplied, config will apply to all stacks"}),
-    "visible-stack": flags.string({multiple: true}),
-    "copy-config": flags.boolean({dependsOn: ['config-file'], description: "copies config file into .cjr folder"}),
+    "config-file": flags.string({ description: "manually remove a path to a config file" }),
+    "default-profile": flags.string(),
+    "stack": flags.string({ multiple: true, dependsOn: ['default-profile'], description: "profile will only activate for stacks matching this name. If this flag is not supplied, profile will apply to all stacks" }),
+    "visible-stack": flags.string({ multiple: true }),
     "quiet": flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
@@ -25,15 +24,12 @@ export default class Set extends ProjectSettingsCommand {
     const project_root: string = (flags["project-root"] as string)
     const project_settings = loadProjectSettings(project_root).value
 
-    // -- add any configuration files ------------------------------------------
-    if(flags['config-file']) {
-      const config_file = path.resolve(flags['config-file'])
-      if(flags["stack"])
-        project_settings.removeStackSpecificConfigFile(config_file, flags['stack'])
-      else
-        project_settings.removeConfigFile(config_file)
-    }
-    if(flags['visible-stack']) project_settings.removeVisibleStacks(flags['visible-stack'])
+    if(flags['default-profile']) // add a default profile
+      project_settings.removeDefaultProfile(flags['default-profile'], flags['stack'])
+    if(flags['config-file'])
+      project_settings.removeConfigFile(flags['config-file'])
+    if(flags['visible-stack']) // add a visible stack
+      project_settings.removeVisibleStacks(flags['visible-stack'])
 
     const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
     if(!result.success) return printResultState(result)
