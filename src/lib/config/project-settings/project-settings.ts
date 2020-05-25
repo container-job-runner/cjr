@@ -14,11 +14,11 @@ export type StackSpecificConfiguration = {
 export type ps_props = {
   "project-root"?: string,
   "stack"?: string,
-  "config-files"?: Array<string>,
   "stacks-dir"?: string,
   "remote-name"?: string,
   "visible-stacks"?: Array<string>
-  "stack-specific-config-files"?: Array<StackSpecificConfiguration>
+  "config-files"?: Array<string>,
+  "default-profiles"?: { [key: string] : Array<string> }
 }
 
 export type ps_prop_keys = keyof ps_props
@@ -28,6 +28,7 @@ export class ProjectSettings
   private yml_file = new YMLFile("", false, ps_vo_validator)
   private raw_object: ps_props = {}
   private file_path: string = "" // location of last load
+  readonly profile_all_stacks_keyword = "ALL"
 
   constructor(file_path?: string)
   {
@@ -51,11 +52,6 @@ export class ProjectSettings
     return this.raw_object["stacks-dir"]
   }
 
-  getConfigFiles() : Array<string>|undefined
-  {
-    return this.raw_object["config-files"]
-  }
-
   getRemoteName() : string | undefined
   {
     return this.raw_object["remote-name"]
@@ -66,9 +62,14 @@ export class ProjectSettings
     return this.raw_object["visible-stacks"]
   }
 
-  getStackSpecificConfigFiles() : Array<StackSpecificConfiguration> | undefined
+  getConfigFiles() : Array<string>|undefined
   {
-    return this.raw_object?.["stack-specific-config-files"]
+    return this.raw_object["config-files"]
+  }
+
+  getDefaultProfiles() : {[key:string] : string[]} | undefined
+  {
+    return this.raw_object["default-profiles"]
   }
 
   // == Setter Methods =========================================================
@@ -103,6 +104,11 @@ export class ProjectSettings
     this.raw_object["config-files"] = config_files
   }
 
+  setDefaultProfiles(default_profiles: { [key: string] : Array<string> })
+  {
+    this.raw_object["default-profiles"] = default_profiles
+  }
+
   addVisibleStacks(stacks: Array<string>)
   {
     if(this.raw_object["visible-stacks"] === undefined)
@@ -119,29 +125,20 @@ export class ProjectSettings
     return true
   }
 
-  addStackSpecificConfigFile(config_file: string, stacks: Array<string>)
+  addDefaultProfile(profile: string, stacks?: Array<string>)
   {
-    if(this.raw_object["stack-specific-config-files"] === undefined)
-      this.raw_object["stack-specific-config-files"] = []
+    // -- add to new profile ---------------------------------------------------
+    if(this.raw_object["default-profiles"] === undefined)
+      this.raw_object["default-profiles"] = {}
 
-    const sscfs = this.raw_object["stack-specific-config-files"]
-    const sscf = sscfs.filter(
-      (c: StackSpecificConfiguration) => c["path"] == config_file
+    const default_profiles = this.raw_object["default-profiles"]
+    if(default_profiles[profile] == undefined)
+      default_profiles[profile] = [];
+
+    stacks = stacks || [this.profile_all_stacks_keyword]
+    default_profiles[profile] = JSTools.distinct(
+      default_profiles[profile].concat(stacks)
     )
-    if( sscf && sscf.length > 0 ) { // append to existing configuration
-      const config_stacks = sscf[0].stacks
-      config_stacks.push( ... stacks.filter( (s:string) => !config_stacks.includes(s)) )
-    }
-    else
-      sscfs.push({
-        "path": config_file,
-        "stacks": stacks
-      })
-  }
-
-  removeConfigFile(abs_path: string)
-  {
-    this.raw_object["config-files"] = this.raw_object["config-files"]?.filter( (s: string) => s !== abs_path )
   }
 
   removeVisibleStacks(stacks: Array<string>)
@@ -149,27 +146,21 @@ export class ProjectSettings
     this.raw_object["visible-stacks"] = this.raw_object["visible-stacks"]?.filter( (s: string) => !stacks.includes(s) )
   }
 
-  removeStackSpecificConfigFile(config_file: string, stacks?: Array<string>)
+  removeConfigFile(abs_path: string)
   {
+    this.raw_object["config-files"] = this.raw_object["config-files"]?.filter( (s: string) => s !== abs_path )
+  }
 
-    if(stacks === undefined)
-      this.raw_object["stack-specific-config-files"] =
-        this.raw_object["stack-specific-config-files"]?.filter(
-          (s: StackSpecificConfiguration) => !(config_file == s.path)
-        )
-    else {
-      // remove stacks
-      this.raw_object["stack-specific-config-files"]?.map(
-        (ssc:StackSpecificConfiguration) => {
-          if(ssc.path == config_file)
-            ssc.stacks = ssc.stacks.filter((s:string) => !stacks.includes(s))
-      })
-      // remove configurations with no stacks
-      this.raw_object["stack-specific-config-files"] =
-        this.raw_object["stack-specific-config-files"]?.filter(
-            (s: StackSpecificConfiguration) => (s.stacks.length != 0)
-        )
-    }
+  removeDefaultProfile(profile: string, stacks?: Array<string>)
+  {
+    const default_profiles = this.raw_object["default-profiles"] || {}
+
+    if(default_profiles[profile] && stacks !== undefined)
+      default_profiles[profile] = default_profiles[profile]?.filter(
+        (p_stack:string) => !stacks.includes(p_stack)
+      )
+    else
+      delete default_profiles[profile]
   }
 
   get(props?:Array<keyof ps_props>) : ps_props
@@ -184,23 +175,26 @@ export class ProjectSettings
     delete this.raw_object[prop]
   }
 
-  processedConfigFiles(stack: string) : ValidatedOutput<Array<string>>
+  getActiveProfiles(stack: string) : Array<string>
   {
-    stack = stack || this.raw_object.stack || ""
-    const configs: Array<string> = []
-    configs.push( ... this.raw_object["config-files"] || [])
-
-    if(stack)
+    const default_profiles = this.raw_object["default-profiles"]
+    if(stack && default_profiles !== undefined)
     {
-      const ssconf = this.raw_object?.["stack-specific-config-files"]
-      ssconf?.filter( (c: StackSpecificConfiguration) =>
-        c.stacks.some(
-          (s:string) => new RegExp(`(^${s}|\\${path.sep}${s})$`).test(stack)
-        )
-      ).map( (c: StackSpecificConfiguration) => configs.push( c["path"]) )
+      const profile_names = Object.keys(default_profiles)
+      return profile_names.filter(
+        (p_name:string) => default_profiles?.[p_name]?.includes(this.profile_all_stacks_keyword) ||
+          default_profiles?.[p_name]?.includes(stack) ||
+          false
+      )
     }
+    return []
+  }
 
-    return this.configFilesToAbsPath(configs)
+  processedConfigFiles() : Array<string>
+  {
+    return this.configFilesToAbsPath(
+      this.raw_object["config-files"] || [],
+      this.file_path).value
   }
 
   // ---------------------------------------------------------------------------
@@ -212,6 +206,8 @@ export class ProjectSettings
   // ---------------------------------------------------------------------------
   loadFromFile(file_path: string) : ValidatedOutput<undefined>
   {
+    const result = new ValidatedOutput(true, undefined)
+
     // -- exit if no hostRoot is specified -------------------------------------
     if(!file_path) return new ValidatedOutput(true, undefined);
     // -- exit if no settings file exists --------------------------------------
@@ -219,7 +215,7 @@ export class ProjectSettings
     // -- exit if settings file is invalid -------------------------------------
     const read_result = this.yml_file.validatedRead(file_path)
     if(read_result.success == false) {
-      return new ValidatedOutput(false, undefined).pushWarning(
+      return result.absorb(read_result).pushWarning(
         WarningStrings.PROJECTSETTINGS.INVALID_YML(file_path)
       )
     }
@@ -227,7 +223,10 @@ export class ProjectSettings
     //  -- set project settings variable -----------------------------------------
     const project_settings:ps_props = read_result.value || {}
     this.stackToAbsPath(project_settings, file_path)
-    const result = this.stacksDirToAbsPath(project_settings, file_path)
+    result.absorb(
+      this.stacksDirToAbsPath(project_settings, file_path),
+      this.configFilesToAbsPath(project_settings["config-files"] || [], file_path)
+    )
     this.raw_object = project_settings
     this.file_path = file_path
     return result
@@ -253,15 +252,15 @@ export class ProjectSettings
   }
 
   // -- HELPER: ensures overwriting project-config files exist and have absolute paths ---
-  private configFilesToAbsPath(config_files: Array<string>) : ValidatedOutput<Array<string>>
+  private configFilesToAbsPath(config_files: Array<string>, file_path: string) : ValidatedOutput<Array<string>>
   {
     const result = new ValidatedOutput(true, config_files)
     // conver config files to absolue
     config_files = this.pathsToExistingAbs(
       config_files,
-      path.dirname(this.file_path),
+      path.dirname(file_path),
       (path_str:string) => {
-        result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(this.file_path, path_str))
+        result.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(file_path, path_str))
       }
     )
     return result
