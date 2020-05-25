@@ -50,12 +50,14 @@ export const ErrorStrings = {
       else
         return chalk`Jupyter is not running.`;
     },
-    NOURL: `Failed to obtain a url for the Jupyter server.`
+    NOURL: `Failed to obtain a url for the Jupyter server.`,
+    LIST_FAILED: `Failed to obtain list of running Jupyter servers`
   },
   THEIA: {
     RUNNING: (id:string, project_root: string) => chalk`Theia is already running in project directory "{green ${project_root}}".`,
     NOT_RUNNING: (project_root: string) => chalk`Theia is not running in project directory "{green ${project_root}}".`,
-    NOURL: `Failed to obtain a url for the Theia.`
+    NOURL: `Failed to obtain a url for the Theia.`,
+    LIST_FAILED: `Failed to obtain list of running Theia servers`
   }
 }
 
