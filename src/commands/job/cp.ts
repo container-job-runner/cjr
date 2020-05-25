@@ -6,14 +6,15 @@ export default class Copy extends BasicCommand {
   static description = 'Copy job files back into the host directories; works on both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {
-    "copy-path": flags.string({description: "overides job default copy path"}),
-    "mode": flags.string({default: "update", options: ["update", "overwrite", "mirror"], description: 'specify copy mode. "update" copies only newer files, "merge" copies all files, "mirror" copies all files and removes any extranious files'}),
-    "manual": flags.boolean({default: false, description: "opens an interactive bash shell which allows the user can manually copy individual files"}),
-    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
-    "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
+    "copy-path": flags.string({description: "Overides job default copy path."}),
+    "mode": flags.string({default: "update", options: ["update", "overwrite", "mirror"], description: 'Specify copy mode: "update" copies only newer files, "merge" copies all files, "mirror" copies all files and removes any extranious files.'}),
+    "all-files": flags.boolean({default: false, description: "If selected, any include or exclude file will be ignored and all project files will be copied"}),
+    "manual": flags.boolean({default: false, description: "Opens an interactive bash shell which allows the user can manually copy individual files."}),
+    "stacks-dir": flags.string({default: "", description: "Override default stack directory."}),
+    "visible-stacks": flags.string({multiple: true, description: "If specified only these stacks will be affected by this command."}),
+    "no-autoload": flags.boolean({default: false, description: "Prevents cli from automatically loading flags using project settings files."}),
     "explicit": flags.boolean({default: false}),
-    "verbose": flags.boolean({default: false, char: 'v', description: 'shows output from rsync', exclusive: ['quiet']}),
+    "verbose": flags.boolean({default: false, char: 'v', description: 'Shows output from rsync.', exclusive: ['quiet']}),
     "quiet":flags.boolean({default: false, char: 'q'}),
   }
   static strict = true;
@@ -35,7 +36,8 @@ export default class Copy extends BasicCommand {
       "ids": ids,
       "mode": (flags.mode as "update"|"overwrite"|"mirror"),
       "stack-paths": this.extractVisibleStacks(flags),
-      "manual": flags["manual"]
+      "manual": flags["manual"],
+      "all-files": flags["all-files"]
     })
     // -- copy jobs ------------------------------------------------------------
     printResultState(result)
