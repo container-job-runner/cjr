@@ -89,6 +89,21 @@ export function stopJupyter(job_manager: JobManager, identifier: {"job-id"?: str
     return runner.jobStop([job_id.value])
 }
 
+// -- extract the url for a jupyter notebook  ----------------------------------
+export function stopAllJupyters(job_manager: JobManager, filter:"all"|"in-project"|"in-job") : ValidatedOutput<undefined>
+{
+  const result = new ValidatedOutput(true, undefined)
+  const jobs = listJupyter(job_manager, filter)
+  if(!jobs.success)
+    return result.pushError(ErrorStrings.JUPYTER.LIST_FAILED)
+
+  const job_ids = jobs.value.map( (job: JupyterJobInfo) : string => job.id )
+  result.absorb(
+    job_manager.container_drivers.runner.jobStop(job_ids)
+  )
+  return result
+}
+
 // -- list all currently running jupyter servers --------------------------------
 export function listJupyter(job_manager: JobManager, filter:"all"|"in-project"|"in-job") : ValidatedOutput<JupyterJobInfo[]>
 {

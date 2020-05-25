@@ -63,6 +63,21 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
   return new ValidatedOutput(true, job.value.id)
 }
 
+// -- extract the url for a jupyter notebook  ----------------------------------
+export function stopAllTheias(job_manager: JobManager) : ValidatedOutput<undefined>
+{
+  const result = new ValidatedOutput(true, undefined)
+  const jobs = listTheia(job_manager)
+  if(!jobs.success)
+    return result.pushError(ErrorStrings.THEIA.LIST_FAILED)
+
+  const job_ids = jobs.value.map( (job: TheiaJobInfo) : string => job.id )
+  result.absorb(
+    job_manager.container_drivers.runner.jobStop(job_ids)
+  )
+  return result
+}
+
 // -- extract the url for a theia notebook  ------------------------------------
 export function stopTheia(job_manager: JobManager, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
