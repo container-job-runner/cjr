@@ -36,8 +36,8 @@ export const project_settings = {
       "id": "project-id.json"
     },
     "subdirectories" : {  // names of important folders in project settings directory
-      "config": "config",
-      "stacks": "stacks"
+      "stacks": "stacks",
+      "profiles": "profiles",
     }
 }
 
@@ -45,6 +45,7 @@ export const project_settings = {
 export const projectSettingsDirPath  = (project_root: string) => path.join(project_root, project_settings.dirname)
 export const projectSettingsYMLPath  = (project_root: string) => path.join(project_root, project_settings.dirname, project_settings.filenames["project-settings"])
 export const projectIDPath  = (hostRoot: string) => path.join(hostRoot, project_settings.dirname, project_settings.filenames.id)
+export const projectSettingsProfilePath  = (project_root: string) => path.join(project_root, project_settings.dirname, project_settings.subdirectories.profiles)
 
 // name of subfolders in data directory
 export const subdirectories =
@@ -54,6 +55,10 @@ export const subdirectories =
     "build": "build",                           // used by socket drivers for storing tar and tar.gz files for building
     'job-copy': 'job-copy',                     // used as tmp data when copying results
     'podman-socket': 'podman-socket'            // used to store podman socket
+  },
+  "stack": {
+    "build": "build",
+    "profiles": "profiles"
   }
 }
 
