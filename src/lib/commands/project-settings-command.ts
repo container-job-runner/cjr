@@ -5,13 +5,12 @@
 import path = require('path')
 import fs = require('fs-extra')
 import chalk = require('chalk')
+import constants = require('../constants')
 import { BasicCommand } from './basic-command'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
-import * as constants from '../constants'
 import { ProjectSettings, StackSpecificConfiguration } from '../config/project-settings/project-settings'
 import { FileTools } from '../fileio/file-tools'
-import { TextFile } from '../fileio/text-file'
 
 export abstract class ProjectSettingsCommand extends BasicCommand
 {
@@ -36,39 +35,36 @@ export abstract class ProjectSettingsCommand extends BasicCommand
     // -- print config-files ---------------------------------------------------
     const abs_config_paths = project_settings.getConfigFiles()?.map(relPathToAbsPath) || []
     this.printKeyVal("config-files", this.arrayToConsoleStr(abs_config_paths))
-    // -- print stack-specific-configurations ----------------------------------
-    const SSCFS = project_settings.getStackSpecificConfigFiles()
-    if( SSCFS ) {
-      console.log(chalk`\n   {underline stack-specific-configurations:}\n`)
-      SSCFS.map( (sscf: StackSpecificConfiguration, index: number) => {
-        this.printKeyVal('file', relPathToAbsPath(sscf.path))
-        this.printKeyVal('stacks', this.arrayToConsoleStr(sscf.stacks))
-        if(index < SSCFS.length - 1) console.log()
+    // -- print default-profiles -----------------------------------------------
+    const default_profiles = project_settings.getDefaultProfiles()
+    const default_profiles_names = Object.keys(default_profiles || {});
+    if( default_profiles && default_profiles_names.length > 0 ) {
+      console.log(chalk`\n   {underline default-profiles:}`)
+      default_profiles_names.map( (name: string, index: number) => {
+        this.printKeyVal(name, default_profiles[name].includes(project_settings.profile_all_stacks_keyword) ? "ALL" : this.arrayToConsoleStr(default_profiles[name], 6), index + 1)
       })
     }
     console.log()
   }
 
-  copyConfigFile(config_path: string, project_root: string)
+  copyProfileToProjectSettings(config_path: string, project_root: string)
   {
     config_path = path.resolve(config_path)
-    console.log(config_path)
     if(FileTools.existsFile(config_path) && project_root) {
-      // -- set name of file to MD5 hash of contents
-      const contents = new TextFile().read(config_path)
-      const local_filename = JSTools.md5(contents.value || path.basename(config_path))
-      const local_dirname = path.join(project_root, constants.project_settings.dirname, constants.project_settings.subdirectories.config)
-      console.log(local_dirname)
+      const local_dirname = constants.projectSettingsProfilePath(project_root)
+      const local_filename = path.basename(config_path)
       fs.mkdirpSync(local_dirname) // ensure local config directory exists
       fs.copyFileSync(config_path, path.join(local_dirname, local_filename))
-      return path.join(constants.project_settings.subdirectories.config, local_filename)
+      return path.join(constants.project_settings.subdirectories.profiles, local_filename)
     }
     return ""
   }
 
-  arrayToConsoleStr(a: Array<string>) {
+  arrayToConsoleStr(a: Array<string>, ns:number = 3) {
+    const spacer = " ".repeat(ns)
+
     if(a.length > 0)
-      return `\n   - ${a.map((e:any) => chalk`{green ${e}}`).join('\n   - ')}`
+      return `\n${spacer}- ${a.map((e:any) => chalk`{green ${e}}`).join(`\n${spacer}- `)}`
     return "[]"
   }
 
@@ -76,8 +72,9 @@ export abstract class ProjectSettingsCommand extends BasicCommand
     return chalk`{green ${s}}`
   }
 
-  printKeyVal(key: string, value: string) {
-    console.log(chalk`   {italic ${key}}:`, value)
+  printKeyVal(key: string, value: string, index?: number) {
+    const header = (index) ? `${index}. ` : ""
+    console.log(chalk`   ${header}{italic ${key}}:`, value)
   }
 
 }
