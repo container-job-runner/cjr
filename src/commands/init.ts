@@ -75,8 +75,8 @@ export default class Init extends ProjectSettingsCommand {
   defaultTemplate(project_settings: ProjectSettings, project_root: string)
   {
     this.emptyTemplate(project_settings, project_root)
-    const project_config_name = 'project-stack-config.yml';
-    project_settings.setConfigFiles([project_config_name])
+    const profile_name = 'upload-include-exclude';
+    project_settings.addDefaultProfile(profile_name)
     // -- create project-stack-config.yml file ---------------------------------
     const project_stack_config = new DockerStackConfiguration()
     project_stack_config.setRsyncUploadSettings({
@@ -87,9 +87,10 @@ export default class Init extends ProjectSettingsCommand {
       include: `../.${cli_name}-download-include`,
       exclude: `../.${cli_name}-download-exclude`
     })
+    fs.mkdirpSync(constants.projectSettingsProfilePath(project_root))
     project_stack_config.save(
-      projectSettingsDirPath(project_root),
-      {'name': project_config_name}
+      constants.projectSettingsProfilePath(project_root),
+      {'name': `${profile_name}.yml`}
     )
     // -- add .git .gitignore and .cjr to ignore file --------------------------
     const author = new TextFile(project_root)
