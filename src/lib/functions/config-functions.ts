@@ -114,6 +114,7 @@ export function addGenericLabels(configuration: JobConfiguration<StackConfigurat
     configuration.addLabel(label_strings.job["stack-path"], configuration.stack_configuration.stack_path)
   // -- add download settings --------------------------------------------------
   const author = new TextFile()
+  author.add_extension = false
   const download_settings = configuration.stack_configuration.getRsyncDownloadSettings(true)
   if( download_settings.include ) {
     const contents = author.read(download_settings.include)
