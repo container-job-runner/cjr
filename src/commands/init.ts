@@ -75,17 +75,17 @@ export default class Init extends ProjectSettingsCommand {
   defaultTemplate(project_settings: ProjectSettings, project_root: string)
   {
     this.emptyTemplate(project_settings, project_root)
-    const profile_name = 'upload-include-exclude';
+    const profile_name = 'default-include-exclude';
     project_settings.addDefaultProfile(profile_name)
     // -- create project-stack-config.yml file ---------------------------------
     const project_stack_config = new DockerStackConfiguration()
     project_stack_config.setRsyncUploadSettings({
-      include: `../.${cli_name}-upload-include`,
-      exclude: `../.${cli_name}-upload-exclude`
+      include: `../../.${cli_name}-upload-include`,
+      exclude: `../../.${cli_name}-upload-exclude`
     })
     project_stack_config.setRsyncDownloadSettings({
-      include: `../.${cli_name}-download-include`,
-      exclude: `../.${cli_name}-download-exclude`
+      include: `../../.${cli_name}-download-include`,
+      exclude: `../../.${cli_name}-download-exclude`
     })
     fs.mkdirpSync(constants.projectSettingsProfilePath(project_root))
     project_stack_config.save(
