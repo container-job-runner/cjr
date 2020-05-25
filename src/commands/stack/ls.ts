@@ -20,10 +20,11 @@ export default class List extends BasicCommand {
     const stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
     fs.ensureDirSync(stacks_path)
     console.log(chalk`{bold PATH}    ${stacks_path}`)
-    process.stdout.write(chalk`{bold STACKS}  `)
+    process.stdout.write(chalk`{bold STACKS}`)
     fs.readdirSync(stacks_path)
       .filter((file_name: string) => !/^\./.test(path.basename(file_name)) && FileTools.existsDir(path.join(stacks_path, file_name)))
-      .map((file_name:string, i:number) => console.log(`${(i == 0) ? "" : "        "}${file_name}`))
+      .map((file_name:string, i:number) => process.stdout.write(`${(i == 0) ? "  " : "\n        "}${file_name}`))
+    process.stdout.write("\n")
   }
 
 }
