@@ -158,19 +158,25 @@ export class LocalJobManager extends JobManager
     if(!ji_result.success) return result.absorb(ji_result)
     const job_info_array = ji_result.value
     // -- copy results from all matching jobs ------------------------------------
-    job_info_array.map((job:Dictionary) => {
+    job_info_array.map((job:JobInfo) => {
       // -- 1. extract label information -----------------------------------------
       const id = job.id;
       const projectRoot = job.labels?.[label_strings.job["project-root"]] || ""
       const file_volume_id = job.labels?.[label_strings.job["file-volume"]] || ""
-      const download_exclude = job.label?.[label_strings.job["download-exclude"]] || ""
-      const download_include = job.label?.[label_strings.job["download-include"]] || ""
+      const download_exclude = job.labels?.[label_strings.job["download-exclude"]] || ""
+      const download_include = job.labels?.[label_strings.job["download-include"]] || ""
       if(!projectRoot) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_PROJECTROOT(id))
       if(!file_volume_id) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_VOLUME(id))
       // -- 2. write include & exclude settings to files -------------------------
-      const rsync_files = this.writeDownloadIncludeExcludeFiles(download_include, download_exclude)
-      if(!rsync_files)
-        return result.absorb(rsync_files)
+      let rsync_files:IncludeExcludeFiles = {}
+      if(!copy_options["all-files"]) {
+        const write_request = this.writeDownloadIncludeExcludeFiles(download_include, download_exclude)
+        rsync_files = write_request.value
+        if(!write_request.success) {
+          if(rsync_files["tmp-dir"]) fs.removeSync(rsync_files["tmp-dir"])
+          return result.absorb(write_request)
+        }
+      }
       // -- 3. copy files --------------------------------------------------------
       const rsync_options: RsyncOptions = {
         "host-path": copy_options?.["host-path"] || projectRoot, // set copy-path to job hostRoot if it's not specified
@@ -178,13 +184,13 @@ export class LocalJobManager extends JobManager
         "direction": "to-host",
         "mode": copy_options.mode,
         "verbose": this.output_options.verbose,
-        "files": {"include": rsync_files.value["include-from"], "exclude": rsync_files.value["exclude-from"]},
+        "files": {"include": rsync_files["include-from"], "exclude": rsync_files["exclude-from"]},
         "manual": copy_options["manual"]
       }
       result.absorb(syncHostDirAndVolume(this.container_drivers, this.configurations, rsync_options))
       // -- 4. remote tmp dir ----------------------------------------------------
-      if(rsync_files.value["tmp-dir"])
-        fs.removeSync(rsync_files.value["tmp-dir"])
+      if(rsync_files["tmp-dir"])
+        fs.removeSync(rsync_files["tmp-dir"])
     })
     return result
   }
@@ -336,7 +342,7 @@ export class LocalJobManager extends JobManager
     result.value["tmp-dir"] = tmp_path
 
     // -- write files ----------------------------------------------------------
-    const author = new TextFile(tmp_path, false)
+    const author = new TextFile()
     author.add_extension = false
 
     type FI = {path: string, data?: string, key: keyof IncludeExcludeFiles}
@@ -348,6 +354,7 @@ export class LocalJobManager extends JobManager
     file_info.map( (f:FI) => {
       if(!f.data) return
       result.absorb(author.write(f.path, f.data))
+      if(!result.success) result.pushError(`Failed to write file ${f.path}`)
       result.value[f.key] = f.path
     })
 
