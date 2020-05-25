@@ -80,6 +80,11 @@ export class JSTools
     return b;
   }
 
+  static distinct(a: Array<any>)
+  {
+    return [ ... new Set(a)]
+  }
+
   static randomString(n:number, alphabet:string = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
   {
     const s = new Array<String>(n)
