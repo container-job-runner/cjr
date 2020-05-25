@@ -1,3 +1,7 @@
+import chalk = require('chalk')
+import path = require('path')
+import constants = require('../constants')
+import fs = require('fs')
 import { BasicCommand, ContainerSDK } from './basic-command'
 import { updateStackConfig, updateJobConfig } from '../functions/config-functions'
 import { ValidatedOutput } from '../validated-output'
@@ -5,9 +9,9 @@ import { JobRunOptions,  ContainerDrivers, JobExecOptions } from '../job-manager
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
-import chalk = require('chalk')
 import { printResultState } from '../functions/misc-functions'
-import { promptUserForJobId } from '../functions/cli-functions'
+import { JSTools } from '../js-tools'
+import { Dictionary } from '../remote/commands/remote-command'
 
 // ===========================================================================
 // NewJobCommand: An abstract Class for cli commands that start new jobs.
@@ -18,7 +22,7 @@ type CLIJobFlags = {
     "stack"?: string,
     "project-root"?: string,
     "here"?: boolean,
-    "profile"?: string,
+    "profile"?: Array<string>,
     "config-files": Array<string>,
     "explicit": boolean,
     "verbose": boolean,
@@ -50,15 +54,84 @@ type JobData = StackData & {
 export abstract class NewJobCommand extends BasicCommand
 {
 
+  augmentFlagsWithProfile(flags: CLIJobFlags)
+  {
+    if(flags.profile === undefined)
+      return
+
+    const stack_path = flags['stack'] ? this.fullStackPath(flags['stack'], flags['stacks-dir']) : undefined
+    flags['profile']?.map( (profile: string) => {
+      const config_path = this.locateProfile(
+        profile, {
+          "project-root": flags['project-root'],
+          "stack-path": stack_path
+        })
+      if(config_path)
+        flags['config-files'].push(config_path)
+    })
+  }
+
+  protected locateProfile(profile_name: string, options: {"project-root"?: string, "stack-path"?: string})
+  {
+    // -- first look in project directory --------------------------------------
+    if(options['project-root']) {
+      const project_profile_path = path.join(
+        constants.projectSettingsProfilePath(options['project-root']),
+        `${profile_name}.yml`
+      )
+      if(fs.existsSync(project_profile_path))
+        return project_profile_path
+    }
+    // -- next look in stack directory -----------------------------------------
+    if(options["stack-path"]) {
+      const stack_profile_path = path.join(
+        options['stack-path'],
+        constants.subdirectories.stack.profiles,
+        `${profile_name}.yml`
+      )
+      if(options?.['stack-path'] && fs.existsSync(stack_profile_path))
+        return stack_profile_path
+    }
+  }
+
   // alters flags based on --here and local project settings
   augmentFlagsForJob(flags: CLIJobFlags)
   {
     this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {
       "stack": true,
+      "profile": false,
       "config-files": false,
       "project-root":false,
       "stacks-dir": false
+    })
+    this.augmentFlagsWithProfile(flags)
+    this.printNonEmptyFlags(flags)
+  }
+
+  printNonEmptyFlags(flags: CLIJobFlags)
+  {
+    if(!flags.verbose)
+      return
+
+    const printable_flags = [
+      "project-root",
+      "stack",
+      "stacks-dir",
+      "working-directory",
+      "build-mode",
+      "config-files",
+      "file-access",
+      "port",
+      "x11",
+      "label",
+      "auto-copy",
+      "visible-stacks"
+    ]
+    console.log(chalk`-- {bold Job Flags} ${"-".repeat(67)}`)
+    printable_flags.map( (name:string) => {
+      if(!JSTools.isEmpty((flags as Dictionary)[name]))
+        console.log(chalk`{italic ${name}}: ${(flags as Dictionary)[name]}`)
     })
   }
 
