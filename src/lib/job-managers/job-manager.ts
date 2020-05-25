@@ -44,6 +44,7 @@ export type JobCopyOptions = {
   "host-path"?: string                               // location where files should be copied. if specified this setting overrides job hostDir
   "manual"?: boolean                                 // manually copy - runs sh shell instead of rsync command
   "force"?: boolean                                  // always copy
+  "all-files"?: boolean                              // if true, then any rsync include or exclude files will be ignored
 }
 
 export type JobDeleteOptions = {
