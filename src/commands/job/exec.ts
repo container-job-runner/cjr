@@ -8,7 +8,7 @@ export default class Exec extends NewJobCommand {
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
     "stack": flags.string({env: 'STACK'}),
-    "profile": flags.string({description: "set stack profile"}),
+    "profile": flags.string({multiple: true, description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "async": flags.boolean({exclusive: ['sync']}),
     "sync": flags.boolean({exclusive: ['async']}),
@@ -36,7 +36,8 @@ export default class Exec extends NewJobCommand {
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- run basic exec -------------------------------------------------------
-    const { job } = this.runSimpleExec(parent_job_id, flags, argv.slice(1))
+    const { job, job_data } = this.runSimpleExec(parent_job_id, flags, argv.slice(1))
+    printResultState(job_data)
     printResultState(job)
   }
 }

@@ -8,7 +8,7 @@ export default class Run extends NewJobCommand {
   static args = [{name: 'command', required: true}]
   static flags = {
     "stack": flags.string({env: 'STACK'}),
-    "profile": flags.string({description: "set stack profile"}),
+    "profile": flags.string({multiple: true, description: "set stack profile"}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
@@ -37,7 +37,8 @@ export default class Run extends NewJobCommand {
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- run basic job --------------------------------------------------------
     const fixed_flags = {"remove-on-exit": (flags['file-access'] === "bind")}
-    const { job } = this.runSimpleJobAndCopy({ ... flags, ... fixed_flags }, argv)
+    const { job, job_data } = this.runSimpleJobAndCopy({ ... flags, ... fixed_flags }, argv)
+    printResultState(job_data)
     printResultState(job)
   }
 
