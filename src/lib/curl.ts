@@ -7,12 +7,12 @@
 //  -- Example -----------------------------------------------------------------
 //  curl.get({
 //    url: "example/endpoint"
-//    data: {a: 1, b: 2}
+//    parameters: {a: 1, b: 2}
 //  })
 //  curl.post({
 //    url: "example/endpoint"
 //    encoding: "json"
-//    data: {a: 1, b: 2}
+//    body: {a: 1, b: 2}
 //  })
 // =============================================================================
 
@@ -102,42 +102,24 @@ export class Curl
     return this.processCurlOutput(result)
   }
 
-  // Shorthand for POST request with url or JSON data
+  // Shorthand for DELETE request with url or JSON data
   delete(options: RequestOptions):ValidatedOutput<RequestOutput>
   {
-    const result = this.curl(
-      {
-        "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
-        "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
-        "output-response-header": true,
-        "header": 'Content-Type: application/x-www-form-urlencoded',
-        "method": 'DELETE'
-      },
+    return this.processCurlOutput(
+      this.curl(
+        this.baseCurlOptions(options, 'DELETE')
+      )
     )
-    return this.processCurlOutput(result)
   }
 
   // Shorthand for url or JSON get
   post(options: RequestOptions):ValidatedOutput<RequestOutput>
   {
-    let c_result: ValidatedOutput<string>
-    if(options.encoding == "json") // -- json request --------------------------
-      c_result = this.curl(
-        this.postCurlOptions(options, 'Content-Type: application/json', JSON.stringify)
+    return this.processCurlOutput(
+      this.curl(
+        this.baseCurlOptions(options, 'POST')
       )
-    else if(options.encoding == "tar") // -- stream tar file -------------------
-      c_result = this.curl(
-        this.postCurlOptions(options, 'Content-Type: application/x-tar', () => "")
-      )
-    else if(options.encoding == "gzip") // -- stream tar file -------------------
-      c_result = this.curl(
-        this.postCurlOptions(options, 'Content-Type: application/x-gzip', () => "")
-      )
-    else // -- url request ------------------------------------------------------
-      c_result = this.curl(
-        this.postCurlOptions(options, 'Content-Type: application/x-www-form-urlencoded', querystring.stringify)
-      )
-    return this.processCurlOutput(c_result)
+    )
   }
 
   private paramsString(options: RequestOptions)
@@ -149,17 +131,49 @@ export class Curl
     return (has_params) ? `?${dataToStr(options['params'])}` : ""
   }
 
-  private postCurlOptions(options: RequestOptions, header: string, dataToStr:(data: any) => string):CurlOptions
+  private baseCurlOptions(options: RequestOptions, method: method_types):CurlOptions
   {
     return {
         "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
         "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
-        "header": header,
-        "method": 'POST',
+        "header": this.header(options),
+        "method": method,
         "output-response-header": true,
-        "body": dataToStr(options['body']),
+        "body": this.body(options),
         "file": options["file"]
       }
+  }
+
+  private header(options: RequestOptions) : string
+  {
+    switch(options.encoding) {
+      case "json":
+        return 'Content-Type: application/json'
+      case "tar":
+        return 'Content-Type: application/x-tar'
+      case "gzip":
+        return 'Content-Type: application/x-gzip'
+      default:
+        return 'Content-Type: application/x-www-form-urlencoded'
+    }
+  }
+
+  private body(options: RequestOptions) : string | undefined
+  {
+    if(options.body == undefined)
+      return undefined
+
+    switch(options.encoding)
+    {
+      case "json":
+        return JSON.stringify(options.body)
+      case "tar":
+      case "gzip":
+        return undefined;
+      default:
+        return 'Content-Type: application/x-www-form-urlencoded'
+    }
+
   }
 
   private processCurlOutput(result:ValidatedOutput<string>) : ValidatedOutput<RequestOutput>
