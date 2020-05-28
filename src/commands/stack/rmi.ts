@@ -2,6 +2,7 @@ import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { JSTools } from '../../lib/js-tools'
 import { printResultState } from '../../lib/functions/misc-functions'
+import { ValidatedOutput } from '../../lib/validated-output'
 
 export default class RMI extends BasicCommand {
   static description = 'Delete an image one or more stacks.'
@@ -28,16 +29,22 @@ export default class RMI extends BasicCommand {
       if(flags["all-configurations"]) // -- remove based on stack_path ---------
         container_drivers.builder.removeAllImages(stack_path)
       else { // -- remove only current configuration ---------------------------
-        const init_stack = this.initStackConfiguration({
+        const init_configuration = this.initStackConfiguration({
           "stack": stack_name,
           "config-files": flags["config-files"],
           "stacks-dir": flags["stacks-dir"],
           },
           configurations
         )
-        if(!init_stack.success)
-          return printResultState(init_stack)
-        printResultState(container_drivers.builder.removeImage(init_stack.value))
+        if(!init_configuration.success)
+          return printResultState(init_configuration)
+        if(container_drivers.builder.isBuilt(init_configuration.value))
+          printResultState(container_drivers.builder.removeImage(init_configuration.value))
+        else if(!flags['quiet'])
+          printResultState(
+            new ValidatedOutput(true, undefined)
+            .pushWarning(`There are currently no images for stack ${stack_path}.`)
+          )
       }
     });
   }
