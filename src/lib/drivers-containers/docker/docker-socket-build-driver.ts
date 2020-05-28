@@ -422,18 +422,26 @@ export class DockerSocketBuildDriver extends BuildDriver
 export function DockerAPIPostProcessor(curl_result: ValidatedOutput<RequestOutput>) : ValidatedOutput<RequestOutput>
 {
     const ERRORSTRINGS_INVALID_JSON = chalk`{bold Docker API Returned Invalid JSON}`
+    const row_splitter = /(?:\r\n)+/
+
     const response = curl_result.value
     const header = response.header
-    if(header.type == 'application/json' && header["transfer-encoding"] == 'chunked')
+
+    if(header.type == 'application/json')
     {
-      const rows = response.body.split(/(?:\r\n)+/).filter((s:string) => !/^\s*$/.test(s))
-      try { response.body = rows.map((s:string) => JSON.parse(s)) }
-      catch(e) { return curl_result.pushError(ERRORSTRINGS_INVALID_JSON) }
+      let parsed = false;
+      // -- first try to parse body as valid json ------------------------------
+      try { response.body = JSON.parse(response.body) ; parsed = true }
+      catch(e) { }
+      if( parsed ) return curl_result
+      // -- next try to parse as line json -------------------------------------
+      const rows = response.body.split(row_splitter).filter((s:string) => !/^\s*$/.test(s))
+      const body_parsed:Array<any> = []
+      try { rows.map( (s:string) => body_parsed.push( JSON.parse(s))) ; response.body = body_parsed; parsed = true }
+      catch(e) { }
+      if( parsed ) return curl_result
+      else curl_result.pushError(ERRORSTRINGS_INVALID_JSON)
     }
-    else if(header.type == 'application/json')
-    {
-      try { response.body = JSON.parse(response.body) }
-      catch(e) { return curl_result.pushError(ERRORSTRINGS_INVALID_JSON) }
-    }
+
     return curl_result
 }
