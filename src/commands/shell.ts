@@ -37,7 +37,7 @@ export default class Shell extends NewJobCommand {
       "sync": true,
       "remove-on-exit": (flags.save !== undefined) ? false : true
     }
-    const {job, job_data} = await this.runSimpleJob(
+    const {job, job_data} = this.runSimpleJob(
       { ... flags, ... shell_flags},
       [this.settings.get("container-default-shell")]
     )
