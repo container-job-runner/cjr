@@ -20,6 +20,7 @@ export abstract class StackConfiguration<T>
 
   // == modifiers ==============================================================
   abstract setImage(value: string): void
+  abstract setTag(value: string): void
   abstract setEntrypoint(value: Array<string>): void;
   abstract setRsyncUploadSettings(value: {include: string, exclude: string}): void;
   abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;

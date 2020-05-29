@@ -249,7 +249,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return trim(sh.output(`echo "${value}"`))
   }
 
-    private replaceRelativePaths(config: DockerStackConfigObject, parent_path: string)
+  private replaceRelativePaths(config: DockerStackConfigObject, parent_path: string)
   {
     if(!parent_path) return
     const toAbsolute = (p: string|undefined) => (p && !path.isAbsolute(p)) ? path.join(parent_path, p) : p
@@ -306,6 +306,16 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     this.stack_name = value.split(':').pop() || value;
     if(!this.config.build) this.config.build = {}
     this.config.build.image = value;
+  }
+
+  setTag(value: string){
+    if(this.stack_type == "config" || this.stack_type == "remote-image")
+    {
+      const image = this.getImage()
+      this.setImage(`${image.split(":").pop()}`)
+    }
+    else
+      this.image_tag = value;
   }
 
   setEntrypoint(value: Array<string>){
