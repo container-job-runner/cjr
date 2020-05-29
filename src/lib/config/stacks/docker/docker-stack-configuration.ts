@@ -589,6 +589,18 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return download_settings
   }
 
+  getFlag(key: string) {
+    return this.config?.flags?.[key]
+  }
+
+  getBuildArg(key: string) {
+    return this.config?.build?.args?.[key]
+  }
+
+  getEnvironmentVar(key: string) {
+    return this.config?.environment?.[key]
+  }
+
   getFlags() : { [key:string] : string }
   {
     return this.config?.flags || {}
