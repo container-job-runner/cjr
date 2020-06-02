@@ -63,6 +63,12 @@ export default class Set extends BasicCommand {
     "socket-path": flags.string({
       description: 'location of container runtime socket'
     }),
+    "container-registry": flags.string({
+      description: 'url of default container registry for pushing snapshots.'
+    }),
+    "container-registry-user": flags.string({
+      description: 'container registry username for pushing snapshots'
+    }),
     "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = true;
