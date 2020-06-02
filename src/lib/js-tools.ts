@@ -13,16 +13,21 @@ type Dictionary = {[key: string]: any}
 
 export class JSTools
 {
-  static rMerge(a: Dictionary, b: Dictionary)
+  static rMerge(a: Dictionary, b: Dictionary) : Dictionary
   {
-    if(JSTools.isObject(a) && JSTools.isObject(b))
+    const a_is_object = JSTools.isObject(a)
+    const b_is_object = JSTools.isObject(b)
+
+    if(a_is_object && b_is_object)
     {
       for (const key in b)
       {
-          a[key] = JSTools.rMerge(a[key], b[key])
+        a[key] = JSTools.rMerge(a[key], b[key])
       }
       return a;
     }
+    else if(b_is_object)
+      return JSTools.rMerge({}, b)
     else
     {
       return b;
@@ -31,17 +36,20 @@ export class JSTools
 
   static rMergeOnEmpty(a: Dictionary, b: Dictionary)
   {
-    if(JSTools.isObject(a) && JSTools.isObject(b))
+    const a_is_object = JSTools.isObject(a)
+    const b_is_object = JSTools.isObject(b)
+
+    if(a_is_object && b_is_object)
     {
       for (const key in b)
       {
-          a[key] = JSTools.rMergeOnEmpty(a[key], b[key])
+        a[key] = JSTools.rMergeOnEmpty(a[key], b[key])
       }
       return a;
     }
     else if(JSTools.isEmpty(a))
     {
-      return b;
+      return (b_is_object) ?  JSTools.rMerge({}, b) : b;
     }
     else
     {
