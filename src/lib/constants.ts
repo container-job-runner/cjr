@@ -93,6 +93,8 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "image-tag": cli_name,
       "socket-path": socket,
       "job-ls-fields": 'id, stackName, command, status',
+      'container-registry': 'docker.io',
+      'container-registry-user': '',
       // container props
       "container-default-shell": "bash",
       "selinux": false,
