@@ -2,6 +2,7 @@ import { DockerCliBuildDriver } from '../docker/docker-cli-build-driver'
 import { parseJSON } from '../../functions/misc-functions'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { Dictionary } from '../../constants'
+import { JSTools } from '../../js-tools'
 
 export class PodmanCliBuildDriver extends DockerCliBuildDriver
 {
@@ -24,8 +25,8 @@ export class PodmanCliBuildDriver extends DockerCliBuildDriver
         return true // if image name contains / assume full name was found
       else
         return result.value?.some((image_data:Dictionary) =>
-          image_data?.names?.some((name: string) =>
-            (new RegExp(`/${image_name}$`))?.test(name))) || false
+          image_data?.Names?.some((name: string) =>
+            (new RegExp(`/${JSTools.regexEscape(image_name)}$`))?.test(name))) || false
     }
 
     protected addJSONFormatFlag(flags: Dictionary)
