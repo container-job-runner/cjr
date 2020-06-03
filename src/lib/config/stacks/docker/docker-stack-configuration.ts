@@ -106,6 +106,15 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     this.image_tag = options?.tag || cli_name
   }
 
+  copy()
+  {
+    const copy = new DockerStackConfiguration({tag: this.image_tag})
+    copy.config = JSTools.rCopy(this.config)
+    copy.stack_type = this.stack_type
+    copy.stack_name = this.stack_name
+    return copy
+  }
+
   // loads stack configuration and sets internal properties "name", and "stack_type"
   load(stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<undefined>
   {
@@ -303,7 +312,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   setImage(value: string){
     this.stack_type = "remote-image"
     this.stack_path = undefined // clear stack_path if image is manually set
-    this.stack_name = value.split(':').pop() || value;
+    this.stack_name = value.split(':').shift() || value;
     if(!this.config.build) this.config.build = {}
     this.config.build.image = value;
   }
@@ -312,7 +321,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     if(this.stack_type == "config" || this.stack_type == "remote-image")
     {
       const image = this.getImage()
-      this.setImage(`${image.split(":").pop()}`)
+      this.setImage(`${image.split(":").shift()}:${value}`)
     }
     else
       this.image_tag = value;
