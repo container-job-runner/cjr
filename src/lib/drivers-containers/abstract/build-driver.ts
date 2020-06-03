@@ -18,7 +18,7 @@ export abstract class BuildDriver
   abstract isBuilt(configuration: StackConfiguration<any>): boolean;
   abstract removeImage(configuration: StackConfiguration<any>): ValidatedOutput<undefined>;
   abstract removeAllImages(stack_path:string): ValidatedOutput<undefined>;
-  abstract tag(configuration: StackConfiguration<any>, name: string) : ValidatedOutput<undefined>
-  abstract push(configuration: StackConfiguration<any>, options: Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<undefined>
+  abstract tagImage(configuration: StackConfiguration<any>, name: string) : ValidatedOutput<undefined>
+  abstract pushImage(configuration: StackConfiguration<any>, options: Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<undefined>
 
 }
