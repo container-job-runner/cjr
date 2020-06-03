@@ -150,6 +150,11 @@ export class JSTools
     return lines
   }
 
+  static regexEscape(text:string)
+  {
+    return text.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&')
+  }
+
   static md5(s: string) : string
   {
     return crypto.createHash('md5').update(s).digest('hex')
