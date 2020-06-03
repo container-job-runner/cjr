@@ -190,6 +190,17 @@ export class DockerSocketBuildDriver extends BuildDriver
     return result
   }
 
+  tagImage(configuration: DockerStackConfiguration, name: string)
+  {
+    const [repo, tag] = name.split(':')
+    return this.API_TagImage(configuration.getImage(), repo, tag)
+  }
+
+  pushImage(configuration: DockerStackConfiguration, options: Dictionary, stdio: "inherit"|"pipe")
+  {
+    return new ValidatedOutput(false, undefined)
+  }
+
   removeImage(configuration: DockerStackConfiguration): ValidatedOutput<undefined>
   {
     return this.API_RemoveImage([configuration.getImage()])
