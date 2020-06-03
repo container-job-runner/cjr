@@ -158,6 +158,25 @@ export class DockerCliBuildDriver extends BuildDriver
 
     }
 
+    tagImage(configuration: DockerStackConfiguration, name: string)
+    {
+      return new ValidatedOutput(true, undefined).absorb(
+        this.shell.output(`${this.base_command} image tag`, {}, [configuration.getImage(), name])
+      )
+    }
+
+    pushImage(configuration: DockerStackConfiguration, options: Dictionary, stdio: "inherit"|"pipe") : ValidatedOutput<undefined>
+    {
+      const login_flags:Dictionary = {}
+      if(options.username) login_flags['username'] = options.username
+      if(options.password) login_flags['password'] = options.password
+      const login_args = []
+      if(options.server) login_args.push(options.server)
+      this.shell.exec(`${this.base_command} login`, login_flags, login_args)
+      this.shell.exec(`${this.base_command} push`, {}, [configuration.getImage()], {"stdio": stdio})
+      return new ValidatedOutput(true, undefined)
+    }
+
     removeImage(configuration:DockerStackConfiguration) : ValidatedOutput<undefined>
     {
       const result = (new ValidatedOutput(true, undefined))
