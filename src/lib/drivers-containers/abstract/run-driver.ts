@@ -8,6 +8,7 @@ import { StackConfiguration } from "../../config/stacks/abstract/stack-configura
 import { JobConfiguration } from '../../config/jobs/job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
 import { ShellCommand } from '../../shell-command'
+import { JSTools } from '../../js-tools'
 
 // -- types --------------------------------------------------------------------
 export type JobPortInfo = {
@@ -85,8 +86,6 @@ export function jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter, optio
   if(filter === undefined)
     return job_info
 
-  const regexEscape = (text:string) => text.replace(/[-[\]{}()*+?.,\\^$|#\\s]/g, '\\$&');
-
   // -- 1. Initialize filters functions once before search -------------------
   const filter_id:boolean = filter?.['ids'] !== undefined
   const id_regex = new RegExp(`^(${filter?.['ids']?.join('|') || ""})`)
@@ -101,7 +100,7 @@ export function jobFilter(job_info:Array<JobInfo>, filter?: JobInfoFilter, optio
   // -- initialize regular expressions for testing labels --------------------
   const filter_labels_keys = Object.keys(filter?.['labels'] || {}).filter((key:string) => filter?.['labels']?.[key] !== undefined) // filter out any undefined label searches
   const filter_labels_regex:{ [key:string] : RegExp} = {}
-  filter_labels_keys.map((key: string) => {filter_labels_regex[key] = new RegExp(`^(${regexEscape(filter?.['labels']?.[key]?.join('|') || "")})`)})
+  filter_labels_keys.map((key: string) => {filter_labels_regex[key] = new RegExp(`^(${JSTools.regexEscape(filter?.['labels']?.[key]?.join('|') || "")})`)})
   // -- construct function for testing labels --------------------------------
   const labelsF = ( labels: { [key:string] : string } ) => {
     return filter_labels_keys.reduce( (accumulator: boolean, key: string) => {
