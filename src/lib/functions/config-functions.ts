@@ -14,10 +14,7 @@ import { WarningStrings } from '../error-strings'
 import { X11_POSIX_BIND, label_strings } from '../constants'
 import { trim } from './misc-functions'
 import { PathTools } from '../fileio/path-tools'
-import { PodmanCliRunDriver } from '../drivers-containers/podman/podman-cli-run-driver'
-import { PodmanSocketRunDriver } from '../drivers-containers/podman/podman-socket-run-driver'
 import { TextFile } from '../fileio/text-file'
-import { ContainerDrivers } from '../job-managers/job-manager'
 
 type StackConfigOptions = {
   "image"?: string
@@ -154,44 +151,38 @@ export function containerWorkingDir(cwd:string, proot: string, croot: string)
 // -- Parameters ---------------------------------------------------------------
 // job_configuration: JobConfiguration<any>
 //    JobConfigration that should be modified
-// drivers: ContainerDrivers
-//    low-level drivers used to run the job
 // options: {shell?: ShellCommand|SshShellCommand, platform?: string}
 //    "shell" - shell that is used to list running x11 sockets.
 //              Default to local shell.
 //    "platform" - operating system running containers. Defaults to os.platform()
 // -----------------------------------------------------------------------------
 
-export function addX11(job_configuration: JobConfiguration<any>, drivers: ContainerDrivers, options?:{shell?: ShellCommand|SshShellCommand, platform?: string}) : ValidatedOutput<undefined>
+export function addX11(job_configuration: JobConfiguration<any>, options?:{shell?: ShellCommand|SshShellCommand, platform?: string}) : ValidatedOutput<undefined>
 {
   const failure = new ValidatedOutput(false, undefined)
   const shell = options?.shell || new ShellCommand(false, false)
-  const platform = options?.platform || os.platform
-
-  // -- add special flags for podman -------------------------------------------
-  if(drivers.runner instanceof PodmanCliRunDriver || drivers.runner instanceof PodmanSocketRunDriver) {
-    job_configuration.stack_configuration.addFlag("network", "host") // allows for reuse of xauth from host
-  }
+  const platform = options?.platform || os.platform()
 
   switch(platform)
   {
     case "linux": // == LINUX ==================================================
-      const secret = getXAuthSecret(shell)
-      if(secret.success) return failure
-      prependXAuthCommand(job_configuration, secret.value)
-      return addDisplayEnvironmentVariable(
+      job_configuration.stack_configuration.addFlag("network", "host") // allows for reuse of xauth from host
+      const envadd = addDisplayEnvironmentVariable(
         job_configuration.stack_configuration,
         {"shell": shell, "platform": platform}
       )
-      break
+      if(!envadd.success) return failure
+      const secret = getXAuthSecret(shell)
+      if(!secret.success) return failure
+      prependXAuthCommand(job_configuration, secret.value)
+      return new ValidatedOutput(true, undefined)
     case "darwin": // == MAC ===================================================
       const add_localhost = shell.output("xhost +localhost"); // add localhost to xhost or container cannot connect to host X11 socket
-      if(add_localhost.success) return failure
+      if(!add_localhost.success) return failure
       return addDisplayEnvironmentVariable(
         job_configuration.stack_configuration,
         {"shell": shell, "platform": platform}
       )
-      break
     default: // == Unsupported OS ==============================================
       return failure.pushError(WarningStrings.X11.FLAGUNAVALIABLE)
   }
@@ -228,7 +219,6 @@ export function addDisplayEnvironmentVariable(configuration: StackConfiguration<
         ?.replace("X", "") || "0"
       configuration.addEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
       return result
-      break;
     case "linux": // == LINUX ==================================================
       return new ValidatedOutput(
         configuration.addEnvironmentVariable("DISPLAY", "$DISPLAY", true, shell), // pass host environment
@@ -253,7 +243,7 @@ export function getXAuthSecret(shell: ShellCommand|SshShellCommand) : ValidatedO
   const xauth_fields = xauth_list.value.split("  ") // assume format: HOST  ACCESS-CONTROL  SECRET
   if(!xauth_list.success) return failure
   if(xauth_fields.length != 3) return failure
-  return new ValidatedOutput<string>(true, xauth_fields[3])
+  return new ValidatedOutput<string>(true, xauth_fields[2])
 }
 
 // -----------------------------------------------------------------------------
@@ -266,6 +256,6 @@ export function getXAuthSecret(shell: ShellCommand|SshShellCommand) : ValidatedO
 
 export function prependXAuthCommand(job_configuration: JobConfiguration<StackConfiguration<any>>, xauth_secret: string)
 {
-  const script = ['touch ~/.Xauthority', `xauth add $DISPLAY ~/ ${xauth_secret}`, job_configuration.command].join(" && ")
+  const script = ['touch ~/.Xauthority', `xauth add $DISPLAY . ${xauth_secret}`, job_configuration.command].join(" && ")
   job_configuration.command = [`bash -c ${ShellCommand.bashEscape(script)}`]
 }
