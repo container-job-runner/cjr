@@ -18,7 +18,8 @@ export class DockerCliBuildDriver extends BuildDriver
       "INVALID_CONFIGURATION": chalk`{bold Invalid Configuration} - This build driver requires a DockerStackConfiguration`,
       "INVALID_STACK_TYPE": chalk`{bold Invalid Configuration} - StackConfiguration is of unkown type`,
       "FAILED_TO_EXTRACT_IMAGE_NAME": chalk`{bold Failed to Load tar} - could not extract image name`,
-      "FAILED_TO_BUILD": chalk`{bold Image Build Failed} - stack configuration likely contains errors`
+      "FAILED_TO_BUILD": chalk`{bold Image Build Failed} - stack configuration likely contains errors`,
+      "FAILED_TO_DELETE_IMAGE": chalk`{bold Image Remove Failed} - unable to remove image`
     }
 
     protected WARNINGSTRINGS = {
@@ -190,7 +191,9 @@ export class DockerCliBuildDriver extends BuildDriver
         const command = `${this.base_command} rmi`;
         const args = [configuration.getImage()]
         const flags = {}
-        return result.absorb(this.shell.exec(command, flags, args))
+        result.absorb(this.shell.exec(command, flags, args))
+        if(!result.success) result.pushError(this.ERRORSTRINGS.FAILED_TO_DELETE_IMAGE)
+        return result
       }
 
       return result.pushWarning(
