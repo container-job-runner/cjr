@@ -97,6 +97,8 @@ export class LocalJobManager extends JobManager
     // -- 1. update job properties: apply options --------------------------------
     setRelativeWorkDir(job_configuration, job_options["project-root"] || "", job_options["cwd"])
     addGenericLabels(job_configuration, job_options["project-root"] || "")
+    if(job_options.x11)
+      addX11(job_configuration, this.container_drivers)
     // -- 3. start job -----------------------------------------------------------
     this.printStatus({"header": this.STATUSHEADERS.START}, this.output_options)
     const job = this.container_drivers.runner.jobStart(
