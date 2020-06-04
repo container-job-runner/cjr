@@ -707,7 +707,6 @@ export class CJRRemoteDriver extends RemoteDriver
       'build-mode':   this.buildOptionsToBuildModeFlag(job_options["build-options"]),
       'no-autoload':  {}
     }
-    if(mode == "$") cjr_flags['keep-record'] = {} // ensure both bind and volume jobs are not deleted (to allow user to copy them back)
     if(mode == "$") cjr_flags['file-access'] = job_options["file-access"]
     if(mode == "$" && remote_params['remote-project-root']) cjr_flags['project-root'] = remote_params['remote-project-root']
     if(mode == "$" || mode == "job:exec") {
