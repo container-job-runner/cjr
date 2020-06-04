@@ -41,6 +41,7 @@ export type RequestOptions = {
   "params"?: any,
   "body"?: any
   "file"?: string
+  "header"?: Array<string>
 }
 export type RequestOutput = {
   "header": {
@@ -136,7 +137,7 @@ export class Curl
     return {
         "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
         "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
-        "header": [this.contentHeader(options)],
+        "header": (options.header || []).concat( [ this.contentHeader(options) ] ),
         "method": method,
         "output-response-header": true,
         "body": this.body(options),
