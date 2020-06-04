@@ -153,7 +153,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     if(!FileTools.existsDir(stack_path)) // exit with failure if stack does not exist
       return failure.pushError(this.ERRORSTRINGS["MISSING_STACKDIR"](stack_path));
 
-    if(!/^[a-zA-z0-9-_]+$/.test(this.stackPathToName(stack_path))) // exit if stack direcotry has invalid characters
+    if(!/^[a-zA-z0-9-_\.]+$/.test(this.stackPathToName(stack_path))) // exit if stack direcotry has invalid characters
       return failure.pushError(this.ERRORSTRINGS["INVALID_NAME"](stack_path))
 
     if(FileTools.existsFile(path.join(stack_path, this.build_context, 'Dockerfile')))
