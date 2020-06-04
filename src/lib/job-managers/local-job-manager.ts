@@ -132,6 +132,7 @@ export class LocalJobManager extends JobManager
     setRelativeWorkDir(job_configuration, parent_project_root, exec_options["cwd"])
     job_configuration.addLabel(label_strings.job["parent-job-id"], parent_job_info.id)
     job_configuration.addLabel(label_strings.job["type"], "exec")
+    job_configuration.remove_on_exit = true
     if(exec_options.x11)
       addX11(job_configuration, this.container_drivers)
     const stack_configuration = job_configuration.stack_configuration
