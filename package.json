@@ -56,7 +56,7 @@
         "description": "View and change the cli configuration."
       },
       "stack": {
-        "description": "Build, list, and delete images cooresponding to a stack."
+        "description": "List stacks, create new stacks, or build and delete stack images."
       },
       "job": {
         "description": "View and manage local jobs."
