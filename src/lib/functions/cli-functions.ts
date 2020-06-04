@@ -385,11 +385,9 @@ export async function promptUserToSnapshot(interactive: boolean = false) : Promi
   return false
 }
 
-export async function augmentImagePushParameters(drivers: ContainerDrivers, options: PushAuth)
+export async function augmentImagePushParameters(options: PushAuth)
 {
-  if( drivers.builder instanceof DockerSocketBuildDriver )
-  {
-    if( !options.server ) {
+  if( ! options.server ) {
       const response = await inquirer.prompt([
         {
           name: "server",
@@ -401,29 +399,27 @@ export async function augmentImagePushParameters(drivers: ContainerDrivers, opti
       options.server = response.server
     }
 
-    if( !options.username ) {
-      const response = await inquirer.prompt([
-        {
-          name: "flag",
-          message: `Registry Username:`,
-          type: "input",
-        }
-      ])
-      options.username = response.flag
-    }
-
-    if( !options.password || !options.token ) {
-      const response = await inquirer.prompt([
-        {
-          name: "password",
-          message: `Registry Password:`,
-          type: "password",
-        }
-      ])
-      options.username = response.password
-    }
+  if( ! options.username ) {
+    const response = await inquirer.prompt([
+      {
+        name: "username",
+        message: `Registry Username:`,
+        type: "input",
+      }
+    ])
+    options.username = response.username
   }
-  else if( drivers.builder instanceof DockerCliBuildDriver ) {}
+
+  if( ! options.password && !options.token ) {
+    const response = await inquirer.prompt([
+      {
+        name: "password",
+        message: `Registry Password (or Token):`,
+        type: "password",
+      }
+    ])
+    options.password = response.password
+  }
 
   return options
 }
