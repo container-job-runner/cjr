@@ -31,7 +31,8 @@ export const ErrorStrings = {
     INVALIDJSON: chalk`{bold Invalid JSON } - could not parse job json.`
   },
   STACK: {
-    EMPTY: chalk`{bold Stack empty } - you must specify a stack`
+    EMPTY: chalk`{bold Stack empty } - you must specify a stack`,
+    INVALID_NAME: chalk`{bold Invalid Stack Name} - A stack name should only contain lowercase and uppercase letters, digits, underscores, periods and dashes.`
   },
   JUPYTER: {
     RUNNING: (id:string, identifier:{"job-id"?: string,"project-root"?: string}) => {
