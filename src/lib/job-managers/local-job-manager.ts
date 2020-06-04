@@ -98,7 +98,7 @@ export class LocalJobManager extends JobManager
     setRelativeWorkDir(job_configuration, job_options["project-root"] || "", job_options["cwd"])
     addGenericLabels(job_configuration, job_options["project-root"] || "")
     if(job_options.x11)
-      addX11(job_configuration, this.container_drivers)
+      addX11(job_configuration)
     // -- 3. start job -----------------------------------------------------------
     this.printStatus({"header": this.STATUSHEADERS.START}, this.output_options)
     const job = this.container_drivers.runner.jobStart(
@@ -136,7 +136,7 @@ export class LocalJobManager extends JobManager
     job_configuration.addLabel(label_strings.job["type"], "exec")
     job_configuration.remove_on_exit = true
     if(exec_options.x11)
-      addX11(job_configuration, this.container_drivers)
+      addX11(job_configuration)
     const stack_configuration = job_configuration.stack_configuration
     if(parent_file_volume_id) // -- bind parent job volume ----------------------
       mountFileVolume(stack_configuration, parent_project_root, parent_file_volume_id)  // check with run options.
