@@ -93,7 +93,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "image-tag": cli_name,
       "socket-path": socket,
       "job-ls-fields": 'id, stackName, command, status',
-      'container-registry': 'docker.io',
+      'container-registry-auth': 'https://index.docker.io/v1/',
       'container-registry-user': '',
       // container props
       "container-default-shell": "bash",
@@ -131,3 +131,6 @@ export const DefaultContainerRoot = "/"
 
 // X11 options
 export const X11_POSIX_BIND = "/tmp/.X11-unix"
+
+// snapshot options
+export const SNAPSHOT_LATEST_TAG = 'latest'
