@@ -26,6 +26,7 @@ export class DockerSocketBuildDriver extends BuildDriver
     "INVALID_STACK_TYPE": chalk`{bold Invalid Configuration} - StackConfiguration is of unkown type.`,
     "FAILED_TO_EXTRACT_IMAGE_ID": (file:string) => chalk`{bold Failed to Load tar} - could not extract image id for ${file}.`,
     "FAILED_TO_PULL": (image: string) => chalk`{bold Image Pull Failed} - could not pull ${image}.`,
+    "FAILED_TO_PUSH": (image: string) => chalk`{bold Image Push Failed} - could not push ${image}.`,
     "FAILED_TO_BUILD": (stack: string) => chalk`{bold Image Build Failed} - stack configuration ${stack} likely contains errors.`,
     "FAILED_TO_LOAD": (file:string) => chalk`{bold Image Load Failed} - failed to load ${file}.`,
     "FAILED_TO_DELETE": (id:string) => chalk`{bold Image Remove Failed} - could not remove image ${id}.`,
@@ -198,7 +199,27 @@ export class DockerSocketBuildDriver extends BuildDriver
 
   pushImage(configuration: DockerStackConfiguration, options: Dictionary, stdio: "inherit"|"pipe")
   {
-    return new ValidatedOutput(false, undefined)
+    // -- create auth string (must be encoded in base64) -----------------------
+    const auth_string = JSON.stringify({
+      "username": options.username,
+      "password": options.password || options.token,
+      "serveraddress": options.server
+    })
+    const buff = Buffer.from(auth_string)
+    const registry_auth = buff.toString('base64')
+
+    // -- submit pull request --------------------------------------------------
+    const pull_result = this.curlPostProcessor(
+      this.curl.post({
+        "url": `/images/${configuration.getImage()}/push`,
+        "params": {},
+        "header": [`X-Registry-Auth: ${registry_auth}`]
+      })
+    )
+    if(!this.validJSONAPIResponse(pull_result, 200))
+      pull_result.pushError(this.ERRORSTRINGS.FAILED_TO_PUSH(configuration.getImage()))
+
+    return new ValidatedOutput(true, undefined).absorb(pull_result)
   }
 
   removeImage(configuration: DockerStackConfiguration): ValidatedOutput<undefined>
