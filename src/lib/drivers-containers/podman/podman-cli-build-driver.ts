@@ -24,9 +24,11 @@ export class PodmanCliBuildDriver extends DockerCliBuildDriver
       if(image_name.indexOf("/") !== -1 && result.value?.length > 0)
         return true // if image name contains / assume full name was found
       else
-        return result.value?.some((image_data:Dictionary) =>
-          image_data?.Names?.some((name: string) =>
-            (new RegExp(`/${JSTools.regexEscape(image_name)}$`))?.test(name))) || false
+        return result.value?.some((image_data:Dictionary) => {
+          let name_field = (image_data.Names !== undefined) ? 'Names' : 'names' // NOTE: podman > v1.9.0 produces "Names" field, while podman < v1.9.0 produces "names".
+          return image_data?.[name_field]?.some( (name: string) =>
+              (new RegExp(`/${JSTools.regexEscape(image_name)}$`))?.test(name))
+        }) || false
     }
 
     protected addJSONFormatFlag(flags: Dictionary)
