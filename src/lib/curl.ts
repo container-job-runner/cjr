@@ -29,7 +29,7 @@ export type CurlOptions = {
   "unix-socket"?: string,
   "output-response-header"?: boolean,
   "method"?: method_types,
-  "header"?: string,
+  "header"?: Array<string>,
   "body"?: string|Array<string>
   "file"?: string
 }
@@ -95,7 +95,7 @@ export class Curl
         "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
         "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
         "output-response-header": true,
-        "header": 'Content-Type: application/x-www-form-urlencoded',
+        "header": ['Content-Type: application/x-www-form-urlencoded'],
         "method": 'GET'
       },
     )
@@ -136,7 +136,7 @@ export class Curl
     return {
         "url": `${url.resolve(this.base_url, options['url'])}${this.paramsString(options)}`,
         "unix-socket": options?.["unix-socket"] || this['unix_socket'] || "",
-        "header": this.header(options),
+        "header": [this.contentHeader(options)],
         "method": method,
         "output-response-header": true,
         "body": this.body(options),
@@ -144,7 +144,7 @@ export class Curl
       }
   }
 
-  private header(options: RequestOptions) : string
+  private contentHeader(options: RequestOptions) : string
   {
     switch(options.encoding) {
       case "json":
