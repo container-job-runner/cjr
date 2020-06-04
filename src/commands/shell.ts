@@ -81,7 +81,7 @@ export default class Shell extends NewJobCommand {
       "token": snapshot_options.token
     }
 
-    await augmentImagePushParameters(drivers, registry_options)
+    await augmentImagePushParameters(registry_options)
     snapshot(job_id, stack_configuration, drivers, registry_options)
     vPrint("done")
   }
