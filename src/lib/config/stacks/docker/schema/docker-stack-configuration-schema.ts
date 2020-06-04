@@ -18,6 +18,7 @@ export const docker_stack_configuration_schema = {
     "environment-dynamic": {"$ref": "#/definitions/args"},
     "resources": {"$ref": "#/definitions/resources"},
     "files": {"$ref": "#/definitions/files"},
+    "snapshots": {"$ref": "#/definitions/snapshots"},
     "flags": {"$ref": "#/definitions/flags"}
   },
   "additionalProperties": false,
@@ -121,6 +122,25 @@ export const docker_stack_configuration_schema = {
         }
       },
       "additionalProperties": false
+    },
+    "snapshots": {
+       "type": "object",
+       "properties": {
+         "mode" : {
+           "type": "string",
+           "pattern": "^(flag)|(always)|(prompt)|(off)$"
+         },
+         "username": {
+           "type": "string"
+         },
+         "server": {
+           "type": "string"
+         },
+         "token": {
+           "type": "string"
+         }
+       },
+       "additionalProperties": false
     },
     "flags" : {
       "type": "object",
