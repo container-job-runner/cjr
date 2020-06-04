@@ -69,7 +69,7 @@ export abstract class BasicCommand extends Command
   {
     const ids = await this.getJobIds(argv, flags, states)
     if(ids === false) return false
-    return ids?.pop() || false
+    return ids?.shift() || false
   }
 
   // ===========================================================================
