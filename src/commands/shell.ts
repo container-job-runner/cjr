@@ -1,7 +1,9 @@
 import { flags } from '@oclif/command'
 import { printResultState, } from '../lib/functions/misc-functions'
-import { jobToImage, initX11 } from '../lib/functions/cli-functions'
+import { initX11, snapshot, promptUserToSnapshot, augmentImagePushParameters } from '../lib/functions/cli-functions'
 import { NewJobCommand } from '../lib/commands/new-job-command'
+import { StackConfiguration } from '../lib/config/stacks/abstract/stack-configuration'
+import { ContainerDrivers, OutputOptions } from '../lib/job-managers/job-manager'
 
 export default class Shell extends NewJobCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
@@ -14,13 +16,13 @@ export default class Shell extends NewJobCommand {
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
     "explicit": flags.boolean({default: false}),
-    "save": flags.string({description: "saves new image that contains modifications"}),
     "port": flags.string({default: [], multiple: true}),
     "x11": flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
+    "snapshot": flags.boolean({default: false, description: "changes will written to new snapshot; only affects stacks with snapshot flag."})
   }
   static strict = true;
 
@@ -35,24 +37,53 @@ export default class Shell extends NewJobCommand {
       "file-access": "bind",
       "label": [],
       "sync": true,
-      "remove-on-exit": (flags.save !== undefined) ? false : true
+      "remove-on-exit": false
     }
     const {job, job_data} = this.runSimpleJob(
       { ... flags, ... shell_flags},
       [this.settings.get("container-default-shell")]
     )
+    if(job.success && job_data.success) {
+      await this.updateSnapshot(
+        job.value.id,
+        job_data.value.stack_configuration,
+        job_data.value.container_drivers,
+        job_data.value.output_options,
+        flags['snapshot']
+      )
+      job_data.value.container_drivers.runner.jobDelete([job.value.id])
+    }
     printResultState(job_data)
     printResultState(job)
-    // -- save image -----------------------------------------------------------
-    const job_id = job.value.id
-    if(flags.save !== undefined)
-      await jobToImage(
-        job_data.value.container_drivers,
-        job_id,
-        flags.save,
-        true,
-        this.settings.get('interactive')
-      )
+  }
+
+  async updateSnapshot(job_id: string, stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, output_options: OutputOptions, cli_snapshot_flag: boolean)
+  {
+    const vPrint = (s:string, newline: boolean = true) => (output_options.quiet) ? undefined : ((newline) ? console.log(s) : process.stdout.write(s))
+    const snapshot_options = stack_configuration.getSnapshotOptions();
+
+    if(snapshot_options === undefined)
+      return
+
+    if(snapshot_options['mode'] === "off")
+      return
+
+    if(snapshot_options['mode'] === "flag" && !cli_snapshot_flag)
+      return
+
+    if(snapshot_options['mode'] === "prompt" && !(await promptUserToSnapshot(this.settings.get('interactive'))))
+      return
+
+    vPrint("Saving snapshot...", false)
+    const registry_options = {
+      "username": snapshot_options.username || this.settings.get('container-registry-user'),
+      "server": snapshot_options.server || this.settings.get('container-registry'),
+      "token": snapshot_options.token
+    }
+
+    await augmentImagePushParameters(drivers, registry_options)
+    snapshot(job_id, stack_configuration, drivers, registry_options)
+    vPrint("done")
   }
 
 }
