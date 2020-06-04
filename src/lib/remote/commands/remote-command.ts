@@ -12,14 +12,14 @@ import { ErrorStrings } from '../error-strings'
 import { CJRRemoteDriver } from '../drivers/cjr-remote-driver'
 import { SshShellCommand } from '../ssh-shell-command'
 import { printResultState } from '../../functions/misc-functions'
-import { BasicCommand } from '../../commands/basic-command'
 import { ResourceConfiguration } from '../config/resource-configuration'
 import { OutputOptions } from '../compatibility'
+import { NewJobCommand } from '../../commands/new-job-command'
 
 export type  Dictionary= {[key: string]: any}
 type DriverCommands = "jobAttach" | "jobList" | "jobLog" | "jobStop" | "jobState"
 
-export abstract class RemoteCommand extends BasicCommand
+export abstract class RemoteCommand extends NewJobCommand
 {
     protected resource_configuration = new ResourceConfiguration(this.config.configDir)
 
