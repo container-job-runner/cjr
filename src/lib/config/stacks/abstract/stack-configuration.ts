@@ -8,6 +8,8 @@ import { Dictionary } from '../../../constants'
 import { SshShellCommand } from '../../../remote/ssh-shell-command'
 import { ShellCommand } from '../../../shell-command'
 
+export type StackSnapshotOptions = {mode: 'flag'|'always'|'prompt'|'off', username?: string, server: string, password?: string, token?: string}
+
 export abstract class StackConfiguration<T>
 {
   stack_path: string|undefined
@@ -26,6 +28,7 @@ export abstract class StackConfiguration<T>
   abstract setEntrypoint(value: Array<string>): void;
   abstract setRsyncUploadSettings(value: {include: string, exclude: string}): void;
   abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;
+  abstract setSnapshotOptions(options: StackSnapshotOptions): void
   // ----> mount modifiers
   abstract addBind(hostPath: string, containerPath: string, options?:Dictionary): boolean;
   abstract addVolume(volumeName: string, containerPath: string): boolean;
@@ -57,6 +60,7 @@ export abstract class StackConfiguration<T>
   abstract getEntrypoint() : Array<string> | undefined;
   abstract getName(): string;
 
+  abstract getSnapshotOptions(): undefined | StackSnapshotOptions
   abstract getContainerRoot() : string;
   abstract getRsyncUploadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
   abstract getRsyncDownloadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
