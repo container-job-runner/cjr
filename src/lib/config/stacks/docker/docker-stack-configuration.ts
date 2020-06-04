@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { ValidatedOutput } from '../../../validated-output'
-import { StackConfiguration } from '../abstract/stack-configuration'
+import { StackConfiguration, StackSnapshotOptions } from '../abstract/stack-configuration'
 import { dsc_vo_validator } from './schema/docker-stack-configuration-schema'
 import { trim } from '../../../functions/misc-functions'
 import { DefaultContainerRoot, cli_name, Dictionary } from '../../../constants'
@@ -25,6 +25,7 @@ export type DockerStackConfigObject = {
   "resources"?: DockerStackResourceConfig
   "files"?: DockerStackFileConfig
   "entrypoint"?: Array<string>
+  "snapshots"?: StackSnapshotOptions
   "flags"?: { [key:string] : string }
 }
 
@@ -353,6 +354,11 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     else delete this.config.files.rsync["download-exclude-from"]
   }
 
+  setSnapshotOptions(options: StackSnapshotOptions)
+  {
+    this.config.snapshots = options;
+  }
+
   // ---- mount modifiers -----------------------------------------------------
 
   addBind(hostPath: string, containerPath: string, options?: Dictionary)
@@ -642,6 +648,11 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
 
   getPorts() : Array<DockerStackPortConfig> {
     return this.config?.ports || []
+  }
+
+  getSnapshotOptions(): undefined | StackSnapshotOptions
+  {
+    return this.config?.snapshots
   }
 
 }
