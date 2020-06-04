@@ -6,6 +6,7 @@ import { Dictionary } from '../lib/constants'
 import { ContainerDrivers } from '../lib/job-managers/job-manager'
 import { OutputOptions, JobOptions, compat_parseLabelFlag, compat_parseBuildModeFlag } from '../lib/remote/compatibility'
 import { initX11 } from '../lib/functions/cli-functions'
+import { NewJobCommand } from '../lib/commands/new-job-command'
 
 export default class Run extends RemoteCommand {
   static description = 'Start a job that runs a shell command on a remote resource.'
@@ -13,6 +14,7 @@ export default class Run extends RemoteCommand {
   static flags = {
     "remote-name": flags.string({env: 'REMOTENAME'}), // new remote flag
     "stack": flags.string({env: 'STACK'}),
+    "profile": flags.string({multiple: true, description: "set stack profile"}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
@@ -31,14 +33,23 @@ export default class Run extends RemoteCommand {
     "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "protocol": flags.string({exclusive: ['file-upload-mode', 'stack-upload-mode', 'build-mode', 'file-access'], char: 'p', description: 'numeric code for rapidly specifying file-upload-mode, stack-upload-mode, and build-mode'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "stacks-dir": flags.string({default: "", description: "override default stack directory"})
+    "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
+    "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'})
   }
   static strict = false;
 
   async run() {
     const {flags, args, argv} = this.parse(Run)
     this.augmentFlagsWithHere(flags)
-    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":false, "remote-name": true})
+    this.augmentFlagsWithProjectSettings(flags, {
+      "stack": true,
+      "profile": false,
+      "config-files": false,
+      "project-root":false,
+      "stacks-dir": false,
+      "remote-name": true
+    })
+    this.augmentFlagsWithProfile(flags)
     this.applyProtocolFlag(flags)
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- initialize run shortcuts --------------------------------------------
@@ -73,7 +84,7 @@ export default class Run extends RemoteCommand {
       "build-options":compat_parseBuildModeFlag(flags["build-mode"]),
       "command":      run_shortcut.apply(argv).join(" "),
       "host-root":    flags["project-root"] || "",
-      "cwd":          process.cwd(),
+      "cwd":          flags['working-directory'],
       "file-access":  (flags['file-access'] as "bind"|"volume"),
       "synchronous":  !flags.async,
       "x11":          flags.x11,
