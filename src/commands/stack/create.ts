@@ -128,7 +128,7 @@ export default class Create extends BasicCommand {
     const snapshot_configuration = new_config_result.value.snapshot
     const latest_configuration = new_config_result.value.latest
     // -- push stack image to user remote registry -----------------------------
-    const push_options = await augmentImagePushParameters(container_drivers, options)
+    const push_options = await augmentImagePushParameters(options)
     result.absorb(
       container_drivers.builder.pushImage(snapshot_configuration, push_options, "inherit"),
       container_drivers.builder.pushImage(latest_configuration, push_options, "inherit")
