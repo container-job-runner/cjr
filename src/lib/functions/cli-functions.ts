@@ -18,6 +18,9 @@ import { ShellCommand } from '../shell-command'
 import { BuildOptions } from './build-functions'
 import { FileTools } from '../fileio/file-tools'
 import { ChildProcess } from 'child_process'
+import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
+import { DockerCliBuildDriver } from '../drivers-containers/docker/docker-cli-build-driver'
+import { DockerSocketBuildDriver } from '../drivers-containers/docker/docker-socket-build-driver'
 
 // == TYPES ====================================================================
 
@@ -42,6 +45,13 @@ export type StackBundleOptions =
   "config-files-only"?:   boolean, // if selected only configuration files are bundled
   "verbose"?:             boolean
 }
+
+export type PushAuth = {
+  "username"?: string,
+  "password"?: string,
+  "server"?:   string,
+  "token"?:    string
+};
 
 export function bundleProject(drivers: ContainerDrivers, configurations: Configurations, options: ProjectBundleOptions)
 {
@@ -357,6 +367,79 @@ export async function jobToImage(drivers: ContainerDrivers, job_id: string, imag
   }
   if(!interactive || response?.flag == true) drivers.runner.jobToImage(job_id, image_name)
   if(remove_job) drivers.runner.jobDelete([job_id])
+}
+
+export async function promptUserToSnapshot(interactive: boolean = false) : Promise<boolean>
+{
+  if(interactive) {
+    const response = await inquirer.prompt([
+      {
+        name: "flag",
+        message: `Save Snapshot?`,
+        default: false,
+        type: "confirm",
+      }
+    ])
+    return (response?.flag == true)
+  }
+  return false
+}
+
+export async function augmentImagePushParameters(drivers: ContainerDrivers, options: PushAuth)
+{
+  if( drivers.builder instanceof DockerSocketBuildDriver )
+  {
+    if( !options.server ) {
+      const response = await inquirer.prompt([
+        {
+          name: "server",
+          message: `Auth Server:`,
+          default: "https://index.docker.io/v1/",
+          type: "input",
+        }
+      ])
+      options.server = response.server
+    }
+
+    if( !options.username ) {
+      const response = await inquirer.prompt([
+        {
+          name: "flag",
+          message: `Registry Username:`,
+          type: "input",
+        }
+      ])
+      options.username = response.flag
+    }
+
+    if( !options.password || !options.token ) {
+      const response = await inquirer.prompt([
+        {
+          name: "password",
+          message: `Registry Password:`,
+          type: "password",
+        }
+      ])
+      options.username = response.password
+    }
+  }
+  else if( drivers.builder instanceof DockerCliBuildDriver ) {}
+
+  return options
+}
+
+export function snapshot(job_id: string, stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, registry_options: PushAuth = {})
+{
+  const sc_time = stack_configuration.copy()
+  sc_time.setTag(`${Date.now()}`)
+  const sc_latest = stack_configuration.copy()
+  sc_latest.setTag(constants.SNAPSHOT_LATEST_TAG)
+
+  drivers.runner.jobToImage(job_id, sc_time.getImage())
+  drivers.builder.tagImage(sc_time, sc_latest.getImage())
+
+  drivers.builder.pushImage(sc_time, registry_options, "inherit")
+  drivers.builder.pushImage(sc_latest, registry_options, "inherit")
 }
 
 // == Helper Functions for Podman Socket ===========================================
