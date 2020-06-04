@@ -169,6 +169,7 @@ export class DockerCliBuildDriver extends BuildDriver
     {
       const login_flags:Dictionary = {}
       if(options.username) login_flags['username'] = options.username
+      if(options.token) login_flags['password'] = options.token
       if(options.password) login_flags['password'] = options.password
       const login_args = []
       if(options.server) login_args.push(options.server)
