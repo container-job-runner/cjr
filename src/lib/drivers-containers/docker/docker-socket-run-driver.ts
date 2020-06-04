@@ -307,7 +307,7 @@ export class DockerSocketRunDriver extends RunDriver
     const [repo, tag] = image_name.split(':')
     const params:Dictionary = {"container": id}
     if(repo) params["repo"] = repo
-    if(tag) params["tag"] = image_name
+    if(tag) params["tag"] = tag
 
     const api_request = this.curlPostProcessor(
       this.curl.post({
