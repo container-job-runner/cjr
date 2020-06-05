@@ -419,7 +419,7 @@ function createFileVolume(drivers: ContainerDrivers, config: Configurations, sta
     const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
     if(id_result.success && id_result.value) copy_options.chown = id_result.value
   }
-  else if ( using_docker && !isNaN(parseInt(cfv))) {
+  else if ( using_docker && !isNaN(parseInt(cfv || ""))) {
     copy_options.chown = cfv
   }
   // -- sync files to volume ---------------------------------------------------
