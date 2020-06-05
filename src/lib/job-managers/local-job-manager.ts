@@ -413,7 +413,7 @@ function createFileVolume(drivers: ContainerDrivers, config: Configurations, sta
     "files": stack_configuration.getRsyncUploadSettings(true)
   }
   // -- check if runtime is docker and chownvolume flags is active -------------
-  const cfv = stack_configuration.getFlags()?.['chown-file-volume'];
+  const cfv = stack_configuration.getFlag('chown-file-volume');
   const using_docker = (drivers.runner instanceof DockerCliRunDriver) || (drivers.runner instanceof DockerSocketRunDriver)
   if( using_docker && (cfv === 'host-user') ) {
     const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
