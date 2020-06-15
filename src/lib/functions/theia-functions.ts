@@ -88,7 +88,7 @@ export function stopTheia(job_manager: JobManager, identifier: {"project-root"?:
   return runner.jobStop([job_id.value])
 }
 
-export function listTheia(job_manager: JobManager) : ValidatedOutput<TheiaJobInfo[]>
+export function listTheia(job_manager: JobManager, host_ip: string="") : ValidatedOutput<TheiaJobInfo[]>
 {
   const theia_jobs: Array<TheiaJobInfo> = []
   const result = new ValidatedOutput(true, theia_jobs)
@@ -102,7 +102,7 @@ export function listTheia(job_manager: JobManager) : ValidatedOutput<TheiaJobInf
   job_info_request.value.map( (job:JobInfo) => {
     theia_jobs.push({
       "id": job.id,
-      "url": extractUrlEnvVar(job_manager, job.id).value,
+      "url": extractUrlEnvVar(job_manager, job.id, host_ip).value,
       "project-root": job.labels?.[label_strings.job["project-root"]] || ""
     })
   })
@@ -111,12 +111,12 @@ export function listTheia(job_manager: JobManager) : ValidatedOutput<TheiaJobInf
 }
 
 // -- extract the url for a theia server  --------------------------------------
-export function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"?: string}) : ValidatedOutput<string>
+export function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"?: string}, host_ip: string="") : ValidatedOutput<string>
 {
   const job_id = jobId(identifier, job_manager)
   if(!job_id.success)
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
-  return extractUrlEnvVar(job_manager, job_id.value)
+  return extractUrlEnvVar(job_manager, job_id.value, host_ip)
 }
 
 // -- starts the Theia Electron app  -------------------------------------------
@@ -189,7 +189,7 @@ function setEnvironment(stack_configuration: StackConfiguration<any>, theia_opti
   stack_configuration.addEnvironmentVariable(ENV.url, '0.0.0.0')
 }
 
-function  extractUrlEnvVar(job_manager: JobManager, job_id: string)
+function  extractUrlEnvVar(job_manager: JobManager, job_id: string, host_ip: string="")
 {
   const runner = job_manager.container_drivers.runner
   const exec_configuration = job_manager.configurations.exec()
@@ -197,5 +197,5 @@ function  extractUrlEnvVar(job_manager: JobManager, job_id: string)
   const exec_output = runner.jobExec(job_id, exec_configuration, "pipe")
   const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
   if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
-  return new ValidatedOutput(true, `http://${json_output.value?.url}:${json_output.value?.port}`);
+  return new ValidatedOutput(true, `http://${(host_ip) ? host_ip : json_output.value?.url}:${json_output.value?.port}`);
 }
