@@ -563,11 +563,16 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   getImage(): string
   {
     if(this.stack_type == 'config' || this.stack_type == 'remote-image')
-      return this.config?.build?.image || ""
-    else {
-      const prefix = JSTools.md5(JSON.stringify(this.config?.build || {})).substring(0,5) // image prefix denotes build settings
-      const path_hash = JSTools.md5(this.stack_path || "EMPTY") // image contains hash based on path
-      return `${prefix}-${path_hash}-${this.stack_name}:${this.image_tag}`
+        return this.config?.build?.image || ""
+    else 
+    {
+        const prefix = JSTools.md5(
+            JSON.stringify(
+                JSTools.oSubset(this.config?.build || {}, ["args", "image"]) // only use args and image fields for prefix
+            )
+        ).substring(0,5) // image prefix denotes build settings
+        const path_hash = JSTools.md5(this.stack_path || "EMPTY") // image contains hash based on path
+        return `${prefix}-${path_hash}-${this.stack_name}:${this.image_tag}`
     }
   }
 
