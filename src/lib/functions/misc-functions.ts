@@ -12,7 +12,7 @@ export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dic
     )
 }
 
-export function printResultState(result: ValidatedOutput<any>)
+export function printValidatedOutput(result: ValidatedOutput<any>)
 {
     result.notice.forEach( (n:string) => console.log(chalk`{bold.blue NOTICE}: ${n}`))
     result.warning.forEach( (w:string) => console.log(chalk`{bold.yellow WARNING}: ${w}`))
