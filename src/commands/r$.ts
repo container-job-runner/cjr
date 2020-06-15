@@ -15,7 +15,7 @@ export default class Run extends RemoteCommand {
     "stack": flags.string({env: 'STACK'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
-    "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
+    "here": flags.boolean({default: false, exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "explicit": flags.boolean({default: false}),
     "async": flags.boolean({default: false}),
