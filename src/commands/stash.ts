@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printResultState } from '../lib/functions/misc-functions'
+import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { NewJobCommand } from '../lib/commands/new-job-command'
 import { label_strings } from '../lib/constants'
 
@@ -32,8 +32,8 @@ export default class Stash extends NewJobCommand {
       "label": [`${label_strings.job.type}=stash`]
     }
     const { job, job_data } = this.runSimpleJob({ ... flags, ... fixed_flags }, ['exit'])
-    printResultState(job_data)
-    printResultState(job)
+    printValidatedOutput(job_data)
+    printValidatedOutput(job)
   }
 
 }

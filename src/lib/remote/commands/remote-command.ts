@@ -11,7 +11,7 @@ import { ValidatedOutput } from '../../validated-output'
 import { ErrorStrings } from '../error-strings'
 import { CJRRemoteDriver } from '../drivers/cjr-remote-driver'
 import { SshShellCommand } from '../ssh-shell-command'
-import { printResultState } from '../../functions/misc-functions'
+import { printValidatedOutput } from '../../functions/misc-functions'
 import { ResourceConfiguration } from '../config/resource-configuration'
 import { OutputOptions } from '../compatibility'
 import { NewJobCommand } from '../../commands/new-job-command'
@@ -27,13 +27,13 @@ export abstract class RemoteCommand extends NewJobCommand
     {
       // -- validate id --------------------------------------------------------
       var result = this.validResourceName(flags["remote-name"])
-      if(!result.success) return printResultState(result)
+      if(!result.success) return printValidatedOutput(result)
       const remote_name = result.value
       // -- modify resource and write file -------------------------------------
       const resource = this.resource_configuration.getResource(remote_name)
       if(resource !== undefined) {
         const driver = this.newRemoteDriver(resource["type"], {explicit: flags.explicit, verbose: flags.verbose, silent: flags.silent})
-        printResultState(driver[command](resource, flags, args, argv))
+        printValidatedOutput(driver[command](resource, flags, args, argv))
       }
     }
 

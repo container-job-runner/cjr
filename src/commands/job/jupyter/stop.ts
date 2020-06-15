@@ -1,8 +1,7 @@
 import { flags } from '@oclif/command'
-import { printResultState } from '../../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { BasicCommand } from '../../../lib/commands/basic-command'
 import { stopJupyter, stopAllJupyters } from '../../../lib/functions/jupyter-functions'
-import { ValidatedOutput } from '../../../lib/validated-output'
 
 export default class Stop extends BasicCommand {
   static description = 'Stop a running Jupyter server.'
@@ -27,13 +26,13 @@ export default class Stop extends BasicCommand {
     const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
 
     if(flags['all'])
-      return printResultState(
+      return printValidatedOutput(
         stopAllJupyters(job_manager, "in-job")
       )
     // -- get job ids --------------------------------------------------------
     const job_id = await this.getJobId([args['id']], flags)
     if(job_id === false) return // exit if user selects empty id or exits interactive dialog
-    printResultState(
+    printValidatedOutput(
       stopJupyter(job_manager, {"job-id": job_id})
     )
   }

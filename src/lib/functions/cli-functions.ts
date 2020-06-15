@@ -13,7 +13,7 @@ import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings, WarningStrings, StatusStrings } from '../error-strings'
 import { JSONFile } from '../fileio/json-file'
 import { ProjectSettings } from '../config/project-settings/project-settings'
-import { printResultState, trim } from './misc-functions'
+import { printValidatedOutput, trim } from './misc-functions'
 import { ShellCommand } from '../shell-command'
 import { BuildOptions } from './build-functions'
 import { FileTools } from '../fileio/file-tools'
@@ -113,7 +113,7 @@ export function bundleStack(container_runtime: ContainerDrivers, configurations:
   }
   // --> 1. remove binds
   const reb_result = stack_configuration.removeExternalBinds(options["stack-path"])
-  printResultState(reb_result) // print any warnings
+  printValidatedOutput(reb_result) // print any warnings
   // --> 2. adjust rsync file paths
   const bundleRsyncFile = (direction:"upload"|"download", file:"include"|"exclude") => {
     if(rsync_settings?.[direction]?.[file] && FileTools.existsFile(rsync_settings?.[direction]?.[file] || "")) {
@@ -192,7 +192,7 @@ export async function initX11(interactive: boolean, explicit: boolean) : Promise
     if((new RegExp('<true/>')).test(result.value))
     {
       if(interactive) {
-        printResultState(new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
+        printValidatedOutput(new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
         var response = await inquirer.prompt([
           {
             name: "flag",
@@ -247,7 +247,7 @@ export function scanForSettingsDirectory(dirpath: string):ValidatedOutput<Projec
     dirpath_parent = path.dirname(dirpath)
     // -- exit if settings file is invalid -------------------------------------
     const load_result = loadProjectSettings(dirpath)
-    printResultState(load_result) // print any warnings if file is invalid
+    printValidatedOutput(load_result) // print any warnings if file is invalid
     if(load_result.success && load_result.value.getProjectRoot() == 'auto') {
       load_result.value.setProjectRoot(dirpath)
       return load_result

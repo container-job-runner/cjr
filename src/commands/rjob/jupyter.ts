@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { startJupyterApp } from "../../lib/functions/jupyter-functions"
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { compat_parseBuildModeFlag, OutputOptions, JobOptions } from '../../lib/remote/compatibility'
 import { ContainerDrivers } from '../../lib/job-managers/job-manager'
 import { nextAvailablePort, initX11 } from '../../lib/functions/cli-functions'
@@ -43,7 +43,7 @@ export default class Jupyter extends RemoteCommand {
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)
     var result = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
@@ -111,7 +111,7 @@ export default class Jupyter extends RemoteCommand {
       if(url_result.success) startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
       result.absorb(url_result)
     }
-    printResultState(result)
+    printValidatedOutput(result)
     driver.disconnect(resource)
   }
 

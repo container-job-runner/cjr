@@ -1,5 +1,5 @@
-import {RemoteCommand} from '../../lib/remote/commands/remote-command'
-import {printResultState} from '../../lib/functions/misc-functions'
+import { RemoteCommand } from '../../lib/remote/commands/remote-command'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Delete extends RemoteCommand {
   static description = 'Remove a remote resource.'
@@ -11,13 +11,13 @@ export default class Delete extends RemoteCommand {
     // -- validate name --------------------------------------------------------
     const name = args["remote-name"]
     const result = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- delete resource ------------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource !== undefined) {
       this.removeKeyfile(resource?.key || "")
       this.resource_configuration.deleteResource(name)
-      printResultState(this.resource_configuration.writeToFile())
+      printValidatedOutput(this.resource_configuration.writeToFile())
     }
   }
 }

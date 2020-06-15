@@ -4,7 +4,7 @@ import { Resource } from '../../lib/remote/config/resource-configuration'
 import path = require('path')
 import { FileTools } from '../../lib/fileio/file-tools'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ErrorStrings } from '../../lib/remote/error-strings'
 import { default_remote_storage_dirname } from '../../lib/remote/constants'
 
@@ -26,7 +26,7 @@ export default class Add extends RemoteCommand {
     const name = args['remote-name']
     // -- verify that name is unique -------------------------------------------
     if(this.resource_configuration.isResource(name))
-      return printResultState(
+      return printValidatedOutput(
         new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.NAME_EXISTS(name)])
       )
     // -- create new entry -----------------------------------------------------
@@ -39,10 +39,10 @@ export default class Add extends RemoteCommand {
     }
     // -- verify that keyfile exists -------------------------------------------
     if(flags.key && !FileTools.existsFile(flags.key))
-      return printResultState(new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.KEYFILE_NONEXISTANT(flags.key)]))
+      return printValidatedOutput(new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.KEYFILE_NONEXISTANT(flags.key)]))
     // -- save or copy keyfile -------------------------------------------------
     if(flags.key) new_entry.key = path.resolve((flags["copy-key"]) ? this.copyKeyfile(flags.key, this.resource_configuration.numResources()) : flags.key)
     this.resource_configuration.setResource(name, new_entry)
-    printResultState(this.resource_configuration.writeToFile())
+    printValidatedOutput(this.resource_configuration.writeToFile())
   }
 }

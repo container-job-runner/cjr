@@ -6,7 +6,7 @@ import constants = require('../../lib/constants')
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ErrorStrings } from '../../lib/error-strings'
 import { FileTools } from '../../lib/fileio/file-tools'
 import { DockerStackConfiguration } from '../../lib/config/stacks/docker/docker-stack-configuration'
@@ -43,11 +43,11 @@ export default class Create extends BasicCommand {
 
     // -- validate name --------------------------------------------------------
     const valid_name = this.validStackName(args.name)
-    if( ! valid_name.success ) return printResultState(valid_name)
+    if( ! valid_name.success ) return printValidatedOutput(valid_name)
 
     // -- exit if stack exists -------------------------------------------------
     if(fs.existsSync(path.join(stacks_path, args.name)))
-      return printResultState(new ValidatedOutput(false, undefined).pushError(`stack "${stack_name}" already exists in ${stacks_path}`))
+      return printValidatedOutput(new ValidatedOutput(false, undefined).pushError(`stack "${stack_name}" already exists in ${stacks_path}`))
 
     // -- create stack ---------------------------------------------------------
     let result: ValidatedOutput<undefined>
@@ -59,7 +59,7 @@ export default class Create extends BasicCommand {
       result = await this.createImageStackWithSnapshots(stacks_path, stack_name, flags['explicit'])
     else
       result = this.createEmptyStack(stacks_path, stack_name)
-    printResultState(result)
+    printValidatedOutput(result)
   }
 
   validStackName(name: string) : ValidatedOutput<undefined>

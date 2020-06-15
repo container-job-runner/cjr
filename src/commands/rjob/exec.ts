@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 
 import { RunShortcuts } from "../../lib/config/run-shortcuts/run-shortcuts"
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { compat_parseLabelFlag, compat_parseBuildModeFlag, OutputOptions, JobOptions } from '../../lib/remote/compatibility'
 import { ContainerDrivers } from '../../lib/job-managers/job-manager'
 
@@ -46,11 +46,11 @@ export default class Exec extends RemoteCommand {
     // -- initialize run shortcuts ---------------------------------------------
     const run_shortcut = new RunShortcuts()
     const rs_result = run_shortcut.loadFromFile(this.settings.get('run-shortcuts-file'))
-    if(!rs_result.success) printResultState(rs_result)
+    if(!rs_result.success) printValidatedOutput(rs_result)
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)
     var result = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
@@ -95,7 +95,7 @@ export default class Exec extends RemoteCommand {
         "host-project-root": flags["project-root"] || "",
         "stack-upload-mode": (flags["stack-upload-mode"] as "cached"|"uncached")
       })
-    printResultState(result)
+    printValidatedOutput(result)
     driver.disconnect(resource)
   }
 

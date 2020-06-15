@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class State extends BasicCommand {
   static description = 'Get the current state of a job.'
@@ -28,7 +28,7 @@ export default class State extends BasicCommand {
     })
 
     if(!states.success)
-      return printResultState(states)
+      return printValidatedOutput(states)
     if(states.value.length == 0)
       console.log('non-existent')
     else

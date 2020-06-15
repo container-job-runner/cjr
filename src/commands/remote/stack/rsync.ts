@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { ValidatedOutput } from '../../../lib/validated-output'
 import { RemoteCommand, Dictionary } from '../../../lib/remote/commands/remote-command'
 import { SshShellCommand } from '../../../lib/remote/ssh-shell-command'
-import { printResultState, parseJSON } from '../../../lib/functions/misc-functions'
+import { printValidatedOutput, parseJSON } from '../../../lib/functions/misc-functions'
 import { PathTools } from '../../../lib/fileio/path-tools'
 
 export default class Rsync extends RemoteCommand {
@@ -26,19 +26,19 @@ export default class Rsync extends RemoteCommand {
     // -- validate id ----------------------------------------------------------
     const name = args["remote-name"] || flags["remote-name"] || ""
     var result:ValidatedOutput<any> = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- get resource & ssh_shell ---------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
     const ssh_shell = new SshShellCommand(flags.explicit, false, this.config.dataDir)
     result = ssh_shell.setResource(resource)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- get local stack dir --------------------------------------------------
     const local_stacks_dir:string = flags['stacks-dir'] || this.settings.get('stacks-dir')
-    if(!local_stacks_dir) return printResultState(new ValidatedOutput(false, undefined).pushError('Empty local stack dir'))
+    if(!local_stacks_dir) return printValidatedOutput(new ValidatedOutput(false, undefined).pushError('Empty local stack dir'))
     // -- get remote stack_dir -------------------------------------------------
     result = this.getRemoteStackDir(ssh_shell)
-    if(!result.success) printResultState(result)
+    if(!result.success) printValidatedOutput(result)
     const remote_stacks_dir:string = result.value
     // -- sync stacks ----------------------------------------------------------
     const rsync_flags:Dictionary = {a: {}}

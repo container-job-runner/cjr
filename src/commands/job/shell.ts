@@ -1,5 +1,5 @@
 import { flags} from '@oclif/command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { NewJobCommand } from '../../lib/commands/new-job-command'
 import { initX11 } from '../../lib/functions/cli-functions'
 
@@ -37,8 +37,8 @@ export default class Shell extends NewJobCommand {
       { ...flags, ... {quiet: false}},
       this.settings.get("container-default-shell")
     )
-    printResultState(job_data)
-    printResultState(job)
+    printValidatedOutput(job_data)
+    printValidatedOutput(job)
   }
 
 }

@@ -2,11 +2,10 @@ import * as fs from 'fs-extra'
 import * as path from 'path'
 import constants = require('../lib/constants')
 import { flags } from '@oclif/command'
-import { JSTools } from '../lib/js-tools'
 import { ProjectSettingsCommand } from '../lib/commands/project-settings-command'
 import { loadProjectSettings } from "../lib/functions/cli-functions"
 import { cli_name, projectSettingsDirPath, projectSettingsYMLPath } from "../lib/constants"
-import { printResultState } from '../lib/functions/misc-functions'
+import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { ProjectSettings, ps_props } from '../lib/config/project-settings/project-settings'
 import { DockerStackConfiguration } from '../lib/config/stacks/docker/docker-stack-configuration'
 import { TextFile } from '../lib/fileio/text-file'
@@ -61,7 +60,7 @@ export default class Init extends ProjectSettingsCommand {
       )
       // -- write files --------------------------------------------------------
       const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
-      if(!result.success) return printResultState(result)
+      if(!result.success) return printValidatedOutput(result)
       console.log(`Initialized cjr project in ${projectSettingsDirPath(project_root)}`)
       this.listProject(project_settings, project_root)
     }

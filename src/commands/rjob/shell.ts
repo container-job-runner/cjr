@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { OutputOptions, JobOptions, compat_parseBuildModeFlag, compat_parseLabelFlag } from '../../lib/remote/compatibility'
 import { ContainerDrivers } from '../../lib/job-managers/job-manager'
 
@@ -40,7 +40,7 @@ export default class Shell extends RemoteCommand {
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)
     var result = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
@@ -83,7 +83,7 @@ export default class Shell extends RemoteCommand {
         "host-project-root": (flags["project-root"] as string),
         "stack-upload-mode": (flags["stack-upload-mode"] as "cached"|"uncached")
       })
-    printResultState(result)
+    printValidatedOutput(result)
     driver.disconnect(resource)
   }
 

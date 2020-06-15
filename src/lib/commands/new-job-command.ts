@@ -9,7 +9,7 @@ import { JobRunOptions,  ContainerDrivers, JobExecOptions } from '../job-manager
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
-import { printResultState } from '../functions/misc-functions'
+import { printValidatedOutput } from '../functions/misc-functions'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../remote/commands/remote-command'
 
@@ -233,7 +233,7 @@ export abstract class NewJobCommand extends BasicCommand
     const {job_manager, configurations, container_drivers, output_options} = job_data.value
     const job_id = job.value.id
     if(this.shouldAutocopy(flags, container_drivers, job_id))
-      printResultState(
+      printValidatedOutput(
         job_manager.copy({
           "ids": [job_id],
           "mode": "update"

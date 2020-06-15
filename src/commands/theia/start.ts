@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { startTheiaInProject, getTheiaUrl, startTheiaApp } from '../../lib/functions/theia-functions'
@@ -38,7 +38,7 @@ export default class Start extends ServerCommand {
     // -- create stack for running theia -------------------------------------
     const create_stack = this.createStack(flags)
     if(!create_stack.success)
-      return printResultState(create_stack)
+      return printValidatedOutput(create_stack)
     const {stack_configuration, container_drivers, job_manager } = create_stack.value
     // -- check x11 user settings --------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
@@ -57,11 +57,11 @@ export default class Start extends ServerCommand {
       }
     )
     await JSTools.sleep(5000) // wait for server to start
-    printResultState(result)
+    printValidatedOutput(result)
 
     const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]})
     if(!url_result.success)
-      return printResultState(url_result)
+      return printValidatedOutput(url_result)
 
     if(!flags['quiet'] && !webapp_path) // only print url
       console.log(url_result.value)

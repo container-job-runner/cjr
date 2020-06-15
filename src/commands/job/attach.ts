@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Attach extends BasicCommand {
   static description = 'Attach to a running job.'
@@ -25,7 +25,7 @@ export default class Attach extends BasicCommand {
     if(job_id === false) return // exit if user selects empty id or exits interactive dialog
     // -- attach ---------------------------------------------------------------
     const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
-    printResultState(
+    printValidatedOutput(
       job_manager.attach({
         "id": job_id,
         "stack-paths": this.extractVisibleStacks(flags)

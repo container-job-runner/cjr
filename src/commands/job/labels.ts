@@ -2,7 +2,7 @@ import * as chalk from 'chalk'
 import { flags } from '@oclif/command'
 import { JSTools } from '../../lib/js-tools'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 import { Dictionary } from '../../lib/constants'
@@ -46,7 +46,7 @@ export default class Labels extends BasicCommand {
       job_info = runner.jobInfo({'ids': JSTools.arrayWrap(ids), 'stack-paths': stack_paths})
     }
     if(!job_info.success)
-      return (flags.json) ? console.log("{}") : printResultState(job_info)
+      return (flags.json) ? console.log("{}") : printValidatedOutput(job_info)
 
     var data:Dictionary = {}
     job_info.value.map((info:JobInfo) => {

@@ -28,7 +28,7 @@ import { DockerStackConfiguration } from '../config/stacks/docker/docker-stack-c
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { DockerJobConfiguration } from '../config/jobs/docker-job-configuration'
 import { ErrorStrings } from '../error-strings'
-import { printResultState } from '../functions/misc-functions'
+import { printValidatedOutput } from '../functions/misc-functions'
 import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
 import { LocalJobManager } from '../job-managers/local-job-manager'
 import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId, socketExists, startPodmanSocket } from '../functions/cli-functions'
@@ -385,7 +385,7 @@ export abstract class BasicCommand extends Command
   {
     const run_shortcuts = new RunShortcuts()
     const rs_result = run_shortcuts.loadFromFile(this.settings.get('run-shortcuts-file'))
-    if(!rs_result.success) printResultState(rs_result)
+    if(!rs_result.success) printValidatedOutput(rs_result)
     return run_shortcuts
   }
 

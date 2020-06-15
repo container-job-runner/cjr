@@ -1,7 +1,7 @@
 import chalk = require('chalk')
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { flags } from '@oclif/command'
-import { printResultState, printHorizontalTable } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, printHorizontalTable } from '../../lib/functions/misc-functions'
 import { JupyterJobInfo, listJupyter } from '../../lib/functions/jupyter-functions'
 
 export default class List extends BasicCommand {
@@ -19,7 +19,7 @@ export default class List extends BasicCommand {
     const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
     const result = listJupyter(job_manager, "in-project")
     if(!result.success)
-      return printResultState(result)
+      return printValidatedOutput(result)
 
     if(flags["json"]) // -- json output ---------------------------------------
       return console.log(JSON.stringify(result.value))

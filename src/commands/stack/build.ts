@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { JSTools } from '../../lib/js-tools'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { buildImage } from '../../lib/functions/build-functions'
 
 export default class Build extends BasicCommand {
@@ -33,11 +33,11 @@ export default class Build extends BasicCommand {
         configurations
       )
       if(!init_stack.success)
-        return printResultState(init_stack)
+        return printValidatedOutput(init_stack)
       const stack_configuration = init_stack.value
       if(flags["pull"]) stack_configuration.addBuildFlag('pull')
       if(flags["no-cache"]) stack_configuration.addBuildFlag('no-cache')
-      printResultState(
+      printValidatedOutput(
         buildImage(stack_configuration, container_drivers, {"reuse-image": false, verbose: true})
       )
     });

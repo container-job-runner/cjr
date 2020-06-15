@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { stopJupyter, stopAllJupyters } from '../../lib/functions/jupyter-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
@@ -30,7 +30,7 @@ export default class Stop extends BasicCommand {
       result = stopJupyter(job_manager, {
         "project-root": flags['project-root']
       });
-    printResultState(result)
+    printValidatedOutput(result)
   }
 
 }

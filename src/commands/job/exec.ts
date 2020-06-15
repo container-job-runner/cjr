@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { NewJobCommand } from '../../lib/commands/new-job-command'
 import { initX11 } from '../../lib/functions/cli-functions'
 
@@ -37,7 +37,7 @@ export default class Exec extends NewJobCommand {
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- run basic exec -------------------------------------------------------
     const { job, job_data } = this.runSimpleExec(parent_job_id, flags, argv.slice(1))
-    printResultState(job_data)
-    printResultState(job)
+    printValidatedOutput(job_data)
+    printValidatedOutput(job)
   }
 }

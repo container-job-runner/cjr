@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printResultState } from '../../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { initX11 } from '../../../lib/functions/cli-functions'
 import { ServerCommand } from '../../../lib/commands/server-command'
 import { getJupyterUrl, startJupyterApp, startJupyterInJob } from '../../../lib/functions/jupyter-functions'
@@ -40,7 +40,7 @@ export default class Start extends ServerCommand {
     // -- create stack for running jupyter -----------------------------------
     this.augmentFlagsForJob(flags)
     const create_stack = this.createStack(flags)
-    if(!create_stack.success) return printResultState(create_stack)
+    if(!create_stack.success) return printValidatedOutput(create_stack)
     const {stack_configuration, container_drivers, job_manager} = create_stack.value
     // -- check x11 user settings --------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
@@ -62,11 +62,11 @@ export default class Start extends ServerCommand {
         "override-entrypoint": flags['override-entrypoint']
       }
     )
-    printResultState(result)
+    printValidatedOutput(result)
 
     const url_result = await getJupyterUrl(job_manager, {"job-id": job_id})
     if(!url_result.success)
-      return printResultState(url_result)
+      return printValidatedOutput(url_result)
 
     if(!flags['quiet'] && !webapp_path) // only print url
       console.log(url_result.value)

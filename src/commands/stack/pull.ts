@@ -5,7 +5,7 @@ import { BasicCommand } from '../../lib/commands/basic-command'
 import { ShellCommand } from '../../lib/shell-command'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { FileTools } from '../../lib/fileio/file-tools'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Pull extends BasicCommand {
   static description = 'Clones or pulls a stack using git directly into the stack folder.'
@@ -31,7 +31,7 @@ export default class Pull extends BasicCommand {
       result = shell.output('git pull', {}, [], {cwd: stack_abs_path})
     else
       result = shell.output('git clone', {depth: "1"}, [args.url], {cwd: local_stacks_path})
-    printResultState(result);
+    printValidatedOutput(result);
   }
 
 }

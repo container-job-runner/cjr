@@ -1,7 +1,7 @@
 import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { Dictionary } from '../../lib/constants'
 
 export default class Set extends BasicCommand {
@@ -80,7 +80,7 @@ export default class Set extends BasicCommand {
       const result = this.settings.set(key, value)
       if(result.success && !flags['quiet'])
         this.log(chalk`{italic ${key}} -> {green ${value}}`)
-      else printResultState(result)
+      else printValidatedOutput(result)
     })
   }
 }

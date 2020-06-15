@@ -1,7 +1,7 @@
-import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../lib/remote/commands/remote-command'
-import {printResultState} from '../../lib/functions/misc-functions'
-import {JSTools} from '../../lib/js-tools'
+import { flags} from '@oclif/command'
+import { RemoteCommand } from '../../lib/remote/commands/remote-command'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
+import { JSTools } from '../../lib/js-tools'
 import { OutputOptions, CopyOptions } from '../../lib/remote/compatibility'
 
 export default class Copy extends RemoteCommand {
@@ -26,7 +26,7 @@ export default class Copy extends RemoteCommand {
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)
     var result = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
@@ -49,7 +49,7 @@ export default class Copy extends RemoteCommand {
     }
     if(flags?.["manual"]) copy_options["manual"] = true
     // -- copy jobs ------------------------------------------------------------
-    printResultState(driver.jobCopy(resource, copy_options))
+    printValidatedOutput(driver.jobCopy(resource, copy_options))
     driver.disconnect(resource)
   }
 

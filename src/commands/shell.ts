@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printResultState, } from '../lib/functions/misc-functions'
+import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { initX11, snapshot, promptUserToSnapshot, augmentImagePushParameters } from '../lib/functions/cli-functions'
 import { NewJobCommand } from '../lib/commands/new-job-command'
 import { StackConfiguration } from '../lib/config/stacks/abstract/stack-configuration'
@@ -53,8 +53,8 @@ export default class Shell extends NewJobCommand {
       )
       job_data.value.container_drivers.runner.jobDelete([job.value.id])
     }
-    printResultState(job_data)
-    printResultState(job)
+    printValidatedOutput(job_data)
+    printValidatedOutput(job)
   }
 
   async updateSnapshot(job_id: string, stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, output_options: OutputOptions, cli_snapshot_flag: boolean)

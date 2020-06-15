@@ -1,12 +1,11 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../lib/remote/commands/remote-command'
 import { RunShortcuts } from "../lib/config/run-shortcuts/run-shortcuts"
-import { printResultState } from '../lib/functions/misc-functions'
+import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { Dictionary } from '../lib/constants'
 import { ContainerDrivers } from '../lib/job-managers/job-manager'
 import { OutputOptions, JobOptions, compat_parseLabelFlag, compat_parseBuildModeFlag } from '../lib/remote/compatibility'
 import { initX11 } from '../lib/functions/cli-functions'
-import { NewJobCommand } from '../lib/commands/new-job-command'
 
 export default class Run extends RemoteCommand {
   static description = 'Start a job that runs a shell command on a remote resource.'
@@ -55,11 +54,11 @@ export default class Run extends RemoteCommand {
     // -- initialize run shortcuts --------------------------------------------
     const run_shortcut = new RunShortcuts()
     const rs_result = run_shortcut.loadFromFile(this.settings.get('run-shortcuts-file'))
-    if(!rs_result.success) printResultState(rs_result)
+    if(!rs_result.success) printValidatedOutput(rs_result)
     // -- validate name --------------------------------------------------------
     const name = flags['remote-name'] || ""
     var result = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  flags.verbose,
@@ -103,7 +102,7 @@ export default class Run extends RemoteCommand {
         "file-upload-mode":  (flags['file-upload-mode'] as "cached"|"uncached")
       }
     )
-    printResultState(result)
+    printValidatedOutput(result)
     remote_driver.disconnect(resource)
   }
 

@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-command'
 import { JSTools } from '../../lib/js-tools'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { RemoteDeleteOptions } from '../../lib/remote/drivers/remote-driver'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { OutputOptions } from '../../lib/remote/compatibility'
@@ -28,7 +28,7 @@ export default class Delete extends RemoteCommand {
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)
     var result:ValidatedOutput<any> = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- set output options ---------------------------------------------------
     const output_options:OutputOptions = {
       verbose:  false,
@@ -48,7 +48,7 @@ export default class Delete extends RemoteCommand {
 
     if(state_filter != undefined) { // filter existing jobs on resource -------
       result = driver.jobInfo(resource, state_filter)
-      if(!result.success) return printResultState(result)
+      if(!result.success) return printValidatedOutput(result)
       ids = result.value.map((x:Dictionary) => x.id)
     }
     else { // use args or prompt user for input --------------------------------

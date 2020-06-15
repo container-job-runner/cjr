@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary } from '../../lib/constants'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Stop extends BasicCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'
@@ -31,7 +31,7 @@ export default class Stop extends BasicCommand {
 
     // -- stop job -------------------------------------------------------------
     const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
-    printResultState(
+    printValidatedOutput(
         job_manager.stop({
         "ids": ids,
         "selecter": this.parseSelector(flags),

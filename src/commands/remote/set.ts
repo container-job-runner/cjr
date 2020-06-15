@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-command'
 import { JSTools } from '../../lib/js-tools'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Set extends RemoteCommand {
   static description = 'Set a remote resource parameter.'
@@ -22,14 +22,14 @@ export default class Set extends RemoteCommand {
     // -- validate name --------------------------------------------------------
     const name = args['remote-name']
     const result = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- modify resource and write file ---------------------------------------
     var resource = this.resource_configuration.getResource(name)
     if(resource !== undefined) {
       const valid_keys = ["type", "address", "username", "key", "storage-dir", "enabled"];
       (resource as Dictionary) = {... (resource as Dictionary), ...JSTools.oSubset(flags, valid_keys)}
       this.resource_configuration.setResource(name, resource)
-      printResultState(this.resource_configuration.writeToFile())
+      printValidatedOutput(this.resource_configuration.writeToFile())
     }
   }
 }

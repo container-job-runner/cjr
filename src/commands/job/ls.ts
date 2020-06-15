@@ -1,6 +1,6 @@
 import * as path from 'path'
 import { flags} from '@oclif/command'
-import { printVerticalTable, printHorizontalTable, printResultState } from '../../lib/functions/misc-functions'
+import { printVerticalTable, printHorizontalTable, printValidatedOutput } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary, label_strings } from '../../lib/constants'
 
@@ -27,7 +27,7 @@ export default class List extends BasicCommand {
     const job_info = container_drivers.runner.jobInfo({
       'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags)
     })
-    if(!job_info.success) return printResultState(job_info)
+    if(!job_info.success) return printValidatedOutput(job_info)
     const jobs = job_info.value
 
     if(flags.json) { // -- JSON format -----------------------------------------

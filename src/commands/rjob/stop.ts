@@ -1,6 +1,5 @@
-import {flags} from '@oclif/command'
-import {RemoteCommand} from '../../lib/remote/commands/remote-command'
-import {printResultState} from '../../lib/functions/misc-functions'
+import { flags } from '@oclif/command'
+import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 
 export default class Stop extends RemoteCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'

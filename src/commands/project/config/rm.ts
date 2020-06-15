@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { JSTools } from '../../../lib/js-tools'
 import { ProjectSettingsCommand}  from '../../../lib/commands/project-settings-command'
 import { projectSettingsYMLPath, Dictionary } from "../../../lib/constants"
-import { printResultState } from '../../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { ps_prop_keys } from '../../../lib/config/project-settings/project-settings'
 import { loadProjectSettings } from '../../../lib/functions/cli-functions'
 
@@ -39,7 +39,7 @@ export default class Delete extends ProjectSettingsCommand {
     })
     if(flags['project-root-auto']) project_settings.remove('project-root')
     const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     else if(!flags.quiet) this.listProject(project_settings, project_root)
   }
 

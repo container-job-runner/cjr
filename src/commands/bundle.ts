@@ -6,7 +6,7 @@ import constants = require('../lib/constants')
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../lib/commands/basic-command'
 import { Dictionary } from '../lib/constants'
-import { printResultState } from '../lib/functions/misc-functions'
+import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { bundleProjectSettings, bundleProject, ProjectBundleOptions } from '../lib/functions/cli-functions'
 import { ShellCommand } from '../lib/shell-command'
 import { FileTools } from '../lib/fileio/file-tools'
@@ -39,7 +39,7 @@ export default class Bundle extends BasicCommand {
     const {container_drivers, configurations} = this.initContainerSDK(flags.verbose, false, flags.explicit)
     // -- create tmp dir for bundle --------------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, constants.subdirectories.data.bundle))
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     const tmp_dir = result.value
     // -- set copy options -----------------------------------------------------
     const options: ProjectBundleOptions = {
@@ -55,7 +55,7 @@ export default class Bundle extends BasicCommand {
       result = bundleProject(container_drivers, configurations, options)
     else // -- bundle project configuration ------------------------------------
       result = bundleProjectSettings(container_drivers, configurations, options)
-    printResultState(result)
+    printValidatedOutput(result)
 
     // -- copy bundle to user specified location -------------------------------
     const bundle_dest_path = this.bundleDestPath(flags, args.save_dir, path.basename(options["bundle-path"])) // final location for user

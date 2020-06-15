@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary } from '../../lib/constants'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Delete extends BasicCommand {
   static description = 'Delete a job and its associated data; works on both running and completed jobs.'
@@ -33,7 +33,7 @@ export default class Delete extends BasicCommand {
 
     // -- delete job -----------------------------------------------------------
     const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
-    printResultState(
+    printValidatedOutput(
       job_manager.delete({
         "ids": ids,
         "selecter": this.parseSelector(flags),

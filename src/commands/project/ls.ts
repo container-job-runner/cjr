@@ -1,6 +1,6 @@
 import { flags } from '@oclif/command'
 import { ProjectSettingsCommand } from '../../lib/commands/project-settings-command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { loadProjectSettings } from '../../lib/functions/cli-functions'
 
 export default class ls extends ProjectSettingsCommand {
@@ -18,7 +18,7 @@ export default class ls extends ProjectSettingsCommand {
     this.augmentFlagsWithProjectSettings(flags, {"project-root": true})
     const project_root: string = (flags["project-root"] as string)
     const load_result = loadProjectSettings(project_root)
-    if(!load_result.success) return printResultState(load_result)
+    if(!load_result.success) return printValidatedOutput(load_result)
     this.listProject(load_result.value, project_root)
   }
 

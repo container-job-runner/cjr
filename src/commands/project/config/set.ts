@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { ProjectSettingsCommand } from '../../../lib/commands/project-settings-command'
 import { projectSettingsYMLPath} from "../../../lib/constants"
-import { printResultState } from '../../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { loadProjectSettings } from '../../../lib/functions/cli-functions'
 
 export default class Set extends ProjectSettingsCommand {
@@ -33,7 +33,7 @@ export default class Set extends ProjectSettingsCommand {
     if(flags['project-root-auto']) project_settings.setProjectRoot('auto')
 
     const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     else if(!flags.quiet) this.listProject(project_settings, project_root)
   }
 

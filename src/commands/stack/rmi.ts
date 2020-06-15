@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { JSTools } from '../../lib/js-tools'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
 
 export default class RMI extends BasicCommand {
@@ -37,11 +37,11 @@ export default class RMI extends BasicCommand {
           configurations
         )
         if(!init_configuration.success)
-          return printResultState(init_configuration)
+          return printValidatedOutput(init_configuration)
         if(container_drivers.builder.isBuilt(init_configuration.value))
-          printResultState(container_drivers.builder.removeImage(init_configuration.value))
+          printValidatedOutput(container_drivers.builder.removeImage(init_configuration.value))
         else if(!flags['quiet'])
-          printResultState(
+          printValidatedOutput(
             new ValidatedOutput(true, undefined)
             .pushWarning(`There are currently no images for stack ${stack_path}.`)
           )

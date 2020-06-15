@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { SshShellCommand } from '../../lib/remote/ssh-shell-command'
-import { printResultState } from '../../lib/functions/misc-functions'
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
 
 export default class Ssh extends RemoteCommand {
@@ -20,14 +20,14 @@ export default class Ssh extends RemoteCommand {
     // -- validate id ----------------------------------------------------------
     const name = args["remote-name"] || flags["remote-name"] || ""
     var result:ValidatedOutput<any> = this.validResourceName(name)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
     const ssh_shell = new SshShellCommand(flags.explicit, false, this.config.dataDir)
     result = ssh_shell.setResource(resource)
-    if(!result.success) return printResultState(result)
+    if(!result.success) return printValidatedOutput(result)
     ssh_shell.exec('', {}, [], {ssh: {x11: flags.x11}})
-    printResultState(result)
+    printValidatedOutput(result)
   }
 }
