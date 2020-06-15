@@ -1,11 +1,12 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
-import { BasicCommand } from '../../lib/commands/basic-command'
+import { ServerCommand } from '../../lib/commands/server-command'
 import { stopTheia, stopAllTheias } from '../../lib/functions/theia-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
 
-export default class Stop extends BasicCommand {
+export default class Stop extends ServerCommand {
   static description = 'Stop a running Theia server.'
+  static args = [ { name: "project-root" } ]
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
@@ -18,8 +19,9 @@ export default class Stop extends BasicCommand {
 
   async run()
   {
-    const { flags } = this.parse(Stop)
+    const { args, flags } = this.parse(Stop)
     this.augmentFlagsWithProjectSettings(flags, {"project-root": false})
+    this.augmentFlagsWithProjectRootArg(args, flags)
     this.augmentFlagsWithHere(flags)
 
     const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])

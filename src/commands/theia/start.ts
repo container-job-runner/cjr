@@ -7,6 +7,7 @@ import { JSTools } from '../../lib/js-tools'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Theia server.'
+  static args = [ { name: "project-root" } ]
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
@@ -27,12 +28,13 @@ export default class Start extends ServerCommand {
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
     "override-entrypoint": flags.boolean({default: false, description: 'forces container entrypoint to be sh shell. This may be useful for images that where not designed for cjr.'})
   }
-  static strict = false;
+  static strict = true;
 
   async run()
   {
-    const { flags } = this.parse(Start)
+    const { args, flags } = this.parse(Start)
     this.augmentFlagsForJob(flags)
+    this.augmentFlagsWithProjectRootArg(args, flags)
     const webapp_path = this.settings.get('webapp');
 
     // -- create stack for running theia -------------------------------------
