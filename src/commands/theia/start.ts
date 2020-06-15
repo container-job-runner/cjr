@@ -56,7 +56,8 @@ export default class Start extends ServerCommand {
         "override-entrypoint": flags['override-entrypoint']
       }
     )
-    await JSTools.sleep(5000) // wait for server to start
+    const timeout = Math.floor(parseFloat(this.settings.get('timeout-theia')) * 1000) || 10000
+    await JSTools.sleep(timeout) // wait for server to start
     printValidatedOutput(result)
 
     const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]})
