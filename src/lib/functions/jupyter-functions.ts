@@ -1,13 +1,12 @@
 import os = require('os')
 import { JSTools } from '../js-tools'
 import { ShellCommand } from '../shell-command'
-import { ErrorStrings } from '../error-strings'
+import { ErrorStrings, NoticeStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
 import { label_strings } from '../constants'
 import { firstJobId, JobInfo } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { JobManager } from '../job-managers/job-manager'
-import { string } from '@oclif/command/lib/flags'
 
 type JupyterOptions = {
   "stack_configuration": StackConfiguration<any> // stack configuration in which jupyter will be run
@@ -42,7 +41,7 @@ export function startJupyterInProject(job_manager: JobManager, jupyter_options: 
   // -- check if jupyter is already running ----------------------------------------
   const job_id = jobId(identifier, job_manager)
   if(job_id.success)
-    return job_id.pushWarning(ErrorStrings.JUPYTER.RUNNING(job_id.value, identifier))
+    return job_id.pushNotice(NoticeStrings.JUPYTER.RUNNING(job_id.value, identifier))
   // -- start new jupyter job ------------------------------------------------------
   const job = job_manager.run(
     createJob(identifier, job_manager, jupyter_options),
@@ -64,7 +63,7 @@ export function startJupyterInJob(job_manager: JobManager, jupyter_options: Jupy
   // -- exit if request fails --------------------------------------------------
   const job_id = jobId(identifier, job_manager)
   if(job_id.success)
-    return job_id.pushWarning(ErrorStrings.JUPYTER.RUNNING(job_id.value, identifier))
+    return job_id.pushNotice(NoticeStrings.JUPYTER.RUNNING(job_id.value, identifier))
   // -- start jupyter job -------------------------------------------------------
   const job = job_manager.exec(
     createJob(identifier, job_manager, jupyter_options),

@@ -1,9 +1,9 @@
 import path = require('path')
 import os = require('os')
 import { ShellCommand } from '../shell-command'
-import { ErrorStrings } from '../error-strings'
+import { ErrorStrings, NoticeStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
-import { label_strings, Dictionary } from '../constants'
+import { label_strings } from '../constants'
 import { parseJSON } from './misc-functions'
 import { firstJobId, JobInfo } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
@@ -47,7 +47,7 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
   // -- check if jupyter is already running ------------------------------------
   const job_id = jobId(job_identifier, job_manager)
   if(job_id.success)
-    return job_id.pushWarning(ErrorStrings.THEIA.RUNNING(job_id.value, theia_options['project-root'] || ""))
+    return job_id.pushNotice(NoticeStrings.THEIA.RUNNING(job_id.value, theia_options['project-root'] || ""))
   // -- start theia job --------------------------------------------------------
   const job = job_manager.run(
     createJob(job_identifier, job_manager, theia_options),
