@@ -69,6 +69,12 @@ export default class Set extends BasicCommand {
     "container-registry-user": flags.string({
       description: 'container registry username for pushing snapshots'
     }),
+    "timeout-jupyter": flags.string({
+      description: 'maximum number of seconds that cjr should wait for jupyter server to start.'
+    }),
+    "timeout-theia": flags.string({
+      description: 'number of seconds that cjr should wait for theia server to start.'
+    }),
     "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = true;

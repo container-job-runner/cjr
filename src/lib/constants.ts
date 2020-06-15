@@ -100,6 +100,8 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "selinux": false,
       "jupyter-command": "jupyter lab",
       "webapp": "",
+      "timeout-jupyter": "10",
+      "timeout-theia": "10"
   }
 }
 
