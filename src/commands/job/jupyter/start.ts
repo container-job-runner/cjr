@@ -64,7 +64,8 @@ export default class Start extends ServerCommand {
     )
     printValidatedOutput(result)
 
-    const url_result = await getJupyterUrl(job_manager, {"job-id": job_id})
+    const timeout = Math.floor(parseFloat(this.settings.get('timeout-jupyter')) * 1000) || 10000
+    const url_result = await getJupyterUrl(job_manager, {"job-id": job_id}, 5, Math.floor(timeout / 5))
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
