@@ -35,14 +35,6 @@ export const ErrorStrings = {
     INVALID_NAME: chalk`{bold Invalid Stack Name} - A stack name should only contain lowercase and uppercase letters, digits, underscores, periods and dashes.`
   },
   JUPYTER: {
-    RUNNING: (id:string, identifier:{"job-id"?: string,"project-root"?: string}) => {
-      if(identifier?.['project-root'])
-        return chalk`Jupyter is already running in project directory "{green ${identifier['project-root']}}".`;
-      if(identifier?.['job-id'])
-        return chalk`Jupyter is already running in job {italic ${identifier['job-id']}}.`;
-      else
-        return chalk`Jupyter is already running.`;
-    },
     NOT_RUNNING: (identifier:{"job-id"?: string,"project-root"?: string}) => {
       if(identifier?.['project-root'])
         return chalk`Jupyter is not running in project directory "{green ${identifier['project-root']}}".`;
@@ -55,7 +47,6 @@ export const ErrorStrings = {
     LIST_FAILED: `Failed to obtain list of running Jupyter servers`
   },
   THEIA: {
-    RUNNING: (id:string, project_root: string) => chalk`Theia is already running in project directory "{green ${project_root}}".`,
     NOT_RUNNING: (project_root: string) => chalk`Theia is not running in project directory "{green ${project_root}}".`,
     NOURL: `Failed to obtain a url for the Theia.`,
     LIST_FAILED: `Failed to obtain list of running Theia servers`
@@ -90,6 +81,22 @@ export const WarningStrings = {
     FAILED_BUNDLE_STACK: (stack_path: string) => chalk`{bold Unable to Bundle Stack:} - verify that the stack contains necessary files and builds correctly.\n  {italic stack:} ${stack_path}`,
     INVALID_STACK_BINDPATH: (dir_path: string, stack_path: string) => chalk`{bold A bind mount was removed from bundled stack} - to ensure the stack is repoducible on other systems, bundle only keeps bind paths that point to locations inside the stack folder.\n  {italic bind path:}   ${dir_path}\n  {italic stack path:} ${stack_path}`,
   }
+}
+
+export const NoticeStrings = {
+    JUPYTER: {
+        RUNNING: (id:string, identifier:{"job-id"?: string,"project-root"?: string}) => {
+        if(identifier?.['project-root'])
+            return chalk`Jupyter is already running in project directory "{green ${identifier['project-root']}}".`;
+        if(identifier?.['job-id'])
+            return chalk`Jupyter is already running in job {italic ${identifier['job-id']}}.`;
+        else
+            return chalk`Jupyter is already running.`;
+        }
+    },
+    THEIA: {
+        RUNNING: (id:string, project_root: string) => chalk`Theia is already running in project directory "{green ${project_root}}".`
+    }
 }
 
 export const StatusStrings = {
