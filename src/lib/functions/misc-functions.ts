@@ -14,8 +14,9 @@ export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dic
 
 export function printResultState(result: ValidatedOutput<any>)
 {
-  result.warning.forEach( (e:string) => console.log(chalk`{bold.yellow WARNING}: ${e}`))
-  result.error.forEach( (e:string) => console.log(chalk`{bold.red ERROR}: ${e}`))
+    result.notice.forEach( (n:string) => console.log(chalk`{bold.blue NOTICE}: ${n}`))
+    result.warning.forEach( (w:string) => console.log(chalk`{bold.yellow WARNING}: ${w}`))
+    result.error.forEach( (e:string) => console.log(chalk`{bold.red ERROR}: ${e}`))
 }
 
  // checks if ValidatedOutput contains valid json and returns parsed json data or returns failed result
