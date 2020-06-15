@@ -17,7 +17,7 @@ export default class List extends BasicCommand {
   {
     const { flags } = this.parse(List)
     const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
-    const result = listTheia(job_manager)
+    const result = listTheia(job_manager, "localhost")
     if(!result.success)
       return printValidatedOutput(result)
 

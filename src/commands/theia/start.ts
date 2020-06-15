@@ -60,7 +60,7 @@ export default class Start extends ServerCommand {
     await JSTools.sleep(timeout) // wait for server to start
     printValidatedOutput(result)
 
-    const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]})
+    const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]}, "localhost")
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
