@@ -14,7 +14,7 @@ export abstract class ServerCommand extends NewJobCommand
       port.address = default_address
       return port
     }
-    const default_port = nextAvailablePort(drivers, 7019)
+    const default_port = nextAvailablePort(drivers, 7001)
     return {"hostPort": default_port, "containerPort": default_port, "address": default_address}
   }
 }
