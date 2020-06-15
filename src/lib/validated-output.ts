@@ -4,13 +4,15 @@ export class ValidatedOutput<T>
     value: T
     error: Array<string>
     warning: Array<string>
+    notice: Array<string>
 
-    constructor(success: boolean, value: T, error: Array<string> = [], warning: Array<string> = [])
+    constructor(success: boolean, value: T, error: Array<string> = [], warning: Array<string> = [], notice: Array<string> = [])
     {
       this.success = success;
       this.value = value;
       this.error = error;
       this.warning = warning;
+      this.notice = notice
     }
 
     pushError(message: string)
@@ -26,12 +28,19 @@ export class ValidatedOutput<T>
       return this
     }
 
+    pushNotice(message: string)
+    {
+      this.notice.push(message)
+      return this
+    }
+
     absorb( ... args: ValidatedOutput<any>[])
     {
       args.map((vo:ValidatedOutput<any>) => {
         this.success = this.success && vo.success
         this.error.push( ... vo.error)
         this.warning.push( ... vo.warning)
+        this.notice.push( ... vo.notice)
       })
       return this
     }
