@@ -114,6 +114,23 @@ export abstract class BasicCommand extends Command
     return flags
   }
 
+  augmentFlagsWithProfile(flags: {"project-root"?: string, "stack"?: string, "profile"?: Array<string>,  "stacks-dir": string, "config-files": Array<string>})
+  {
+    if(flags.profile === undefined)
+      return
+
+    const stack_path = flags['stack'] ? this.fullStackPath(flags['stack'], flags['stacks-dir']) : undefined
+    flags['profile']?.map( (profile: string) => {
+      const config_path = this.locateProfile(
+        profile, {
+          "project-root": flags['project-root'],
+          "stack-path": stack_path
+        })
+      if(config_path)
+        flags['config-files'].push(config_path)
+    })
+  }
+
   // ===========================================================================
   // Stack Configuration Loading Functions
   // ===========================================================================
@@ -157,6 +174,29 @@ export abstract class BasicCommand extends Command
     else // interpret input as remote image
       stack_configuration.setImage(flags['stack'])
     return result
+  }
+
+  protected locateProfile(profile_name: string, options: {"project-root"?: string, "stack-path"?: string})
+  {
+    // -- first look in project directory --------------------------------------
+    if(options['project-root']) {
+      const project_profile_path = path.join(
+        constants.projectSettingsProfilePath(options['project-root']),
+        `${profile_name}.yml`
+      )
+      if(fs.existsSync(project_profile_path))
+        return project_profile_path
+    }
+    // -- next look in stack directory -----------------------------------------
+    if(options["stack-path"]) {
+      const stack_profile_path = path.join(
+        options['stack-path'],
+        constants.subdirectories.stack.profiles,
+        `${profile_name}.yml`
+      )
+      if(options?.['stack-path'] && fs.existsSync(stack_profile_path))
+        return stack_profile_path
+    }
   }
 
   // ===========================================================================
