@@ -55,7 +55,7 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
       "project-root": theia_options["project-root"],
       "cwd": theia_options["project-root"],
       "x11": theia_options["x11"],
-      "reuse-image": theia_options["reuse-image"] || true,
+      "reuse-image": (theia_options?.["reuse-image"] !== undefined) ? theia_options["reuse-image"] : true,
       "project-root-file-access": "bind"
     }
   )
