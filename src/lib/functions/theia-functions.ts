@@ -47,7 +47,10 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
   // -- check if jupyter is already running ------------------------------------
   const job_id = jobId(job_identifier, job_manager)
   if(job_id.success)
-    return new ValidatedOutput(true, {id: job_id.value, isnew: false})
+    return new ValidatedOutput(true, {
+        "id": job_id.value, 
+        "isnew": false
+    }).pushNotice(NoticeStrings.THEIA.RUNNING(job_id.value, theia_options['project-root'] || ""))
   // -- start theia job --------------------------------------------------------
   const job = job_manager.run(
     createJob(job_identifier, job_manager, theia_options),
