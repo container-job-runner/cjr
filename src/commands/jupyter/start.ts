@@ -62,16 +62,21 @@ export default class Start extends ServerCommand {
       }
     )
     printValidatedOutput(result)
+    if(!result.success) return
 
-    const timeout = Math.floor(parseFloat(this.settings.get('timeout-jupyter')) * 1000) || 10000
-    const url_result = await getJupyterUrl(job_manager, {"project-root": flags["project-root"]}, 5, Math.floor(timeout / 5))
+    const timeout = (result.value.isnew) ? (Math.floor(parseFloat(this.settings.get('timeout-jupyter')) * 1000) || 10000) : 0
+    const max_tries = (result.value.isnew) ? 5 : 1
+    const url_result = await getJupyterUrl(job_manager, {"project-root": flags["project-root"]}, max_tries, Math.floor(timeout / max_tries))
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
-    if(!flags['quiet'] && !webapp_path) // only print url
-      console.log(url_result.value)
-    else if(!flags['quiet'] && webapp_path) // open webapp
+    if(flags['quiet']) // exit silently
+      return    
+    else if(webapp_path) // open webapp
       startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
+    else // only print url
+      console.log(url_result.value)
+    
   }
 
 }
