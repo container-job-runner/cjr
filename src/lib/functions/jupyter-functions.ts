@@ -35,13 +35,16 @@ export type JupyterJobInfo = {
 
 type JobIdentifer = {"job-id"?: string,"project-root"?: string}
 
-export function startJupyterInProject(job_manager: JobManager, jupyter_options: JupyterProjectOptions) : ValidatedOutput<string>
+export function startJupyterInProject(job_manager: JobManager, jupyter_options: JupyterProjectOptions) : ValidatedOutput<{id: string, isnew: boolean}>
 {
   const identifier:JobIdentifer = {"project-root" : jupyter_options['project-root'] || ""}
   // -- check if jupyter is already running ----------------------------------------
   const job_id = jobId(identifier, job_manager)
   if(job_id.success)
-    return job_id.pushNotice(NoticeStrings.JUPYTER.RUNNING(job_id.value, identifier))
+    return new ValidatedOutput(true, {
+        "id": job_id.value, 
+        "isnew": false
+    }).pushNotice(NoticeStrings.JUPYTER.RUNNING(job_id.value, identifier))
   // -- start new jupyter job ------------------------------------------------------
   const job = job_manager.run(
     createJob(identifier, job_manager, jupyter_options),
@@ -53,17 +56,21 @@ export function startJupyterInProject(job_manager: JobManager, jupyter_options: 
       "project-root-file-access": "bind"
     }
   )
-  if(!job.success) return new ValidatedOutput(false, "").absorb(job)
-  return new ValidatedOutput(true, job.value.id)
+  if(!job.success) 
+    return new ValidatedOutput(false, {id: "", isnew: true}).absorb(job)
+  return new ValidatedOutput(true, {"id": job.value.id, "isnew": true})
 }
 
-export function startJupyterInJob(job_manager: JobManager, jupyter_options: JupyterJobOptions) : ValidatedOutput<string>
+export function startJupyterInJob(job_manager: JobManager, jupyter_options: JupyterJobOptions) : ValidatedOutput<{id: string, isnew: boolean}>
 {
   const identifier:JobIdentifer = {"job-id" : jupyter_options["job-id"]}
   // -- exit if request fails --------------------------------------------------
   const job_id = jobId(identifier, job_manager)
   if(job_id.success)
-    return job_id.pushNotice(NoticeStrings.JUPYTER.RUNNING(job_id.value, identifier))
+    return new ValidatedOutput(true, {
+        "id": job_id.value, 
+        "isnew": false
+    }).pushNotice(NoticeStrings.JUPYTER.RUNNING(job_id.value, identifier))
   // -- start jupyter job -------------------------------------------------------
   const job = job_manager.exec(
     createJob(identifier, job_manager, jupyter_options),
@@ -73,8 +80,9 @@ export function startJupyterInJob(job_manager: JobManager, jupyter_options: Jupy
       "reuse-image": jupyter_options["reuse-image"] || true
     }
   )
-  if(!job.success) return new ValidatedOutput(false, "").absorb(job)
-  return new ValidatedOutput(true, job.value.id)
+  if(!job.success) 
+    return new ValidatedOutput(false, {id: "", isnew: true}).absorb(job)
+  return new ValidatedOutput(true, {"id": job.value.id, "isnew": true})
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
