@@ -60,20 +60,12 @@ export default class Start extends ServerCommand {
             "override-entrypoint": flags['override-entrypoint']
         }
     )
-    
-    if(!result.success)
-        return printValidatedOutput(result)
+    printValidatedOutput(result)
+    if(!result.success) return 
     
     if(result.value.isnew) { // wait for new server to start
         const timeout = Math.floor(parseFloat(this.settings.get('timeout-theia')) * 1000) || 10000
         await JSTools.sleep(timeout) 
-    } 
-    else { // notify user that theia was already running
-        printValidatedOutput(
-            new ValidatedOutput(true, undefined).pushNotice(
-                NoticeStrings.THEIA.RUNNING(result.value.id, flags['project-root'] || "")
-            )
-        )
     }
 
     const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]}, "localhost")
@@ -82,8 +74,7 @@ export default class Start extends ServerCommand {
 
     if(flags['quiet']) // exit silently
         return
-    
-    if(webapp_path) // open webapp
+    else if(webapp_path) // open webapp
         startTheiaApp(url_result.value, webapp_path || "", flags.explicit)  
     else // print server url
         console.log(url_result.value)
