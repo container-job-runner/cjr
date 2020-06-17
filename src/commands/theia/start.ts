@@ -4,6 +4,8 @@ import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { startTheiaInProject, getTheiaUrl, startTheiaApp } from '../../lib/functions/theia-functions'
 import { JSTools } from '../../lib/js-tools'
+import { ValidatedOutput } from '../../lib/validated-output'
+import { NoticeStrings } from '../../lib/error-strings'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Theia server.'
@@ -48,28 +50,44 @@ export default class Start extends ServerCommand {
     const theia_port = this.defaultPort(container_drivers, flags["server-port"], flags["expose"])
     // -- start theia --------------------------------------------------------
     const result = startTheiaInProject(
-      job_manager,
-      {
-        "stack_configuration": stack_configuration,
-        "reuse-image" : this.extractReuseImage(flags),
-        "project-root": flags["project-root"],
-        "port": theia_port,
-        "x11": flags['x11'],
-        "override-entrypoint": flags['override-entrypoint']
-      }
+        job_manager,
+        {
+            "stack_configuration": stack_configuration,
+            "reuse-image" : this.extractReuseImage(flags),
+            "project-root": flags["project-root"],
+            "port": theia_port,
+            "x11": flags['x11'],
+            "override-entrypoint": flags['override-entrypoint']
+        }
     )
-    const timeout = Math.floor(parseFloat(this.settings.get('timeout-theia')) * 1000) || 10000
-    await JSTools.sleep(timeout) // wait for server to start
-    printValidatedOutput(result)
+    
+    if(!result.success)
+        return printValidatedOutput(result)
+    
+    if(result.value.isnew) { // wait for new server to start
+        const timeout = Math.floor(parseFloat(this.settings.get('timeout-theia')) * 1000) || 10000
+        await JSTools.sleep(timeout) 
+    } 
+    else { // notify user that theia was already running
+        printValidatedOutput(
+            new ValidatedOutput(true, undefined).pushNotice(
+                NoticeStrings.THEIA.RUNNING(result.value.id, flags['project-root'] || "")
+            )
+        )
+    }
 
     const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]}, "localhost")
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
-    if(!flags['quiet'] && !webapp_path) // only print url
-      console.log(url_result.value)
-    else if(!flags['quiet'] && webapp_path) // open webapp
-      startTheiaApp(url_result.value, webapp_path || "", flags.explicit)
+    if(flags['quiet']) // exit silently
+        return
+    
+    if(webapp_path) // open webapp
+        startTheiaApp(url_result.value, webapp_path || "", flags.explicit)  
+    else // print server url
+        console.log(url_result.value)
+
   }
 
 }
