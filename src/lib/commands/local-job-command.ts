@@ -51,7 +51,7 @@ type JobData = StackData & {
   "job_configuration": JobConfiguration<StackConfiguration<any>>,
 }
 
-export abstract class NewJobCommand extends BasicCommand
+export abstract class LocalJobCommand extends BasicCommand
 {
 
   // alters flags based on --here and local project settings
