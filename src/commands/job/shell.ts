@@ -1,9 +1,9 @@
 import { flags} from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
-import { NewJobCommand } from '../../lib/commands/new-job-command'
+import { LocalJobCommand } from '../../lib/commands/local-job-command'
 import { initX11 } from '../../lib/functions/cli-functions'
 
-export default class Shell extends NewJobCommand {
+export default class Shell extends LocalJobCommand {
   static description = 'Start an interactive shell to view or modify a job\'s files or outputs.'
   static args = [{name: 'id', required: false}]
   static flags = {

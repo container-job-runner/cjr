@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { initX11, snapshot, promptUserToSnapshot, augmentImagePushParameters } from '../lib/functions/cli-functions'
-import { NewJobCommand } from '../lib/commands/new-job-command'
+import { LocalJobCommand } from '../lib/commands/local-job-command'
 import { StackConfiguration } from '../lib/config/stacks/abstract/stack-configuration'
 import { ContainerDrivers, OutputOptions } from '../lib/job-managers/job-manager'
 
-export default class Shell extends NewJobCommand {
+export default class Shell extends LocalJobCommand {
   static description = 'Start an interactive shell for developing in a stack container.'
   static args = []
   static flags = {

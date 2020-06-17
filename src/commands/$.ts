@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
-import { NewJobCommand } from '../lib/commands/new-job-command'
+import { LocalJobCommand } from '../lib/commands/local-job-command'
 import { initX11 } from '../lib/functions/cli-functions'
 
-export default class Run extends NewJobCommand {
+export default class Run extends LocalJobCommand {
   static description = 'Start a job that runs a shell command.'
   static args = [{name: 'command', required: true}]
   static flags = {

@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
-import { NewJobCommand } from '../lib/commands/new-job-command'
+import { LocalJobCommand } from '../lib/commands/local-job-command'
 import { label_strings } from '../lib/constants'
 
-export default class Stash extends NewJobCommand {
+export default class Stash extends LocalJobCommand {
   static description = 'Save current project state as a result.'
   static flags = {
     "stack": flags.string({env: 'STACK'}),

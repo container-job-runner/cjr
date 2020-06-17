@@ -14,12 +14,12 @@ import { SshShellCommand } from '../ssh-shell-command'
 import { printValidatedOutput } from '../../functions/misc-functions'
 import { ResourceConfiguration } from '../config/resource-configuration'
 import { OutputOptions } from '../compatibility'
-import { NewJobCommand } from '../../commands/new-job-command'
+import { LocalJobCommand } from '../../commands/local-job-command'
 
 export type  Dictionary= {[key: string]: any}
 type DriverCommands = "jobAttach" | "jobList" | "jobLog" | "jobStop" | "jobState"
 
-export abstract class RemoteCommand extends NewJobCommand
+export abstract class RemoteCommand extends LocalJobCommand
 {
     protected resource_configuration = new ResourceConfiguration(this.config.configDir)
 
