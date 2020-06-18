@@ -28,12 +28,12 @@ export class SshShellCommand
     shell: ShellCommand
     resource: Dictionary = {}
     multiplex: boolean = true
-    cli_data_dir: string
+    data_dir: string
     tags = {tunnel: 'tunnel_'} // tags used for multiplex master socket when creating tunnel
 
-    constructor(explicit: boolean, silent: boolean, cli_data_dir: string)
+    constructor(explicit: boolean, silent: boolean, data_dir: string)
     {
-      this.cli_data_dir = cli_data_dir
+      this.data_dir = data_dir
       this.shell = new ShellCommand(explicit, silent)
     }
 
@@ -176,7 +176,7 @@ export class SshShellCommand
 
     private multiplexSocketPath(options:Dictionary={}) : string // returns name of multiplex socket
     {
-      return path.join(this.cli_data_dir, remote_sshsocket_dirname, `${options?.tag || ""}${this.resource.username}@${this.resource.address}:22`)
+      return path.join(this.data_dir, remote_sshsocket_dirname, `${options?.tag || ""}${this.resource.username}@${this.resource.address}:22`)
     }
 
     // === Tunnel Functions ====================================================
