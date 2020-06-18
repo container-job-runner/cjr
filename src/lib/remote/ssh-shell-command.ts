@@ -65,7 +65,7 @@ export class SshShellCommand
     }
 
     // set post_process format to trim by default
-    exec(command: string, flags: Dictionary, args: Array<string>, options:Dictionary = {}) : ValidatedOutput<SpawnSyncReturns<Buffer>>
+    exec(command: string, flags: Dictionary = {}, args: Array<string> = [], options:Dictionary = {}) : ValidatedOutput<SpawnSyncReturns<Buffer>>
     {
       const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
       return this.shell.exec('ssh', ssh_flags, ssh_args, options)
