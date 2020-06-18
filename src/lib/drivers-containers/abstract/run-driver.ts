@@ -9,6 +9,7 @@ import { JobConfiguration } from '../../config/jobs/job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
 import { ShellCommand } from '../../shell-command'
 import { JSTools } from '../../js-tools'
+import { SshShellCommand } from '../../remote/ssh-shell-command'
 
 // -- types --------------------------------------------------------------------
 export type JobPortInfo = {
@@ -42,9 +43,9 @@ export type NewJobInfo = {
 
 export abstract class RunDriver
 {
-  protected shell: ShellCommand
+  protected shell: ShellCommand|SshShellCommand
 
-  constructor(shell: ShellCommand)
+  constructor(shell: ShellCommand|SshShellCommand)
   {
     this.shell = shell;
   }

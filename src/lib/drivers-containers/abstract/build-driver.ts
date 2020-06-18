@@ -2,14 +2,15 @@ import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { Dictionary } from '../../constants'
 import { ShellCommand } from '../../shell-command'
+import { SshShellCommand } from '../../remote/ssh-shell-command'
 
 // - types ---------------------------------------------------------------------
 
 export abstract class BuildDriver
 {
-  protected shell: ShellCommand
+  protected shell: ShellCommand|SshShellCommand
 
-  constructor(shell: ShellCommand)
+  constructor(shell: ShellCommand|SshShellCommand)
   {
     this.shell = shell;
   }
