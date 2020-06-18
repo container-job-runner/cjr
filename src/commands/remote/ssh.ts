@@ -1,8 +1,10 @@
+import path = require('path')
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { SshShellCommand } from '../../lib/remote/ssh-shell-command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
+import { remote_sshsocket_dirname } from '../../lib/remote/constants'
 
 export default class Ssh extends RemoteCommand {
   static description = 'ssh into a remote resource.'
@@ -24,7 +26,7 @@ export default class Ssh extends RemoteCommand {
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    const ssh_shell = new SshShellCommand(flags.explicit, false, this.config.dataDir)
+    const ssh_shell = new SshShellCommand(flags.explicit, false, path.join(this.config.dataDir, remote_sshsocket_dirname))
     result = ssh_shell.setResource(resource)
     if(!result.success) return printValidatedOutput(result)
     ssh_shell.exec('', {}, [], {ssh: {x11: flags.x11}})

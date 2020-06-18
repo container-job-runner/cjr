@@ -6,7 +6,7 @@
 import * as path from 'path'
 import * as fs from 'fs-extra'
 import { PathTools } from '../../fileio/path-tools'
-import { remote_keys_dir_name } from '../constants'
+import { remote_keys_dir_name, remote_sshsocket_dirname } from '../constants'
 import { ValidatedOutput } from '../../validated-output'
 import { ErrorStrings } from '../error-strings'
 import { CJRRemoteDriver } from '../drivers/cjr-remote-driver'
@@ -50,7 +50,7 @@ export abstract class RemoteCommand extends LocalJobCommand
       {
         case "cjr":
         {
-          const ssh_shell = new SshShellCommand(output_options.explicit, output_options.silent, this.config.dataDir)
+          const ssh_shell = new SshShellCommand(output_options.explicit, output_options.silent, path.join(this.config.dataDir, remote_sshsocket_dirname))
           return new CJRRemoteDriver(ssh_shell, output_options, this.config.dataDir, {autodisconnect: autodisconnect, autoconnect: true});
         }
         default:

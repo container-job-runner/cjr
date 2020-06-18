@@ -1,9 +1,11 @@
+import path = require('path')
 import { flags } from '@oclif/command'
 import { ValidatedOutput } from '../../../lib/validated-output'
 import { RemoteCommand, Dictionary } from '../../../lib/remote/commands/remote-command'
 import { SshShellCommand } from '../../../lib/remote/ssh-shell-command'
 import { printValidatedOutput, parseJSON } from '../../../lib/functions/misc-functions'
 import { PathTools } from '../../../lib/fileio/path-tools'
+import { remote_sshsocket_dirname } from '../../../lib/remote/constants'
 
 export default class Rsync extends RemoteCommand {
   static description = 'rsyncs local stacks-dir with remote resource or vice-versa.'
@@ -30,7 +32,7 @@ export default class Rsync extends RemoteCommand {
     // -- get resource & ssh_shell ---------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    const ssh_shell = new SshShellCommand(flags.explicit, false, this.config.dataDir)
+    const ssh_shell = new SshShellCommand(flags.explicit, false, path.join(this.config.dataDir, remote_sshsocket_dirname))
     result = ssh_shell.setResource(resource)
     if(!result.success) return printValidatedOutput(result)
     // -- get local stack dir --------------------------------------------------
