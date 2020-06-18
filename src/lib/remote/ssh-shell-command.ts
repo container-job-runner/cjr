@@ -16,9 +16,7 @@ import * as fs from 'fs-extra'
 import * as os from 'os'
 import {ValidatedOutput} from '../validated-output'
 import {JSTools} from '../js-tools'
-import {FileTools} from '../fileio/file-tools'
 import {ShellCommand} from '../shell-command'
-import {remote_sshsocket_dirname} from './constants'
 import { SpawnSyncReturns } from 'child_process'
 import { trim } from '../functions/misc-functions'
 type Dictionary = {[key: string]: any}
@@ -28,7 +26,7 @@ export class SshShellCommand
     shell: ShellCommand
     resource: Dictionary = {}
     multiplex: boolean = true
-    data_dir: string
+    data_dir: string // directory where ssh master socket will be stored
     tags = {tunnel: 'tunnel_'} // tags used for multiplex master socket when creating tunnel
 
     constructor(explicit: boolean, silent: boolean, data_dir: string)
@@ -176,7 +174,7 @@ export class SshShellCommand
 
     private multiplexSocketPath(options:Dictionary={}) : string // returns name of multiplex socket
     {
-      return path.join(this.data_dir, remote_sshsocket_dirname, `${options?.tag || ""}${this.resource.username}@${this.resource.address}:22`)
+      return path.join(this.data_dir, `${options?.tag || ""}${this.resource.username}@${this.resource.address}:22`)
     }
 
     // === Tunnel Functions ====================================================
