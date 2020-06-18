@@ -5,6 +5,7 @@ import { ValidatedOutput } from '../validated-output'
 import { ShellCommand } from '../shell-command'
 import { trim } from '../functions/misc-functions'
 import { PathTools } from './path-tools'
+import { SshShellCommand } from '../remote/ssh-shell-command'
 
 export class FileTools
 {
@@ -22,7 +23,7 @@ export class FileTools
   }
 
   // creates a temporary directory inside parent_abs_path
-  static mktempDir(parent_abs_path: string, shell:ShellCommand = new ShellCommand(false, false))
+  static mktempDir(parent_abs_path: string, shell:ShellCommand|SshShellCommand = new ShellCommand(false, false))
   {
     fs.ensureDirSync(parent_abs_path)
     switch(os.platform())
