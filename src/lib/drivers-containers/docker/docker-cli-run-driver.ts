@@ -11,6 +11,7 @@ import { DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig,
 import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
+import { SshShellCommand } from '../../remote/ssh-shell-command'
 
 // internal types: used for creating jobs
 export type DockerCreateOptions = DockerStackConfigObject & {
@@ -39,7 +40,7 @@ export class DockerCliRunDriver extends RunDriver
       chalk` copy {green ${container_id}:${container_path}}\n   to {green ${host_path}}`
   }
 
-  constructor(shell: ShellCommand, options: {selinux: boolean})
+  constructor(shell: ShellCommand|SshShellCommand, options: {selinux: boolean})
   {
     super(shell)
     this.selinux = options.selinux || false
