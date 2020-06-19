@@ -1,7 +1,7 @@
 import chalk = require('chalk');
 import path = require('path');
 import fs = require('fs-extra')
-import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions } from '../abstract/job-manager'
+import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
 import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../../drivers-containers/abstract/run-driver';
@@ -302,6 +302,11 @@ export class LocalJobManager extends JobManager
       return this.container_drivers.runner.jobLog(result.value, options["lines"])
     else
       return new ValidatedOutput(false, "").pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
+  }
+
+  list(options: JobListOptions) : ValidatedOutput<JobInfo[]>
+  {
+    return this.container_drivers.runner.jobInfo(options.filter)  
   }
 
   private jobSelector(container_drivers: ContainerDrivers, options: JobStopOptions|JobDeleteOptions) : ValidatedOutput<JobInfo[]>

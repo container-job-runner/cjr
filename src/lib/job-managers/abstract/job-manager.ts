@@ -1,6 +1,6 @@
 import { JobConfiguration } from "../../config/jobs/job-configuration";
 import { ValidatedOutput } from '../../validated-output';
-import { RunDriver, NewJobInfo, JobState } from '../../drivers-containers/abstract/run-driver';
+import { RunDriver, NewJobInfo, JobState, JobInfoFilter, JobInfo } from '../../drivers-containers/abstract/run-driver';
 import { BuildDriver } from '../../drivers-containers/abstract/build-driver';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { ExecConfiguration, ExecConstructorOptions } from '../../config/exec/exec-configuration';
@@ -69,6 +69,10 @@ export type JobLogOptions = ID_OSTACK & {
   "lines": string
 }
 
+export type JobListOptions = {
+    filter?: JobInfoFilter
+}
+
 export abstract class JobManager // High-Level Job Driver
 {
 
@@ -104,5 +108,7 @@ export abstract class JobManager // High-Level Job Driver
   abstract attach( options: JobAttachOptions ) : ValidatedOutput<undefined>
 
   abstract log( options: JobLogOptions ) : ValidatedOutput<string>
+
+  abstract list( options: JobListOptions ) : ValidatedOutput<JobInfo[]>
 
 }
