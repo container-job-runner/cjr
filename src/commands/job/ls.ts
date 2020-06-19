@@ -23,10 +23,10 @@ export default class List extends BasicCommand {
   {
     const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const { container_drivers }  = this.initContainerSDK(flags.verbose, false, flags.explicit)
-    const job_info = container_drivers.runner.jobInfo({
+    const { job_manager }  = this.initContainerSDK(flags.verbose, false, flags.explicit)
+    const job_info = job_manager.list({filter: {
       'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags)
-    })
+    }})
     if(!job_info.success) return printValidatedOutput(job_info)
     const jobs = job_info.value
 
