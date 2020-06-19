@@ -23,14 +23,14 @@ import { ProjectSettings, ps_prop_keys } from '../config/project-settings/projec
 import { BuildDriver } from '../drivers-containers/abstract/build-driver'
 import { RunDriver, JobState } from '../drivers-containers/abstract/run-driver'
 import { ExecConstructorOptions, ExecConfiguration } from '../config/exec/exec-configuration'
-import { Configurations, ContainerDrivers, OutputOptions, JobManager } from '../job-managers/job-manager'
+import { Configurations, ContainerDrivers, OutputOptions, JobManager } from '../job-managers/abstract/job-manager'
 import { DockerStackConfiguration } from '../config/stacks/docker/docker-stack-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { DockerJobConfiguration } from '../config/jobs/docker-job-configuration'
 import { ErrorStrings } from '../error-strings'
 import { printValidatedOutput } from '../functions/misc-functions'
 import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
-import { LocalJobManager } from '../job-managers/local-job-manager'
+import { LocalJobManager } from '../job-managers/local/local-job-manager'
 import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId, socketExists, startPodmanSocket } from '../functions/cli-functions'
 
 export type ContainerSDK = {

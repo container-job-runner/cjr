@@ -4,7 +4,7 @@ import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { RunShortcuts } from "../../lib/config/run-shortcuts/run-shortcuts"
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { compat_parseLabelFlag, compat_parseBuildModeFlag, OutputOptions, JobOptions } from '../../lib/remote/compatibility'
-import { ContainerDrivers } from '../../lib/job-managers/job-manager'
+import { ContainerDrivers } from '../../lib/job-managers/abstract/job-manager'
 
 export default class Exec extends RemoteCommand {
   static description = 'Start a new remote job using files from a completd or currently running remote job'

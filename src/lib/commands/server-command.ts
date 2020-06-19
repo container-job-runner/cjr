@@ -1,6 +1,6 @@
 import path = require('path')
 import { LocalJobCommand } from './local-job-command'
-import { ContainerDrivers } from '../job-managers/job-manager'
+import { ContainerDrivers } from '../job-managers/abstract/job-manager'
 import { nextAvailablePort } from '../functions/cli-functions'
 
 export abstract class ServerCommand extends LocalJobCommand

@@ -2,7 +2,7 @@ import { ValidatedOutput } from '../validated-output'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { NewJobInfo } from '../drivers-containers/abstract/run-driver'
-import { ContainerDrivers } from '../job-managers/job-manager'
+import { ContainerDrivers } from '../job-managers/abstract/job-manager'
 
 export type BuildOptions = {
   'reuse-image': boolean     // will not build if image with proper name already exists

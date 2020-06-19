@@ -1,9 +1,9 @@
-import { JobConfiguration } from "../config/jobs/job-configuration";
-import { ValidatedOutput } from '../validated-output';
-import { RunDriver, NewJobInfo, JobState } from '../drivers-containers/abstract/run-driver';
-import { BuildDriver } from '../drivers-containers/abstract/build-driver';
-import { StackConfiguration } from '../config/stacks/abstract/stack-configuration';
-import { ExecConfiguration, ExecConstructorOptions } from '../config/exec/exec-configuration';
+import { JobConfiguration } from "../../config/jobs/job-configuration";
+import { ValidatedOutput } from '../../validated-output';
+import { RunDriver, NewJobInfo, JobState } from '../../drivers-containers/abstract/run-driver';
+import { BuildDriver } from '../../drivers-containers/abstract/build-driver';
+import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
+import { ExecConfiguration, ExecConstructorOptions } from '../../config/exec/exec-configuration';
 
 export type ContainerDrivers = {
   "runner": RunDriver

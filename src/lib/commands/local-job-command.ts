@@ -5,7 +5,7 @@ import fs = require('fs')
 import { BasicCommand, ContainerSDK } from './basic-command'
 import { updateStackConfig, updateJobConfig } from '../functions/config-functions'
 import { ValidatedOutput } from '../validated-output'
-import { JobRunOptions,  ContainerDrivers, JobExecOptions } from '../job-managers/job-manager'
+import { JobRunOptions,  ContainerDrivers, JobExecOptions } from '../job-managers/abstract/job-manager'
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'

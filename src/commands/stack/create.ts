@@ -12,7 +12,7 @@ import { FileTools } from '../../lib/fileio/file-tools'
 import { DockerStackConfiguration } from '../../lib/config/stacks/docker/docker-stack-configuration'
 import { StackConfiguration } from '../../lib/config/stacks/abstract/stack-configuration'
 import { augmentImagePushParameters } from '../../lib/functions/cli-functions'
-import { ContainerDrivers } from '../../lib/job-managers/job-manager'
+import { ContainerDrivers } from '../../lib/job-managers/abstract/job-manager'
 
 type NewSnapshotOptions = {
   "image": string,

@@ -1,7 +1,7 @@
 import { ValidatedOutput } from "../../validated-output"
 import { Resource } from "../../remote/config/resource-configuration"
 import { OutputOptions, CopyOptions, JobOptions } from '../compatibility'
-import { ContainerDrivers, Configurations } from '../../job-managers/job-manager'
+import { ContainerDrivers, Configurations } from '../../job-managers/abstract/job-manager'
 type Dictionary = {[key: string]: any}
 
 // NOTE: DEFINE ALL REMOTE TYPES BELOW

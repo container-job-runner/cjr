@@ -6,7 +6,7 @@ import fs = require('fs-extra')
 import constants = require('../constants')
 
 import { JobState, JobInfo, JobPortInfo} from '../drivers-containers/abstract/run-driver'
-import { ContainerDrivers, Configurations } from '../job-managers/job-manager'
+import { ContainerDrivers, Configurations } from '../job-managers/abstract/job-manager'
 import { Dictionary, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths } from '../constants'
 import { JSTools } from '../js-tools'
 import { ValidatedOutput } from '../validated-output'

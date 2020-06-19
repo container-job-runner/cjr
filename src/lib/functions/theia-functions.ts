@@ -7,7 +7,7 @@ import { label_strings } from '../constants'
 import { parseJSON } from './misc-functions'
 import { firstJobId, JobInfo } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
-import { JobManager } from '../job-managers/job-manager'
+import { JobManager } from '../job-managers/abstract/job-manager'
 import { JSTools } from '../js-tools'
 
 export type TheiaOptions = {

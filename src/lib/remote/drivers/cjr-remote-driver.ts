@@ -15,7 +15,7 @@ import { Resource } from "../../remote/config/resource-configuration"
 import { PathTools } from '../../fileio/path-tools'
 import { OutputOptions, CopyOptions, JobOptions, BuildOptions } from '../compatibility'
 import { getProjectId, ensureProjectId, promptUserForId, StackBundleOptions, bundleStack } from '../../functions/cli-functions'
-import { ContainerDrivers, Configurations } from '../../job-managers/job-manager'
+import { ContainerDrivers, Configurations } from '../../job-managers/abstract/job-manager'
 import { containerWorkingDir } from '../../functions/config-functions'
 
 type Dictionary = {[key: string]: any}

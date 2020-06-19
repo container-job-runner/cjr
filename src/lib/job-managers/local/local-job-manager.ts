@@ -1,20 +1,20 @@
 import chalk = require('chalk');
 import path = require('path');
 import fs = require('fs-extra')
-import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions } from './job-manager'
-import { JobConfiguration } from '../config/jobs/job-configuration';
-import { ValidatedOutput } from '../validated-output';
-import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../drivers-containers/abstract/run-driver';
-import { Dictionary, rsync_constants, label_strings } from '../constants';
-import { StackConfiguration } from '../config/stacks/abstract/stack-configuration';
-import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot } from '../functions/config-functions';
-import { ShellCommand } from '../shell-command';
-import { FileTools } from '../fileio/file-tools';
-import { DockerCliRunDriver } from '../drivers-containers/docker/docker-cli-run-driver';
-import { DockerSocketRunDriver } from '../drivers-containers/docker/docker-socket-run-driver';
-import { trim } from '../functions/misc-functions';
-import { buildAndRun, buildImage } from '../functions/build-functions';
-import { TextFile } from '../fileio/text-file';
+import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions } from '../abstract/job-manager'
+import { JobConfiguration } from '../../config/jobs/job-configuration';
+import { ValidatedOutput } from '../../validated-output';
+import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../../drivers-containers/abstract/run-driver';
+import { Dictionary, rsync_constants, label_strings } from '../../constants';
+import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
+import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot } from '../../functions/config-functions';
+import { ShellCommand } from '../../shell-command';
+import { FileTools } from '../../fileio/file-tools';
+import { DockerCliRunDriver } from '../../drivers-containers/docker/docker-cli-run-driver';
+import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-socket-run-driver';
+import { trim } from '../../functions/misc-functions';
+import { buildAndRun, buildImage } from '../../functions/build-functions';
+import { TextFile } from '../../fileio/text-file';
 
 type IncludeExcludeFiles ={
   "include-from"?: string

@@ -6,7 +6,7 @@ import { ValidatedOutput } from '../validated-output'
 import { label_strings } from '../constants'
 import { firstJobId, JobInfo } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
-import { JobManager } from '../job-managers/job-manager'
+import { JobManager } from '../job-managers/abstract/job-manager'
 
 type JupyterOptions = {
   "stack_configuration": StackConfiguration<any> // stack configuration in which jupyter will be run
