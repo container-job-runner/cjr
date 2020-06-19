@@ -167,6 +167,19 @@ export class SshShellCommand
       return (!this.multiplexExists(options))
     }
 
+    multiplexAlive(options:Dictionary={}) : boolean // check status of the multiplex master
+    {
+      if(!this.multiplexExists(options)) return false
+      const command = 'ssh'
+      const flags = {
+        O: {value: 'check', noequals: true}, // Control multiplex. Request stop
+        S: {value: this.multiplexSocketPath(options), noequals: true} // location of socket
+      }
+      const args = ['arg'] // add a dummy arg for command
+      const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
+      return result.success
+    }
+
     multiplexExists(options:Dictionary={}) : boolean // returns true if multiplex socket file exists
     {
         return fs.existsSync(this.multiplexSocketPath(options))
