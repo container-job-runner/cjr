@@ -140,7 +140,7 @@ export class SshShellCommand
         M: {}, // set as master for multiplexer
         N: {}, // No command (does not execute anything over ssh)
         f: {}, // send to background
-        o: {value: "ExitOnForwardFailure yes", noequals: true}, // does not sent process to background until connection is established
+        o: {value: ["ExitOnForwardFailure yes", `ControlPersist ${options.controlpersist || '15s'}`], noequals: true}, // multiplex master will autoshutdown after 15 seconds of inactivity
         S: {value: this.multiplexSocketPath(options), noequals: true} // location of socket
       }
       if(options?.x11) {
