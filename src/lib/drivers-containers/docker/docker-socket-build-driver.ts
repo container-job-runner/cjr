@@ -16,7 +16,7 @@ import { JSTools } from '../../js-tools'
 export class DockerSocketBuildDriver extends BuildDriver
 {
   protected socket: string // path to socket
-  protected tmpdir: string // path to tmp directory for saving tar files
+  protected build_dir: string // path to tmp directory for saving tar files
   protected curl: Curl
   protected curlPostProcessor = DockerAPIPostProcessor
   protected base_url = "http://v1.24" // base url for api
@@ -34,13 +34,13 @@ export class DockerSocketBuildDriver extends BuildDriver
     "FAILED_TO_TAG": (id:string) => chalk`{bold Image Tag Failed} - could not tag image ${id}.`
   }
 
-  constructor(shell: ShellCommand, options: {socket: string, tmpdir: string})
+  constructor(shell: ShellCommand, options: {"socket": string, "build-directory": string})
   {
     super(shell)
-    this.socket = options.socket
-    this.tmpdir = options.tmpdir
+    this.socket = options["socket"]
+    this.build_dir = options["build-directory"]
     this.curl = new Curl(shell, {
-      "unix-socket": options.socket,
+      "unix-socket": options["socket"],
       "base-url": this.base_url
     })
   }
@@ -159,7 +159,7 @@ export class DockerSocketBuildDriver extends BuildDriver
       return result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD(configuration.stack_path))
 
     // -- 1. make temporary directory -------------------------------------------
-    const mkdir = FileTools.mktempDir(this.tmpdir, this.shell)
+    const mkdir = FileTools.mktempDir(this.build_dir, this.shell)
     if(!mkdir.success) return result.absorb(mkdir)
     const tmp_dir = mkdir.value
     // -- 2. tar contents of stack build folder into build.tar.gz ---------------

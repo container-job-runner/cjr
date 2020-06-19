@@ -10,13 +10,9 @@ export class PodmanSocketBuildDriver extends DockerSocketBuildDriver
   protected base_url = "http://libpod" // base url for api
   protected curlPostProcessor = PodmanAPIPostProcessor
 
-  constructor(shell: ShellCommand, options: {socket: string, tmpdir: string})
+  constructor(shell: ShellCommand, options: {"socket": string, "build-directory": string})
   {
     super(shell, options)
-    this.curl = new Curl(shell, {
-      "unix-socket": options.socket,
-      "base-url": this.base_url
-    })
   }
 
   protected API_Build(options: {archive: string, imageName?: string, encoding: "tar"|"gzip", buildargs?: {[key: string] : string}, pull?: boolean, nocache?: boolean}) : ValidatedOutput<{output: string}>

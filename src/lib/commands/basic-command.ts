@@ -356,7 +356,7 @@ export abstract class BasicCommand extends Command
         case "docker-socket":
         {
           return new DockerSocketBuildDriver(shell, {
-            "tmpdir": build_dir,
+            "build-directory": build_dir,
             "socket": socket
           });
         }
@@ -368,7 +368,7 @@ export abstract class BasicCommand extends Command
         {
           this.startPodmanSocketOnce(shell, socket)
           return new PodmanSocketBuildDriver(shell,  {
-            "tmpdir": build_dir,
+            "build-directory": build_dir,
             "socket": socket
           });
         }
