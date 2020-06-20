@@ -76,16 +76,9 @@ export type JobListOptions = {
 export abstract class JobManager // High-Level Job Driver
 {
 
-  container_drivers: ContainerDrivers
-  output_options: OutputOptions
-  configurations: Configurations
-
-  constructor(container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions)
-  {
-    this.container_drivers = container_drivers;
-    this.configurations = configurations
-    this.output_options = output_options
-  }
+  abstract container_drivers: ContainerDrivers
+  abstract output_options: OutputOptions
+  abstract configurations: Configurations
 
   abstract run(
     job_configuration: JobConfiguration<StackConfiguration<any>>,
