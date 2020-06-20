@@ -8,11 +8,11 @@ import { DriverInitDockerConfig } from '../abstract/driver-init-docker-config';
 
 export class CliDriverInit extends DriverInitDockerConfig
 {
-    drivers(type: "podman"|"docker", options: {"selinux": boolean}, shell:ShellCommand|SshShellCommand)
+    drivers(shell: ShellCommand|SshShellCommand, options: {"type": "podman" | "docker", "selinux": boolean})
     {
         return {
-            "builder": this.newBuildDriver(type, shell),
-            "runner":  this.newRunDriver(type, shell,  options)
+            "builder": this.newBuildDriver(options.type, shell),
+            "runner":  this.newRunDriver(options.type, shell,  options)
         }
     }
     

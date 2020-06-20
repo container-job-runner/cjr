@@ -7,11 +7,11 @@ import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-so
 
 export class SocketDriverInit extends DriverInitDockerConfig
 {
-    drivers(type: "podman"|"docker", options: {"socket": string, "build-directory": string, "selinux": boolean}, shell:ShellCommand)
+    drivers(shell: ShellCommand, options: {"type": "podman"|"docker", "socket": string, "build-directory": string, "selinux": boolean})
     {
         return {
-            "builder": this.newBuildDriver(type, shell, options),
-            "runner":  this.newRunDriver(type, shell,  options)
+            "builder": this.newBuildDriver(options.type, shell, options),
+            "runner":  this.newRunDriver(options.type, shell,  options)
         }
     }
     
