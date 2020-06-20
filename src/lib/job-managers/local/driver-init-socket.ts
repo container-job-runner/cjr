@@ -5,7 +5,7 @@ import { PodmanSocketBuildDriver } from '../../drivers-containers/podman/podman-
 import { PodmanSocketRunDriver } from '../../drivers-containers/podman/podman-socket-run-driver';
 import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-socket-run-driver';
 
-export class SocketDriverInit extends DriverInitDockerConfig
+export class DriverInitSocket extends DriverInitDockerConfig
 {
     drivers(shell: ShellCommand, options: {"type": "podman"|"docker", "socket": string, "build-directory": string, "selinux": boolean})
     {

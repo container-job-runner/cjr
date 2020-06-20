@@ -6,7 +6,7 @@ import { PodmanCliRunDriver } from '../../drivers-containers/podman/podman-cli-r
 import { ShellCommand } from '../../shell-command';
 import { DriverInitDockerConfig } from '../abstract/driver-init-docker-config';
 
-export class CliDriverInit extends DriverInitDockerConfig
+export class DriverInitCli extends DriverInitDockerConfig
 {
     drivers(shell: ShellCommand|SshShellCommand, options: {"type": "podman" | "docker", "selinux": boolean})
     {
