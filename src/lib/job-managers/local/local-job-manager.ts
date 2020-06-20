@@ -25,11 +25,17 @@ type IncludeExcludeFiles ={
 export class LocalJobManager extends JobManager
 {
 
+  container_drivers: ContainerDrivers
+  configurations: Configurations
+  output_options: OutputOptions
   protected tmpdir: string
 
   constructor(drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, options: {tmpdir: string})
   {
-    super(drivers, configurations, output_options)
+    super()
+    this.container_drivers = drivers;
+    this.configurations = configurations;
+    this.output_options = output_options;
     this.tmpdir = options.tmpdir
   }
 
