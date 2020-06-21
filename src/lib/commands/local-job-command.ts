@@ -2,10 +2,10 @@ import chalk = require('chalk')
 import path = require('path')
 import constants = require('../constants')
 import fs = require('fs')
-import { BasicCommand, ContainerSDK } from './basic-command'
+import { BasicCommand } from './basic-command'
 import { updateStackConfig, updateJobConfig } from '../functions/config-functions'
 import { ValidatedOutput } from '../validated-output'
-import { JobRunOptions,  ContainerDrivers, JobExecOptions } from '../job-managers/abstract/job-manager'
+import { JobRunOptions,  ContainerDrivers, JobExecOptions, JobManager } from '../job-managers/abstract/job-manager'
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
@@ -43,7 +43,8 @@ type CLIJobFlags = {
     "visible-stacks"?: Array<string>
 }
 
-type StackData = ContainerSDK & {
+type StackData = {
+  "job_manager": JobManager  
   "stack_configuration": StackConfiguration<any>
 }
 
@@ -95,19 +96,19 @@ export abstract class LocalJobCommand extends BasicCommand
     })
   }
 
-  // generates stack based on cli flags
+  // generates a StackConfiguration based on cli flags
   createStack(flags: CLIJobFlags) : ValidatedOutput<StackData>
   {
     // -- init Container SDK components ----------------------------------------
-    const {configurations, container_drivers, job_manager, output_options} = this.initContainerSDK(
-      flags["verbose"] || false,
-      flags["quiet"] || false,
-      flags["explicit"] || false
+    const job_manager = this.newJobManager(
+        flags["verbose"]  || false,
+        flags["quiet"]    || false,
+        flags["explicit"] || false
     )
     // -- load run-shortcuts ---------------------------------------------------
     const run_shortcuts = this.newRunShortcuts()
     // -- init stack configuration ---------------------------------------------
-    const load = this.initStackConfiguration(flags, configurations)
+    const load = this.initStackConfiguration(flags, job_manager.configurations)
     const stack_configuration = load.value
     // -- set stack options ----------------------------------------------------
     updateStackConfig(stack_configuration, {
@@ -117,10 +118,7 @@ export abstract class LocalJobCommand extends BasicCommand
 
     return new ValidatedOutput(true, {
       "stack_configuration": stack_configuration,
-      "configurations": configurations,
-      "container_drivers": container_drivers,
-      "job_manager": job_manager,
-      "output_options": output_options
+      "job_manager": job_manager
     }).absorb(load)
   }
 
@@ -129,11 +127,11 @@ export abstract class LocalJobCommand extends BasicCommand
   {
     // -- init Container SDK components ----------------------------------------
     const load = this.createStack(flags)
-    const {stack_configuration, configurations, container_drivers, job_manager, output_options} = load.value
+    const { stack_configuration, job_manager } = load.value
     // -- load run-shortcuts ---------------------------------------------------
     const run_shortcuts = this.newRunShortcuts()
     // -- set job options ------------------------------------------------------
-    const job_configuration = configurations.job(stack_configuration)
+    const job_configuration = job_manager.configurations.job(stack_configuration)
     const synchronous = flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))
     updateJobConfig(job_configuration, {
       "synchronous": synchronous,
@@ -145,10 +143,7 @@ export abstract class LocalJobCommand extends BasicCommand
     return new ValidatedOutput(true, {
       "job_configuration": job_configuration,
       "stack_configuration": stack_configuration,
-      "configurations": configurations,
-      "container_drivers": container_drivers,
-      "job_manager": job_manager,
-      "output_options": output_options
+      "job_manager": job_manager
     }).absorb(load)
   }
 
@@ -190,9 +185,9 @@ export abstract class LocalJobCommand extends BasicCommand
 
     if(!job.success || !job_data.success) return {"job": job, "job_data": job_data}
     // -- copy back results ----------------------------------------------------
-    const {job_manager, configurations, container_drivers, output_options} = job_data.value
+    const { job_manager } = job_data.value
     const job_id = job.value.id
-    if(this.shouldAutocopy(flags, container_drivers, job_id))
+    if(this.shouldAutocopy(flags, job_manager, job_id))
       printValidatedOutput(
         job_manager.copy({
           "ids": [job_id],
@@ -203,13 +198,17 @@ export abstract class LocalJobCommand extends BasicCommand
 
   }
 
-  shouldAutocopy(flags: CLIJobFlags, drivers: ContainerDrivers, job_id: string)
+  shouldAutocopy(flags: CLIJobFlags, job_manager: JobManager, job_id: string)
   {
     // -- check flag status ----------------------------------------------------
     if(!flags["project-root"]) return false
     if(flags["file-access"] === 'bind') return false
     // -- check that job has stopped -------------------------------------------
-    const result = firstJob(drivers.runner.jobInfo({"ids": [job_id], "states": ['exited']}))
+    const result = firstJob(
+        job_manager.list({
+            "filter" : {"ids": [job_id], "states": ['exited']}
+        })
+    )
     if(!result.success) return false
     if(flags["autocopy"]) return true
     const synchronous = flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))
