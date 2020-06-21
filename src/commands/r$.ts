@@ -69,11 +69,8 @@ export default class Run extends RemoteCommand {
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
     var remote_driver = this.newRemoteDriver(resource["type"], output_options, false)
-    // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
-      runner:  this.newRunDriver(flags.explicit, flags.quiet)
-    }
+    // -- create local job manager ---------------------------------------------
+    const job_manager = this.newJobManager(flags.verbose, false, flags.explicit)
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- set job options ------------------------------------------------------
@@ -93,8 +90,8 @@ export default class Run extends RemoteCommand {
     }
     result = remote_driver.jobStart(
       resource,
-      drivers,
-      this.newConfigurationsObject(),
+      job_manager.container_drivers,
+      job_manager.configurations,
       job_options,
       {
         "auto-copy":         this.shouldAutocopy(flags),

@@ -23,7 +23,7 @@ export default class Stop extends BasicCommand {
     const { args, flags } = this.parse(Stop)
     this.augmentFlagsWithProjectSettings(flags, {"project-root": false})
     this.augmentFlagsWithHere(flags)
-    const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+    const job_manager = this.newJobManager(flags['verbose'], flags['quiet'], flags['explicit'])
 
     if(flags['all'])
       return printValidatedOutput(

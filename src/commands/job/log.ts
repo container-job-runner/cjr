@@ -26,7 +26,7 @@ export default class Log extends BasicCommand {
     const job_id = await this.getJobId(argv, flags)
     if(job_id === false) return // exit if user selects empty id or exits interactive dialog
 
-    const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
+    const job_manager = this.newJobManager(false, false, flags['explicit'])
     const log = job_manager.log({
       "id": job_id,
       "stack-paths": this.extractVisibleStacks(flags),

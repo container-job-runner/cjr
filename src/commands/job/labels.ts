@@ -28,8 +28,10 @@ export default class Labels extends BasicCommand {
   {
     const {argv, flags} = this.parse(Labels)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const builder = this.newBuildDriver(flags.explicit)
-    const runner = this.newRunDriver(flags.explicit)
+    const job_manager = this.newJobManager(false, false, flags.explicit)
+    const runner = job_manager.container_drivers.runner
+    const builder = job_manager.container_drivers.builder
+    
     const stack_paths = flags['visible-stacks']?.map((stack:string) => this.fullStackPath(stack, flags["stacks-dir"]))
     // get id and stack_path
     var job_info:ValidatedOutput<Array<JobInfo>>

@@ -53,11 +53,8 @@ export default class Shell extends RemoteCommand {
     var driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- get job id  ----------------------------------------------------------
     var id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
-    // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit),
-      runner:  this.newRunDriver(flags.explicit)
-    }
+    // -- create local job manager ---------------------------------------------
+    const job_manager = this.newJobManager(flags.verbose, false, flags.explicit)
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,
@@ -74,8 +71,8 @@ export default class Shell extends RemoteCommand {
     }
     result = driver.jobExec(
       resource,
-      drivers,
-      this.newConfigurationsObject(),
+      job_manager.container_drivers,
+      job_manager.configurations,
       job_options,
       {
         id: id,

@@ -54,16 +54,13 @@ export default class Jupyter extends RemoteCommand {
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
     const driver = this.newRemoteDriver(resource["type"], output_options, false)
-    // -- set container runtime options ----------------------------------------
-    const drivers:ContainerDrivers = {
-      builder: this.newBuildDriver(flags.explicit, !flags.verbose),
-      runner:  this.newRunDriver(flags.explicit, flags.verbose)
-    }
+    // -- create local job manager ---------------------------------------------
+    const job_manager = this.newJobManager(flags.verbose, false, flags.explicit)
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11'] && args['command'] == 'start') await initX11(this.settings.get('interactive'), flags.explicit)
     // -- select port ----------------------------------------------------------
     if(flags['port'] == 'auto') {
-      const port_number = nextAvailablePort(drivers, 7027)
+      const port_number = nextAvailablePort(job_manager.container_drivers, 7027)
       const port_address = (flags.expose) ? '0.0.0.0' : '127.0.0.1'
       flags['port'] = `${port_address}:${port_number}:${port_number}`
     }
@@ -84,7 +81,7 @@ export default class Jupyter extends RemoteCommand {
         "labels":       [],
         "remove":       false
       }
-      result = driver.jobJupyterStart(resource, drivers,  this.newConfigurationsObject(), job_options, {
+      result = driver.jobJupyterStart(resource, job_manager.container_drivers,  job_manager.configurations, job_options, {
         id: args['id'],
         tunnel: flags['tunnel'],
         "host-project-root": flags["project-root"] || "",

@@ -24,7 +24,7 @@ export default class Attach extends BasicCommand {
     const job_id = await this.getJobId(argv, flags, ["running"])
     if(job_id === false) return // exit if user selects empty id or exits interactive dialog
     // -- attach ---------------------------------------------------------------
-    const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
+    const job_manager = this.newJobManager(false, false, flags['explicit'])
     printValidatedOutput(
       job_manager.attach({
         "id": job_id,

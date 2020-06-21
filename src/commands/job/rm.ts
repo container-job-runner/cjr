@@ -32,7 +32,7 @@ export default class Delete extends BasicCommand {
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
 
     // -- delete job -----------------------------------------------------------
-    const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+    const job_manager = this.newJobManager(flags['verbose'], flags['quiet'], flags['explicit'])
     printValidatedOutput(
       job_manager.delete({
         "ids": ids,

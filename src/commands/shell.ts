@@ -47,11 +47,11 @@ export default class Shell extends LocalJobCommand {
       await this.updateSnapshot(
         job.value.id,
         job_data.value.stack_configuration,
-        job_data.value.container_drivers,
-        job_data.value.output_options,
+        job_data.value.job_manager.container_drivers,
+        job_data.value.job_manager.output_options,
         flags['snapshot']
       )
-      job_data.value.container_drivers.runner.jobDelete([job.value.id])
+      job_data.value.job_manager.container_drivers.runner.jobDelete([job.value.id])
     }
     printValidatedOutput(job_data)
     printValidatedOutput(job)

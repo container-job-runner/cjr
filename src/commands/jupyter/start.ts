@@ -40,11 +40,11 @@ export default class Start extends ServerCommand {
     const create_stack = this.createStack(flags)
     if(!create_stack.success)
       return printValidatedOutput(create_stack)
-    const {stack_configuration, container_drivers, job_manager} = create_stack.value
+    const {stack_configuration, job_manager} = create_stack.value
     // -- check x11 user settings --------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- select port --------------------------------------------------------
-    const jupyter_port = this.defaultPort(container_drivers, flags["server-port"], flags["expose"])
+    const jupyter_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"])
     // -- select lab or notebook ---------------------------------------------
     const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
     // -- start jupyter ------------------------------------------------------

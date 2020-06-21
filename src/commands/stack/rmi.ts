@@ -22,7 +22,8 @@ export default class RMI extends BasicCommand {
     const { argv, flags } = this.parse(RMI)
     this.augmentFlagsWithProjectSettings(flags, {stack:false, "stacks-dir": false, "config-files": false})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
-    const { container_drivers, configurations } = this.initContainerSDK(true, flags.quiet, flags.explicit)
+    const job_manager = this.newJobManager(true, flags.quiet, flags.explicit)
+    const container_drivers = job_manager.container_drivers
     // -- map through list and remove ------------------------------------------
     stack_list.map((stack_name:string) => {
       const stack_path = this.fullStackPath(stack_name, flags["stacks-dir"])
@@ -34,7 +35,7 @@ export default class RMI extends BasicCommand {
           "config-files": flags["config-files"],
           "stacks-dir": flags["stacks-dir"],
           },
-          configurations
+          job_manager.configurations
         )
         if(!init_configuration.success)
           return printValidatedOutput(init_configuration)

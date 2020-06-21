@@ -36,7 +36,7 @@ export default class Bundle extends BasicCommand {
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
-    const {container_drivers, configurations} = this.initContainerSDK(flags.verbose, false, flags.explicit)
+    const job_manager = this.newJobManager(flags.verbose, false, flags.explicit)
     // -- create tmp dir for bundle --------------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, constants.subdirectories.data.bundle))
     if(!result.success) return printValidatedOutput(result)
@@ -52,9 +52,9 @@ export default class Bundle extends BasicCommand {
     if(flags['include-stacks-dir']) options["stacks-dir"] = flags["stacks-dir"]
 
     if(flags['include-files']) // -- bundle all files --------------------------
-      result = bundleProject(container_drivers, configurations, options)
+      result = bundleProject(job_manager.container_drivers, job_manager.configurations, options)
     else // -- bundle project configuration ------------------------------------
-      result = bundleProjectSettings(container_drivers, configurations, options)
+      result = bundleProjectSettings(job_manager.container_drivers, job_manager.configurations, options)
     printValidatedOutput(result)
 
     // -- copy bundle to user specified location -------------------------------

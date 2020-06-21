@@ -28,14 +28,14 @@ export default class Build extends BasicCommand {
     this.augmentFlagsWithProfile(flags)
 
     const stack_list = (flags.stack) ? [ flags.stack ] : []
-    const { container_drivers, configurations } = this.initContainerSDK(true, flags.quiet, flags.explicit)
+    const job_manager = this.newJobManager(true, flags.quiet, flags.explicit)
     stack_list.map((stack_name:string) => {
       const init_stack = this.initStackConfiguration({
         "stack": stack_name,
         "config-files": flags["config-files"],
         "stacks-dir": flags["stacks-dir"],
         },
-        configurations
+        job_manager.configurations
       )
       if(!init_stack.success)
         return printValidatedOutput(init_stack)
@@ -43,7 +43,7 @@ export default class Build extends BasicCommand {
       if(flags["pull"]) stack_configuration.addBuildFlag('pull')
       if(flags["no-cache"]) stack_configuration.addBuildFlag('no-cache')
       printValidatedOutput(
-        buildImage(stack_configuration, container_drivers, {"reuse-image": false, verbose: true})
+        buildImage(stack_configuration, job_manager.container_drivers, {"reuse-image": false, verbose: true})
       )
     });
   }

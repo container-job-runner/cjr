@@ -21,7 +21,7 @@ export default class State extends BasicCommand {
       "stacks-dir": false
     })
 
-    const { job_manager } = this.initContainerSDK(false, false, flags['explicit'])
+    const job_manager = this.newJobManager(false, false, flags['explicit'])
     const states = job_manager.state({
       "ids": argv,
       "stack-paths": this.extractVisibleStacks(flags)

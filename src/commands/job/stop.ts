@@ -30,7 +30,7 @@ export default class Stop extends BasicCommand {
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
 
     // -- stop job -------------------------------------------------------------
-    const { job_manager } = this.initContainerSDK(flags['verbose'], flags['quiet'], flags['explicit'])
+    const job_manager = this.newJobManager(flags['verbose'], flags['quiet'], flags['explicit'])
     printValidatedOutput(
         job_manager.stop({
         "ids": ids,
