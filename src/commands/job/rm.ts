@@ -28,7 +28,8 @@ export default class Delete extends BasicCommand {
     })
 
     // -- get job id -----------------------------------------------------------
-    const ids = await this.getJobIds(argv, flags)
+    const id_selector_active = flags['all'] || flags['all-running'] || flags['all-completed'] // do not prompt for id if these flags are selected
+    const ids = (id_selector_active) ? [] : await this.getJobIds(argv, flags)
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
 
     // -- delete job -----------------------------------------------------------
