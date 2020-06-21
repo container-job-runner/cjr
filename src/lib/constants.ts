@@ -89,8 +89,6 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "job-default-run-mode": "sync",
       "run-shortcuts-file": "",
       "driver": driver,
-      "build-driver": driver,
-      "run-driver": driver,
       "image-tag": cli_name,
       "socket-path": socket,
       "job-ls-fields": 'id, stackName, command, status',

@@ -33,14 +33,6 @@ export default class Set extends BasicCommand {
     "run-shortcuts-file": flags.string({
       description: "location of a yml file that can be used to specify run shortcuts for `cjr $` command; To disable set value to ''"
     }),
-    "build-driver": flags.string({
-      options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
-      description: "container environment used to build images"
-    }),
-    "run-driver": flags.string({
-      options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
-      description: "container environment used to run images"
-    }),
     "driver": flags.string({
       options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
       description: "container engine used to build and run images"
