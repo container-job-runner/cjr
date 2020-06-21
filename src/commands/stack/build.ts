@@ -1,7 +1,5 @@
 import { flags } from '@oclif/command'
-import { JSTools } from '../../lib/js-tools'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
-import { buildImage } from '../../lib/functions/build-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
 
 export default class Build extends BasicCommand {
@@ -43,7 +41,7 @@ export default class Build extends BasicCommand {
       if(flags["pull"]) stack_configuration.addBuildFlag('pull')
       if(flags["no-cache"]) stack_configuration.addBuildFlag('no-cache')
       printValidatedOutput(
-        buildImage(stack_configuration, job_manager.container_drivers, {"reuse-image": false, verbose: true})
+        job_manager.build(stack_configuration, {"reuse-image": false, verbose: true})
       )
     });
   }
