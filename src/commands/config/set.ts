@@ -41,6 +41,10 @@ export default class Set extends BasicCommand {
       options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
       description: "container environment used to run images"
     }),
+    "driver": flags.string({
+      options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
+      description: "container engine used to build and run images"
+    }),
     "image-tag": flags.string({
       description: "tag that cli uses when building all its images"
     }),
