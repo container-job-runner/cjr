@@ -71,6 +71,7 @@ export type JobLogOptions = ID_OSTACK & {
 
 export type JobBuildOptions = {
   'reuse-image': boolean  // will not build if image with proper name already exists
+  'verbose'?: boolean
 }
 
 export type JobListOptions = {
