@@ -4,8 +4,6 @@ import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { startTheiaInProject, getTheiaUrl, startTheiaApp } from '../../lib/functions/theia-functions'
 import { JSTools } from '../../lib/js-tools'
-import { ValidatedOutput } from '../../lib/validated-output'
-import { NoticeStrings } from '../../lib/error-strings'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Theia server.'

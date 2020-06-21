@@ -3,7 +3,6 @@ import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { startJupyterApp } from "../../lib/functions/jupyter-functions"
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { compat_parseBuildModeFlag, OutputOptions, JobOptions } from '../../lib/remote/compatibility'
-import { ContainerDrivers } from '../../lib/job-managers/abstract/job-manager'
 import { nextAvailablePort, initX11 } from '../../lib/functions/cli-functions'
 
 export default class Jupyter extends RemoteCommand {

@@ -7,7 +7,7 @@ export default class Delete extends RemoteCommand {
   static strict = true;
 
   async run() {
-    const {args, flags} = this.parse(Delete)
+    const { args } = this.parse(Delete)
     // -- validate name --------------------------------------------------------
     const name = args["remote-name"]
     const result = this.validResourceName(name)

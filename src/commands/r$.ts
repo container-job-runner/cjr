@@ -3,7 +3,6 @@ import { RemoteCommand } from '../lib/remote/commands/remote-command'
 import { RunShortcuts } from "../lib/config/run-shortcuts/run-shortcuts"
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { Dictionary } from '../lib/constants'
-import { ContainerDrivers } from '../lib/job-managers/abstract/job-manager'
 import { OutputOptions, JobOptions, compat_parseLabelFlag, compat_parseBuildModeFlag } from '../lib/remote/compatibility'
 import { initX11 } from '../lib/functions/cli-functions'
 
@@ -38,7 +37,7 @@ export default class Run extends RemoteCommand {
   static strict = false;
 
   async run() {
-    const {flags, args, argv} = this.parse(Run)
+    const { flags, argv } = this.parse(Run)
     this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {
       "stack": true,

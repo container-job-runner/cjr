@@ -223,7 +223,6 @@ export function addDisplayEnvironmentVariable(configuration: StackConfiguration<
       return new ValidatedOutput(
         configuration.addEnvironmentVariable("DISPLAY", "$DISPLAY", true, shell), // pass host environment
         undefined)
-      break
     default:  // == Unsupported OS =============================================
       return result.pushError(WarningStrings.X11.FLAGUNAVALIABLE)
   }

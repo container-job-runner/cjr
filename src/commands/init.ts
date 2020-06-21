@@ -6,7 +6,7 @@ import { ProjectSettingsCommand } from '../lib/commands/project-settings-command
 import { loadProjectSettings } from "../lib/functions/cli-functions"
 import { cli_name, projectSettingsDirPath, projectSettingsYMLPath } from "../lib/constants"
 import { printValidatedOutput } from '../lib/functions/misc-functions'
-import { ProjectSettings, ps_props } from '../lib/config/project-settings/project-settings'
+import { ProjectSettings } from '../lib/config/project-settings/project-settings'
 import { DockerStackConfiguration } from '../lib/config/stacks/docker/docker-stack-configuration'
 import { TextFile } from '../lib/fileio/text-file'
 

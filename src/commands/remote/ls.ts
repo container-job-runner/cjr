@@ -12,7 +12,7 @@ export default class List extends RemoteCommand {
   static strict = true;
 
   async run() {
-    const {args, flags} = this.parse(List)
+    const { flags } = this.parse(List)
     const resource_config:{[key:string]: Resource} = this.resource_configuration.getAllResources()
     const resource_names:Array<string> = Object.keys(resource_config)
 

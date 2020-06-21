@@ -9,7 +9,7 @@ import constants = require('../constants')
 import { BasicCommand } from './basic-command'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
-import { ProjectSettings, StackSpecificConfiguration } from '../config/project-settings/project-settings'
+import { ProjectSettings } from '../config/project-settings/project-settings'
 import { FileTools } from '../fileio/file-tools'
 
 export abstract class ProjectSettingsCommand extends BasicCommand

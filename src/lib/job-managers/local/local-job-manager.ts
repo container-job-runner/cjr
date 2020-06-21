@@ -4,7 +4,7 @@ import fs = require('fs-extra')
 import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
-import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../../drivers-containers/abstract/run-driver';
+import { firstJob, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../../drivers-containers/abstract/run-driver';
 import { Dictionary, rsync_constants, label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot } from '../../functions/config-functions';
@@ -546,7 +546,7 @@ function syncHostDirAndVolume(drivers: ContainerDrivers, config: Configurations,
   if(!copy_options["host-path"]) return result
   if(!copy_options["volume"]) return result
   // -- create stack configuration for rsync job -------------------------------
-  const rsync_stack_configuration = rsyncStackConfiguration(drivers.runner, config, copy_options)
+  const rsync_stack_configuration = rsyncStackConfiguration(config, copy_options)
   // -- ensure rsync container is built ----------------------------------------
   if(!drivers.builder.isBuilt(rsync_stack_configuration)) {
     result.absorb(
@@ -609,7 +609,7 @@ function syncHostDirAndVolume(drivers: ContainerDrivers, config: Configurations,
 // copy_direction: string - specified which direction the copy is going. It can
 //                          either be "to-host" or "to-container"
 // -----------------------------------------------------------------------------
-function rsyncStackConfiguration(runner: RunDriver, config:Configurations, copy_options: RsyncOptions) : StackConfiguration<any>
+function rsyncStackConfiguration(config:Configurations, copy_options: RsyncOptions) : StackConfiguration<any>
 {
   const rsync_stack_configuration = config.stack()
 

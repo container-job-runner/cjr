@@ -1,11 +1,8 @@
 import chalk = require('chalk')
-import path = require('path')
-import constants = require('../constants')
-import fs = require('fs')
 import { BasicCommand } from './basic-command'
 import { updateStackConfig, updateJobConfig } from '../functions/config-functions'
 import { ValidatedOutput } from '../validated-output'
-import { JobRunOptions,  ContainerDrivers, JobExecOptions, JobManager } from '../job-managers/abstract/job-manager'
+import { JobRunOptions, JobExecOptions, JobManager } from '../job-managers/abstract/job-manager'
 import { JobConfiguration } from '../config/jobs/job-configuration'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
@@ -105,8 +102,6 @@ export abstract class LocalJobCommand extends BasicCommand
         flags["quiet"]    || false,
         flags["explicit"] || false
     )
-    // -- load run-shortcuts ---------------------------------------------------
-    const run_shortcuts = this.newRunShortcuts()
     // -- init stack configuration ---------------------------------------------
     const load = this.initStackConfiguration(flags, job_manager.configurations)
     const stack_configuration = load.value

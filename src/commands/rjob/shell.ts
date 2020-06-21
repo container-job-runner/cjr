@@ -2,7 +2,6 @@ import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { OutputOptions, JobOptions, compat_parseBuildModeFlag, compat_parseLabelFlag } from '../../lib/remote/compatibility'
-import { ContainerDrivers } from '../../lib/job-managers/abstract/job-manager'
 
 export default class Shell extends RemoteCommand {
   static description = 'Start an interactive shell to view or modify a remote job\'s files or outputs.'
@@ -28,7 +27,7 @@ export default class Shell extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parse(Shell)
+    const { flags, args } = this.parse(Shell)
     this.augmentFlagsWithProjectSettings(flags, {
       "stack": true,
       "project-root": false,

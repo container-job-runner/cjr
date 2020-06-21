@@ -1,6 +1,6 @@
 import chalk = require('chalk')
 import { ValidatedOutput } from '../validated-output'
-import { ErrorStrings, WarningStrings } from '../error-strings'
+import { ErrorStrings } from '../error-strings'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
 

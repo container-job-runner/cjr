@@ -23,7 +23,7 @@ export default class Delete extends RemoteCommand {
 
   async run()
   {
-    const {flags, args, argv} = this.parse(Delete)
+    const { flags, argv } = this.parse(Delete)
     this.augmentFlagsWithProjectSettings(flags, {"remote-name": true})
     // -- validate name --------------------------------------------------------
     const name = (flags['remote-name'] as string)
