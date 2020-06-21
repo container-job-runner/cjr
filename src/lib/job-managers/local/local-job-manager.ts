@@ -291,14 +291,14 @@ export class LocalJobManager extends JobManager
 
     // -- delete jobs ----------------------------------------------------
     job_ids.map( (id:string) => {
-      const delete_result = this.container_drivers.runner.jobDelete(job_ids)
+      const delete_result = this.container_drivers.runner.jobDelete([id])
       result.absorb(delete_result)
       if(delete_result.success)
         console.log(` deleted job ${id}.`)
     })
     // -- delete volumes -------------------------------------------------
     volume_ids.map( (id:string) => {
-      const delete_result = this.container_drivers.runner.volumeDelete(job_ids)
+      const delete_result = this.container_drivers.runner.volumeDelete([id])
       result.absorb(delete_result)
       if(delete_result.success)
         console.log(` deleted volume ${id}.`)
