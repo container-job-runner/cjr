@@ -1,7 +1,7 @@
 import chalk = require('chalk');
 import path = require('path');
 import fs = require('fs-extra')
-import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions } from '../abstract/job-manager'
+import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
 import { firstJob, RunDriver, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../../drivers-containers/abstract/run-driver';
@@ -13,7 +13,6 @@ import { FileTools } from '../../fileio/file-tools';
 import { DockerCliRunDriver } from '../../drivers-containers/docker/docker-cli-run-driver';
 import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-socket-run-driver';
 import { trim } from '../../functions/misc-functions';
-import { buildAndRun, buildImage } from '../../functions/build-functions';
 import { TextFile } from '../../fileio/text-file';
 import { JSTools } from '../../js-tools';
 import { DriverInitSocket } from './driver-init-socket';
@@ -133,13 +132,9 @@ export class LocalJobManager extends JobManager
     const stack_configuration = job_configuration.stack_configuration
     // -- 1. build stack and load stack configuration ---------------------------
     this.printStatus({"header": this.STATUSHEADERS.BUILD}, this.output_options)
-    const build_result = buildImage(
+    const build_result = this.build(
       job_configuration.stack_configuration,
-      this.container_drivers,
-      {
-        "reuse-image": job_options['reuse-image'],
-        "verbose": this.output_options.verbose
-      }
+      {"reuse-image": job_options['reuse-image']}
     )
     if(!build_result.success) return failed_result.absorb(build_result)
     // -- 2. mount project files ------------------------------------------------
@@ -210,10 +205,10 @@ export class LocalJobManager extends JobManager
     else // -- bind parent job hostRoot -----------------------------------------
       bindProjectRoot(stack_configuration, parent_project_root)
     // -- start job -------------------------------------------------------------
-    return buildAndRun(job_configuration, this.container_drivers, {
-      "reuse-image": exec_options["reuse-image"],
-      "verbose": this.output_options.verbose
-    })
+    return this.buildAndRun(
+      job_configuration,
+      {"reuse-image": exec_options["reuse-image"]}
+    )
   }
 
   copy(copy_options: JobCopyOptions) : ValidatedOutput<undefined>
@@ -374,6 +369,30 @@ export class LocalJobManager extends JobManager
   list(options: JobListOptions) : ValidatedOutput<JobInfo[]>
   {
     return this.container_drivers.runner.jobInfo(options.filter)  
+  }
+
+  build(stack_configuration: StackConfiguration<any>, build_options: JobBuildOptions) : ValidatedOutput<undefined>
+  {
+    const result = new ValidatedOutput(true, undefined)
+    if(build_options["reuse-image"] && this.container_drivers.builder.isBuilt(stack_configuration))
+        return result
+    else
+        return result.absorb(
+            this.container_drivers.builder.build(
+                stack_configuration, 
+                (this.output_options.verbose || build_options?.verbose) ? "inherit" : "pipe", 
+                build_options
+            )
+        )
+  }
+
+  private buildAndRun(job_configuration: JobConfiguration<StackConfiguration<any>>, build_options: JobBuildOptions)
+  {    
+    const failed_result = new ValidatedOutput(false, {"id": "", "exit-code": 0, "output": ""});
+    const build_result = this.build(job_configuration.stack_configuration, build_options)
+    if(!build_result.success)
+        return failed_result
+    return this.container_drivers.runner.jobStart(job_configuration, job_configuration.synchronous ? 'inherit' : 'pipe')
   }
 
   private jobSelector(container_drivers: ContainerDrivers, options: JobStopOptions|JobDeleteOptions) : ValidatedOutput<JobInfo[]>
