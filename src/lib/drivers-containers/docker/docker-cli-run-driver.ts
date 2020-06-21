@@ -162,6 +162,7 @@ export class DockerCliRunDriver extends RunDriver
 
   volumeDelete(ids: Array<string>) : ValidatedOutput<undefined>
   {
+    if(ids.length == 0) return new ValidatedOutput(true, undefined);
     const command = `${this.base_command} volume rm`
     return new ValidatedOutput(true, undefined).absorb(
       this.shell.exec(command, {}, ids, {stdio: "pipe"})
