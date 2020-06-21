@@ -6,7 +6,7 @@ import fs = require('fs-extra')
 import constants = require('../constants')
 
 import { JobState, JobInfo, JobPortInfo} from '../drivers-containers/abstract/run-driver'
-import { ContainerDrivers, Configurations } from '../job-managers/abstract/job-manager'
+import { ContainerDrivers, Configurations, JobBuildOptions } from '../job-managers/abstract/job-manager'
 import { Dictionary, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths } from '../constants'
 import { JSTools } from '../js-tools'
 import { ValidatedOutput } from '../validated-output'
@@ -15,7 +15,6 @@ import { JSONFile } from '../fileio/json-file'
 import { ProjectSettings } from '../config/project-settings/project-settings'
 import { printValidatedOutput, trim } from './misc-functions'
 import { ShellCommand } from '../shell-command'
-import { BuildOptions } from './build-functions'
 import { FileTools } from '../fileio/file-tools'
 import { ChildProcess } from 'child_process'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
@@ -32,7 +31,7 @@ export type ProjectBundleOptions =
   "config-files": Array<string>,
   "bundle-path":  string
   "stacks-dir"?:  string,
-  "build-options"?: BuildOptions,
+  "build-options"?: JobBuildOptions,
   "verbose"?:     boolean
 }
 
