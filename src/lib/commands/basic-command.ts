@@ -317,6 +317,13 @@ export abstract class BasicCommand extends Command
             "copy": path.join(this.config.dataDir, constants.subdirectories.data["job-copy"])
         }
     }
+
+    if(driver === 'podman-socket') {
+        this.startPodmanSocketOnce(
+            new ShellCommand(explicit, quiet), 
+            this.settings.get('socket-path')
+        )
+    }
     
     return new LocalJobManager(options)
   }
