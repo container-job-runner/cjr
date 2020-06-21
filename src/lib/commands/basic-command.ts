@@ -33,13 +33,6 @@ import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
 import { LocalJobManager, LocalJobManagerUserOptions } from '../job-managers/local/local-job-manager'
 import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId, socketExists, startPodmanSocket } from '../functions/cli-functions'
 
-export type ContainerSDK = {
-  "output_options": OutputOptions
-  "configurations": Configurations,
-  "container_drivers": ContainerDrivers,
-  "job_manager": JobManager
-}
-
 export type ProjectSettingsFlags = "project-root" | "stack" | "stacks-dir" | "remote-name" | "visible-stacks" | "config-files" | "profile"
 
 export abstract class BasicCommand extends Command
@@ -56,8 +49,8 @@ export abstract class BasicCommand extends Command
     else if(this.settings.get('interactive'))
     {
       const visible_stack_paths = this.extractVisibleStacks(flags)
-      const { container_drivers } = this.initContainerSDK(false, false, flags['explicit'])
-      const id = await promptUserForJobId(container_drivers, visible_stack_paths, states, false)
+      const job_manager = this.newJobManager(false, false, flags['explicit'])
+      const id = await promptUserForJobId(job_manager.container_drivers, visible_stack_paths, states, false)
       if(!id) return false
       return [id]
     }
@@ -302,118 +295,6 @@ export abstract class BasicCommand extends Command
   // ===========================================================================
   // Container SDK Functions
   // ===========================================================================
-
-  initContainerSDK(verbose: boolean, quiet: boolean, explicit: boolean) : ContainerSDK
-  {
-    const container_drivers = {
-      "runner": this.newRunDriver(explicit, quiet),
-      "builder": this.newBuildDriver(explicit, quiet)
-    }
-    const configurations = this.newConfigurationsObject()
-    const output_options = {
-      "verbose": verbose,
-      "quiet": quiet
-    }
-    const job_manager = this.newJobManager(verbose, quiet, explicit)
-
-    return {
-      "configurations": configurations,
-      "container_drivers": container_drivers,
-      "output_options": output_options,
-      "job_manager": job_manager
-    }
-  }
-
-  newConfigurationsObject() : Configurations
-  {
-    const tag:string = this.settings.get('image-tag')
-    const stack = () => new DockerStackConfiguration({"tag": tag})
-    const job = (stack_configuration?: StackConfiguration<any>) =>
-    {
-      if(stack_configuration instanceof DockerStackConfiguration)
-        return new DockerJobConfiguration(stack_configuration)
-      else
-        return new DockerJobConfiguration(new DockerStackConfiguration())
-    }
-    const exec = (options?:ExecConstructorOptions) => new ExecConfiguration(options)
-
-    return {"stack": stack, "job": job, "exec": exec}
-  }
-
-  newBuildDriver(explicit: boolean = false, silent: boolean = false) : BuildDriver
-  {
-    const shell = new ShellCommand(explicit, silent)
-    const build_driver = this.settings.get('build-driver');
-    const socket:string = this.settings.get('socket-path')
-    const build_dir = path.join(this.config.dataDir, constants.subdirectories.data.build)
-
-    switch(build_driver)
-    {
-        case "docker-cli":
-        {
-          return new DockerCliBuildDriver(shell);
-        }
-        case "docker-socket":
-        {
-          return new DockerSocketBuildDriver(shell, {
-            "build-directory": build_dir,
-            "socket": socket
-          });
-        }
-        case "podman-cli":
-        {
-          return new PodmanCliBuildDriver(shell);
-        }
-        case "podman-socket":
-        {
-          this.startPodmanSocketOnce(shell, socket)
-          return new PodmanSocketBuildDriver(shell,  {
-            "build-directory": build_dir,
-            "socket": socket
-          });
-        }
-        default:
-        {
-          this.error("invalid build command")
-        }
-    }
-  }
-
-  newRunDriver(explicit: boolean = false, silent: boolean = false) : RunDriver
-  {
-    const shell = new ShellCommand(explicit, silent)
-    const run_driver = this.settings.get('run-driver');
-    const selinux:boolean = this.settings.get('selinux')
-    const socket:string = this.settings.get('socket-path')
-
-    switch(run_driver)
-    {
-        case "docker-cli":
-        {
-          return new DockerCliRunDriver(shell, {"selinux": selinux});
-        }
-        case "docker-socket":
-        {
-          return new DockerSocketRunDriver(shell, {"selinux": selinux, "socket": socket});
-        }
-        case "podman-cli":
-        {
-          return new PodmanCliRunDriver(shell, {"selinux": selinux});
-        }
-        case "podman-socket":
-        {
-          this.startPodmanSocketOnce(shell, socket)
-          return new PodmanSocketRunDriver(shell, {
-            "selinux": selinux,
-            "socket": socket
-          });
-        }
-        default:
-        {
-          this.error("invalid run command")
-        }
-    }
-  }
 
   newJobManager(verbose: boolean, quiet: boolean, explicit: boolean) : JobManager
   {
