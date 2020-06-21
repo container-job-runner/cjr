@@ -95,7 +95,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       'container-registry-auth': 'https://index.docker.io/v1/',
       'container-registry-user': '',
       // container props
-      "container-default-shell": "bash",
+      "default-container-shell": "bash",
       "selinux": false,
       "jupyter-command": "jupyter lab",
       "webapp": "",

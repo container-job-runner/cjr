@@ -43,8 +43,8 @@ export default class Set extends BasicCommand {
     "job-ls-fields": flags.string({
       description: 'specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "status", "command", "message"'
     }),
-    "container-default-shell": flags.string({
-      description: 'default shell that should be started for job:shell commands (e.g. sh, bash, zsh).'
+    "default-container-shell": flags.string({
+      description: 'default shell that should be started for shell and job:shell commands (e.g. sh, bash, zsh).'
     }),
     "jupyter-command": flags.string({
       description: 'command that should be run to start Jupyter (e.g. "jupyter lab" or "jupyter notebook").'

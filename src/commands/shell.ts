@@ -41,7 +41,7 @@ export default class Shell extends LocalJobCommand {
     }
     const {job, job_data} = this.runSimpleJob(
       { ... flags, ... shell_flags},
-      [this.settings.get("container-default-shell")]
+      [this.settings.get("default-container-shell")]
     )
     if(job.success && job_data.success) {
       await this.updateSnapshot(
