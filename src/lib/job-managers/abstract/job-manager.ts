@@ -69,6 +69,10 @@ export type JobLogOptions = ID_OSTACK & {
   "lines": string
 }
 
+export type JobBuildOptions = {
+  'reuse-image': boolean  // will not build if image with proper name already exists
+}
+
 export type JobListOptions = {
     filter?: JobInfoFilter
 }
@@ -103,5 +107,10 @@ export abstract class JobManager // High-Level Job Driver
   abstract log( options: JobLogOptions ) : ValidatedOutput<string>
 
   abstract list( options: JobListOptions ) : ValidatedOutput<JobInfo[]>
+
+  abstract build (
+      stack_configuration: StackConfiguration<any>,
+      options: JobBuildOptions
+  ) : ValidatedOutput<undefined>
 
 }
