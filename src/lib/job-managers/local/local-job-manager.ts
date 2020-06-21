@@ -15,28 +15,89 @@ import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-so
 import { trim } from '../../functions/misc-functions';
 import { buildAndRun, buildImage } from '../../functions/build-functions';
 import { TextFile } from '../../fileio/text-file';
+import { JSTools } from '../../js-tools';
+import { DriverInitSocket } from './driver-init-socket';
+import { DriverInitCli } from './driver-init-cli';
 
-type IncludeExcludeFiles ={
+type IncludeExcludeFiles = {
   "include-from"?: string
   "exclude-from"?: string
   "tmp-dir"?: string
 }
 
+export type LocalJobManagerUserOptions = {
+    "driver"?: "podman"|"docker"            // underlying container runner
+    "driver-type"?: "cli"|"socket"          // once cli driver are depricated this field can be removed
+    "output-options"?: OutputOptions    
+    "selinux"?: boolean                     // if true, then bind mounts will have selinux :Z mode
+    "socket"?: string                       // path to socket
+    "image-tag"?: string                    // tag that will be used for all container images
+    "explicit"?: boolean
+    "directories": {
+        "copy": string                      // directory path for storing temporary rsync include-from and exclude-from files during copy operations from volumes
+        "build": string                     // directory path for storing temporary tar files that are sent to socket for building.
+    }
+}
+
 export class LocalJobManager extends JobManager
 {
-
+  options: Required<LocalJobManagerUserOptions> = {
+      "driver": "docker", 
+      "driver-type": "socket", 
+      "output-options": {"quiet": false, "verbose": false},
+      "selinux": false,
+      "image-tag": 'cjr',
+      "socket": "/var/run/docker.sock",
+      "explicit": false,
+      "directories": {
+          "copy": "",
+          "build": ""
+      }
+  }
   container_drivers: ContainerDrivers
   configurations: Configurations
   output_options: OutputOptions
-  protected tmpdir: string
 
-  constructor(drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions, options: {tmpdir: string})
+  constructor(options: LocalJobManagerUserOptions)
   {
     super()
-    this.container_drivers = drivers;
-    this.configurations = configurations;
-    this.output_options = output_options;
-    this.tmpdir = options.tmpdir
+    JSTools.rMerge(this.options, options)
+    
+    const shell = new ShellCommand(
+        this.options.explicit, 
+        this.options["output-options"].quiet
+    )
+    
+    if(options["driver-type"] == "socket") {
+        const initializer = new DriverInitSocket()
+        this.container_drivers = initializer.drivers(
+            shell,
+            {
+                "type": this.options["driver"], 
+                "socket": this.options["socket"],
+                "selinux": this.options["selinux"],
+                "build-directory": this.options["directories"]['build'], 
+            }
+        )
+        this.configurations = initializer.configurations({
+            "image-tag": this.options["image-tag"]
+        })
+    } 
+    else { // once cli driver are depricated this case can be removed
+        const initializer = new DriverInitCli()
+        this.container_drivers = initializer.drivers(
+            shell,
+            {
+                "type": this.options["driver"],
+                "selinux": this.options["selinux"]
+            }            
+        )
+        this.configurations = initializer.configurations({
+            "image-tag": this.options["image-tag"]
+        });
+    }
+    
+    this.output_options = this.options["output-options"]
   }
 
   protected ERRORSTRINGS = {
@@ -349,7 +410,7 @@ export class LocalJobManager extends JobManager
       return result
 
     // -- create tmp dir in scratch dir ----------------------------------------
-    const mktemp = FileTools.mktempDir(this.tmpdir)
+    const mktemp = FileTools.mktempDir(this.options.directories["copy"])
     if(!mktemp.success)
       return result.absorb(mktemp)
     const tmp_path = mktemp.value
