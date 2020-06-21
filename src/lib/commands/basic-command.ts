@@ -30,7 +30,7 @@ import { DockerJobConfiguration } from '../config/jobs/docker-job-configuration'
 import { ErrorStrings } from '../error-strings'
 import { printValidatedOutput } from '../functions/misc-functions'
 import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
-import { LocalJobManager } from '../job-managers/local/local-job-manager'
+import { LocalJobManager, LocalJobManagerUserOptions } from '../job-managers/local/local-job-manager'
 import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId, socketExists, startPodmanSocket } from '../functions/cli-functions'
 
 export type ContainerSDK = {
@@ -314,7 +314,7 @@ export abstract class BasicCommand extends Command
       "verbose": verbose,
       "quiet": quiet
     }
-    const job_manager = this.newJobManager(container_drivers, configurations, output_options)
+    const job_manager = this.newJobManager(verbose, quiet, explicit)
 
     return {
       "configurations": configurations,
@@ -415,10 +415,29 @@ export abstract class BasicCommand extends Command
     }
   }
 
-  newJobManager(container_drivers: ContainerDrivers, configurations: Configurations, output_options: OutputOptions)
+  newJobManager(verbose: boolean, quiet: boolean, explicit: boolean) : JobManager
   {
-    const copy_dir = path.join(this.config.dataDir, constants.subdirectories.data["job-copy"])
-    return new LocalJobManager(container_drivers, configurations, output_options, { "tmpdir": copy_dir})
+    // -- read cli settings ----------------------------------------------------
+    const driver = this.settings.get('driver'); // expecting podman-cli, podman-socket, docker-cli, docker-socket
+    
+    const options:LocalJobManagerUserOptions = {
+        "driver":       /^podman/.test(driver) ? "podman" : "docker",
+        "driver-type":  /-cli$/.test(driver) ? "cli" : "socket",
+        "socket":       this.settings.get('socket-path'),
+        "selinux":      this.settings.get('selinux'),
+        "image-tag":    this.settings.get('image-tag'),
+        "explicit":     explicit,
+        "output-options": {
+            "quiet": quiet, 
+            "verbose": verbose
+        },
+        "directories": {
+            "build":path.join(this.config.dataDir, constants.subdirectories.data["build"]),
+            "copy": path.join(this.config.dataDir, constants.subdirectories.data["job-copy"])
+        }
+    }
+    
+    return new LocalJobManager(options)
   }
 
   newRunShortcuts() : RunShortcuts
