@@ -7,7 +7,7 @@ import { ValidatedOutput } from '../../validated-output';
 import { firstJob, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../../drivers-containers/abstract/run-driver';
 import { Dictionary, rsync_constants, label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
-import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot } from '../../functions/config-functions';
+import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot, mountFileVolume } from '../../functions/config-functions';
 import { ShellCommand } from '../../shell-command';
 import { FileTools } from '../../fileio/file-tools';
 import { DockerCliRunDriver } from '../../drivers-containers/docker/docker-cli-run-driver';
@@ -17,6 +17,7 @@ import { TextFile } from '../../fileio/text-file';
 import { JSTools } from '../../js-tools';
 import { DriverInitSocket } from './driver-init-socket';
 import { DriverInitCli } from './driver-init-cli';
+import { VolumeSyncManager, VolumeRsyncOptions } from '../../sync-managers/volume-sync-manager';
 
 type IncludeExcludeFiles = {
   "include-from"?: string
@@ -56,6 +57,7 @@ export class LocalJobManager extends JobManager
   container_drivers: ContainerDrivers
   configurations: Configurations
   output_options: OutputOptions
+  sync_manager: VolumeSyncManager = new VolumeSyncManager()
 
   constructor(options: LocalJobManagerUserOptions)
   {
@@ -143,15 +145,14 @@ export class LocalJobManager extends JobManager
     else if(job_options["project-root"] && job_options["project-root-file-access"] === "volume")
     {
       this.printStatus({header: this.STATUSHEADERS.COPY_TO_VOLUME}, this.output_options)
-      const create_file_volume = createFileVolume(
-        this.container_drivers,
-        this.configurations,
-        stack_configuration,
-        job_options["project-root"],
-        this.output_options.verbose
+      const create_file_volume = this.createNewFileVolume(
+          job_options['project-root'], 
+          stack_configuration.getRsyncUploadSettings(true),
+          this.volumeChownId(stack_configuration.getFlag('chown-file-volume')) // special volume chown for docker
       )
       if(!create_file_volume.success)
         return failed_result.absorb(create_file_volume)
+      
       const file_volume_id = create_file_volume.value
       mountFileVolume(stack_configuration, job_options["project-root"], file_volume_id)
       job_configuration.addLabel(label_strings.job["file-volume"], file_volume_id)
@@ -243,16 +244,17 @@ export class LocalJobManager extends JobManager
         }
       }
       // -- 3. copy files --------------------------------------------------------
-      const rsync_options: RsyncOptions = {
+      const rsync_options: VolumeRsyncOptions = {
         "host-path": copy_options?.["host-path"] || projectRoot, // set copy-path to job hostRoot if it's not specified
         "volume": file_volume_id,
-        "direction": "to-host",
         "mode": copy_options.mode,
         "verbose": this.output_options.verbose,
         "files": {"include": rsync_files["include-from"], "exclude": rsync_files["exclude-from"]},
         "manual": copy_options["manual"]
       }
-      result.absorb(syncHostDirAndVolume(this.container_drivers, this.configurations, rsync_options))
+      result.absorb(
+        this.sync_manager.copyToHost(this, rsync_options)
+      )
       // -- 4. remote tmp dir ----------------------------------------------------
       if(rsync_files["tmp-dir"])
         fs.removeSync(rsync_files["tmp-dir"])
@@ -455,209 +457,53 @@ export class LocalJobManager extends JobManager
     return result
   }
 
-}
-
-// == FILE VOLUME FUNCTIONS ====================================================
-// Function for creating and manipulating volumes that contain copies of a jobs
-// project-root.
-// =============================================================================
-
-// -- used by functions jobCopy and syncHostDirAndVolume
-type RsyncOptions = {
-  "host-path": string                                                           // path on host where files should be copied to
-  "volume": string                                                              // id of volume that contains files
-  "direction": "to-volume"|"to-host"                                            // specifies direction of sync
-  "mode": "update"|"overwrite"|"mirror"                                         // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
-  "verbose"?: boolean                                                           // if true rsync will by run with -v flag
-  "files"?: {include?: string, exclude?: string}                                // rsync include-from and rsync exclude-from
-  "chown"?: string                                                              // string that specifies the username or id to use with command chown
-  "manual"?: boolean                                                            // if true starts interactive shell instead of rsync job
-}
-
-// -----------------------------------------------------------------------------
-// CREATEANDMOUNTFILEVOLUME create a new volume and then uses rsync to copy
-// files from the hostRoot into the volume. This volume is then mounted to the
-// configuration at the ContainerRoot
-// -- Parameters ---------------------------------------------------------------
-// runner: RunDriver - runner used to create volume
-// configuration - configuration for use to run associated job. This function
-//                 will: (1) read the rsync upload include and exclude files
-//                 from this configuration, and (2) add a mount pointing to the
-//                 file volume to the configuration.
-// hostRoot:string  - Project root folder
-// verbose: boolean - flag for rsync
-// -----------------------------------------------------------------------------
-function createFileVolume(drivers: ContainerDrivers, config: Configurations, stack_configuration: StackConfiguration<any>, hostRoot: string, verbose: boolean=false) : ValidatedOutput<string>
-{
-  const failure = new ValidatedOutput(false, "")
-  // -- create volume ----------------------------------------------------------
-  const vc_result = drivers.runner.volumeCreate({});
-  if(!vc_result.success) return failure.absorb(vc_result)
-  const volume_id = vc_result.value
-  // -- sync to volume ---------------------------------------------------------
-  const copy_options: RsyncOptions = {
-    "host-path": hostRoot,
-    "volume": volume_id,
-    "direction": "to-volume",
-    "mode": "mirror",
-    "verbose": verbose,
-    "files": stack_configuration.getRsyncUploadSettings(true)
-  }
-  // -- check if runtime is docker and chownvolume flags is active -------------
-  const cfv = stack_configuration.getFlag('chown-file-volume');
-  const using_docker = (drivers.runner instanceof DockerCliRunDriver) || (drivers.runner instanceof DockerSocketRunDriver)
-  if( using_docker && (cfv === 'host-user') ) {
-    const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
-    if(id_result.success && id_result.value) copy_options.chown = id_result.value
-  }
-  else if ( using_docker && !isNaN(parseInt(cfv || ""))) {
-    copy_options.chown = cfv
-  }
-  // -- sync files to volume ---------------------------------------------------
-  return new ValidatedOutput(true, volume_id).absorb(
-    syncHostDirAndVolume(drivers, config, copy_options)
-  )
-}
-
-// -----------------------------------------------------------------------------
-// MOUNTFILEVOLUME mounts a volume at containerRoot with name of hostRoot
-// -- Parameters ---------------------------------------------------------------
-// runner: RunDriver - runner used to create volume
-// configuration:Configuration - Object that inherits from abstract class Configuration
-// hostRoot:string - Project root folder
-// volume_id:string - volume id
-// -----------------------------------------------------------------------------
-function mountFileVolume(stack_configuration: StackConfiguration<any>, hostRoot: string, volume_id: string)
-{
-  const hostRoot_basename = path.basename(hostRoot)
-  stack_configuration.addVolume(volume_id, path.posix.join(stack_configuration.getContainerRoot(), hostRoot_basename))
-}
-
-// -----------------------------------------------------------------------------
-// SYNCHOSTDIRANDVOLUME uses rsync to sync a folder on host with a volume
-// -- Parameters ---------------------------------------------------------------
-// runner: RunDriver - runner that is used to start rsync job
-// copy_options: string - options for file sync
-// -----------------------------------------------------------------------------
-function syncHostDirAndVolume(drivers: ContainerDrivers, config: Configurations, copy_options:RsyncOptions) : ValidatedOutput<undefined>
-{
-  const result = new ValidatedOutput(true, undefined)
-
-  if(!copy_options["host-path"]) return result
-  if(!copy_options["volume"]) return result
-  // -- create stack configuration for rsync job -------------------------------
-  const rsync_stack_configuration = rsyncStackConfiguration(config, copy_options)
-  // -- ensure rsync container is built ----------------------------------------
-  if(!drivers.builder.isBuilt(rsync_stack_configuration)) {
-    result.absorb(
-      drivers.builder.build(rsync_stack_configuration, copy_options.verbose ? "inherit" : "pipe")
-    )
-    if(!result.success) return result
-  }
-  // -- set rsync flags --------------------------------------------------------
-  const rsync_flags:Dictionary = {a: {}}
-  addrsyncIncludeExclude( // -- mount any rsync include or exclude files -------
-      rsync_stack_configuration,
-      rsync_flags,
-      copy_options.files || {include: "", exclude: ""}
-  )
-  switch(copy_options.mode)
+  private createNewFileVolume(host_root: string, include_exclude_files: {include: string, exclude: string}, chown_id?:string) : ValidatedOutput<string>
   {
-    case "update":
-      rsync_flags['update'] = {}
-      break
-    case "overwrite":
-      break
-    case "mirror":
-      rsync_flags['delete'] = {}
-      break
-  }
-  if(copy_options?.verbose) rsync_flags.v = {}
-  // -- set rsync job ------------------------------------------------------
-  const rsync_base_command = rsyncCommandString(
-    rsync_constants.source_dir,
-    rsync_constants.dest_dir,
-    rsync_flags
-  )
-
-  const rsync_job_configuration = config.job(rsync_stack_configuration)
-  rsync_job_configuration.remove_on_exit = true
-  rsync_job_configuration.synchronous = true
-  if(copy_options['manual']) {
-    rsync_job_configuration.command = ['sh']
-    rsync_job_configuration.working_directory = rsync_constants.manual_working_dir
-  }
-  else if(copy_options['chown'])
-    rsync_job_configuration.command = [`${rsync_base_command} && chown -R ${copy_options['chown']}:${copy_options['chown']} ${rsync_constants.dest_dir}`]
-  else
-    rsync_job_configuration.command = [rsync_base_command]
-  // -- start rsync job --------------------------------------------------------
-  return new ValidatedOutput(true, undefined).absorb(
-    drivers.runner.jobStart(
-      rsync_job_configuration,
-      'inherit'
-    )
-  )
-}
-
-// -----------------------------------------------------------------------------
-// RSYNCCONFIGURATION helper function that creates an new configuration for the
-// rsync job that either copies files from host to container or from container
-// to host
-// -- Parameters ---------------------------------------------------------------
-// runner: RunDriver - run driver that will be used to run job
-// copy_direction: string - specified which direction the copy is going. It can
-//                          either be "to-host" or "to-container"
-// -----------------------------------------------------------------------------
-function rsyncStackConfiguration(config:Configurations, copy_options: RsyncOptions) : StackConfiguration<any>
-{
-  const rsync_stack_configuration = config.stack()
-
-  rsync_stack_configuration.setImage(rsync_constants.image)
-  if(copy_options["direction"] == "to-host")
-  {
-    rsync_stack_configuration.addVolume(copy_options["volume"], rsync_constants.source_dir)
-    rsync_stack_configuration.addBind(copy_options["host-path"], rsync_constants.dest_dir)
-  }
-  else if(copy_options["direction"] == "to-volume")
-  {
-    rsync_stack_configuration.addVolume(copy_options["volume"], rsync_constants.dest_dir)
-    rsync_stack_configuration.addBind(copy_options["host-path"], rsync_constants.source_dir)
-  }
-  return rsync_stack_configuration
-}
-
-// -----------------------------------------------------------------------------
-// MOUNTRSYNCFILES helper function that alters configuration of an rsync job by
-// adding mounts for any include or exclude files. It will also add the
-// include-from and exclude-from to the Dictionary rsync-flags that can be
-// passed to rsyncCommandString
-// -- Parameters ---------------------------------------------------------------
-// rsync_configuration: Configuration - configuration for rsync job
-// rsync_flags: Dictionary - flags that will be passed to rsyncCommandString
-// files: object containing absoluve paths include and exclude files for rsync job
-// -----------------------------------------------------------------------------
-function addrsyncIncludeExclude(rsync_configuration: StackConfiguration<any>, rsync_flags: Dictionary, files: {include?: string, exclude?: string})
-{
-  const mount_rsync_configfile = (type:"include"|"exclude") => {
-    const host_file_path = files[type]
-    if(host_file_path && FileTools.existsFile(host_file_path)) {
-      const container_file_name = rsync_constants[(`${type}_file_name` as ("include_file_name"|"exclude_file_name"))]
-      const container_file_path = path.posix.join(rsync_constants.config_dir, container_file_name)
-      rsync_flags[`${type}-from`] = container_file_path
-      rsync_configuration.addBind(host_file_path, container_file_path)
+    const failure = new ValidatedOutput(false, "")
+    // -- create volume --------------------------------------------------------
+    const vc_result = this.container_drivers.runner.volumeCreate({});
+    if(!vc_result.success) return failure.absorb(vc_result)
+    const volume_id = vc_result.value
+    // -- sync to volume -------------------------------------------------------
+    const copy_options: VolumeRsyncOptions = {
+        "host-path": host_root,
+        "volume":    volume_id,
+        "mode":      "mirror",
+        "verbose":   this.output_options.verbose,
+        "files":     include_exclude_files,
+        "chown":     chown_id
     }
+    // -- sync files to volume -------------------------------------------------
+    return new ValidatedOutput(true, volume_id).absorb(
+        this.sync_manager.copyFromHost(this, copy_options)
+    )
   }
-  // note: always add include before exclude
-  mount_rsync_configfile('include')
-  mount_rsync_configfile('exclude')
-}
 
-function rsyncCommandString(source: string, destination: string, flags: Dictionary)
-{
-  const shell = new ShellCommand(false, false)
-  const args  = [source, destination]
-  return shell.commandString('rsync', flags, args)
+  // -- check if runtime is docker and chownvolume flags is active -------------
+  private volumeChownId(chown_file_volume_flag: string|undefined) : string | undefined
+  {
+    if( ! chown_file_volume_flag )
+        return undefined
+    
+    // -- this setting only affects docker -------------------------------------
+    // (volumes always owned by root https://github.com/moby/moby/issues/2259)
+    const using_docker = (this.container_drivers.runner instanceof DockerCliRunDriver) || (this.container_drivers.runner instanceof DockerSocketRunDriver)
+    if( ! using_docker )
+        return undefined
+    
+    // -- if flag is set to 'host-user' replace with current user id -----------
+    if( chown_file_volume_flag === 'host-user' ) {
+        const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
+        if(!id_result.success) return undefined
+        chown_file_volume_flag = id_result.value
+    }
+
+    // -- verify flag is a valid integer ---------------------------------------
+    if ( isNaN(parseInt(chown_file_volume_flag)) )
+        return undefined
+    return chown_file_volume_flag
+  }
+
 }
 
 function volumeIds(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<string>>
