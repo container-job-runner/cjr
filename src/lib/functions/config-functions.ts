@@ -96,6 +96,20 @@ export function bindProjectRoot(configuration: StackConfiguration<any>, projectR
 }
 
 // -----------------------------------------------------------------------------
+// MOUNTFILEVOLUME mounts a volume at containerRoot with name of hostRoot
+// -- Parameters ---------------------------------------------------------------
+// runner: RunDriver - runner used to create volume
+// configuration:Configuration - Object that inherits from abstract class Configuration
+// hostRoot:string - Project root folder
+// volume_id:string - volume id
+// -----------------------------------------------------------------------------
+export function mountFileVolume(stack_configuration: StackConfiguration<any>, hostRoot: string, volume_id: string)
+{
+  const hostRoot_basename = path.basename(hostRoot)
+  stack_configuration.addVolume(volume_id, path.posix.join(stack_configuration.getContainerRoot(), hostRoot_basename))
+}
+
+// -----------------------------------------------------------------------------
 // addGenericLabels adds important labels for each job
 // -- Parameters ---------------------------------------------------------------
 // configuration - Object that inherits from abstract class Configuration
