@@ -19,6 +19,8 @@ export abstract class StackConfiguration<T>
   abstract copy() : StackConfiguration<T>
   //LOAD loads stack configuration from a directory containing requisite stack data
   abstract load(stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<undefined>
+  // loadConfiguration merges configuration from yml file with current stack configuration
+  abstract mergeConfigurations(config_path: Array<string>) : ValidatedOutput<undefined>
   //SAVE saves configuration into stack directory
   abstract save(stack_path: string, options?: Dictionary) : ValidatedOutput<undefined> | ValidatedOutput<Error>
 
