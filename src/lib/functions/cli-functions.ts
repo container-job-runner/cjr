@@ -100,8 +100,16 @@ export function bundleStack(container_runtime: ContainerDrivers, configurations:
   // -- ensure that stack can be loaded ----------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.STACK_BUILD(options['stack-path']), options?.verbose || false)
   const stack_configuration = configurations.stack()
-  const load_result = stack_configuration.load(options['stack-path'], options["config-files"])
-  if(!load_result.success) load_result
+  if(FileTools.existsDir(options['stack-path'])) { // assume local stack
+    const load_result = stack_configuration.load(options['stack-path'], options["config-files"])
+    if(!load_result.success) load_result
+  } 
+  else { // assume remote stack
+    stack_configuration.setImage(options['stack-path'])
+    const load_result = stack_configuration.mergeConfigurations(options["config-files"])
+    if(!load_result.success) load_result
+  }
+
   // -- prepare configuration for bundling -------------------------------------
   const copy_ops:Array<{source: string, destination: string}> = []
   const rsync_settings = {
