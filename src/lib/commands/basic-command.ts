@@ -145,16 +145,19 @@ export abstract class BasicCommand extends Command
     else if(fs.existsSync(local_stack_path)) // check if stack exists in stacks dir
       load_path = local_stack_path
 
-    if(load_path) // attempt to load stack
+    if(load_path) // attempt to load local stack
       return result.absorb(
         stack_configuration.load(
           load_path,
           flags?.['config-files'] || []
         )
       )
-    else // interpret input as remote image
+    else { // interpret input as remote image
       stack_configuration.setImage(flags['stack'])
-    return result
+      return result.absorb(
+        stack_configuration.mergeConfigurations(flags['config-files'] || [])
+      ) 
+    }
   }
 
   protected locateProfile(profile_name: string, options: {"project-root"?: string, "stack-path"?: string})
