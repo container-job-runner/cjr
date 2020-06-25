@@ -854,7 +854,7 @@ export class CJRRemoteDriver extends RemoteDriver
 
   private getStackUploadDirectories(resource: Resource, params:{'stack-upload-mode': 'cached'|'uncached', 'local-stack-name': string, 'project-id':string, 'parent-remote-job-dir'?:string})
   {
-    const namedStack = (stack_dir:string) => path.posix.join(stack_dir, params['local-stack-name'])
+    const namedStack = (stack_dir:string) => path.posix.join(stack_dir, params['local-stack-name'].replace(/[^a-zA-z0-9-_\.]/g, "")) // remove any invalid characters to support remote stacks (e.g. fedora:latest)
     const remote_storage_dir = remoteStoragePath(resource['storage-dir'])
 
     var result: ValidatedOutput<any>
@@ -898,7 +898,8 @@ export class CJRRemoteDriver extends RemoteDriver
     // if both stack and files are set to cache store both in same tmp directory
     if(params['file-upload-mode'] == 'uncached' && params['stack-upload-mode'] == 'uncached')
     {
-      directories['remote-stack-path'] = path.posix.join(directories['remote-job-dir'], params['local-stack-name'])
+      const stack_dir_name = params['local-stack-name'].replace(/[^a-zA-z0-9-_\.]/g, "") // remove any invalid characters to support remote stacks (e.g. fedora:latest)
+      directories['remote-stack-path'] = path.posix.join(directories['remote-job-dir'], stack_dir_name)
     }
     else // -- otherwise compute paths regularly -------------------------------
     {
