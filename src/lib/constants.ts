@@ -110,7 +110,7 @@ export const rsync_constants = {
   dest_dir:   "/rsync/dest",
   config_dir: "/rsync/config",
   manual_working_dir: "/rsync/",
-  image: "buvoli/alpine-rsync:cjr",
+  image: "cjrun/alpine-rsync:latest",
   include_file_name: 'includes',
   exclude_file_name: 'excludes'
 }
