@@ -90,9 +90,9 @@ export class VolumeSyncManager extends SyncManager
             rsync_job_configuration.working_directory = rsync_constants.manual_working_dir
         }
         else if(options['chown'])
-            rsync_job_configuration.command = [`${rsync_base_command} && chown -R ${options['chown']}:${options['chown']} ${rsync_constants.dest_dir}`]
+            rsync_job_configuration.command = ['sh', '-c', `${rsync_base_command} && chown -R ${options['chown']}:${options['chown']} ${rsync_constants.dest_dir}`]
         else
-            rsync_job_configuration.command = [rsync_base_command]
+            rsync_job_configuration.command = ['sh', '-c', rsync_base_command]
         // -- start rsync job --------------------------------------------------
         return new ValidatedOutput(true, undefined).absorb(
             job_manager.container_drivers.runner.jobStart(
