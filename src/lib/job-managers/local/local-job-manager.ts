@@ -222,6 +222,7 @@ export class LocalJobManager extends JobManager
       "stack-paths": copy_options["stack-paths"]
     })
     if(!ji_result.success) return result.absorb(ji_result)
+    if(ji_result.value.length == 0) return result.pushError(this.ERRORSTRINGS['NO_MATCHING_ID'])
     const job_info_array = ji_result.value
     // -- copy results from all matching jobs ------------------------------------
     job_info_array.map((job:JobInfo) => {
