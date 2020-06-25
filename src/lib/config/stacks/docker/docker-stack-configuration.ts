@@ -116,6 +116,14 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return copy
   }
 
+  // merges settings from configuration file into current stack configuration
+  mergeConfigurations(config_paths: Array<string>) : ValidatedOutput<undefined>
+  {
+    const merge = this.mergeConfigFiles(config_paths)
+    if(merge.success) JSTools.rMerge(this.config, merge.value)
+    return new ValidatedOutput(true, undefined).absorb(merge)
+  }
+
   // loads stack configuration and sets internal properties "name", and "stack_type"
   load(stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<undefined>
   {
@@ -176,16 +184,21 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
 
   protected loadStackConfigFiles(stack_path: string, overloaded_config_paths: Array<string> = []) : ValidatedOutput<DockerStackConfigObject>
   {
-    const config: DockerStackConfigObject = {}
-    const result = new ValidatedOutput(true, config)
-
     const all_config_paths = []
     const primary_stack_config = path.join(stack_path, this.config_filename)
     if(fs.existsSync(primary_stack_config)) // stack config is optional so it may not exist
       all_config_paths.push(primary_stack_config)
     all_config_paths.push(...overloaded_config_paths)
 
-    all_config_paths.map( (path: string) => {
+    return this.mergeConfigFiles(all_config_paths)
+  }
+
+  protected mergeConfigFiles(config_paths: Array<string>) : ValidatedOutput<DockerStackConfigObject>
+  {
+    const config: DockerStackConfigObject = {}
+    const result = new ValidatedOutput(true, config)
+    
+    config_paths.map( (path: string) => {
       const read_result = this.loadYMLFile(path)
       if(read_result.success) JSTools.rMerge(config, read_result.value)
       result.absorb(read_result)
