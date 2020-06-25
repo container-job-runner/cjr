@@ -635,8 +635,15 @@ export class CJRRemoteDriver extends RemoteDriver
     if(!options['remote-project-root']) return new ValidatedOutput(false, undefined).pushError('Internal Error: missing remote-project-root')
     // -- 1. load stack configuration ------------------------------------------
     const configuration = configurations.stack()
-    var result:ValidatedOutput<any> = configuration.load(options['local-stack-path'], options['local-config-files'])
-    if(!result.success) return result
+    if(FileTools.existsDir(options['local-stack-path'])) { // assume local stack
+        const load_result = configuration.load(options['local-stack-path'], options['local-config-files'])
+        if(!load_result.success) load_result
+    } 
+    else { // assume remote stack
+        configuration.setImage(options['local-stack-path'])
+        const load_result = configuration.mergeConfigurations(options['local-config-files'])
+        if(!load_result.success) load_result
+    }
     // -- 3. transfer stack over rsync ------------------------------------------
     const upload_settings = configuration.getRsyncUploadSettings(true)
     const rsync_flags:Dictionary = {a:{}, delete:{}}
@@ -644,13 +651,12 @@ export class CJRRemoteDriver extends RemoteDriver
     // note: always add include before exclude
     if(upload_settings.include && FileTools.existsFile(upload_settings.include)) rsync_flags['include-from'] = upload_settings.include
     if(upload_settings.exclude && FileTools.existsFile(upload_settings.exclude)) rsync_flags['exclude-from'] = upload_settings.exclude
-    result = this.ssh_shell.rsync(
+    return this.ssh_shell.rsync(
       PathTools.addTrailingSeparator(options["local-project-root"], 'posix'), // upload contents
       options["remote-project-root"],
       'push',
       rsync_flags
     )
-    return result
   }
 
 
