@@ -26,7 +26,7 @@ export default class Build extends BasicCommand {
     this.augmentFlagsWithProfile(flags)
 
     const stack_list = (flags.stack) ? [ flags.stack ] : []
-    const job_manager = this.newJobManager(true, flags.quiet, flags.explicit)
+    const job_manager = this.newJobManager('localhost', true, flags.quiet, flags.explicit)
     stack_list.map((stack_name:string) => {
       const init_stack = this.initStackConfiguration({
         "stack": stack_name,

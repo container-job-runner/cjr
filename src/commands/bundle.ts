@@ -36,7 +36,7 @@ export default class Bundle extends BasicCommand {
     this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
-    const job_manager = this.newJobManager(flags.verbose, false, flags.explicit)
+    const job_manager = this.newJobManager('localhost', flags.verbose, false, flags.explicit)
     // -- create tmp dir for bundle --------------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, constants.subdirectories.data.bundle))
     if(!result.success) return printValidatedOutput(result)

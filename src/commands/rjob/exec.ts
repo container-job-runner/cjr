@@ -63,7 +63,7 @@ export default class Exec extends RemoteCommand {
     // -- get job id  ----------------------------------------------------------
     const id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
     // -- create local job manager ---------------------------------------------
-    const job_manager = this.newJobManager(flags.verbose, false, flags.explicit)
+    const job_manager = this.newJobManager('localhost', flags.verbose, false, flags.explicit)
     // -- set job options ------------------------------------------------------
     const synchronous = flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))
     const command = run_shortcut.apply(argv.splice(1)).join(" ")

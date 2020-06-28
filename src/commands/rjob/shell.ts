@@ -53,7 +53,7 @@ export default class Shell extends RemoteCommand {
     // -- get job id  ----------------------------------------------------------
     var id = args.id || await driver.promptUserForJobId(resource, this.settings.get('interactive')) || ""
     // -- create local job manager ---------------------------------------------
-    const job_manager = this.newJobManager(flags.verbose, false, flags.explicit)
+    const job_manager = this.newJobManager('localhost', flags.verbose, false, flags.explicit)
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,

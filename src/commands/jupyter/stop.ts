@@ -24,7 +24,7 @@ export default class Stop extends ServerCommand {
     this.augmentFlagsWithProjectRootArg(args, flags)
     this.augmentFlagsWithHere(flags)
 
-    const job_manager = this.newJobManager(flags['verbose'], flags['quiet'], flags['explicit'])
+    const job_manager = this.newJobManager('localhost', flags['verbose'], flags['quiet'], flags['explicit'])
     let result:ValidatedOutput<undefined>;
     if(flags['all'])
       result = stopAllJupyters(job_manager, "in-project")

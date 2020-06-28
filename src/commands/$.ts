@@ -7,7 +7,7 @@ export default class Run extends LocalJobCommand {
   static description = 'Start a job that runs a shell command.'
   static args = [{name: 'command', required: true}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
+    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
     "stack": flags.string({env: 'STACK'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "project-root": flags.string({env: 'PROJECTROOT'}),

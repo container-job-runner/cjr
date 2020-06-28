@@ -17,7 +17,7 @@ export default class List extends BasicCommand {
   async run()
   {
     const { flags } = this.parse(List)
-    const job_manager = this.newJobManager(false, false, flags['explicit'])
+    const job_manager = this.newJobManager(flags['resource'], false, false, flags['explicit'])
     const result = listJupyter(job_manager, "in-job")
     if(!result.success)
       return printValidatedOutput(result)

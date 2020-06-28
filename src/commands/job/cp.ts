@@ -31,7 +31,7 @@ export default class Copy extends BasicCommand {
     const ids = await this.getJobIds(argv, flags)
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
     // -- copy job data --------------------------------------------------------
-    const job_manager = this.newJobManager(flags["verbose"], flags["quiet"], flags["explicit"])
+    const job_manager = this.newJobManager(flags['resource'], flags["verbose"], flags["quiet"], flags["explicit"])
     const result = job_manager.copy({
       "host-path": flags["copy-path"],
       "ids": ids,

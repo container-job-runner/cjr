@@ -28,7 +28,7 @@ export default class Labels extends BasicCommand {
   {
     const {argv, flags} = this.parse(Labels)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const job_manager = this.newJobManager(false, false, flags.explicit)
+    const job_manager = this.newJobManager('localhost', false, false, flags.explicit)
     const runner = job_manager.container_drivers.runner
     const builder = job_manager.container_drivers.builder
     
