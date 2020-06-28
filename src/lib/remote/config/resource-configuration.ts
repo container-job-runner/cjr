@@ -6,14 +6,16 @@ import {ValidatedOutput} from '../../validated-output'
 import {WarningStrings} from '../../error-strings'
 import {rc_vo_validator} from './resource-configuration-schema'
 import {remote_config_filename, default_remote_config} from '../constants'
+import { Dictionary } from '../commands/remote-command'
 
 export type Resource = {
-  "type": "cjr",
-  "address": string,
-  "username": string,
-  "key" ?: string,
-  "storage-dir" : string,
+  "type": "cjr"
+  "address": string
+  "username": string
+  "key" ?: string
+  "storage-dir" : string
   "enabled" : boolean
+  "options": Dictionary
 }
 
 export type ResourceField = "type"|"address"|"username"|"key"|"storage-dir"|"enabled"

@@ -19,10 +19,13 @@ export const resource_configuration_schema = {
         "username": {"type": "string"},
         "key" : {"type:": "string"},
         "storage-dir" : {"type": "string"},
-        "enabled" : {"type:": "boolean"}
+        "enabled" : {"type:": "boolean"},
+        "options" : {
+            "type:": "object"
+        }
       },
       "additionalProperties": false,
-      "required": ["type", "address", "username", "storage-dir"]
+      "required": ["type", "address", "username", "storage-dir", "options"]
     }
   }
 }
