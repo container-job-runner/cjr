@@ -23,14 +23,14 @@ export default class List extends RemoteCommand {
     if(flags.verbose)  // -- Verbose Output ------------------------------------
     {
       table_parameters = {
-          row_headers:    ["NAME", "ADDRESS", "USERNAME", "TYPE", "ENABLED", "KEY", "STORAGE-DIR"],
+          row_headers:    ["NAME", "ADDRESS", "USERNAME", "TYPE", "ENABLED", "KEY", "STORAGE-DIR", "OPTIONS"],
           column_widths:  [13, 103],
           text_widths:    [12, 102],
           silent_clip:    [true, true]
       }
       toArray = (name:string) => {
         const r = resource_config[name]
-        return [name, r.address, r.username, r.type, `${r.enabled}`, r?.key || "", r['storage-dir']]
+        return [name, r.address, r.username, r.type, `${r.enabled}`, r?.key || "", r['storage-dir'], JSON.stringify(r['options'] || {})]
       }
       printTable = printHorizontalTable
     }

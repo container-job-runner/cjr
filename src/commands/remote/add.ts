@@ -31,11 +31,12 @@ export default class Add extends RemoteCommand {
       )
     // -- create new entry -----------------------------------------------------
     var new_entry:Resource = {
-      type: (flags.type as 'cjr'),
-      address: flags.address,
-      username: flags.username,
+      "type": (flags.type as 'cjr'),
+      "address": flags.address,
+      "username": flags.username,
       "storage-dir": flags['storage-dir'] || default_remote_storage_dirname,
-      enabled: true
+      "enabled": true,
+      "options": {}
     }
     // -- verify that keyfile exists -------------------------------------------
     if(flags.key && !FileTools.existsFile(flags.key))
