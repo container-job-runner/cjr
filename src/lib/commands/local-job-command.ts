@@ -58,6 +58,7 @@ export abstract class LocalJobCommand extends BasicCommand
   {
     this.augmentFlagsWithHere(flags)
     this.augmentFlagsWithProjectSettings(flags, {
+      "resource": false,
       "stack": true,
       "profile": false,
       "config-files": false,
