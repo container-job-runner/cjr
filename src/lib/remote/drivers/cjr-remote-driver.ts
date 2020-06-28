@@ -821,7 +821,7 @@ export class CJRRemoteDriver extends RemoteDriver
 
   private getFileUploadDirectories(resource: Resource, params:{'file-upload-mode': 'cached'|'uncached', 'local-project-root': string, 'project-id':string})
   {
-    const remote_storage_dir = remoteStoragePath(resource['storage-dir'])
+    const remote_storage_dir = remoteStoragePath(resource['options']?.['storage-dir'] || "$HOME")
     const remoteProjectRoot = (remote_job_dir:string) =>
       (params['local-project-root']) ?
         path.posix.join(remote_job_dir, 'files', path.basename(params['local-project-root'])) :
@@ -855,7 +855,7 @@ export class CJRRemoteDriver extends RemoteDriver
   private getStackUploadDirectories(resource: Resource, params:{'stack-upload-mode': 'cached'|'uncached', 'local-stack-name': string, 'project-id':string, 'parent-remote-job-dir'?:string})
   {
     const namedStack = (stack_dir:string) => path.posix.join(stack_dir, params['local-stack-name'].replace(/[^a-zA-z0-9-_\.]/g, "")) // remove any invalid characters to support remote stacks (e.g. fedora:latest)
-    const remote_storage_dir = remoteStoragePath(resource['storage-dir'])
+    const remote_storage_dir = remoteStoragePath(resource['options']?.['storage-dir'] || "$HOME")
 
     var result: ValidatedOutput<any>
     var stack_dir: string
