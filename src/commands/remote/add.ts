@@ -1,12 +1,11 @@
+import path = require('path')
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { Resource } from '../../lib/remote/config/resource-configuration'
-import path = require('path')
 import { FileTools } from '../../lib/fileio/file-tools'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ErrorStrings } from '../../lib/remote/error-strings'
-import { default_remote_storage_dirname } from '../../lib/remote/constants'
 
 export default class Add extends RemoteCommand {
   static description = 'Add a remote resource.'
@@ -34,8 +33,6 @@ export default class Add extends RemoteCommand {
       "type": (flags.type as 'cjr'),
       "address": flags.address,
       "username": flags.username,
-      "storage-dir": flags['storage-dir'] || default_remote_storage_dirname,
-      "enabled": true,
       "options": {}
     }
     // -- verify that keyfile exists -------------------------------------------

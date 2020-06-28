@@ -3,6 +3,7 @@ import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-comm
 import { JSTools } from '../../lib/js-tools'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
+import { Resource } from '../../lib/remote/config/resource-configuration'
 
 export default class Set extends RemoteCommand {
   static description = 'Set a remote resource parameter.'
@@ -14,9 +15,7 @@ export default class Set extends RemoteCommand {
     "address": flags.string(),
     "username": flags.string(),
     "option-key": flags.string({default: [], multiple: true, dependsOn: ['option-value']}),
-    "option-value": flags.string({default: [], multiple: true, dependsOn: ['option-key']}),
-    "storage-dir": flags.string({description: 'location where job data is stored on remote host.'}),
-    "enabled": flags.string()
+    "option-value": flags.string({default: [], multiple: true, dependsOn: ['option-key']})
   }
   static strict = true;
 
@@ -36,8 +35,8 @@ export default class Set extends RemoteCommand {
     // -- modify resource and write file ---------------------------------------
     let resource = this.resource_configuration.getResource(name)
     if(resource !== undefined) {
-      const valid_keys = ["type", "address", "username", "key", "storage-dir", "enabled"];
-      (resource as Dictionary) = {... (resource as Dictionary), ...JSTools.oSubset(flags, valid_keys)}
+      const valid_keys = ["type", "address", "username", "key"];
+      resource = { ... resource, ... (JSTools.oSubset(flags, valid_keys) as Resource)}
       // -- set any options ----------------------------------------------------
       const options = resource['options']
       flags['option-key'].map( (key:string, index: number) => {

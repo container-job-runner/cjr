@@ -30,14 +30,14 @@ export default class List extends RemoteCommand {
       }
       toArray = (name:string) => {
         const r = resource_config[name]
-        return [name, r.address, r.username, r.type, `${r.enabled}`, r?.key || "", r['storage-dir'], JSON.stringify(r['options'] || {})]
+        return [name, r.address, r.username, r.type, r?.key || "", JSON.stringify(r['options'] || {})]
       }
       printTable = printHorizontalTable
     }
     else // -- Standard Output -------------------------------------------------
     {
       table_parameters = {
-          column_headers: ["NAME", "ADDRESS", "USERNAME", "TYPE", "ENABLED"],
+          column_headers: ["NAME", "ADDRESS", "USERNAME", "TYPE"],
           column_widths:  [13, 20, 15, 10, 10],
           text_widths:    [10, 17, 12, 7, 7],
           silent_clip:    [true, false, false, false, false]
@@ -45,7 +45,7 @@ export default class List extends RemoteCommand {
 
       toArray = (name:string) => {
         const r = resource_config[name]
-        return [name, r.address, r.username, r.type, `${r.enabled}`]
+        return [name, r.address, r.username, r.type]
       }
       printTable = printVerticalTable
     }
