@@ -13,8 +13,6 @@ export type Resource = {
   "address": string
   "username": string
   "key" ?: string
-  "storage-dir" : string
-  "enabled" : boolean
   "options": Dictionary
 }
 
