@@ -16,6 +16,7 @@ import { Dictionary } from '../remote/commands/remote-command'
 // ===========================================================================
 
 type CLIJobFlags = {
+    "resource"?: string,
     "stack"?: string,
     "project-root"?: string,
     "here"?: boolean,
@@ -98,6 +99,7 @@ export abstract class LocalJobCommand extends BasicCommand
   {
     // -- init Container SDK components ----------------------------------------
     const job_manager = this.newJobManager(
+        flags["resource"] || "localhost",
         flags["verbose"]  || false,
         flags["quiet"]    || false,
         flags["explicit"] || false
