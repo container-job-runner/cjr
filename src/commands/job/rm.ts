@@ -7,7 +7,7 @@ export default class Delete extends BasicCommand {
   static description = 'Delete a job and its associated data; works on both running and completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
-    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "all": flags.boolean({default: false}),
     "all-exited": flags.boolean({default: false, exclusive: ['all', 'all-running']}),
     "all-running": flags.boolean({default: false, exclusive: ['all', 'all-exited']}),
@@ -34,7 +34,12 @@ export default class Delete extends BasicCommand {
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
 
     // -- delete job -----------------------------------------------------------
-    const job_manager = this.newJobManager(flags['resource'], flags['verbose'], flags['quiet'], flags['explicit'])
+    const job_manager = this.newJobManager(
+      flags['resource'] || "localhost",
+      flags['verbose'],
+      flags['quiet'],
+      flags['explicit']
+    )
     printValidatedOutput(
       job_manager.delete({
         "ids": ids,

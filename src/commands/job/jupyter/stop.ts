@@ -7,7 +7,7 @@ export default class Stop extends BasicCommand {
   static description = 'Stop a running Jupyter server.'
   static args = [{name: 'id', default: ""}]
   static flags = {
-    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "all": flags.boolean({description: "stop all jupyter servers running in host directories"}),
@@ -24,7 +24,12 @@ export default class Stop extends BasicCommand {
     const { args, flags } = this.parse(Stop)
     this.augmentFlagsWithProjectSettings(flags, {"project-root": false})
     this.augmentFlagsWithHere(flags)
-    const job_manager = this.newJobManager(flags['resource'], flags['verbose'], flags['quiet'], flags['explicit'])
+    const job_manager = this.newJobManager(
+      flags['resource'] || "localhost", 
+      flags["verbose"], 
+      flags["quiet"], 
+      flags["explicit"]
+    )
 
     if(flags['all'])
       return printValidatedOutput(

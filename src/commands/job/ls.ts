@@ -8,7 +8,7 @@ export default class List extends BasicCommand {
   static description = 'List all running and completed jobs.'
   static args = []
   static flags = {
-    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "json": flags.boolean({default: false}),
     "all": flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
     "show-stashes": flags.boolean({default: false, description: "show stashes"}),
@@ -24,7 +24,12 @@ export default class List extends BasicCommand {
   {
     const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const job_manager  = this.newJobManager(flags['resource'], flags.verbose, false, flags.explicit)
+    const job_manager  = this.newJobManager(
+        flags['resource'] || 'localhost',
+        flags.verbose, 
+        false, 
+        flags.explicit
+    )
     const job_info = job_manager.list({filter: {
       'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags)
     }})

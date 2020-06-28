@@ -7,7 +7,7 @@ export default class Stop extends BasicCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
-    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "all": flags.boolean({default: false, description: "stop all running jobs"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
@@ -31,7 +31,12 @@ export default class Stop extends BasicCommand {
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
 
     // -- stop job -------------------------------------------------------------
-    const job_manager = this.newJobManager(flags['resource'], flags['verbose'], flags['quiet'], flags['explicit'])
+    const job_manager = this.newJobManager(
+      flags['resource'] || "localhost",
+      flags['verbose'],
+      flags['quiet'],
+      flags['explicit']
+    )
     printValidatedOutput(
         job_manager.stop({
         "ids": ids,

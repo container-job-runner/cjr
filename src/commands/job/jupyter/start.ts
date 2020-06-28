@@ -8,7 +8,7 @@ export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server inside a job.'
   static args = [{name: 'id', default: ""}]
   static flags = {
-    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "stack": flags.string({env: 'STACK'}),

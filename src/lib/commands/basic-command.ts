@@ -29,7 +29,7 @@ export abstract class BasicCommand extends Command
   private podman_socket_started: boolean = false
 
   // helper functions for exec commands that require id
-  async getJobIds( argv: Array<string>, flags: {'resource': string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean} , states?: Array<JobState>) : Promise<string[]|false>
+  async getJobIds( argv: Array<string>, flags: {'resource'?: string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean} , states?: Array<JobState>) : Promise<string[]|false>
   {
     const non_empty_ids = argv.filter((id:string) => id !== "")
     if(non_empty_ids.length > 0)
@@ -37,7 +37,7 @@ export abstract class BasicCommand extends Command
     else if(this.settings.get('interactive'))
     {
       const visible_stack_paths = this.extractVisibleStacks(flags)
-      const job_manager = this.newJobManager(flags['resource'], false, false, flags['explicit'])
+      const job_manager = this.newJobManager(flags['resource'] || "localhost", false, false, flags['explicit'])
       const id = await promptUserForJobId(job_manager.container_drivers, visible_stack_paths, states, false)
       if(!id) return false
       return [id]
@@ -46,7 +46,7 @@ export abstract class BasicCommand extends Command
       return false
   }
 
-  async getJobId(argv: Array<string>, flags: {'resource': string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean},  states?: Array<JobState>) : Promise<string|false>
+  async getJobId(argv: Array<string>, flags: {'resource'?: string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean},  states?: Array<JobState>) : Promise<string|false>
   {
     const ids = await this.getJobIds(argv, flags, states)
     if(ids === false) return false
