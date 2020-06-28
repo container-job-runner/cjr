@@ -21,7 +21,7 @@ import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
 import { LocalJobManager, LocalJobManagerUserOptions } from '../job-managers/local/local-job-manager'
 import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId, socketExists, startPodmanSocket } from '../functions/cli-functions'
 
-export type ProjectSettingsFlags = "project-root" | "stack" | "stacks-dir" | "remote-name" | "visible-stacks" | "config-files" | "profile"
+export type ProjectSettingsFlags = "project-root" | "stack" | "stacks-dir" | "remote-name" | "visible-stacks" | "config-files" | "profile" | "resource"
 
 export abstract class BasicCommand extends Command
 {
@@ -79,7 +79,7 @@ export abstract class BasicCommand extends Command
     // -- merge flags if load was successful -----------------------------------
     if(load_result.success) {
       const project_settings = load_result.value
-      const valid_keys: Array<ps_prop_keys> = ["project-root", "stack", "stacks-dir", "remote-name", "visible-stacks"]
+      const valid_keys: Array<ps_prop_keys> = ["project-root", "stack", "stacks-dir", "remote-name", "resource", "visible-stacks"]
       const mergeable_fields:Array<ps_prop_keys> = Object.keys(flag_props).filter((key:string) => valid_keys.includes(key as ps_prop_keys)) as Array<ps_prop_keys>
       const project_flags:Dictionary = project_settings.get(mergeable_fields)
       if(flag_props['config-files'] !== undefined)
