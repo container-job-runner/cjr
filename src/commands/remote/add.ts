@@ -23,10 +23,15 @@ export default class Add extends RemoteCommand {
   async run() {
     const {args, flags} = this.parse(Add)
     const name = args['remote-name']
+    // -- do not allow name localhost name -------------------------------------
+    if(name === "localhost")
+      return printValidatedOutput(
+        new ValidatedOutput(false, undefined).pushError(ErrorStrings.REMOTE_RESOURCE.NEW.LOCALHOST_NAME)
+      )
     // -- verify that name is unique -------------------------------------------
     if(this.resource_configuration.isResource(name))
       return printValidatedOutput(
-        new ValidatedOutput(false, [], [ErrorStrings.REMOTE_RESOURCE.NEW.NAME_EXISTS(name)])
+        new ValidatedOutput(false, undefined).pushError(ErrorStrings.REMOTE_RESOURCE.NEW.NAME_EXISTS(name))
       )
     // -- create new entry -----------------------------------------------------
     var new_entry:Resource = {

@@ -6,7 +6,8 @@ export const ErrorStrings = {
     KEYFILE_NON_EXISTANT : (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,
     NEW: {
       NAME_EXISTS: (name: string) => chalk`{bold Name Invalid} - a remote resource named ${name} already exists.`,
-      KEYFILE_NONEXISTANT: (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`
+      KEYFILE_NONEXISTANT: (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,
+      LOCALHOST_NAME: chalk`{bold Name Invalid} - you cannot name a remote resource localhost.`
     }
   },
   REMOTEJOB: {
