@@ -6,6 +6,7 @@ export default class Copy extends BasicCommand {
   static description = 'Copy job files back into the host directories; works on both running and completed jobs.'
   static args = [{name: 'id', required: false}]
   static flags = {
+    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
     "copy-path": flags.string({description: "Overides job default copy path."}),
     "mode": flags.string({default: "update", options: ["update", "overwrite", "mirror"], description: 'Specify copy mode: "update" copies only newer files, "merge" copies all files, "mirror" copies all files and removes any extranious files.'}),
     "all-files": flags.boolean({default: false, description: "If selected, any include or exclude file will be ignored and all project files will be copied"}),

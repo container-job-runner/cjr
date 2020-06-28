@@ -6,6 +6,7 @@ export default class State extends BasicCommand {
   static description = 'Get the current state of a job.'
   static args = [{name: 'id', required: true}]
   static flags = {
+    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),

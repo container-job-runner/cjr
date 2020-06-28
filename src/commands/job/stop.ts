@@ -7,6 +7,7 @@ export default class Stop extends BasicCommand {
   static description = 'Stop a running job. This command has no effect on completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
+    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
     "all": flags.boolean({default: false, description: "stop all running jobs"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),

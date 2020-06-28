@@ -8,6 +8,7 @@ export default class List extends BasicCommand {
   static description = 'List running jupiter servers.'
   static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
   static flags = {
+    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
     "explicit": flags.boolean({default: false}),
     "json": flags.boolean({default: false})
   }

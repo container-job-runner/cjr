@@ -7,6 +7,7 @@ export default class Delete extends BasicCommand {
   static description = 'Delete a job and its associated data; works on both running and completed jobs.'
   static args = [{name: 'id'}]
   static flags = {
+    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
     "all": flags.boolean({default: false}),
     "all-exited": flags.boolean({default: false, exclusive: ['all', 'all-running']}),
     "all-running": flags.boolean({default: false, exclusive: ['all', 'all-exited']}),

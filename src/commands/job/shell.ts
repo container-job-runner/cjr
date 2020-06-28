@@ -7,6 +7,7 @@ export default class Shell extends LocalJobCommand {
   static description = 'Start an interactive shell to view or modify a job\'s files or outputs.'
   static args = [{name: 'id', required: false}]
   static flags = {
+    "resource": flags.string({default: 'localhost', env: 'RESOURCE'}),
     "stack": flags.string({env: 'STACK'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
