@@ -13,7 +13,8 @@ export const project_settings_schema = {
     "visible-stacks": {"$ref": "#/definitions/array-of-strings"},
     "config-files": {"$ref": "#/definitions/array-of-strings"},
     "stacks-dir": {"type": "string"},
-    "remote-name": {"type": "string"},
+    "remote-name": {"type": "string"}, // remove once resource is fully implemented
+    "resource": {"type": "string"},
     "default-profiles": {"$ref": "#/definitions/default-profiles"}
   },
   "definitions": {

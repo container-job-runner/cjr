@@ -15,7 +15,8 @@ export type ps_props = {
   "project-root"?: string,
   "stack"?: string,
   "stacks-dir"?: string,
-  "remote-name"?: string,
+  "remote-name"?: string, // remove once resource if fully implemented
+  "resource"?: string,
   "visible-stacks"?: Array<string>
   "config-files"?: Array<string>,
   "default-profiles"?: { [key: string] : Array<string> }
@@ -57,6 +58,11 @@ export class ProjectSettings
     return this.raw_object["remote-name"]
   }
 
+  getResource() : string | undefined
+  {
+    return this.raw_object["resource"]
+  }
+
   getVisibleStacks() : Array<string> | undefined
   {
     return this.raw_object["visible-stacks"]
@@ -92,6 +98,11 @@ export class ProjectSettings
   setRemoteName(remote_name: string)
   {
     this.raw_object["remote-name"] = remote_name
+  }
+
+  setResource(resource: string)
+  {
+    this.raw_object["resource"] = resource
   }
 
   setVisibleStacks(visible_stacks: Array<string>)
