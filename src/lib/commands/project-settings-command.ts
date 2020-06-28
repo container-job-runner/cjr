@@ -17,7 +17,7 @@ export abstract class ProjectSettingsCommand extends BasicCommand
 
   listProject(project_settings: ProjectSettings, project_root: string)
   {
-    const raw_settings:Dictionary = project_settings.get(["project-root", "stack", "stacks-dir", "remote-name", "visible-stacks"])
+    const raw_settings:Dictionary = project_settings.get(["project-root", "stack", "stacks-dir", "remote-name", "resource", "visible-stacks"])
     console.log(chalk`\n   {bold Project}: ${project_root}\n`)
     Object.keys(raw_settings).map((key:string) => {
       const value = raw_settings[key]
