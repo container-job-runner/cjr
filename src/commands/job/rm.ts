@@ -8,8 +8,8 @@ export default class Delete extends BasicCommand {
   static args = [{name: 'id'}]
   static flags = {
     "all": flags.boolean({default: false}),
-    "all-completed": flags.boolean({default: false, exclusive: ['all', 'all-running']}),
-    "all-running": flags.boolean({default: false, exclusive: ['all', 'all-complete']}),
+    "all-exited": flags.boolean({default: false, exclusive: ['all', 'all-running']}),
+    "all-running": flags.boolean({default: false, exclusive: ['all', 'all-exited']}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -28,7 +28,7 @@ export default class Delete extends BasicCommand {
     })
 
     // -- get job id -----------------------------------------------------------
-    const id_selector_active = flags['all'] || flags['all-running'] || flags['all-completed'] // do not prompt for id if these flags are selected
+    const id_selector_active = flags['all'] || flags['all-running'] || flags['all-exited'] // do not prompt for id if these flags are selected
     const ids = (id_selector_active) ? [] : await this.getJobIds(argv, flags)
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
 
