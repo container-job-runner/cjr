@@ -143,6 +143,14 @@ export function jobLabels(job_info: ValidatedOutput<Array<JobInfo>>, label:strin
   )
 }
 
+export function jobStates(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<JobState>>
+{
+  if(!job_info.success) return new ValidatedOutput(false, [])
+  return new ValidatedOutput(true,
+    job_info.value.map( ( job:JobInfo ) => job.state)
+  )
+}
+
 export function firstJobId(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<string>
 {
   if(job_info.value.length < 1)
@@ -157,3 +165,4 @@ export function firstJob(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedO
     return new ValidatedOutput(false, failure_output)
   return new ValidatedOutput(true, job_info.value[0])
 }
+
