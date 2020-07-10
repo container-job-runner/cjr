@@ -15,16 +15,16 @@ import * as path from 'path'
 import * as fs from 'fs-extra'
 import * as os from 'os'
 import {ValidatedOutput} from '../validated-output'
-import {JSTools} from '../js-tools'
 import {ShellCommand} from '../shell-command'
 import { SpawnSyncReturns } from 'child_process'
 import { trim } from '../functions/misc-functions'
 type Dictionary = {[key: string]: any}
+type Resource = {"username": string, "address": string, "key"?:string}
 
 export class SshShellCommand
 {
     shell: ShellCommand
-    resource: Dictionary = {}
+    resource: Resource = {"username": "", "address": ""}
     multiplex: boolean = true
     data_dir: string // directory where ssh master socket will be stored
     tags = {tunnel: 'tunnel_'} // tags used for multiplex master socket when creating tunnel
@@ -35,18 +35,9 @@ export class SshShellCommand
       this.shell = new ShellCommand(explicit, silent)
     }
 
-    setResource(resource: Dictionary) : ValidatedOutput<undefined>
+    setResource(resource: Resource) : void
     {
-      const result = new ValidatedOutput(true, undefined)
-      const base_message = "Internal Error: sshShellCommand invalid remote resource "
-      if(!JSTools.isString(resource?.username) || !resource.username)
-        result.pushError(`${base_message} (bad username).`)
-      if(!JSTools.isString(resource?.address) || !resource.address)
-        result.pushError(`${base_message} (bad address).`)
-      if(resource?.key && !JSTools.isString(resource.key))
-        result.pushError(`${base_message} (bad key).`)
-      if(result.success) this.resource = resource
-      return result
+      this.resource = resource
     }
 
     commandString(command: string, flags: Dictionary={}, args: Array<string>=[], options: Dictionary = {}) : string
