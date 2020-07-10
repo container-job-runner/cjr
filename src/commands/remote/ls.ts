@@ -38,9 +38,9 @@ export default class List extends RemoteCommand {
     {
       table_parameters = {
           column_headers: ["NAME", "ADDRESS", "USERNAME", "TYPE"],
-          column_widths:  [13, 20, 15, 10, 10],
-          text_widths:    [10, 17, 12, 7, 7],
-          silent_clip:    [true, false, false, false, false]
+          column_widths:  [18, 20, 15, 10],
+          text_widths:    [15, 17, 12, 7],
+          silent_clip:    [false, false, false, false, false]
       }
 
       toArray = (name:string) => {
