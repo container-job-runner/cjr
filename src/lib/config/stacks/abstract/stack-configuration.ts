@@ -36,7 +36,9 @@ export abstract class StackConfiguration<T>
   abstract addVolume(volumeName: string, containerPath: string): boolean;
   abstract removeBind(hostPath: string): ValidatedOutput<undefined>;
   abstract removeVolume(parent_path: string): ValidatedOutput<undefined>;
-  abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>;
+  abstract removeAllVolumes() : ValidatedOutput<undefined>;
+  abstract removeLocalBinds() : ValidatedOutput<undefined>;
+  abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>; // note: this function should be removed once updated remote code is finished
   // ----> resource modifiers
   abstract setMemory(value: number, units:"GB"|"MB"|"KB"|"B") : void
   abstract setSwapMemory(value: number, units:"GB"|"MB"|"KB"|"B") : void
@@ -74,4 +76,10 @@ export abstract class StackConfiguration<T>
   abstract getEnvironmentVars(): {[key:string] : string}
   abstract getMounts(): Array<Dictionary>
   abstract getPorts(): Array<Dictionary>
+
+  // == remote functions =======================================================
+  
+  // maps bind host paths (stack_path -> maps['stack_path'](stack_path), bind_paths -> maps['bind-paths'](bind_path)
+  abstract mapPaths(map: {"stack-path": (p:string) => string, "bind-paths": (p:string) => string}): ValidatedOutput<undefined>
+  abstract getBindMountPaths(remote_only: boolean) : Array<string> // returns paths of binds on localhost. If remote_only=true, then only select those that will be uploaded remotely
 }
