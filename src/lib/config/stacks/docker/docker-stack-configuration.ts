@@ -407,6 +407,41 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return new ValidatedOutput(true, undefined)
   }
 
+  removeAllVolumes()
+  {
+    if(this.config?.mounts)
+       this.config.mounts = this.config.mounts.filter(
+           (m: DockerStackMountConfig) => (m.type != 'volume')
+        )
+    return new ValidatedOutput(true, undefined)
+  }
+
+  removeLocalBinds()
+  {
+    if(this.config?.mounts)
+       this.config.mounts = this.config.mounts.filter(
+           (m: DockerStackMountConfig) => (m.type != 'bind' || (m.includeForRemoteJob === true))
+        )
+    return new ValidatedOutput(true, undefined)
+  }
+
+  mapPaths(map: {"stack-path": (p:string) => string, "bind-paths": (p:string) => string}): ValidatedOutput<undefined>
+  {
+    if(this.stack_path !== undefined)
+        this.stack_path = map['stack-path'](this.stack_path)
+
+    if(this.config?.mounts !== undefined) {
+        this.config.mounts = this.config?.mounts?.map( 
+            (m:DockerStackMountConfig) => {
+                if(m.type == 'bind' && m.hostPath)
+                    m.hostPath = map['bind-paths'](m.hostPath)
+                return m
+            }
+        )
+    }
+    return new ValidatedOutput(true, undefined)
+  }
+
   removeExternalBinds(parent_path: string)
   {
     // copy existing configuration
@@ -671,6 +706,19 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   getSnapshotOptions(): undefined | StackSnapshotOptions
   {
     return this.config?.snapshots
+  }
+
+  getBindMountPaths(remote_only: boolean) : Array<string>
+  {
+    if(!this.config?.mounts) return []
+    
+    const paths: Array<string> = []
+    this.config.mounts.map( (m:DockerStackMountConfig) => {
+        if(m.type === "bind" && m.hostPath && (!remote_only || m.includeForRemoteJob))
+            paths.push(m.hostPath)
+    })
+
+    return paths
   }
 
 }
