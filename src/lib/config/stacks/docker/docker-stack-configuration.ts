@@ -37,7 +37,7 @@ export type DockerStackMountConfig = {
   "readonly"?: boolean
   "consistency"?: "consistent" | "cached" | "delegated"
   "selinux"?: boolean
-  "includeForRemoteJob"?: boolean
+  "remoteUpload"?: boolean
 }
 
 export type DockerStackPortConfig = {
@@ -420,7 +420,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   {
     if(this.config?.mounts)
        this.config.mounts = this.config.mounts.filter(
-           (m: DockerStackMountConfig) => (m.type != 'bind' || (m.includeForRemoteJob === true))
+           (m: DockerStackMountConfig) => (m.type != 'bind' || (m.remoteUpload === true))
         )
     return new ValidatedOutput(true, undefined)
   }
@@ -714,7 +714,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     
     const paths: Array<string> = []
     this.config.mounts.map( (m:DockerStackMountConfig) => {
-        if(m.type === "bind" && m.hostPath && (!remote_only || m.includeForRemoteJob))
+        if(m.type === "bind" && m.hostPath && (!remote_only || m.remoteUpload))
             paths.push(m.hostPath)
     })
 
