@@ -111,6 +111,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   {
     const copy = new DockerStackConfiguration({tag: this.image_tag})
     copy.config = JSTools.rCopy(this.config)
+    copy.stack_path = this.stack_path
     copy.stack_type = this.stack_type
     copy.stack_name = this.stack_name
     return copy
