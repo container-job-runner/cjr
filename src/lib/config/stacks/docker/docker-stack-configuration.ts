@@ -118,15 +118,15 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   }
 
   // merges settings from configuration file into current stack configuration
-  mergeConfigurations(config_paths: Array<string>) : ValidatedOutput<undefined>
+  mergeConfigurations(config_paths: Array<string>, shell?:ShellCommand|SshShellCommand) : ValidatedOutput<undefined>
   {
-    const merge = this.mergeConfigFiles(config_paths)
+    const merge = this.mergeConfigFiles(config_paths, shell)
     if(merge.success) JSTools.rMerge(this.config, merge.value)
     return new ValidatedOutput(true, undefined).absorb(merge)
   }
 
   // loads stack configuration and sets internal properties "name", and "stack_type"
-  load(stack_path: string, overloaded_config_paths: Array<string>) : ValidatedOutput<undefined>
+  load(stack_path: string, overloaded_config_paths: Array<string>, shell?:ShellCommand|SshShellCommand) : ValidatedOutput<undefined>
   {
     const failure = new ValidatedOutput(false, undefined)
     const success = new ValidatedOutput(true, undefined)
@@ -137,7 +137,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
       return failure.absorb(stk_type)
 
     // -- load configuration files -------------------------------------------
-    const result = this.loadStackConfigFiles(stack_path, overloaded_config_paths)
+    const result = this.loadStackConfigFiles(stack_path, overloaded_config_paths, shell)
     if(!result.success)
       return failure.absorb(result)
     if(stk_type.value === 'config' && result.value?.build?.image === undefined)
@@ -183,7 +183,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return path.basename(stack_path).toLowerCase()
   }
 
-  protected loadStackConfigFiles(stack_path: string, overloaded_config_paths: Array<string> = []) : ValidatedOutput<DockerStackConfigObject>
+  protected loadStackConfigFiles(stack_path: string, overloaded_config_paths: Array<string> = [], shell?: ShellCommand|SshShellCommand) : ValidatedOutput<DockerStackConfigObject>
   {
     const all_config_paths = []
     const primary_stack_config = path.join(stack_path, this.config_filename)
@@ -191,16 +191,16 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
       all_config_paths.push(primary_stack_config)
     all_config_paths.push(...overloaded_config_paths)
 
-    return this.mergeConfigFiles(all_config_paths)
+    return this.mergeConfigFiles(all_config_paths, shell)
   }
 
-  protected mergeConfigFiles(config_paths: Array<string>) : ValidatedOutput<DockerStackConfigObject>
+  protected mergeConfigFiles(config_paths: Array<string>, shell?: ShellCommand | SshShellCommand) : ValidatedOutput<DockerStackConfigObject>
   {
     const config: DockerStackConfigObject = {}
     const result = new ValidatedOutput(true, config)
     
     config_paths.map( (path: string) => {
-      const read_result = this.loadYMLFile(path)
+      const read_result = this.loadYMLFile(path, shell)
       if(read_result.success) JSTools.rMerge(config, read_result.value)
       result.absorb(read_result)
     })
@@ -209,7 +209,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   }
 
   // resolves fields build.[environment-dynamic] and run.[environment-dynamic]
-  protected loadYMLFile(abs_path: string) : ValidatedOutput<DockerStackConfigObject>
+  protected loadYMLFile(abs_path: string, shell?: ShellCommand | SshShellCommand) : ValidatedOutput<DockerStackConfigObject>
   {
     const read_result = this.yml_file.validatedRead(abs_path) // json Schema used to validate object
     if(!read_result.success)
@@ -221,14 +221,16 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     // resolve dynamic environment
     raw_yml_object.environment = this.processRawArgs(
       raw_yml_object?.environment,
-      raw_yml_object?.["environment-dynamic"]
+      raw_yml_object?.["environment-dynamic"],
+      shell
     )
     delete raw_yml_object["environment-dynamic"]
     // resolve build environment
     if(raw_yml_object?.build) {
       raw_yml_object.build.args = this.processRawArgs(
         raw_yml_object?.build?.args,
-        raw_yml_object?.build?.["args-dynamic"]
+        raw_yml_object?.build?.["args-dynamic"],
+        shell
       )
       delete (raw_yml_object?.build || {})["args-dynamic"] // Note: optional chaining (?.) not used due to https://github.com/microsoft/TypeScript/pull/35090
     }
@@ -242,7 +244,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return result
   }
 
-  private processRawArgs(raw_env_data: any, raw_dynamic_env_data: any) : { [key:string]: string }
+  private processRawArgs(raw_env_data: any, raw_dynamic_env_data: any, shell?: ShellCommand | SshShellCommand) : { [key:string]: string }
   {
     const resolved_env:{ [key:string]: string } = {}
 
@@ -252,7 +254,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
         return
       const env_val = raw_dynamic_env_data[k]
       if(typeof env_val == "string")
-        resolved_env[k] = this.evalDynamicArg(env_val).value
+        resolved_env[k] = this.evalDynamicArg(env_val, shell).value
     })
 
     if(raw_env_data instanceof Object) // resolve static properties
