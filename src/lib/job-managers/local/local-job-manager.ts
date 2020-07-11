@@ -54,6 +54,7 @@ export class LocalJobManager extends JobManager
           "build": ""
       }
   }
+  shell: ShellCommand
   container_drivers: ContainerDrivers
   configurations: Configurations
   output_options: OutputOptions
@@ -99,6 +100,7 @@ export class LocalJobManager extends JobManager
     }
     
     this.output_options = this.options["output-options"]
+    this.shell = shell
   }
 
   protected ERRORSTRINGS = {
