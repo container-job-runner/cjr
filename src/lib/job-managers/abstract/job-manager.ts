@@ -4,6 +4,8 @@ import { RunDriver, NewJobInfo, JobState, JobInfoFilter, JobInfo } from '../../d
 import { BuildDriver } from '../../drivers-containers/abstract/build-driver';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { ExecConfiguration, ExecConstructorOptions } from '../../config/exec/exec-configuration';
+import { ShellCommand } from '../../shell-command';
+import { SshShellCommand } from '../../remote/ssh-shell-command';
 
 export type ContainerDrivers = {
   "runner": RunDriver
@@ -84,6 +86,7 @@ export abstract class JobManager // High-Level Job Driver
   abstract container_drivers: ContainerDrivers
   abstract output_options: OutputOptions
   abstract configurations: Configurations
+  abstract shell: ShellCommand|SshShellCommand
 
   abstract run(
     job_configuration: JobConfiguration<StackConfiguration<any>>,
