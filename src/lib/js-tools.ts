@@ -15,8 +15,14 @@ export class JSTools
 {
   static rMerge(a: Dictionary, b: Dictionary) : Dictionary
   {
+    return JSTools.mergeAny(a, b)
+  }
+
+  static mergeAny(a: any, b: any) : any
+  {
     const a_is_object = JSTools.isObject(a)
     const b_is_object = JSTools.isObject(b)
+    const b_is_array  = !b_is_object && JSTools.isArray(b)
 
     if(a_is_object && b_is_object)
     {
@@ -28,11 +34,14 @@ export class JSTools
     }
     else if(b_is_object)
       return JSTools.rMerge({}, b)
+    else if(b_is_array)
+      return JSTools.arrayCopy(b as any[])
     else
     {
       return b;
     }
   }
+
 
   static rMergeOnEmpty(a: Dictionary, b: Dictionary)
   {
@@ -86,6 +95,25 @@ export class JSTools
       if(a.hasOwnProperty(p)) b[p] = a[p]
     }
     return b;
+  }
+
+  static arrayCopy(a : Array<any>) : Array<any>
+  {
+    const l = a.length
+    let val: any
+
+    const b: Array<any> = new Array(l)
+    for(var i = 0; i < l; i ++)
+    {
+      val = a[i]
+      if(JSTools.isObject(val))
+        b[i] = JSTools.rCopy(val)
+      else if(JSTools.isArray(val))
+        b[i] = JSTools.arrayCopy(val)
+      else
+        b[i] = a[i]
+    }
+    return b
   }
 
   static distinct(a: Array<any>)
