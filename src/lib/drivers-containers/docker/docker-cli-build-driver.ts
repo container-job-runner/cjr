@@ -80,7 +80,8 @@ export class DockerCliBuildDriver extends BuildDriver
       const command = `${this.base_command} build`;
       const args = ['.'] // user cwd as context
       const flags = this.generateDockerBuildFlags(configuration, options)
-      const exec_result = this.shell.exec(command, flags, args, {"cwd": path.join(configuration.stack_path, configuration.build_context), "stdio": stdio})
+      const wd = path.join(configuration.stack_path, configuration.build_context);
+      const exec_result = this.shell.exec(`cd ${ShellCommand.bashEscape(wd)} ; ${command}`, flags, args, {"stdio": stdio})
       const result = new ValidatedOutput(true, ShellCommand.stdout(exec_result.value))
       if(!exec_result.success)
         result.pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
