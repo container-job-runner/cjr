@@ -27,8 +27,7 @@ export default class Ssh extends RemoteCommand {
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
     const ssh_shell = new SshShellCommand(flags.explicit, false, path.join(this.config.dataDir, remote_sshsocket_dirname))
-    result = ssh_shell.setResource(resource)
-    if(!result.success) return printValidatedOutput(result)
+    ssh_shell.setResource(resource)
     ssh_shell.exec('', {}, [], {ssh: {x11: flags.x11}})
     printValidatedOutput(result)
   }
