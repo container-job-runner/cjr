@@ -72,8 +72,8 @@ export default class Create extends BasicCommand {
 
   createEmptyStack(stacks_dir: string, stack_name: string) : ValidatedOutput<undefined>
   {
-    fs.mkdirSync(path.join(stacks_dir, stack_name))
-    fs.mkdirSync(path.join(stacks_dir, stack_name, constants.subdirectories.stack.profiles))
+    fs.mkdirpSync(path.join(stacks_dir, stack_name))
+    fs.mkdirpSync(path.join(stacks_dir, stack_name, constants.subdirectories.stack.profiles))
     return new ValidatedOutput(true, undefined)
   }
 
