@@ -67,11 +67,10 @@ export class CJRRemoteDriver extends RemoteDriver
     this.multiplex_options = { ...this.multiplex_options, ...multiplex_options}
   }
 
-  jobAttach(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobAttach(resource: Resource, flags: Dictionary, args: Dictionary, argv: Array<string>)
   {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
     return this.ssh_shell.exec(
       'cjr job:attach',
@@ -214,11 +213,10 @@ export class CJRRemoteDriver extends RemoteDriver
     return this.stopMultiplexMasterAndReturn(result)
   }
 
-  jobList(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobList(resource: Resource, flags: Dictionary, args: Dictionary, argv: Array<string>)
   {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
     return this.ssh_shell.exec(
       'cjr job:ls',
@@ -228,11 +226,10 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  jobLog(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobLog(resource: Resource, flags: Dictionary, args: Dictionary, argv: Array<string>)
   {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
     return this.ssh_shell.exec(
       'cjr job:log',
@@ -308,10 +305,10 @@ export class CJRRemoteDriver extends RemoteDriver
   //jobStart(resource: Dictionary, builder: BuildDriver, stack_path: string, overloaded_config_paths: Array<string>, flags: Dictionary, args: Dictionary, argv: Array<string>)
   jobStart(resource: Resource, local_drivers:ContainerDrivers, configurations: Configurations, job_options: JobOptions, remote_options: RemoteStartOptions)
   {
+    var result:ValidatedOutput<any> = new ValidatedOutput(true, undefined)
     const host_root = job_options['host-root'] || ""
     // -- set resource ---------------------------------------------------------
-    var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- ensure project has ID ------------------------------------------------
     if(host_root) result = ensureProjectId(host_root)
     if(!result.success) return result;
@@ -380,11 +377,10 @@ export class CJRRemoteDriver extends RemoteDriver
     return this.stopMultiplexMasterAndReturn(result);
   }
 
-  jobStop(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobStop(resource: Resource, flags: Dictionary, args: Dictionary, argv: Array<string>)
   {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
     return this.ssh_shell.exec(
       'cjr job:stop',
@@ -394,11 +390,10 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  jobState(resource: Dictionary, flags: Dictionary, args: Dictionary, argv: Array<string>)
+  jobState(resource: Resource, flags: Dictionary, args: Dictionary, argv: Array<string>)
   {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
     return this.ssh_shell.exec(
       'cjr job:state',
@@ -408,14 +403,13 @@ export class CJRRemoteDriver extends RemoteDriver
     )
   }
 
-  async promptUserForJobId(resource: Dictionary, interactive: boolean) : Promise<string>
+  async promptUserForJobId(resource: Resource, interactive: boolean) : Promise<string>
   {
     if(!interactive) return ""
     // -- set resource ---------------------------------------------------------
-    var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
-    if(!result.success) return ""
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
-    result = parseJSON(
+    var result:ValidatedOutput<any> = parseJSON(
       this.ssh_shell.output(
         'cjr job:ls', {json: {}}, [],
         this.interactive_ssh_options,
@@ -425,13 +419,12 @@ export class CJRRemoteDriver extends RemoteDriver
     return await promptUserForId(result.value)
   }
 
-  jobInfo(resource: Dictionary, state?: string)
+  jobInfo(resource: Resource, state?: string)
   {
     // -- set resource ---------------------------------------------------------
-    var result:ValidatedOutput<any> = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
-    result = parseJSON(
+    var result:ValidatedOutput<any> = parseJSON(
       this.ssh_shell.output(
         'cjr job:ls',
         {json:{}},
@@ -479,19 +472,17 @@ export class CJRRemoteDriver extends RemoteDriver
 
   jobJupyterStop(resource: Resource, id: string) {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
-
+    this.ssh_shell.setResource(resource)
     this.ssh_shell.tunnelStop();
     this.disconnect(resource, {tag: this.job_jupyter_x11_multiplex_tag}) // stop any x11 master for job
     return this.jobJupyterGeneric(resource, id, 'stop', 'exec');
   }
 
-  jobJupyterList(resource: Dictionary, id: string) {
+  jobJupyterList(resource: Resource, id: string) {
     return this.jobJupyterGeneric(resource, id, 'list', 'exec')
   }
 
-  jobJupyterUrl(resource: Dictionary, id: string, options: Dictionary = {mode: 'remote'}) {
+  jobJupyterUrl(resource: Resource, id: string, options: Dictionary = {mode: 'remote'}) {
     var result:ValidatedOutput<any> = this.jobJupyterGeneric(resource, id, 'url', 'output')
     if(result.success && options?.mode == 'remote' && resource.address)
       result.value = result.value?.replace(/(?<=http:\/\/)\S+(?=:)/, resource.address)
@@ -500,11 +491,10 @@ export class CJRRemoteDriver extends RemoteDriver
     return result
   }
 
-  private jobJupyterGeneric(resource: Dictionary, id: string, command: 'stop'|'list'|'url', mode:'output'|'exec')
+  private jobJupyterGeneric(resource: Resource, id: string, command: 'stop'|'list'|'url', mode:'output'|'exec')
   {
     // -- set resource ---------------------------------------------------------
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
+    this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
     const cjr_cmd   = 'cjr job:jupyter'
     const cjr_flags = (this.output_options.explicit) ? {explicit: {}} : {}
@@ -929,21 +919,19 @@ export class CJRRemoteDriver extends RemoteDriver
     if(this.multiplex_options.autoconnect)
       return this.connect(resource, options)
     else
-      return this.ssh_shell.setResource(resource)
+        this.ssh_shell.setResource(resource)
+    return new ValidatedOutput(true, undefined)
   }
 
   disconnect(resource: Resource, options: Dictionary = {})
   {
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
-    else return new ValidatedOutput(this.ssh_shell.multiplexStop(options), undefined)
+    this.ssh_shell.setResource(resource)
+    return new ValidatedOutput(this.ssh_shell.multiplexStop(options), undefined)
   }
 
   connect(resource: Resource, options: Dictionary = {})
   {
-    var result = this.ssh_shell.setResource(resource)
-    if(!result.success) return result
-
+    this.ssh_shell.setResource(resource)
     if(this.multiplex_options['restart-existing-connection'] && this.ssh_shell.multiplexExists(options)) {
       this.ssh_shell.multiplexStop(options)
     }
