@@ -54,7 +54,8 @@ export const subdirectories =
     "bundle": "bundle",                         // used by bundle functions to store tmp data
     "build": "build",                           // used by socket drivers for storing tar and tar.gz files for building
     'job-copy': 'job-copy',                     // used as tmp data when copying results
-    'podman-socket': 'podman-socket'            // used to store podman socket
+    'podman-socket': 'podman-socket',           // used to store podman socket
+    "ssh-sockets": "ssh-sockets"                // used to store ssh master sockets
   },
   "stack": {
     "build": "build",
