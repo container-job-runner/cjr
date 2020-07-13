@@ -90,7 +90,6 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   readonly config_filename = "config.yml" // name of config file in stack directory
   readonly archive_filename = "image" // name of config file in stack directory
   readonly build_context:string = "./build" // default build context relative to stack directory
-  protected verify_host_bind_path:boolean = true;
 
   protected ERRORSTRINGS = {
     "MISSING_STACKDIR": (dir: string) => chalk`{bold Nonexistant Stack Directory.}\n  {italic path:} ${dir}`,
@@ -380,7 +379,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   addBind(hostPath: string, containerPath: string, options?: Dictionary)
   {
       // verify host path Exists before adding
-      if(this.verify_host_bind_path && !fs.existsSync(hostPath)) return false
+      if(!options?.['allow-nonexistant'] && !fs.existsSync(hostPath)) return false
       if(!(this.config?.mounts)) this.config.mounts = [];
       this.config.mounts.push({
         ...{type: "bind", hostPath: hostPath, containerPath: containerPath},
