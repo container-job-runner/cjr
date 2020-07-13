@@ -1,4 +1,5 @@
 import { StackConfiguration } from "../stacks/abstract/stack-configuration";
+import { JSTools } from '../../js-tools';
 
 export class JobConfiguration<T extends StackConfiguration<any>>
 {
@@ -17,6 +18,20 @@ export class JobConfiguration<T extends StackConfiguration<any>>
     this.remove_on_exit = props?.remove_on_exit || false;
     this.working_directory = props?.working_directory || environment.getContainerRoot()
     this.labels = props?.labels || {}
+  }
+
+  copy() : JobConfiguration<T>
+  {
+    return new JobConfiguration<T>(
+        this.stack_configuration.copy() as T,
+        {
+            command: this.command, 
+            synchronous: this.synchronous, 
+            remove_on_exit: this.remove_on_exit, 
+            working_directory: this.working_directory, 
+            labels: JSTools.rCopy(this.labels)
+        }
+    )
   }
 
   addLabel(field: string, value: string)
