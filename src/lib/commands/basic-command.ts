@@ -20,12 +20,16 @@ import { printValidatedOutput } from '../functions/misc-functions'
 import { RunShortcuts } from '../config/run-shortcuts/run-shortcuts'
 import { LocalJobManager, LocalJobManagerUserOptions } from '../job-managers/local/local-job-manager'
 import { scanForSettingsDirectory, loadProjectSettings, promptUserForJobId, socketExists, startPodmanSocket } from '../functions/cli-functions'
+import { ResourceConfiguration, Resource } from '../remote/config/resource-configuration'
+import { RemoteSshJobManager, RemoteSshJobManagerUserOptions } from '../job-managers/remote/remote-ssh-job-manager'
+import { SshShellCommand } from '../remote/ssh-shell-command'
 
 export type ProjectSettingsFlags = "project-root" | "stack" | "stacks-dir" | "remote-name" | "visible-stacks" | "config-files" | "profile" | "resource"
 
 export abstract class BasicCommand extends Command
 {
   protected settings = new Settings(this.config.configDir, this.config.dataDir, this.config.cacheDir)
+  protected resource_configuration = new ResourceConfiguration(this.config.configDir)
   private podman_socket_started: boolean = false
 
   // helper functions for exec commands that require id
@@ -37,7 +41,7 @@ export abstract class BasicCommand extends Command
     else if(this.settings.get('interactive'))
     {
       const visible_stack_paths = this.extractVisibleStacks(flags)
-      const job_manager = this.newJobManager(flags['resource'] || "localhost", false, false, flags['explicit'])
+      const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: false, quiet: false, explicit: flags['explicit']})
       const id = await promptUserForJobId(job_manager.container_drivers, visible_stack_paths, states, false)
       if(!id) return false
       return [id]
@@ -130,7 +134,7 @@ export abstract class BasicCommand extends Command
   // if flags['stack'] exists, load from this location
   // if stack named flags['stack'] exists in stacks-dir, then load from stacks-path/flags['stack']
   // otherwise assume stack is referencing an image
-  initStackConfiguration(flags: {"stack"?: string, "stacks-dir"?: string, "config-files"?: Array<string>}, configurations: Configurations) : ValidatedOutput<StackConfiguration<any>>
+  initStackConfiguration(flags: {"stack"?: string, "stacks-dir"?: string, "config-files"?: Array<string>}, configurations: Configurations, shell: ShellCommand|SshShellCommand) : ValidatedOutput<StackConfiguration<any>>
   {
     const stack_configuration = configurations.stack()
     const result = new ValidatedOutput(true, stack_configuration)
@@ -149,13 +153,14 @@ export abstract class BasicCommand extends Command
       return result.absorb(
         stack_configuration.load(
           load_path,
-          flags?.['config-files'] || []
+          flags?.['config-files'] || [],
+          shell
         )
       )
     else { // interpret input as remote image
       stack_configuration.setImage(flags['stack'])
       return result.absorb(
-        stack_configuration.mergeConfigurations(flags['config-files'] || [])
+        stack_configuration.mergeConfigurations(flags['config-files'] || [], shell)
       ) 
     }
   }
@@ -287,7 +292,26 @@ export abstract class BasicCommand extends Command
   // Container SDK Functions
   // ===========================================================================
 
-  newJobManager(resource: string, verbose: boolean, quiet: boolean, explicit: boolean) : JobManager
+  newJobManager(resource_name: string, options: {verbose: boolean, quiet: boolean, explicit: boolean}) : JobManager
+  {
+    if(resource_name === "localhost") {
+      return this.newLocalJobManager(options)
+    }
+
+    const resource = this.resource_configuration.getResource(resource_name)
+    if(resource === undefined)
+        this.error(`There is no resource named ${resource_name}`)
+
+    switch(resource.type) {
+        case 'ssh':
+            return this.newRemoteSshJobManager(resource, options)
+        default:
+            this.error('invalid resource type')
+    }
+       
+  }
+
+  protected newLocalJobManager(manager_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : LocalJobManager
   {
     // -- read cli settings ----------------------------------------------------
     const driver = this.settings.get('driver'); // expecting podman-cli, podman-socket, docker-cli, docker-socket
@@ -298,10 +322,10 @@ export abstract class BasicCommand extends Command
         "socket":       this.settings.get('socket-path'),
         "selinux":      this.settings.get('selinux'),
         "image-tag":    this.settings.get('image-tag'),
-        "explicit":     explicit,
+        "explicit":     manager_options.explicit,
         "output-options": {
-            "quiet": quiet, 
-            "verbose": verbose
+            "quiet": manager_options.quiet, 
+            "verbose": manager_options.verbose
         },
         "directories": {
             "build":path.join(this.config.dataDir, constants.subdirectories.data["build"]),
@@ -311,12 +335,34 @@ export abstract class BasicCommand extends Command
 
     if(driver === 'podman-socket') {
         this.startPodmanSocketOnce(
-            new ShellCommand(explicit, quiet), 
+            new ShellCommand(manager_options.explicit, manager_options.quiet), 
             this.settings.get('socket-path')
         )
     }
     
     return new LocalJobManager(options)
+  }
+
+  protected newRemoteSshJobManager(resource: Resource, manager_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : RemoteSshJobManager
+  {
+    const options:RemoteSshJobManagerUserOptions = {
+        "resource":  resource,
+        "driver":    (resource.options?.['driver'] == "podman") ? "podman" : "docker",
+        "selinux":   (resource.options?.['selinux']) ? true : false,
+        "image-tag": this.settings.get('image-tag'),
+        "explicit":  manager_options.explicit,
+        "output-options": {
+            "quiet": manager_options.quiet, 
+            "verbose": manager_options.verbose
+        },
+        "directories": {
+            "multiplex": path.join(this.config.dataDir, constants.subdirectories.data["ssh-sockets"]),
+            "copy": path.join(this.config.dataDir, constants.subdirectories.data["job-copy"])
+        }
+    }
+
+    return new RemoteSshJobManager(options)
+
   }
 
   newRunShortcuts() : RunShortcuts
