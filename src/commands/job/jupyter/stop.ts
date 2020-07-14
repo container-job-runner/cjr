@@ -26,9 +26,11 @@ export default class Stop extends BasicCommand {
     this.augmentFlagsWithHere(flags)
     const job_manager = this.newJobManager(
       flags['resource'] || "localhost", 
-      flags["verbose"], 
-      flags["quiet"], 
-      flags["explicit"]
+      {
+        verbose: flags["verbose"], 
+        quiet: flags["quiet"], 
+        explicit: flags["explicit"]
+      }
     )
 
     if(flags['all'])

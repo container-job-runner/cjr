@@ -1,6 +1,7 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
+import { ShellCommand } from '../../lib/shell-command'
 
 export default class Build extends BasicCommand {
   static description = 'Manually build an image for a stack.'
@@ -26,14 +27,15 @@ export default class Build extends BasicCommand {
     this.augmentFlagsWithProfile(flags)
 
     const stack_list = (flags.stack) ? [ flags.stack ] : []
-    const job_manager = this.newJobManager('localhost', true, flags.quiet, flags.explicit)
+    const job_manager = this.newJobManager('localhost', {verbose: true, quiet: flags.quiet, explicit: flags.explicit})
     stack_list.map((stack_name:string) => {
       const init_stack = this.initStackConfiguration({
         "stack": stack_name,
         "config-files": flags["config-files"],
         "stacks-dir": flags["stacks-dir"],
         },
-        job_manager.configurations
+        job_manager.configurations,
+        new ShellCommand(flags.explicit, flags.quiet)
       )
       if(!init_stack.success)
         return printValidatedOutput(init_stack)

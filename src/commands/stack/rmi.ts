@@ -3,6 +3,7 @@ import { BasicCommand } from '../../lib/commands/basic-command'
 import { JSTools } from '../../lib/js-tools'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
+import { ShellCommand } from '../../lib/shell-command'
 
 export default class RMI extends BasicCommand {
   static description = 'Delete an image one or more stacks.'
@@ -22,7 +23,7 @@ export default class RMI extends BasicCommand {
     const { argv, flags } = this.parse(RMI)
     this.augmentFlagsWithProjectSettings(flags, {stack:false, "stacks-dir": false, "config-files": false})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
-    const job_manager = this.newJobManager('localhost', true, flags.quiet, flags.explicit)
+    const job_manager = this.newJobManager('localhost', {verbose: true, quiet: flags.quiet, explicit: flags.explicit})
     const container_drivers = job_manager.container_drivers
     // -- map through list and remove ------------------------------------------
     stack_list.map((stack_name:string) => {
@@ -35,7 +36,8 @@ export default class RMI extends BasicCommand {
           "config-files": flags["config-files"],
           "stacks-dir": flags["stacks-dir"],
           },
-          job_manager.configurations
+          job_manager.configurations,
+          new ShellCommand(flags.explicit, flags.quiet)
         )
         if(!init_configuration.success)
           return printValidatedOutput(init_configuration)

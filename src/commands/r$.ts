@@ -69,7 +69,7 @@ export default class Run extends RemoteCommand {
     if(resource === undefined) return
     var remote_driver = this.newRemoteDriver(resource["type"], output_options, false)
     // -- create local job manager ---------------------------------------------
-    const job_manager = this.newJobManager('localhost', flags.verbose, false, flags.explicit)
+    const job_manager = this.newJobManager('localhost', {verbose: flags.verbose, quiet: false, explicit: flags.explicit})
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
     // -- set job options ------------------------------------------------------

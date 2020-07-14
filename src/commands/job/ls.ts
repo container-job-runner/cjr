@@ -26,9 +26,11 @@ export default class List extends BasicCommand {
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
     const job_manager  = this.newJobManager(
         flags['resource'] || 'localhost',
-        flags.verbose, 
-        false, 
-        flags.explicit
+        {
+            verbose: flags['verbose'],
+            quiet: false,
+            explicit: flags['explicit']
+        }
     )
     const job_info = job_manager.list({filter: {
       'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags)

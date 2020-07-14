@@ -24,9 +24,11 @@ export default class State extends BasicCommand {
 
     const job_manager = this.newJobManager(
       flags['resource'] || "localhost",
-      false,
-      false,
-      flags['explicit']
+      {
+        verbose: false,
+        quiet: false,
+        explicit: flags['explicit']
+      }
     )
     const states = job_manager.state({
       "ids": argv,

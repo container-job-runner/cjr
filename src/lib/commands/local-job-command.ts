@@ -100,13 +100,15 @@ export abstract class LocalJobCommand extends BasicCommand
   {
     // -- init Container SDK components ----------------------------------------
     const job_manager = this.newJobManager(
-        flags["resource"] || "localhost",
-        flags["verbose"]  || false,
-        flags["quiet"]    || false,
-        flags["explicit"] || false
+        flags["resource"] || "localhost", 
+        {
+            "verbose": flags["verbose"] || false,
+            "quiet": flags["quiet"] || false,
+            "explicit": flags["explicit"] || false
+        }
     )
     // -- init stack configuration ---------------------------------------------
-    const load = this.initStackConfiguration(flags, job_manager.configurations)
+    const load = this.initStackConfiguration(flags, job_manager.configurations, job_manager.shell)
     const stack_configuration = load.value
     // -- set stack options ----------------------------------------------------
     updateStackConfig(stack_configuration, {

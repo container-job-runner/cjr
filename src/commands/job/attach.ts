@@ -27,9 +27,11 @@ export default class Attach extends BasicCommand {
     // -- attach ---------------------------------------------------------------
     const job_manager = this.newJobManager(
         flags['resource'] || "localhost", 
-        false, 
-        false, 
-        flags['explicit']
+        {
+            verbose: false, 
+            quiet: false, 
+            explicit: flags['explicit']
+        }
     )
     printValidatedOutput(
       job_manager.attach({

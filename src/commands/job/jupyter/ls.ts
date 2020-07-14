@@ -19,9 +19,11 @@ export default class List extends BasicCommand {
     const { flags } = this.parse(List)
     const job_manager = this.newJobManager(
         flags['resource'] || "localhost",
-        false,
-        false,
-        flags['explicit']
+        {
+            verbose: false,
+            quiet: false,
+            explicit: flags['explicit']
+        }
     )
     const result = listJupyter(job_manager, "in-job")
     if(!result.success)

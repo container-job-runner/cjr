@@ -29,9 +29,11 @@ export default class Log extends BasicCommand {
 
     const job_manager = this.newJobManager(
       flags['resource'] || "localhost",
-      false,
-      false,
-      flags['explicit']
+      {
+        verbose: false,
+        quiet: false,
+        explicit: flags['explicit']
+      }
     )
     const log = job_manager.log({
       "id": job_id,

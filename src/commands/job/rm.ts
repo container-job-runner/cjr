@@ -36,9 +36,11 @@ export default class Delete extends BasicCommand {
     // -- delete job -----------------------------------------------------------
     const job_manager = this.newJobManager(
       flags['resource'] || "localhost",
-      flags['verbose'],
-      flags['quiet'],
-      flags['explicit']
+      {
+        "verbose": flags['verbose'],
+        "quiet": flags['quiet'],
+        "explicit": flags['explicit']
+      }
     )
     printValidatedOutput(
       job_manager.delete({

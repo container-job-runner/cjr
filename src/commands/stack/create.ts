@@ -114,7 +114,7 @@ export default class Create extends BasicCommand {
   async createImageStackWithSnapshots(stacks_dir: string, stack_name: string, explicit: boolean)
   {
     const result = new ValidatedOutput(true, undefined)
-    const job_manager = this.newJobManager('localhost', false, false, explicit)
+    const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: explicit})
     const container_drivers = job_manager.container_drivers
 
     // -- prompt user for stack options ----------------------------------------

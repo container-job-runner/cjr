@@ -33,9 +33,11 @@ export default class Copy extends BasicCommand {
     // -- copy job data --------------------------------------------------------
     const job_manager = this.newJobManager(
         flags['resource'] || "localhost", 
-        flags["verbose"], 
-        flags["quiet"], 
-        flags["explicit"]
+        {
+            verbose: flags["verbose"], 
+            quiet: flags["quiet"], 
+            explicit: flags["explicit"]
+        }
     )
     const result = job_manager.copy({
       "host-path": flags["copy-path"],
