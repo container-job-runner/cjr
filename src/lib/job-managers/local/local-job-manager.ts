@@ -1,11 +1,11 @@
 import chalk = require('chalk');
 import path = require('path');
 import fs = require('fs-extra')
-import { JobManager, JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions } from '../abstract/job-manager'
+import { JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
-import { firstJob, NewJobInfo, JobInfo, jobIds, JobState, firstJobId } from '../../drivers-containers/abstract/run-driver';
-import { Dictionary, rsync_constants, label_strings } from '../../constants';
+import { NewJobInfo, JobInfo, jobIds, JobState, } from '../../drivers-containers/abstract/run-driver';
+import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot, mountFileVolume } from '../../functions/config-functions';
 import { ShellCommand } from '../../shell-command';
@@ -18,6 +18,7 @@ import { JSTools } from '../../js-tools';
 import { DriverInitSocket } from './driver-init-socket';
 import { DriverInitCli } from './driver-init-cli';
 import { VolumeSyncManager, VolumeRsyncOptions } from '../../sync-managers/volume-sync-manager';
+import { GenericJobManager } from '../abstract/generic-job-manager';
 
 type IncludeExcludeFiles = {
   "include-from"?: string
@@ -39,7 +40,7 @@ export type LocalJobManagerUserOptions = {
     }
 }
 
-export class LocalJobManager extends JobManager
+export class LocalJobManager extends GenericJobManager
 {
   options: Required<LocalJobManagerUserOptions> = {
       "driver": "docker", 
@@ -105,7 +106,10 @@ export class LocalJobManager extends JobManager
 
   protected ERRORSTRINGS = {
     NO_MATCHING_ID: chalk`{bold No Matching Job ID}`,
-    FAILED_START: chalk`{bold Failed to start job}`
+    FAILED_START: chalk`{bold Failed to start job}`,
+    JOBEXEC: {
+      NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job`
+    }
   }
 
   protected WARNINGSTRINGS = {
@@ -122,7 +126,7 @@ export class LocalJobManager extends JobManager
   protected STATUSHEADERS = {
     BUILD : "Build Output",
     COPY_TO_VOLUME : "rsync Output: Host to Volume",
-    COPY_TO_HOST :   "rsync Output: Volume to Host",
+    COPY :   "rsync Output: Volume to Host",
     START : "Job Output",
     JOB_ID : "Job Id"
   }
@@ -135,7 +139,7 @@ export class LocalJobManager extends JobManager
 
     const stack_configuration = job_configuration.stack_configuration
     // -- 1. build stack and load stack configuration ---------------------------
-    this.printStatus({"header": this.STATUSHEADERS.BUILD}, this.output_options)
+    this.printStatus({"header": this.STATUSHEADERS.BUILD})
     const build_result = this.build(
       job_configuration.stack_configuration,
       {"reuse-image": job_options['reuse-image']}
@@ -146,7 +150,7 @@ export class LocalJobManager extends JobManager
       bindProjectRoot(stack_configuration, job_options["project-root"])
     else if(job_options["project-root"] && job_options["project-root-file-access"] === "volume")
     {
-      this.printStatus({header: this.STATUSHEADERS.COPY_TO_VOLUME}, this.output_options)
+      this.printStatus({header: this.STATUSHEADERS.COPY_TO_VOLUME})
       const create_file_volume = this.createNewFileVolume(
           job_options['project-root'], 
           stack_configuration.getRsyncUploadSettings(true),
@@ -165,70 +169,37 @@ export class LocalJobManager extends JobManager
     if(job_options.x11)
       addX11(job_configuration)
     // -- 3. start job -----------------------------------------------------------
-    this.printStatus({"header": this.STATUSHEADERS.START}, this.output_options)
+    this.printStatus({"header": this.STATUSHEADERS.START})
     const job = this.container_drivers.runner.jobStart(
       job_configuration,
       job_configuration.synchronous ? 'inherit' : 'pipe'
     )
     // -- print id ---------------------------------------------------------------
     if(!job.success) job.pushError(this.ERRORSTRINGS.FAILED_START)
-    else this.printStatus({header: this.STATUSHEADERS.JOB_ID, message: job.value.id}, this.output_options)
+    else this.printStatus({header: this.STATUSHEADERS.JOB_ID, message: job.value.id})
     return job
   }
 
-  exec(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions) : ValidatedOutput<NewJobInfo>
+  protected configureExecFileMounts(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions, parent_job: JobInfo) : ValidatedOutput<undefined>
   {
-    const failed_result = new ValidatedOutput(false, this.failed_nji);
-
-    // -- get parent job information -------------------------------------------
-    const job_info_request = firstJob(
-      this.container_drivers.runner.jobInfo({
-        "ids": [exec_options["parent-id"]],
-        "stack-paths": exec_options["stack-paths"]
-      })
-    )
-    if(!job_info_request.success)
-      return failed_result.absorb(job_info_request).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
-    const parent_job_info = job_info_request.value
-    // -- extract parent-job hostRoot and file_volume_id -----------------------
-    const parent_project_root = parent_job_info.labels?.[label_strings.job["project-root"]] || ""
-    const parent_file_volume_id = parent_job_info.labels?.[label_strings.job["file-volume"]] || ""
+    const result = new ValidatedOutput(true, undefined)
+    const parent_file_volume_id = parent_job.labels?.[label_strings.job["file-volume"]] || ""
+    const parent_project_root = parent_job.labels?.[label_strings.job["project-root"]] || ""
     if(!parent_project_root)
-      return failed_result.pushWarning(this.WARNINGSTRINGS.JOBEXEC.NO_PROJECTROOT(parent_job_info.id))
-    // -- configure job & stack properties --------------------------------------
-    setRelativeWorkDir(job_configuration, parent_project_root, exec_options["cwd"])
-    job_configuration.addLabel(label_strings.job["parent-job-id"], parent_job_info.id)
-    job_configuration.addLabel(label_strings.job["type"], "exec")
-    job_configuration.remove_on_exit = true
-    if(exec_options.x11)
-      addX11(job_configuration)
-    const stack_configuration = job_configuration.stack_configuration
+      return result.pushError(this.ERRORSTRINGS.JOBEXEC.NO_PROJECTROOT(parent_job.id))
+
     if(parent_file_volume_id) // -- bind parent job volume ----------------------
-      mountFileVolume(stack_configuration, parent_project_root, parent_file_volume_id)  // check with run options.
+      mountFileVolume(job_configuration.stack_configuration, parent_project_root, parent_file_volume_id)
     else // -- bind parent job hostRoot -----------------------------------------
-      bindProjectRoot(stack_configuration, parent_project_root)
-    // -- start job -------------------------------------------------------------
-    return this.buildAndRun(
-      job_configuration,
-      {"reuse-image": exec_options["reuse-image"]}
-    )
+      bindProjectRoot(job_configuration.stack_configuration, parent_project_root)
+
+    return result
   }
 
-  copy(copy_options: JobCopyOptions) : ValidatedOutput<undefined>
+  copyJob(job: JobInfo, copy_options: JobCopyOptions) : ValidatedOutput<undefined>
   {
-    this.printStatus({header: this.STATUSHEADERS.COPY_TO_HOST}, this.output_options)
-    const result = new ValidatedOutput(true, undefined);
-    // -- get information on all matching jobs -----------------------------------
-    var ji_result = this.container_drivers.runner.jobInfo({
-      "ids": copy_options['ids'],
-      "stack-paths": copy_options["stack-paths"]
-    })
-    if(!ji_result.success) return result.absorb(ji_result)
-    if(ji_result.value.length == 0) return result.pushError(this.ERRORSTRINGS['NO_MATCHING_ID'])
-    const job_info_array = ji_result.value
-    // -- copy results from all matching jobs ------------------------------------
-    job_info_array.map((job:JobInfo) => {
-      // -- 1. extract label information -----------------------------------------
+      const result = new ValidatedOutput(true, undefined)
+      // -- 1. extract label information ---------------------------------------
       const id = job.id;
       const projectRoot = job.labels?.[label_strings.job["project-root"]] || ""
       const file_volume_id = job.labels?.[label_strings.job["file-volume"]] || ""
@@ -246,7 +217,7 @@ export class LocalJobManager extends JobManager
           return result.absorb(write_request)
         }
       }
-      // -- 3. copy files --------------------------------------------------------
+      // -- 3. copy files ------------------------------------------------------
       const rsync_options: VolumeRsyncOptions = {
         "host-path": copy_options?.["host-path"] || projectRoot, // set copy-path to job hostRoot if it's not specified
         "volume": file_volume_id,
@@ -258,171 +229,26 @@ export class LocalJobManager extends JobManager
       result.absorb(
         this.sync_manager.copyToHost(this, rsync_options)
       )
-      // -- 4. remote tmp dir ----------------------------------------------------
+      // -- 4. remote tmp dir --------------------------------------------------
       if(rsync_files["tmp-dir"])
         fs.removeSync(rsync_files["tmp-dir"])
-    })
+
+      return result
+  }
+
+  protected deleteJob(job: JobInfo, options: JobDeleteOptions) : ValidatedOutput<undefined>
+  {
+    const result = super.deleteJob(job, options)
+    // -- remove any associated file volumes -----------------------------------    
+    const file_volume = job.labels?.[label_strings.job["file-volume"]]
+    if(!file_volume) return result
+
+    const volume_delete = this.container_drivers.runner.volumeDelete([file_volume])
+    result.absorb(volume_delete)
+    if(volume_delete.success)
+        console.log(` deleted volume ${file_volume}.`)
+
     return result
-  }
-
-  protected printStatus(contents: {header: string, message?: string}, output_options: OutputOptions, line_width:number = 80) {
-    if(output_options.quiet || !output_options.verbose) return
-    console.log(chalk`-- {bold ${contents.header}} ${'-'.repeat(Math.max(0,line_width - contents.header.length - 4))}`)
-    if(contents?.message) console.log(contents.message)
-  }
-
-  delete(options: JobDeleteOptions) : ValidatedOutput<undefined>
-  {
-    const result = new ValidatedOutput(true, undefined)
-    const job_info = this.jobSelector(this.container_drivers, options)
-    if(!job_info.success)
-      return new ValidatedOutput(false, undefined)
-    if(job_info.value.length == 0)
-      return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
-
-    const job_ids = jobIds(job_info).value
-    const volume_ids = volumeIds(job_info).value
-
-    if(!this.output_options.verbose)
-      return result.absorb(
-        this.container_drivers.runner.jobDelete(job_ids),
-        this.container_drivers.runner.volumeDelete(volume_ids)
-      )
-
-    // -- delete jobs ----------------------------------------------------
-    job_ids.map( (id:string) => {
-      const delete_result = this.container_drivers.runner.jobDelete([id])
-      result.absorb(delete_result)
-      if(delete_result.success)
-        console.log(` deleted job ${id}.`)
-    })
-    // -- delete volumes -------------------------------------------------
-    volume_ids.map( (id:string) => {
-      const delete_result = this.container_drivers.runner.volumeDelete([id])
-      result.absorb(delete_result)
-      if(delete_result.success)
-        console.log(` deleted volume ${id}.`)
-    })
-    return result
-  }
-
-  stop(options: JobStopOptions) : ValidatedOutput<undefined>
-  {
-    const result = new ValidatedOutput(true, undefined)
-    const job_info = this.jobSelector(this.container_drivers, options)
-    if(!job_info.success)
-      return new ValidatedOutput(false, undefined)
-    if(job_info.value.length == 0)
-      return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
-
-    const job_ids = jobIds(job_info).value
-
-    if(!this.output_options.verbose)
-      return result.absorb(
-        this.container_drivers.runner.jobStop(job_ids)
-      )
-
-    // -- stop jobs ----------------------------------------------------
-    job_ids.map( (id:string) => {
-      const delete_result = this.container_drivers.runner.jobDelete(job_ids)
-      result.absorb(delete_result)
-      if(delete_result.success)
-        console.log(` stopped job ${id}.`)
-    })
-    return result
-  }
-
-  state(options: JobStateOptions) : ValidatedOutput<JobState[]>
-  {
-    return jobStates(
-      this.container_drivers.runner.jobInfo({
-        'ids': options["ids"],
-        'stack-paths': options["stack-paths"]
-      })
-    )
-  }
-
-  attach(options: JobAttachOptions) : ValidatedOutput<undefined>
-  {
-    // match with existing container ids
-    const result = firstJobId(
-      this.container_drivers.runner.jobInfo({
-        "ids": [options['id']],
-        "stack-paths": options['stack-paths'],
-        "states": ["running"]
-      }))
-    if(result.success)
-      return this.container_drivers.runner.jobAttach(result.value)
-    else
-      return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
-  }
-
-  log(options: JobLogOptions) : ValidatedOutput<string>
-  {
-    // match with existing container ids
-    const result = firstJobId(
-      this.container_drivers.runner.jobInfo({
-        "ids": [options['id']],
-        "stack-paths": options['stack-paths']
-      }))
-    if(result.success)
-      return this.container_drivers.runner.jobLog(result.value, options["lines"])
-    else
-      return new ValidatedOutput(false, "").pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
-  }
-
-  list(options: JobListOptions) : ValidatedOutput<JobInfo[]>
-  {
-    return this.container_drivers.runner.jobInfo(options.filter)  
-  }
-
-  build(stack_configuration: StackConfiguration<any>, build_options: JobBuildOptions) : ValidatedOutput<undefined>
-  {
-    const result = new ValidatedOutput(true, undefined)
-    if(build_options["reuse-image"] && this.container_drivers.builder.isBuilt(stack_configuration))
-        return result
-    else
-        return result.absorb(
-            this.container_drivers.builder.build(
-                stack_configuration, 
-                (this.output_options.verbose || build_options?.verbose) ? "inherit" : "pipe", 
-                build_options
-            )
-        )
-  }
-
-  private buildAndRun(job_configuration: JobConfiguration<StackConfiguration<any>>, build_options: JobBuildOptions)
-  {    
-    const failed_result = new ValidatedOutput(false, {"id": "", "exit-code": 0, "output": ""});
-    const build_result = this.build(job_configuration.stack_configuration, build_options)
-    if(!build_result.success)
-        return failed_result
-    return this.container_drivers.runner.jobStart(job_configuration, job_configuration.synchronous ? 'inherit' : 'pipe')
-  }
-
-  private jobSelector(container_drivers: ContainerDrivers, options: JobStopOptions|JobDeleteOptions) : ValidatedOutput<JobInfo[]>
-  {
-    let job_info: ValidatedOutput<JobInfo[]>
-    if(options.selecter == "all") // -- delete all jobs ----------------------------------------
-      job_info = container_drivers.runner.jobInfo({
-        'stack-paths': options['stack-paths']
-      })
-    else if(options.selecter == "all-exited") // -- delete all jobs ----------------------------
-      job_info = container_drivers.runner.jobInfo({
-        'stack-paths': options['stack-paths'],
-        'states': ["exited"]
-      })
-    else if(options.selecter == "all-running")
-      job_info = container_drivers.runner.jobInfo({
-        'stack-paths': options['stack-paths'],
-        'states': ["running"]
-      })
-    else  // -- remove only specific jobs ------------------------------------------------------
-      job_info = container_drivers.runner.jobInfo({
-        'ids': options['ids'],
-        'stack-paths': options['stack-paths']
-      })
-    return job_info
   }
 
   // creates files for rsync --include-from and --excluded from that are used when copying from volume back to host
@@ -507,22 +333,4 @@ export class LocalJobManager extends JobManager
     return chown_file_volume_flag
   }
 
-}
-
-function volumeIds(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<string>>
-{
-  if(!job_info.success) return new ValidatedOutput(false, [])
-  return new ValidatedOutput(true,
-    job_info.value
-    .map((ji:JobInfo) => ji.labels?.[label_strings.job["file-volume"]] || "")
-    .filter((s:string) => s !== "")
-  )
-}
-
-function jobStates(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<Array<JobState>>
-{
-  if(!job_info.success) return new ValidatedOutput(false, [])
-  return new ValidatedOutput(true,
-    job_info.value.map( ( job:JobInfo ) => job.state)
-  )
 }
