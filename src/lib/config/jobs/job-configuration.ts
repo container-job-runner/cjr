@@ -14,7 +14,7 @@ export class JobConfiguration<T extends StackConfiguration<any>>
   {
     this.stack_configuration = environment;
     this.command = props?.command || [];
-    this.synchronous = props?.synchronous || true;
+    this.synchronous = (props?.synchronous == undefined) ? true : props.synchronous;
     this.remove_on_exit = props?.remove_on_exit || false;
     this.working_directory = props?.working_directory || environment.getContainerRoot()
     this.labels = props?.labels || {}
