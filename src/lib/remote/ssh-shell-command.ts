@@ -78,11 +78,8 @@ export class SshShellCommand
         ssh_flags.t = {}
         ssh_flags.o = "LogLevel=QUIET"
       }
-      if(ssh_options.x11) {
-        const platform = os.platform()
-        if(platform === 'darwin') ssh_flags.Y = {}
-        else if(platform === 'linux') ssh_flags.X = {}
-      }
+      if(ssh_options.x11)
+        this.addSshX11Flags(ssh_options)
       if(!use_multiplex && this.resource.key) // no resource needed if socket exists
         ssh_flags.i = {value: this.resource.key, noequals: true}
       if(use_multiplex)
@@ -147,11 +144,7 @@ export class SshShellCommand
         o: {value: ["ExitOnForwardFailure yes", `ControlPersist ${(options.controlpersist === undefined) ? 15 : options.controlpersist}s`], noequals: true}, // multiplex master will autoshutdown after 15 seconds of inactivity
         S: {value: this.multiplexSocketPath(options), noequals: true} // location of socket
       }
-      if(options?.x11) {
-        const platform = os.platform()
-        if(platform === 'darwin') flags.Y = {}
-        else if(platform === 'linux') flags.X = {}
-      }
+      if(options?.x11) this.addSshX11Flags(flags)
       if(this.resource.key) flags.i = {value: this.resource.key, noequals: true}
       const args = [`${this.resource.username}@${this.resource.address}`]
       const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
@@ -196,6 +189,12 @@ export class SshShellCommand
     {
       const options = { ... JSTools.rCopy(this.base_options.multiplex), ... (user_options || {}) }
       return path.join(this.data_dir, `${options?.tag || ""}${this.resource.username}@${this.resource.address}:22`)
+    }
+
+    private addSshX11Flags(flags: Dictionary, platform:string=os.platform())
+    {
+      if(platform === 'darwin') flags.Y = {}
+      else if(platform === 'linux') flags.X = {}
     }
 
     // === Tunnel Functions ====================================================
