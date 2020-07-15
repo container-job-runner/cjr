@@ -39,7 +39,11 @@ const jupyter_label_strings = {'access-ip': "jupyter-access-ip"}
 
 export function startJupyterInProject(job_manager: JobManager, jupyter_options: JupyterProjectOptions) : ValidatedOutput<{id: string, isnew: boolean}>
 {
+  const failure = new ValidatedOutput(false, {id: "", isnew: true})
+  // -- standardize identifier -----------------------------------------------------
   const identifier:JobIdentifer = {"project-root" : jupyter_options['project-root'] || ""}
+  const SJI = toStandardJupyterIdentifier(job_manager, identifier)
+  if(!SJI.success) return failure.absorb(SJI)
   // -- check if jupyter is already running ----------------------------------------
   const fetch_job_id = jupyterJobId(identifier, job_manager)
   if(fetch_job_id.success)
@@ -59,13 +63,17 @@ export function startJupyterInProject(job_manager: JobManager, jupyter_options: 
     }
   )
   if(!job.success) 
-    return new ValidatedOutput(false, {id: "", isnew: true}).absorb(job)
+    return failure.absorb(job)
   return new ValidatedOutput(true, {"id": job.value.id, "isnew": true})
 }
 
 export function startJupyterInJob(job_manager: JobManager, jupyter_options: JupyterJobOptions) : ValidatedOutput<{id: string, isnew: boolean}>
 {
+  const failure = new ValidatedOutput(false, {id: "", isnew: true})
+  // -- standardize identifier ------------------------------------------------
   const identifier:JobIdentifer = {"job-id" : jupyter_options["job-id"]}
+  const SJI = toStandardJupyterIdentifier(job_manager, identifier)
+  if(!SJI.success) return failure.absorb(SJI)
   // -- exit if request fails --------------------------------------------------
   const fetch_job_id = jupyterJobId(identifier, job_manager)
   if(fetch_job_id.success)
@@ -83,17 +91,22 @@ export function startJupyterInJob(job_manager: JobManager, jupyter_options: Jupy
     }
   )
   if(!job.success) 
-    return new ValidatedOutput(false, {id: "", isnew: true}).absorb(job)
+    return failure.absorb(job)
   return new ValidatedOutput(true, {"id": job.value.id, "isnew": true})
 }
 
-// -- extract the url for a jupyter notebook  ----------------------------------
-export function stopJupyter(job_manager: JobManager, identifier: {"job-id"?: string,"project-root"?: string}) : ValidatedOutput<undefined>
+// -- extract the url for a jupyter notebook  ---------------------------------
+export function stopJupyter(job_manager: JobManager, identifier: JobIdentifer) : ValidatedOutput<undefined>
 {
+  const failure = new ValidatedOutput(false, undefined)
+  // -- standardize identifier ------------------------------------------------
+  const SJI = toStandardJupyterIdentifier(job_manager, identifier)
+  if(!SJI.success) return failure.absorb(SJI)
+  // stop jupyter
   const runner = job_manager.container_drivers.runner
   const fetch_job_id = jupyterJobId(identifier, job_manager)
   if(!fetch_job_id.success)
-    return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
+    return failure.pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   else
     return runner.jobStop([fetch_job_id.value])
 }
@@ -152,9 +165,14 @@ export function listJupyter(job_manager: JobManager, filter:"all"|"in-project"|"
 // function can send repeated requests if the first one fails
 export async function getJupyterUrl(job_manager: JobManager, identifier: JobIdentifer, max_tries:number = 5, timeout:number = 2000) : Promise<ValidatedOutput<string>>
 {
+  const failure = new ValidatedOutput(false, "");
+  // -- standardize identifier -------------------------------------------------
+  const SJI = toStandardJupyterIdentifier(job_manager, identifier)
+  if(!SJI.success) return failure.absorb(SJI)
+
   const fetch_job = jupyterJobInfo(identifier, job_manager)
   if(!fetch_job.success) 
-    return (new ValidatedOutput(false, "")).pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
+    return failure.pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
   const job = fetch_job.value  
   // extract id and access url
   const job_id = job.id;
@@ -259,6 +277,7 @@ function parseNotebookListCommand(job_manager: JobManager, jupyter_id: string) :
 }
 
 const JUPYTER_JOB_PREFIX = "JUPYTER-"
+
 const JUPYTER_JOB_NAME = (identifier: JobIdentifer) => {
   if(identifier['project-root']) return `${JUPYTER_JOB_PREFIX}${JSTools.md5(identifier['project-root'])}`
   if(identifier['job-id']) return `${JUPYTER_JOB_PREFIX}${JSTools.md5(identifier['job-id'])}`
@@ -270,4 +289,20 @@ function mapJupyterUrl(url: string, access_ip?:string)
   if(access_ip)
     return url.replace(/(?<=http:\/\/)\d+\.\d+\.\d+\.\d+/, access_ip)
   return url
+}
+
+function toStandardJupyterIdentifier(job_manager: JobManager, job_identifer: JobIdentifer) : ValidatedOutput<undefined>
+{
+    const failure = new ValidatedOutput(false, undefined)
+    const success = new ValidatedOutput(true, undefined)
+    // ensure all job-ids are valid full-length ids
+    if(job_identifer["job-id"]) {
+        const fetch_id = firstJobId(job_manager.container_drivers.runner.jobInfo({
+            'ids': [job_identifer["job-id"]],
+            'states': ['running']
+        }))
+        if(!fetch_id.success) return failure
+        job_identifer['job-id'] = fetch_id.value
+    }
+    return success
 }
