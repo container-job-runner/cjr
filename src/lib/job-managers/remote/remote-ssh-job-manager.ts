@@ -112,6 +112,7 @@ export class RemoteSshJobManager extends GenericJobManager
             {ssh: {interactive: true}, multiplex: {}}
         )
         this.shell.setResource(options.resource)
+        this.shell.base_options['multiplex']['controlpersist'] = 15
         if(this.options.multiplexOptions.autoconnect)
             this.connect()
 
