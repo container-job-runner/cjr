@@ -149,11 +149,13 @@ export class SshShellCommand
       fs.ensureDirSync(path.dirname(this.multiplexSocketPath(options)))
 
       const command = "ssh"
+      const ssh_options = ["ExitOnForwardFailure yes"]
+      if(options.controlpersist) ssh_options.push(`ControlPersist ${options.controlpersist}s`)
       const flags:Dictionary = {
         M: {}, // set as master for multiplexer
         N: {}, // No command (does not execute anything over ssh)
         f: {}, // send to background
-        o: {value: ["ExitOnForwardFailure yes", `ControlPersist ${(options.controlpersist === undefined) ? 15 : options.controlpersist}s`], noequals: true}, // multiplex master will autoshutdown after 15 seconds of inactivity
+        o: {value: ssh_options, noequals: true},
         S: {value: this.multiplexSocketPath(options), noequals: true} // location of socket
       }
       if(options?.x11) this.addSshX11Flags(flags)
