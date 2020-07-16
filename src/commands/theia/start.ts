@@ -56,7 +56,7 @@ export default class Start extends ServerCommand {
             "port": theia_port,
             "x11": flags['x11'],
             "override-entrypoint": flags['override-entrypoint'],
-            "access-ip": "localhost"
+            "access-ip": this.getAccessIp(job_manager)
         }
     )
     printValidatedOutput(result)

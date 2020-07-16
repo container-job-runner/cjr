@@ -3,6 +3,8 @@ import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { initX11 } from '../../../lib/functions/cli-functions'
 import { ServerCommand } from '../../../lib/commands/server-command'
 import { getJupyterUrl, startJupyterApp, startJupyterInJob } from '../../../lib/functions/jupyter-functions'
+import { RemoteSshJobManager } from '../../../lib/job-managers/remote/remote-ssh-job-manager'
+import { JobManager } from '../../../lib/job-managers/abstract/job-manager'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server inside a job.'
@@ -20,6 +22,7 @@ export default class Start extends ServerCommand {
     "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     "server-port": flags.string({default: "auto", description: "default port for the jupyter server"}),
     "expose": flags.boolean({default: false}),
+    "tunnel": flags.boolean({default: false, description: "tunnel remote traffic through ssh"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "explicit": flags.boolean({default: false}),
@@ -60,7 +63,8 @@ export default class Start extends ServerCommand {
         "job-id": job_id,
         "port": jupyter_port,
         "x11": flags['x11'],
-        "override-entrypoint": flags['override-entrypoint']
+        "override-entrypoint": flags['override-entrypoint'],
+        "access-ip": this.getAccessIp(job_manager, flags)
       }
     )
     printValidatedOutput(result)
@@ -71,6 +75,11 @@ export default class Start extends ServerCommand {
     const url_result = await getJupyterUrl(job_manager, {"job-id": job_id}, max_tries, Math.floor(timeout / max_tries))
     if(!url_result.success)
       return printValidatedOutput(url_result)
+
+    if(flags['tunnel']) 
+        this.startTunnel(job_manager, {
+            "port": jupyter_port.hostPort, 
+        })
 
     if(flags['quiet']) // exit silently
       return    
