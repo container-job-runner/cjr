@@ -460,10 +460,9 @@ export class CJRRemoteDriver extends RemoteDriver
 
     if(result.success && rjup_options['tunnel']) {
       const success = this.ssh_shell.tunnelStart({
-        remotePort: port,
-        localPort: port,
-        localHostname: this.tunnel_local_hostname,
-        x11: false
+        remotePort: parseInt(port),
+        localPort: parseInt(port),
+        localIP: this.tunnel_local_hostname
       })
       if(!success) result.pushError('Failed to start tunnel')
     }
