@@ -222,7 +222,7 @@ export abstract class LocalJobCommand extends BasicCommand
     if(skip_print) return
     else if (flags.async)
       console.log(job.value.id)
-    else if(!flags.async && this.settings.get('alway-print-job-id'))
+    else if(!flags.async && this.settings.get('always-print-job-id'))
       console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job.value.id}`)
   }
 
