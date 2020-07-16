@@ -245,7 +245,7 @@ export class LocalJobManager extends GenericJobManager
 
     const volume_delete = this.container_drivers.runner.volumeDelete([file_volume])
     result.absorb(volume_delete)
-    if(volume_delete.success)
+    if(this.output_options.verbose && volume_delete.success)
         console.log(` deleted volume ${file_volume}.`)
 
     return result
