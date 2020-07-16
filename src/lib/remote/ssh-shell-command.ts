@@ -34,7 +34,7 @@ type SshTunnelOptions = {
         "reuse-connection"?: boolean
         "tag"?: string
         "controlpersist"?: number
-        "x11": boolean
+        "x11"?: boolean
     }
 }
 
