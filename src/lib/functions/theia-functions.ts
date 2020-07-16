@@ -5,7 +5,7 @@ import { ErrorStrings, NoticeStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'
 import { label_strings } from '../constants'
 import { parseJSON } from './misc-functions'
-import { firstJobId, JobInfo } from '../drivers-containers/abstract/run-driver'
+import { firstJobId, JobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { JobManager } from '../job-managers/abstract/job-manager'
 import { JSTools } from '../js-tools'
@@ -18,6 +18,7 @@ export type TheiaOptions = {
   "args"?: Array<string>      // additional args for jupyter command
   "x11"?: boolean             // optional x11 command
   "override-entrypoint"?: boolean // sets entrypoint to /bin/sh -c
+  "access-ip"?: string // if this is set, then this ip address will be returned by jobId
 }
 
 export type TheiaJobInfo = {
@@ -32,6 +33,7 @@ const ENV = {
 }
 
 type JobIdentifer = {"project-root"?: string}
+const theia_label_strings = {'access-ip': "theia-access-ip"}
 
 const THEIA_JOB_PREFIX = "THEIA-"
 const THEIA_JOB_NAME = (identifier: JobIdentifer) => {
@@ -45,7 +47,7 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
 {
   const job_identifier = {"project-root" : theia_options['project-root'] || ""}
   // -- check if jupyter is already running ------------------------------------
-  const job_id = jobId(job_identifier, job_manager)
+  const job_id = theiaJobId(job_identifier, job_manager)
   if(job_id.success)
     return new ValidatedOutput(true, {
         "id": job_id.value, 
@@ -85,13 +87,13 @@ export function stopAllTheias(job_manager: JobManager) : ValidatedOutput<undefin
 export function stopTheia(job_manager: JobManager, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const runner = job_manager.container_drivers.runner
-  const job_id = jobId(identifier, job_manager)
+  const job_id = theiaJobId(identifier, job_manager)
   if(!job_id.success)
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
   return runner.jobStop([job_id.value])
 }
 
-export function listTheia(job_manager: JobManager, host_ip: string="") : ValidatedOutput<TheiaJobInfo[]>
+export function listTheia(job_manager: JobManager) : ValidatedOutput<TheiaJobInfo[]>
 {
   const theia_jobs: Array<TheiaJobInfo> = []
   const result = new ValidatedOutput(true, theia_jobs)
@@ -105,7 +107,7 @@ export function listTheia(job_manager: JobManager, host_ip: string="") : Validat
   job_info_request.value.map( (job:JobInfo) => {
     theia_jobs.push({
       "id": job.id,
-      "url": extractUrlEnvVar(job_manager, job.id, host_ip).value,
+      "url": extractUrlEnvVar(job_manager, job).value,
       "project-root": job.labels?.[label_strings.job["project-root"]] || ""
     })
   })
@@ -114,12 +116,12 @@ export function listTheia(job_manager: JobManager, host_ip: string="") : Validat
 }
 
 // -- extract the url for a theia server  --------------------------------------
-export function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"?: string}, host_ip: string="") : ValidatedOutput<string>
+export function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"?: string}) : ValidatedOutput<string>
 {
-  const job_id = jobId(identifier, job_manager)
-  if(!job_id.success)
+  const job_info_request = theiaJobInfo(identifier, job_manager)
+  if(!job_info_request.success)
     return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
-  return extractUrlEnvVar(job_manager, job_id.value, host_ip)
+  return extractUrlEnvVar(job_manager, job_info_request.value)
 }
 
 // -- starts the Theia Electron app  -------------------------------------------
@@ -156,14 +158,17 @@ function createJob(identifier: JobIdentifer, job_manager: JobManager, theia_opti
   // -- create new jupyter job -------------------------------------------------
   const job_configuration = job_manager.configurations.job(stack_configuration)
   job_configuration.addLabel(label_strings.job.name, THEIA_JOB_NAME(identifier))
+  if(theia_options["access-ip"])
+    job_configuration.addLabel(theia_label_strings['access-ip'], theia_options["access-ip"])
   job_configuration.remove_on_exit = true
   job_configuration.synchronous = false
   job_configuration.command = [theiaCommand(stack_configuration, theia_options)]
   return job_configuration
 }
 
-function jobId(identifier: JobIdentifer, job_manager: JobManager,) : ValidatedOutput<string>
+function theiaJobInfo(identifier: JobIdentifer, job_manager: JobManager) : ValidatedOutput<JobInfo>
 {
+  const failure_output:JobInfo = {id: "", image: "", names: [], command: "", status: "", state: "dead", stack: "", labels: {}, ports: []}
   const theia_job_name = THEIA_JOB_NAME(identifier)
   const job_info_request = job_manager.container_drivers.runner.jobInfo({
     'labels': { [label_strings.job.name]: [theia_job_name]},
@@ -171,12 +176,16 @@ function jobId(identifier: JobIdentifer, job_manager: JobManager,) : ValidatedOu
   })
   // -- return false if request fails ------------------------------------------
   if(!job_info_request.success)
-    return new ValidatedOutput(false, "")
+    return new ValidatedOutput(false, failure_output)
   // -- return success if id exists --------------------------------------------
-  const jupyter_job_id = firstJobId(job_info_request).value
-  if(jupyter_job_id)
-    return (new ValidatedOutput(true, jupyter_job_id))
-  return new ValidatedOutput(false, "")
+  return firstJob(job_info_request)
+}
+
+function theiaJobId(identifier: JobIdentifer, job_manager: JobManager) : ValidatedOutput<string>
+{
+    const fetch_job = theiaJobInfo(identifier, job_manager)
+    if(fetch_job.success) return new ValidatedOutput(true, fetch_job.value.id)
+    return new ValidatedOutput(false, "")
 }
 
 // -- command to start theia server --------------------------------------------
@@ -192,13 +201,14 @@ function setEnvironment(stack_configuration: StackConfiguration<any>, theia_opti
   stack_configuration.addEnvironmentVariable(ENV.url, '0.0.0.0')
 }
 
-function  extractUrlEnvVar(job_manager: JobManager, job_id: string, host_ip: string="")
+function  extractUrlEnvVar(job_manager: JobManager, theia_job_info: JobInfo)
 {
+  const access_ip = theia_job_info.labels?.[theia_label_strings['access-ip']]
   const runner = job_manager.container_drivers.runner
   const exec_configuration = job_manager.configurations.exec()
   exec_configuration.command = ['bash', '-c', `echo '{"url":"'$${ENV.url}'","port":"'$${ENV.port}'"}'`]
-  const exec_output = runner.jobExec(job_id, exec_configuration, "pipe")
+  const exec_output = runner.jobExec(theia_job_info.id, exec_configuration, "pipe")
   const json_output = parseJSON(new ValidatedOutput(true, exec_output.value.output).absorb(exec_output)) // wrap output in ValidatedOutput<string> and pass to parseJSON
   if(!json_output.success) return (new ValidatedOutput(false, "")).pushError(ErrorStrings.THEIA.NOURL)
-  return new ValidatedOutput(true, `http://${(host_ip) ? host_ip : json_output.value?.url}:${json_output.value?.port}`);
+  return new ValidatedOutput(true, `http://${(access_ip) ? access_ip : json_output.value?.url}:${json_output.value?.port}`);
 }
