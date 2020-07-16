@@ -26,6 +26,18 @@ type SshOptions = { interactive?: boolean, x11?: boolean } // options pertaining
 type MultiplexOptions = { x11?: boolean, tag?: string, controlpersist?: number} // options for ssh multiplex master
 type SshShellOptions = Dictionary & { ssh?: SshOptions, multiplex?: MultiplexOptions } // options that users can specify
 
+type SshTunnelOptions = {
+    "remotePort": number
+    "localPort": number
+    "localIP"?: string
+    "multiplex"?: {
+        "reuse-connection"?: boolean
+        "tag"?: string
+        "controlpersist"?: number
+        "x11": boolean
+    }
+}
+
 export class SshShellCommand
 {
     shell: ShellCommand
@@ -199,19 +211,30 @@ export class SshShellCommand
 
     // === Tunnel Functions ====================================================
 
-    tunnelStart(options:{remotePort: string, localHostname: string, localPort: string, x11: boolean}) : boolean
+    tunnelStart(options:SshTunnelOptions) : boolean
     {
-      const multiplex_options = {tag: this.tags.tunnel, x11: options?.x11 || false}
-      if(!this.tunnelStop()) return false // -- stop any existing tunnel
-      if(!this.multiplexStart(multiplex_options)) return false
+      const default_ip = '127.0.0.1'
+      const multiplex_options = { 
+          "tag": options.multiplex?.tag || 'tunnel-' , 
+          "controlpersist": options.multiplex?.controlpersist || 600,
+          "x11": options.multiplex?.x11 || false
+     }
+
+      if(!options.multiplex?.["reuse-connection"] || !this.multiplexAlive(multiplex_options)) {
+        if(!this.tunnelStop()) return false // -- stop any existing tunnel
+        if(!this.multiplexStart(multiplex_options)) return false
+      }
+      
       const command = 'ssh'
       const flags = {
         O: {value: 'forward', noequals: true},
-        L: {value: `${options.remotePort}:${options.localHostname}:${options.localPort}`, noequals: true},
+        L: {value: `${options.remotePort}:${options.localIP || default_ip}:${options.localPort}`, noequals: true},
         S: {value: this.multiplexSocketPath(multiplex_options), noequals: true}
       }
+
       const args = [`${this.resource.username}@${this.resource.address}`]
       const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
+      if(!result.success) return false
       return this.multiplexExists(multiplex_options)
     }
 
