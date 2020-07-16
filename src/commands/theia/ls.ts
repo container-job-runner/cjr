@@ -17,7 +17,7 @@ export default class List extends BasicCommand {
   {
     const { flags } = this.parse(List)
     const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
-    const result = listTheia(job_manager, "localhost")
+    const result = listTheia(job_manager)
     if(!result.success)
       return printValidatedOutput(result)
 

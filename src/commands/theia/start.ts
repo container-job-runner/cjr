@@ -55,7 +55,8 @@ export default class Start extends ServerCommand {
             "project-root": flags["project-root"],
             "port": theia_port,
             "x11": flags['x11'],
-            "override-entrypoint": flags['override-entrypoint']
+            "override-entrypoint": flags['override-entrypoint'],
+            "access-ip": "localhost"
         }
     )
     printValidatedOutput(result)
@@ -66,7 +67,7 @@ export default class Start extends ServerCommand {
         await JSTools.sleep(timeout) 
     }
 
-    const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]}, "localhost")
+    const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]})
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
