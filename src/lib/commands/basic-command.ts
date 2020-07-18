@@ -209,7 +209,7 @@ export abstract class BasicCommand extends Command
       if(split_index >= 1)
         labels[l.substring(0, split_index)] = l.substring(split_index + 1)
     })
-    if(message) labels['message'] = message
+    if(message) labels[constants.label_strings['job']['message']] = message
     return labels
   }
 
