@@ -120,6 +120,7 @@ export function addGenericLabels(job_configuration: JobConfiguration<StackConfig
 {
   const stack_configuration = job_configuration.stack_configuration;
   job_configuration.addLabel(label_strings.job["container-root"],stack_configuration.getContainerRoot())
+  job_configuration.addLabel(label_strings.job["command"], job_configuration.command.join(" "))
   if(projectRoot)
     job_configuration.addLabel(label_strings.job["project-root"], projectRoot)
   if(stack_configuration.stack_path)

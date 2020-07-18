@@ -21,7 +21,8 @@ export const label_strings = {
     "stack-name": "stack-name",                   // name of job stack
     "download-include": 'rsync-include',          // contents of the file passed to rsync through the flag --include-from used when downloading files to host
     "download-exclude": 'rsync-exclude',          // contents of the file passed to rsync through the flag --exclude-from used when downloading files to host
-    "message": "message"                          // an optional user message describing the job
+    "message": "message",                         // an optional user message describing the job
+    "command": "cjr-command"                      // the inputted user command 
   }
 }
 
