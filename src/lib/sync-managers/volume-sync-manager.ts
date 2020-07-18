@@ -14,12 +14,18 @@ type RsyncIncludeExclude = {
     exclude?: string
 }
 
+type RsyncRules = {
+    include?: string[],
+    exclude?: string[]
+}
+
 export type VolumeRsyncOptions = {
   "host-path": string                                                           // path on host where files should be copied to
   "volume": string                                                              // id of volume that contains files
   "mode": "update" | "overwrite" | "mirror"                                         // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
   "verbose"?: boolean                                                           // if true rsync will by run with -v flag
   "files"?: RsyncIncludeExclude                                                 // rsync include-from and rsync exclude-from
+  "rules"?: RsyncRules
   "chown"?: string                                                              // string that specifies the username or id to use with command chown
   "manual"?: boolean                                                            // if true starts interactive shell instead of rsync job
 }
@@ -60,7 +66,7 @@ export class VolumeSyncManager extends SyncManager
             return build_result
         // -- set rsync flags --------------------------------------------------
         const rsync_flags:Dictionary = {a: {}}
-        this.addRsyncIncludeExcludeFlags(rsync_flags, options?.files)
+        this.addRsyncIncludeExcludeFlags(rsync_flags, options?.rules, options?.files)
         switch(options.mode)
         {
             case "update":
@@ -154,13 +160,17 @@ export class VolumeSyncManager extends SyncManager
             rsync_configuration.addBind(files.exclude, path.posix.join(rsync_constants['config_dir'], rsync_constants['exclude_file_name']))   
     }
 
-    private addRsyncIncludeExcludeFlags(rsync_flags: Dictionary, files?: {include?: string, exclude?: string})
+    private addRsyncIncludeExcludeFlags(rsync_flags: Dictionary, rules: undefined|{include?: Array<string>, exclude?: Array<string>}, files: undefined|{include?: string, exclude?: string})
     {
         // note: always add include before exclude
         if(files?.include) 
             rsync_flags[`include-from`] = path.posix.join(rsync_constants['config_dir'], rsync_constants['include_file_name'])
+        if(rules?.include)
+            rsync_flags[`include`] = rules.include
         if(files?.exclude) 
             rsync_flags[`exclude-from`] = path.posix.join(rsync_constants['config_dir'], rsync_constants['exclude_file_name'])
+        if(rules?.exclude)
+            rsync_flags[`exclude`] = rules.exclude
     }
 
     private rsyncCommandString(source: string, destination: string, flags: Dictionary)

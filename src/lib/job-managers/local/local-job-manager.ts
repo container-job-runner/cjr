@@ -20,12 +20,6 @@ import { DriverInitCli } from './driver-init-cli';
 import { VolumeSyncManager, VolumeRsyncOptions } from '../../sync-managers/volume-sync-manager';
 import { GenericJobManager } from '../abstract/generic-job-manager';
 
-type IncludeExcludeFiles = {
-  "include-from"?: string
-  "exclude-from"?: string
-  "tmp-dir"?: string
-}
-
 export type LocalJobManagerUserOptions = {
     "driver"?: "podman"|"docker"            // underlying container runner
     "driver-type"?: "cli"|"socket"          // once cli driver are depricated this field can be removed
@@ -195,14 +189,10 @@ export class LocalJobManager extends GenericJobManager
       if(!projectRoot) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_PROJECTROOT(id))
       if(!file_volume_id) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_VOLUME(id))
       // -- 2. write include & exclude settings to files -------------------------
-      let rsync_files:IncludeExcludeFiles = {}
+      let rsync_rules:{include?: string[], exclude?: string[]} = {}
       if(!copy_options["all-files"]) {
-        const write_request = this.writeDownloadIncludeExcludeFiles(download_include, download_exclude)
-        rsync_files = write_request.value
-        if(!write_request.success) {
-          if(rsync_files["tmp-dir"]) fs.removeSync(rsync_files["tmp-dir"])
-          return result.absorb(write_request)
-        }
+        rsync_rules['include'] = this.includeExcludeLabelToFlag(download_include)
+        rsync_rules['exclude'] = this.includeExcludeLabelToFlag(download_exclude)
       }
       // -- 3. copy files ------------------------------------------------------
       const rsync_options: VolumeRsyncOptions = {
@@ -210,15 +200,12 @@ export class LocalJobManager extends GenericJobManager
         "volume": file_volume_id,
         "mode": copy_options.mode,
         "verbose": this.output_options.verbose,
-        "files": {"include": rsync_files["include-from"], "exclude": rsync_files["exclude-from"]},
+        "rules": rsync_rules,
         "manual": copy_options["manual"]
       }
       result.absorb(
         this.sync_manager.copyToHost(this, rsync_options)
       )
-      // -- 4. remote tmp dir --------------------------------------------------
-      if(rsync_files["tmp-dir"])
-        fs.removeSync(rsync_files["tmp-dir"])
 
       return result
   }
@@ -234,41 +221,6 @@ export class LocalJobManager extends GenericJobManager
     result.absorb(volume_delete)
     if(this.output_options.verbose && volume_delete.success)
         console.log(` deleted volume ${file_volume}.`)
-
-    return result
-  }
-
-  // creates files for rsync --include-from and --excluded from that are used when copying from volume back to host
-
-  private writeDownloadIncludeExcludeFiles(include_label: string|undefined, exclude_label: string|undefined) : ValidatedOutput<IncludeExcludeFiles>
-  {
-    const result:ValidatedOutput<IncludeExcludeFiles> = new ValidatedOutput(true, {})
-    if(!include_label && !exclude_label)
-      return result
-
-    // -- create tmp dir in scratch dir ----------------------------------------
-    const mktemp = FileTools.mktempDir(this.options.directories["copy"])
-    if(!mktemp.success)
-      return result.absorb(mktemp)
-    const tmp_path = mktemp.value
-    result.value["tmp-dir"] = tmp_path
-
-    // -- write files ----------------------------------------------------------
-    const author = new TextFile()
-    author.add_extension = false
-
-    type FI = {path: string, data?: string, key: keyof IncludeExcludeFiles}
-    const file_info: Array<FI> = [
-      {key: 'include-from', path: path.join(tmp_path, "download_include"), data: include_label},
-      {key: 'exclude-from', path: path.join(tmp_path, "download_exclude"), data: exclude_label}
-    ]
-
-    file_info.map( (f:FI) => {
-      if(!f.data) return
-      result.absorb(author.write(f.path, f.data))
-      if(!result.success) result.pushError(`Failed to write file ${f.path}`)
-      result.value[f.key] = f.path
-    })
 
     return result
   }
