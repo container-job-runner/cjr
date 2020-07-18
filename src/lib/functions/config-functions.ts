@@ -116,24 +116,27 @@ export function mountFileVolume(stack_configuration: StackConfiguration<any>, ho
 // projectRoot: string - project-root on host
 // stack_path: string - absolute path to stack used to run job
 // -----------------------------------------------------------------------------
-export function addGenericLabels(configuration: JobConfiguration<StackConfiguration<any>>, projectRoot: string)
+export function addGenericLabels(job_configuration: JobConfiguration<StackConfiguration<any>>, projectRoot: string)
 {
-  configuration.addLabel(label_strings.job["container-root"], configuration.stack_configuration.getContainerRoot())
+  const stack_configuration = job_configuration.stack_configuration;
+  job_configuration.addLabel(label_strings.job["container-root"],stack_configuration.getContainerRoot())
   if(projectRoot)
-    configuration.addLabel(label_strings.job["project-root"], projectRoot)
-  if(configuration.stack_configuration.stack_path)
-    configuration.addLabel(label_strings.job["stack-path"], configuration.stack_configuration.stack_path)
+    job_configuration.addLabel(label_strings.job["project-root"], projectRoot)
+  if(stack_configuration.stack_path)
+    job_configuration.addLabel(label_strings.job["stack-path"], stack_configuration.stack_path)
+  if(stack_configuration.stack_name)
+    job_configuration.addLabel(label_strings.job["stack-name"], stack_configuration.stack_name)
   // -- add download settings --------------------------------------------------
   const author = new TextFile()
   author.add_extension = false
-  const download_settings = configuration.stack_configuration.getRsyncDownloadSettings(true)
+  const download_settings = stack_configuration.getRsyncDownloadSettings(true)
   if( download_settings.include ) {
     const contents = author.read(download_settings.include)
-    configuration.addLabel(label_strings.job["download-include"], contents.value)
+    job_configuration.addLabel(label_strings.job["download-include"], contents.value)
   }
   if( download_settings.exclude ) {
     const contents = author.read(download_settings.exclude)
-    configuration.addLabel(label_strings.job["download-exclude"], contents.value)
+    job_configuration.addLabel(label_strings.job["download-exclude"], contents.value)
   }
 }
 
