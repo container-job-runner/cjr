@@ -46,4 +46,9 @@ export class JobConfiguration<T extends StackConfiguration<any>>
     delete this.labels[field]
   }
 
+  joinCommand()
+  {
+    this.command = [this.command.join(" ")]
+  }
+
 }
