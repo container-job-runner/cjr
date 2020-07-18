@@ -12,6 +12,7 @@ export default class Labels extends BasicCommand {
   static description = 'Retrieve labels for a job.'
   static args = [{name: 'id'}]
   static flags = {
+    "resource": flags.string({env: 'RESOURCE'}),
     "label": flags.string({}),
     "all": flags.boolean({default: false}),
     "all-completed": flags.boolean({default: false}),
@@ -28,7 +29,7 @@ export default class Labels extends BasicCommand {
   {
     const {argv, flags} = this.parse(Labels)
     this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
-    const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags.explicit})
+    const job_manager = this.newJobManager(flags['resource'] || 'localhost', {verbose: false, quiet: false, explicit: flags.explicit})
     const runner = job_manager.container_drivers.runner
     const builder = job_manager.container_drivers.builder
     
