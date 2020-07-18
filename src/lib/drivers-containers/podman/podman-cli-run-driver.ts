@@ -3,7 +3,7 @@
 // ===========================================================================
 
 import { ShellCommand } from "../../shell-command"
-import { JobInfo, JobInfoFilter } from '../abstract/run-driver'
+import { JobInfo, JobInfoFilter, JobState } from '../abstract/run-driver'
 import { DockerCliRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
 import { parseJSON, parseLineJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
@@ -38,7 +38,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
         id: x.ID,
         image: x.Image,
         names: x.Names,
-        command: x.Command,
+        command: x.Command, // this field is overwritten using inspect data, since podman ps command also shows entrypoint
         state: this.psStatusToJobInfoState(x.Status),
         stack: x?.Labels?.[label_strings.job["stack-path"]] || "",
         labels: x?.Labels || {},
@@ -63,22 +63,26 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
 
     const ids = jobs.map((x:JobInfo) => x.id)
     const result = parseLineJSON(
-      this.shell.output(`${this.base_command} inspect`, {format: '{{json .HostConfig.PortBindings}}'}, ids, {})
+      this.shell.output(`${this.base_command} inspect`, {format: '{{"{\\\"ID\\\":"}}{{json .ID}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Command\\\":"}}{{json .Config.Cmd}}{{"}"}}'}, ids, {})
     )
     if(!result.success) return new ValidatedOutput(false, [])
 
     // -- extract port data and index by id ------------------------------------
     const inspect_data:Dictionary = {}
-      result.value.map((info:Dictionary, index: number) => {
-        const id = ids[index];
-        if(id) inspect_data[id] = {ports: this.PortBindingsToJobPortInfo(info || {})}
+      result.value.map((info:Dictionary) => {
+        if(info.ID)
+            inspect_data[info.ID] = {
+            'Ports': this.PortBindingsToJobPortInfo(info?.['PortBindings'] || {}),
+            'Command': info?.['Command'].join(" ") || ""
+            }
     });
 
     // -- add data to job array ------------------------------------------------
     jobs.map( (job:JobInfo):void => {
       const id = job.id
       if(inspect_data[id] !== undefined) {
-        job.ports = inspect_data[id]?.ports || []
+        job.ports = inspect_data[id]?.Ports || []
+        job.command = inspect_data[id]?.Command || job.command
       }
     })
     return new ValidatedOutput(true, jobs)
