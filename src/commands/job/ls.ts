@@ -48,15 +48,19 @@ export default class List extends BasicCommand {
     var toArray: (e: Dictionary) => Array<any>
     var printTable
 
+    const sn_lbl = constants.label_strings['job']['stack-name']
+    const msg_lbl = constants.label_strings['job']['message']
+
     if(flags.verbose)  // -- Verbose Output ------------------------------------
     {
       table_parameters = {
-          row_headers:    ["ID", "IMAGE", "STACK", "COMMAND", "STATUS", "MESSAGE"],
-          column_widths:  [9, 103],
-          text_widths:    [8, 102],
+          row_headers:    ["ID", "IMAGE", "STACK", "STACKNAME", "COMMAND", "STATUS", "MESSAGE"],
+          column_widths:  [11, 103],
+          text_widths:    [10, 102],
           silent_clip:    [true, true]
       }
-      toArray = (e:Dictionary) => [e.id, e.image, e.stack, e.command, e.status, e?.labels?.message || ""]
+
+      toArray = (e:Dictionary) => [e.id, e.image, e.stack, (e?.labels?.[sn_lbl] || ""), e.command, e.status, e?.labels?.[msg_lbl] || ""]
       printTable = printHorizontalTable
     }
     else // -- Standard Output -------------------------------------------------
@@ -83,7 +87,7 @@ export default class List extends BasicCommand {
           "column_width":   20,
           "text_width":     15,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => (d?.labels?.[constants.label_strings['job']['stack-name']] || "")
+          "getter": (d:Dictionary) => (d?.labels?.[sn_lbl] || "")
         },
         command: {
           "column_header":  "COMMAND",
@@ -104,7 +108,7 @@ export default class List extends BasicCommand {
           "column_width":   40,
           "text_width":     35,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => (d?.labels?.message || "")
+          "getter": (d:Dictionary) => (d?.labels?.[msg_lbl] || "")
         }
       }
 
