@@ -62,7 +62,8 @@ export default class Start extends ServerCommand {
         "project-root": flags["project-root"],
         "port": jupyter_port,
         "x11": flags['x11'],
-        "override-entrypoint": flags['override-entrypoint']
+        "override-entrypoint": flags['override-entrypoint'],
+        "access-ip": this.getAccessIp(job_manager)
       }
     )
     printValidatedOutput(result)
