@@ -13,6 +13,7 @@ export type StackSnapshotOptions = {mode: 'flag'|'always'|'prompt'|'off', userna
 export abstract class StackConfiguration<T>
 {
   stack_path: string|undefined
+  stack_name: string|undefined
   abstract config: T
 
   //COPY returns new StackConfigurations with deep copies of all parameters

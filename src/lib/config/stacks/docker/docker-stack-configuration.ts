@@ -86,7 +86,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   image_tag: string = "" // tag used for image building
   yml_file = new YMLFile("", false, dsc_vo_validator) // yml file for reading configs
 
-  protected stack_name = ""
+  stack_name = ""
   readonly config_filename = "config.yml" // name of config file in stack directory
   readonly archive_filename = "image" // name of config file in stack directory
   readonly build_context:string = "./build" // default build context relative to stack directory
