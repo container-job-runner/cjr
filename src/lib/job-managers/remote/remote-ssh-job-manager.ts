@@ -486,14 +486,14 @@ export class RemoteSshJobManager extends GenericJobManager
         // -- remove any tmp directories ---------------------------------------    
         const cached = (job.labels?.[this.REMOTELABELS['CACHED_PROJECT_ROOT']] === 'TRUE')
         const remote_project_root = job.labels?.[this.REMOTELABELS['REMOTE_PROJECT_ROOT']]
-        if(!remote_project_root || !cached) // only delete uncached projects with a remote_project_root
+        if(!remote_project_root || cached) // only delete uncached projects with a remote_project_root
             return result
         if(!PathTools.ischild(PathTools.split(this.remoteWorkDirectory()), PathTools.split(remote_project_root))) // extra check to ensure only delete files inside work directory are removed
             return result
         
         const file_delete = this.shell.exec('rm', {r: {}, f: {}}, [remote_project_root])
         result.absorb(file_delete)
-        if(file_delete.success)
+        if(this.output_options.verbose && file_delete.success)
             console.log(` deleted files ${remote_project_root}.`)
 
         return result
