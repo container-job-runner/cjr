@@ -71,6 +71,10 @@ export default class Set extends BasicCommand {
     "timeout-theia": flags.string({
       description: 'number of seconds that cjr should wait for theia server to start.'
     }),
+    "xquartz-autostart": flags.string({
+      options: ["true", "false"],
+      description: "only affects mac. if true, then cjr will try to start xquartz automatically when --x11 flag is selected."
+    }),
     "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = true;

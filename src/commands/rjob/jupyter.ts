@@ -56,7 +56,11 @@ export default class Jupyter extends RemoteCommand {
     // -- create local job manager ---------------------------------------------
     const job_manager = this.newJobManager('localhost', {verbose: flags.verbose, quiet: false, explicit: flags.explicit})
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11'] && args['command'] == 'start') await initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11'] && args['command'] == 'start') await initX11({
+            'interactive': this.settings.get('interactive'),
+            'xquartz': this.settings.get('xquartz-autostart'),
+            'explicit': flags.explicit
+        })
     // -- select port ----------------------------------------------------------
     if(flags['port'] == 'auto') {
       const port_number = nextAvailablePort(job_manager.container_drivers, 7027)

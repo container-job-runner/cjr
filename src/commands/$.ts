@@ -35,7 +35,11 @@ export default class Run extends LocalJobCommand {
   {
     const {argv, flags} = this.parse(Run)
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11({
+            'interactive': this.settings.get('interactive'),
+            'xquartz': this.settings.get('xquartz-autostart'),
+            'explicit': flags.explicit
+        })
     // -- run basic job --------------------------------------------------------
     const fixed_flags = {"remove-on-exit": (flags['file-access'] === "bind")}
     const { job, job_data } = this.runSimpleJobAndCopy({ ... flags, ... fixed_flags }, argv)

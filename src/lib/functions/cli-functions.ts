@@ -181,12 +181,12 @@ export function nextAvailablePort(drivers: ContainerDrivers, port:number=1024) :
 // ensures xQuartz is running
 // -- Parameters ---------------------------------------------------------------
 // -----------------------------------------------------------------------------
-export async function initX11(interactive: boolean, explicit: boolean) : Promise<ValidatedOutput<undefined>>
+export async function initX11(options: {interactive: boolean, explicit: boolean, xquartz: boolean}) : Promise<ValidatedOutput<undefined>>
 {
   const platform = os.platform()
-  const shell = new ShellCommand(explicit, false)
+  const shell = new ShellCommand(options.explicit, false)
 
-  if(platform == "darwin") // -- OSX -------------------------------------------
+  if(platform == "darwin" && options.xquartz) // -- OSX -------------------------------------------
   {
     // -- 1. check if x11 settings plist file exists ---------------------------
     const x11_config_path = path.join(os.homedir(), 'Library/Preferences/org.macosforge.xquartz.X11.plist')
@@ -196,7 +196,7 @@ export async function initX11(interactive: boolean, explicit: boolean) : Promise
     var response: { flag: any; } & { flag: any; } = {flag: false}
     if((new RegExp('<true/>')).test(result.value))
     {
-      if(interactive) {
+      if(options.interactive) {
         printValidatedOutput(new ValidatedOutput(true, undefined).pushWarning(WarningStrings.X11.XQUARTZ_NOREMOTECONNECTION))
         var response = await inquirer.prompt([
           {
@@ -208,7 +208,7 @@ export async function initX11(interactive: boolean, explicit: boolean) : Promise
         if(!response.flag) return new ValidatedOutput(false, undefined)
       }
       // change setting
-      if(!interactive || response?.flag == true)
+      if(!options.interactive || response?.flag == true)
         shell.output(`plutil -replace nolisten_tcp -bool NO ${x11_config_path}`)
     }
     // -- 2. start x11 if it's not already running -----------------------------

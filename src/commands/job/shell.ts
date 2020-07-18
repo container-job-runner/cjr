@@ -28,7 +28,11 @@ export default class Shell extends LocalJobCommand {
   {
     const { argv, flags } = this.parse(Shell)
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11({
+            'interactive': this.settings.get('interactive'),
+            'xquartz': this.settings.get('xquartz-autostart'),
+            'explicit': flags.explicit
+        })
     // -- get job id -----------------------------------------------------------
     const parent_id = await this.getJobId(argv, flags)
     if(parent_id === false) return // exit if user selects empty id or exits interactive dialog

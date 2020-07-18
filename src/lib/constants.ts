@@ -101,7 +101,8 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "jupyter-command": "jupyter lab",
       "webapp": "",
       "timeout-jupyter": "10",
-      "timeout-theia": "10"
+      "timeout-theia": "10",
+      "xquartz-autostart": false
   }
 }
 

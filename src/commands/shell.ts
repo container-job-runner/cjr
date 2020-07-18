@@ -30,7 +30,11 @@ export default class Shell extends LocalJobCommand {
   {
     const {flags} = this.parse(Shell)
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11({
+            'interactive': this.settings.get('interactive'),
+            'xquartz': this.settings.get('xquartz-autostart'),
+            'explicit': flags.explicit
+        })
     // -- run basic job --------------------------------------------------------
     const shell_flags = {
       "quiet": false,

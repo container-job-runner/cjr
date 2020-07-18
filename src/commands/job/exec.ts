@@ -35,7 +35,11 @@ export default class Exec extends LocalJobCommand {
     const parent_job_id = await this.getJobId(argv, flags)
     if(parent_job_id === false) return // exit if user selects empty id or exits interactive dialog
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11({
+            'interactive': this.settings.get('interactive'),
+            'xquartz': this.settings.get('xquartz-autostart'),
+            'explicit': flags.explicit
+        })
     // -- run basic exec -------------------------------------------------------
     const { job, job_data } = this.runSimpleExec(parent_job_id, flags, argv.slice(1))
     printValidatedOutput(job_data)

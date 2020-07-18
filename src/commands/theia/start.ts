@@ -43,7 +43,11 @@ export default class Start extends ServerCommand {
       return printValidatedOutput(create_stack)
     const {stack_configuration, job_manager } = create_stack.value
     // -- check x11 user settings --------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11({
+            'interactive': this.settings.get('interactive'),
+            'xquartz': this.settings.get('xquartz-autostart'),
+            'explicit': flags.explicit
+        })
     // -- select port --------------------------------------------------------
     const theia_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"])
     // -- start theia --------------------------------------------------------

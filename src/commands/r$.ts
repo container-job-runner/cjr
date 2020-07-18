@@ -71,7 +71,11 @@ export default class Run extends RemoteCommand {
     // -- create local job manager ---------------------------------------------
     const job_manager = this.newJobManager('localhost', {verbose: flags.verbose, quiet: false, explicit: flags.explicit})
     // -- check x11 user settings ----------------------------------------------
-    if(flags['x11']) await initX11(this.settings.get('interactive'), flags.explicit)
+    if(flags['x11']) await initX11({
+            'interactive': this.settings.get('interactive'),
+            'xquartz': this.settings.get('xquartz-autostart'),
+            'explicit': flags.explicit
+        })
     // -- set job options ------------------------------------------------------
     var job_options:JobOptions = {
       "stack-path":   stack_path,
