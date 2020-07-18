@@ -17,7 +17,8 @@ export const label_strings = {
     "file-volume": "file-volume",                 // id of any associated file volume
     "parent-job-id": "parent-job",                 // id of parent job for exec
     "name": "job-name",                           // a string that contains an optional job name
-    "stack-path": "stack-path",                   // string containg path on host where underlying stack is located
+    "stack-path": "stack-path",                   // string containing path on host where underlying stack is located
+    "stack-name": "stack-name",                   // name of job stack
     "download-include": 'rsync-include',          // contents of the file passed to rsync through the flag --include-from used when downloading files to host
     "download-exclude": 'rsync-exclude'           // contents of the file passed to rsync through the flag --exclude-from used when downloading files to host
   }
