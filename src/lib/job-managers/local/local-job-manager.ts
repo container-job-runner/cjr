@@ -163,21 +163,8 @@ export class LocalJobManager extends GenericJobManager
       mountFileVolume(stack_configuration, job_options["project-root"], file_volume_id)
       job_configuration.addLabel(label_strings.job["file-volume"], file_volume_id)
     }
-    // -- 1. update job properties: apply options --------------------------------
-    setRelativeWorkDir(job_configuration, job_options["project-root"] || "", job_options["cwd"])
-    addGenericLabels(job_configuration, job_options["project-root"] || "")
-    if(job_options.x11)
-      addX11(job_configuration)
-    // -- 3. start job -----------------------------------------------------------
-    this.printStatus({"header": this.STATUSHEADERS.START})
-    const job = this.container_drivers.runner.jobStart(
-      job_configuration,
-      job_configuration.synchronous ? 'inherit' : 'pipe'
-    )
-    // -- print id ---------------------------------------------------------------
-    if(!job.success) job.pushError(this.ERRORSTRINGS.FAILED_START)
-    else this.printStatus({header: this.STATUSHEADERS.JOB_ID, message: job.value.id})
-    return job
+    
+    return super.run(job_configuration, job_options)
   }
 
   protected configureExecFileMounts(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions, parent_job: JobInfo) : ValidatedOutput<undefined>
