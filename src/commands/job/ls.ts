@@ -4,6 +4,7 @@ import { flags} from '@oclif/command'
 import { printVerticalTable, printHorizontalTable, printValidatedOutput } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary, label_strings } from '../../lib/constants'
+import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 
 export default class List extends BasicCommand {
   static description = 'List all running and completed jobs.'
@@ -44,12 +45,14 @@ export default class List extends BasicCommand {
       return
     }
 
-    var table_parameters: Dictionary;
-    var toArray: (e: Dictionary) => Array<any>
-    var printTable
+    let table_parameters: Dictionary;
+    let toArray: (e: JobInfo) => Array<string>
+    let printTable
 
-    const sn_lbl = constants.label_strings['job']['stack-name']
-    const msg_lbl = constants.label_strings['job']['message']
+    const lbl_stack_name  = constants.label_strings['job']['stack-name']
+    const lbl_message = constants.label_strings['job']['message']
+    const lbl_command = constants.label_strings['job']['command']
+    const getLabel = (job:JobInfo, label: string) => job?.labels?.[label] || ""
 
     if(flags.verbose)  // -- Verbose Output ------------------------------------
     {
@@ -60,7 +63,7 @@ export default class List extends BasicCommand {
           silent_clip:    [true, true]
       }
 
-      toArray = (e:Dictionary) => [e.id, e.image, e.stack, (e?.labels?.[sn_lbl] || ""), e.command, e.status, e?.labels?.[msg_lbl] || ""]
+      toArray = (j:JobInfo) => [j.id, j.image, j.stack, getLabel(j, lbl_stack_name), getLabel(j, lbl_command), j.status, getLabel(j, lbl_message)]
       printTable = printHorizontalTable
     }
     else // -- Standard Output -------------------------------------------------
@@ -73,42 +76,42 @@ export default class List extends BasicCommand {
           "column_width":   17,
           "text_width":     12,
           "silent_clip":    true,
-          "getter": (d:Dictionary) => d.id
+          "getter": (j:JobInfo) => j.id
         },
         stack: {
           "column_header":  "STACK",
           "column_width":   20,
           "text_width":     15,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => d.stack
+          "getter": (j:JobInfo) => j.stack
         },
         stackName: {
           "column_header":  "STACKNAME",
           "column_width":   20,
           "text_width":     15,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => (d?.labels?.[sn_lbl] || "")
+          "getter": (j:JobInfo) => getLabel(j, lbl_stack_name)
         },
         command: {
           "column_header":  "COMMAND",
           "column_width":   40,
           "text_width":     35,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => d.command
+          "getter": (j:JobInfo) => getLabel(j, lbl_command)
         },
         status: {
           "column_header":  "STATUS",
           "column_width":   35,
           "text_width":     30,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => d.status
+          "getter": (j:JobInfo) => j.status
         },
         message: {
           "column_header":  "MESSAGE",
           "column_width":   40,
           "text_width":     35,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => (d?.labels?.[msg_lbl] || "")
+          "getter": (j:JobInfo) => getLabel(j, lbl_message)
         }
       }
 
@@ -135,18 +138,18 @@ export default class List extends BasicCommand {
 
     printTable({ ...table_parameters, ...{
         title:  "Running Jobs",
-        data:   jobs.filter((j:Dictionary) => (j.state === "running")).map((e:Dictionary) => toArray(e))
+        data:   jobs.filter((j:JobInfo) => (j.state === "running")).map((j:JobInfo) => toArray(j))
     }})
 
     printTable({ ...table_parameters, ...{
         title:  "Completed Jobs",
-        data:   jobs.filter((j:Dictionary) => (j.state === "exited" && j?.labels?.[label_strings.job.type] !== "stash")).map((e:Dictionary) => toArray(e)),
+        data:   jobs.filter((j:JobInfo) => (j.state === "exited" && j?.labels?.[label_strings.job.type] !== "stash")).map((j:JobInfo) => toArray(j)),
     }})
 
     if(flags['show-stashes'] || flags['all'])
       printTable({ ...table_parameters, ...{
           title:  "Stashes",
-          data:   jobs.filter((j:Dictionary) => (j?.labels?.[label_strings.job.type] === "stash")).map((e:Dictionary) => toArray(e)),
+          data:   jobs.filter((j:JobInfo) => (j?.labels?.[label_strings.job.type] === "stash")).map((j:JobInfo) => toArray(j)),
       }})
 
   }
