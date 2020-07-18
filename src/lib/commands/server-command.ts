@@ -6,7 +6,7 @@ import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manag
 
 export abstract class ServerCommand extends LocalJobCommand
 {
-    readonly localhost_ip = '127.0.0.1'
+    readonly localhost_ip = 'localhost' // use localhost instead of 127.0.0.1 for theia webviews
     
     defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean)
     {
