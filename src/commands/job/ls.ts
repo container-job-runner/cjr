@@ -1,4 +1,5 @@
 import * as path from 'path'
+import constants = require('../../lib/constants')
 import { flags} from '@oclif/command'
 import { printVerticalTable, printHorizontalTable, printValidatedOutput } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
@@ -82,7 +83,7 @@ export default class List extends BasicCommand {
           "column_width":   20,
           "text_width":     15,
           "silent_clip":    false,
-          "getter": (d:Dictionary) => path.basename(d.stack)
+          "getter": (d:Dictionary) => (d?.labels?.[constants.label_strings['job']['stack-name']] || "")
         },
         command: {
           "column_header":  "COMMAND",
