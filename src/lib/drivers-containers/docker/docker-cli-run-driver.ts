@@ -277,7 +277,7 @@ export class DockerCliRunDriver extends RunDriver
     const ids = jobs.map((x:JobInfo) => x.id)
     const result = this.JSONOutputParser(this.shell.output(
       `${this.base_command} inspect`,
-      {format: '{{"{\\\"ID\\\":"}}{{json .Id}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Labels\\\":"}}{{json .Config.Labels}},{{"\\\"Command\\\":"}}{{json .Config.Cmd}}{{"}"}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ, Command: UUU}
+      {format: '{{"{\\\"ID\\\":"}}{{json .Id}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Labels\\\":"}}{{json .Config.Labels}}{{"}"}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ, Command: UUU}
       ids,
       {})
     )
@@ -290,8 +290,7 @@ export class DockerCliRunDriver extends RunDriver
       if(info.ID)
         inspect_data[info.ID] = {
           'Labels': info?.['Labels'] || {},
-          'Ports': this.PortBindingsToJobPortInfo(info?.['PortBindings'] || {}),
-          'Command': info?.['Command'].join(" ") || ""
+          'Ports': this.PortBindingsToJobPortInfo(info?.['PortBindings'] || {})
         }
     });
 
@@ -302,7 +301,6 @@ export class DockerCliRunDriver extends RunDriver
         job.stack  = inspect_data[id]?.Labels?.[label_strings.job["stack-path"]] || "",
         job.labels = inspect_data[id]?.Labels || {}
         job.ports = inspect_data[id]?.Ports || []
-        job.command = inspect_data[id]?.Command || job.command
       }
     })
     return new ValidatedOutput(true, jobs)

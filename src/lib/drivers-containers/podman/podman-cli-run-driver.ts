@@ -26,7 +26,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     flags["format"] = 'json'
   }
 
-  // converts data from docker ps into a JobObject
+   // converts data from docker ps into a JobObject
   protected psToJobInfo() : ValidatedOutput<Array<JobInfo>>
   {
     const ps_result = this.ps()
@@ -38,7 +38,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
         id: x.ID,
         image: x.Image,
         names: x.Names,
-        command: x.Command, // this field is overwritten using inspect data, since podman ps command also shows entrypoint
+        command: x.Command,
         state: this.psStatusToJobInfoState(x.Status),
         stack: x?.Labels?.[label_strings.job["stack-path"]] || "",
         labels: x?.Labels || {},
@@ -63,7 +63,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
 
     const ids = jobs.map((x:JobInfo) => x.id)
     const result = parseLineJSON(
-      this.shell.output(`${this.base_command} inspect`, {format: '{{"{\\\"ID\\\":"}}{{json .ID}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Command\\\":"}}{{json .Config.Cmd}}{{"}"}}'}, ids, {})
+      this.shell.output(`${this.base_command} inspect`, {format: '{{"{\\\"ID\\\":"}}{{json .ID}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}}{{"}"}}'}, ids, {})
     )
     if(!result.success) return new ValidatedOutput(false, [])
 
@@ -72,8 +72,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
       result.value.map((info:Dictionary) => {
         if(info.ID)
             inspect_data[info.ID] = {
-            'Ports': this.PortBindingsToJobPortInfo(info?.['PortBindings'] || {}),
-            'Command': info?.['Command'].join(" ") || ""
+            'Ports': this.PortBindingsToJobPortInfo(info?.['PortBindings'] || {})
             }
     });
 
@@ -82,7 +81,6 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
       const id = job.id
       if(inspect_data[id] !== undefined) {
         job.ports = inspect_data[id]?.Ports || []
-        job.command = inspect_data[id]?.Command || job.command
       }
     })
     return new ValidatedOutput(true, jobs)
