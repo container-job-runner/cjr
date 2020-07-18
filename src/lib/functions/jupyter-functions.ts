@@ -301,7 +301,7 @@ function toStandardJupyterIdentifier(job_manager: JobManager, job_identifer: Job
             'ids': [job_identifer["job-id"]],
             'states': ['running']
         }))
-        if(!fetch_id.success) return failure
+        if(!fetch_id.success) return failure.pushError(ErrorStrings.JOBS.NO_MATCHING_ID)
         job_identifer['job-id'] = fetch_id.value
     }
     return success
