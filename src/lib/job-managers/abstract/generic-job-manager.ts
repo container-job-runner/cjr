@@ -33,6 +33,8 @@ export abstract class GenericJobManager extends JobManager
     addGenericLabels(job_configuration, job_options["project-root"] || "")
     if(job_options.x11)
       addX11(job_configuration, {"platform": this.platform, "shell": this.shell})
+    if(job_configuration.stack_configuration.getFlag('cmd-args') == 'join')
+        job_configuration.joinCommand()
     // -- 2. start job -----------------------------------------------------------
     this.printStatus({"header": this.STATUSHEADERS.START})
     const job = this.container_drivers.runner.jobStart(
@@ -68,6 +70,8 @@ export abstract class GenericJobManager extends JobManager
     job_configuration.remove_on_exit = true
     if(exec_options.x11)
         addX11(job_configuration,  {"platform": this.platform})
+    if(job_configuration.stack_configuration.getFlag('cmd-args') == 'join')
+        job_configuration.joinCommand()
 
     const file_config = this.configureExecFileMounts(job_configuration, exec_options, parent_job)
     if(!file_config.success)
@@ -220,15 +224,6 @@ export abstract class GenericJobManager extends JobManager
     console.log(chalk`-- {bold ${contents.header}} ${'-'.repeat(Math.max(0,line_width - contents.header.length - 4))}`)
     if(contents?.message) console.log(contents.message)
   }
-
-//   private buildAndRun(job_configuration: JobConfiguration<StackConfiguration<any>>, build_options: JobBuildOptions)
-//   {    
-//     const failed_result = new ValidatedOutput(false, {"id": "", "exit-code": 0, "output": ""});
-//     const build_result = this.build(job_configuration.stack_configuration, build_options)
-//     if(!build_result.success)
-//         return failed_result
-//     return this.container_drivers.runner.jobStart(job_configuration, job_configuration.synchronous ? 'inherit' : 'pipe')
-//   }
 
   protected jobSelector(container_drivers: ContainerDrivers, options: JobStopOptions|JobDeleteOptions) : ValidatedOutput<JobInfo[]>
   {
