@@ -49,7 +49,7 @@ export class CJRRemoteDriver extends RemoteDriver
      'job:log'    : ['explicit', 'lines', 'all'],
      'job:stop'   : ['explicit', 'all', 'all-completed', 'all-running', 'quiet'],
      'job:shell'  : ['explicit', 'discard'],
-     'job:jupyter': ['build-mode', 'explicit'], // only used by stop, list, url
+     'job:jupyter:start': ['build-mode', 'explicit'], // only used by stop, list, url
      '$'          : ['explicit', 'async', 'verbose', 'quiet', 'port', 'x11', 'message', 'label', 'autocopy', 'build-mode']
   }
   private ssh_shell: SshShellCommand
@@ -452,7 +452,7 @@ export class CJRRemoteDriver extends RemoteDriver
 
     var result:ValidatedOutput<any> = this.jobExec(resource, local_drivers, configurations, job_options, {
       "id": rjup_options['id'],
-      "mode": 'job:jupyter',
+      "mode": 'job:jupyter:start',
       "host-project-root": rjup_options["host-project-root"],
       "stack-upload-mode": rjup_options["stack-upload-mode"],
       "connect-options": connect_options
@@ -478,11 +478,11 @@ export class CJRRemoteDriver extends RemoteDriver
   }
 
   jobJupyterList(resource: Resource, id: string) {
-    return this.jobJupyterGeneric(resource, id, 'list', 'exec')
+    return this.jobJupyterGeneric(resource, id, 'ls', 'exec')
   }
 
   jobJupyterUrl(resource: Resource, id: string, options: Dictionary = {mode: 'remote'}) {
-    var result:ValidatedOutput<any> = this.jobJupyterGeneric(resource, id, 'url', 'output')
+    var result:ValidatedOutput<any> = this.jobJupyterUrlPatch(resource, id)
     if(result.success && options?.mode == 'remote' && resource.address)
       result.value = result.value?.replace(/(?<=http:\/\/)\S+(?=:)/, resource.address)
     if(result.success && options?.mode == 'tunnel')
@@ -490,14 +490,34 @@ export class CJRRemoteDriver extends RemoteDriver
     return result
   }
 
-  private jobJupyterGeneric(resource: Resource, id: string, command: 'stop'|'list'|'url', mode:'output'|'exec')
+  // a patch to restore basic url functionality.
+  private jobJupyterUrlPatch(resource: Resource, id: string)
   {
     // -- set resource ---------------------------------------------------------
     this.ssh_shell.setResource(resource)
     // -- execute ssh command --------------------------------------------------
-    const cjr_cmd   = 'cjr job:jupyter'
+    const cjr_cmd   = `cjr job:jupyter:ls`
+    const cjr_flags = {json: {}}
+    const output = parseJSON(this.ssh_shell.output(cjr_cmd, cjr_flags, [], this.interactive_ssh_options))
+    if(!output.success)
+        return new ValidatedOutput(false, "")
+
+    const url_data:Dictionary[] = output.value?.filter(
+        (i:Dictionary) => (new RegExp(`^${id}`).test(i?.['parent-job-id'] || ""))
+    )
+    const url_string:string= url_data?.[0].url || ""
+    if(!url_data) return new ValidatedOutput(false, "")
+    return new ValidatedOutput(true, url_string)
+  }
+
+  private jobJupyterGeneric(resource: Resource, id: string, command: 'stop'|'ls', mode:'output'|'exec')
+  {
+    // -- set resource ---------------------------------------------------------
+    this.ssh_shell.setResource(resource)
+    // -- execute ssh command --------------------------------------------------
+    const cjr_cmd   = `cjr job:jupyter:${command}`
     const cjr_flags = (this.output_options.explicit) ? {explicit: {}} : {}
-    const cjr_args  = [id, command]
+    const cjr_args  = (command === "stop") ? [id] : []
     if(mode === 'output')
       return this.ssh_shell.output(cjr_cmd, cjr_flags, cjr_args, this.interactive_ssh_options)
     else
@@ -684,7 +704,7 @@ export class CJRRemoteDriver extends RemoteDriver
     return result
   }
 
-  private CJRJobStart(job_options: JobOptions, remote_params:RemoteJobParams, mode:"$"|"job:shell"|"job:exec"|"job:jupyter")
+  private CJRJobStart(job_options: JobOptions, remote_params:RemoteJobParams, mode:"$"|"job:shell"|"job:exec"|"job:jupyter:start")
   {
     // -- set args -------------------------------------------------------------
     var cjr_args:Array<string> = []
@@ -694,8 +714,8 @@ export class CJRRemoteDriver extends RemoteDriver
       cjr_args = [remote_params['previous-job-id'] || "", job_options['command']]
     else if(mode === "job:shell")
       cjr_args = [remote_params['previous-job-id'] || ""]
-    else if(mode === "job:jupyter")
-      cjr_args = [remote_params['previous-job-id'] || "", 'start', job_options['command']]
+    else if(mode === "job:jupyter:start")
+      cjr_args = [remote_params['previous-job-id'] || ""]
     // -- set flags ------------------------------------------------------------
     const cjr_flags:Dictionary = {
       'stack':        remote_params["remote-stack-path"],
@@ -716,12 +736,13 @@ export class CJRRemoteDriver extends RemoteDriver
     }
 
     if(this.output_options.explicit) cjr_flags['explicit'] = {}
-    if(this.output_options.silent || mode === "job:jupyter") cjr_flags['quiet'] = {}
+    if(this.output_options.silent || mode === "job:jupyter:start") cjr_flags['quiet'] = {}
     if(this.output_options.verbose) cjr_flags['verbose'] = {}
 
     const labels:Array<string> = job_options['labels']?.map((label:{key:string, value: string}) => `${label.key}=${label.value}`) || []
-    const ports:Array<string>  = job_options['ports']?.map((port:{hostPort:number, containerPort: number}) => `${port.hostPort}:${port.containerPort}`) || []
-
+    const ports:Array<string> = (mode === "job:jupyter:start") ? [] : job_options['ports']?.map((port:{hostPort:number, containerPort: number}) => `${port.hostPort}:${port.containerPort}`) || []
+    if(mode == 'job:jupyter:start' && job_options['ports'] !== undefined)
+        cjr_flags['server-port'] = `${job_options['ports']?.[0].hostPort}`
     // Note: OCLIF does not support flags with multiple values before args
     //       (https://github.com/oclif/oclif/issues/190). Therefore we must
     //       manually append the --label and --port flags at end of cjr command.
