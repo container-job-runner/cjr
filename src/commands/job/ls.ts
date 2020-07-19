@@ -14,7 +14,6 @@ export default class List extends BasicCommand {
     "all": flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
     "running": flags.boolean({default: false, exclusive: ['excited']}),
     "exited": flags.boolean({default: false, exclusive: ['running']}),
-    "show-stashes": flags.boolean({default: false, description: "show stashes"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -157,28 +156,22 @@ export default class List extends BasicCommand {
         `(${this.resource_configuration.getResource(flags['resource'] || "")?.address || '127.0.0.1'})`
     ]
 
-    printTable({ ...resource_table_parameters, ...{
+    printTable({ ... resource_table_parameters, ... {
         title:  "Resource",
         data:   [resource_data]
     }})
 
     if(!flags['exited'])
-        printTable({ ...table_parameters, ...{
+        printTable({ ... table_parameters, ... {
             title:  "Running Jobs",
             data:   jobs.filter((j:JobInfo) => (j.state === "running")).map((j:JobInfo) => toArray(j))
         }})
 
     if(!flags['running'])
-        printTable({ ...table_parameters, ...{
+        printTable({ ... table_parameters, ... {
             title:  "Completed Jobs",
-            data:   jobs.filter((j:JobInfo) => (j.state === "exited" && j?.labels?.[label_strings.job.type] !== "stash")).map((j:JobInfo) => toArray(j)),
+            data:   jobs.filter((j:JobInfo) => (j.state === "exited")).map((j:JobInfo) => toArray(j)),
         }})
-
-    if(flags['show-stashes'] || flags['all'])
-      printTable({ ...table_parameters, ...{
-          title:  "Stashes",
-          data:   jobs.filter((j:JobInfo) => (j?.labels?.[label_strings.job.type] === "stash")).map((j:JobInfo) => toArray(j)),
-      }})
 
   }
 
