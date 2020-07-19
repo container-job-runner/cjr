@@ -1,7 +1,7 @@
 import path = require('path')
 import { flags } from '@oclif/command'
 import { RemoteCommand } from '../../lib/remote/commands/remote-command'
-import { Resource } from '../../lib/remote/config/resource-configuration'
+import { Resource, ResourceType } from '../../lib/remote/config/resource-configuration'
 import { FileTools } from '../../lib/fileio/file-tools'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
@@ -11,7 +11,7 @@ export default class Add extends RemoteCommand {
   static description = 'Add a remote resource.'
   static args  = [{name: 'remote-name', required: true}]
   static flags = {
-    "type":        flags.string({required: true, options: ['cjr']}),
+    "type":        flags.string({required: true, options: ['ssh']}),
     "address":     flags.string({required: true}),
     "username":    flags.string({required: true}),
     "key":         flags.string({default:  ""}),
@@ -35,7 +35,7 @@ export default class Add extends RemoteCommand {
       )
     // -- create new entry -----------------------------------------------------
     var new_entry:Resource = {
-      "type": (flags.type as 'cjr'),
+      "type": (flags.type as ResourceType),
       "address": flags.address,
       "username": flags.username,
       "options": {}

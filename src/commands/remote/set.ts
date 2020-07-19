@@ -11,7 +11,7 @@ export default class Set extends RemoteCommand {
     {name: 'remote-name', required: true}
   ]
   static flags  = {
-    "type": flags.string(),
+    "type": flags.string({options: ['ssh']}),
     "address": flags.string(),
     "username": flags.string(),
     "option-key": flags.string({default: [], multiple: true, dependsOn: ['option-value']}),
