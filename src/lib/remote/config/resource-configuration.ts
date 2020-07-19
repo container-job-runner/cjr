@@ -1,15 +1,13 @@
-import * as fs from 'fs'
-import * as path from 'path'
 import {JSTools} from '../../js-tools'
 import {JSONFile} from '../../fileio/json-file'
-import {ValidatedOutput} from '../../validated-output'
-import {WarningStrings} from '../../error-strings'
 import {rc_vo_validator} from './resource-configuration-schema'
 import {remote_config_filename, default_remote_config} from '../constants'
 import { Dictionary } from '../commands/remote-command'
 
+
+export type ResourceType = "ssh"
 export type Resource = {
-  "type": "cjr"
+  "type": ResourceType
   "address": string
   "username": string
   "key" ?: string

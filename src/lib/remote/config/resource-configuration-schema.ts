@@ -13,7 +13,7 @@ export const resource_configuration_schema = {
       "properties": {
         "type" : {
           "type:": "string",
-          "pattern": "^(cjr)$"
+          "pattern": "^(ssh)$"
         },
         "address": {"type": "string"},
         "username": {"type": "string"},
