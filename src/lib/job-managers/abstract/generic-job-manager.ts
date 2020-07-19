@@ -3,7 +3,7 @@ import os = require('os')
 import { JobManager, JobRunOptions, ContainerDrivers, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
-import { firstJob, NewJobInfo, JobInfo, jobIds, JobState, firstJobId, jobStates } from '../../drivers-containers/abstract/run-driver';
+import { firstJob, NewJobInfo, JobInfo, jobIds, JobState, firstJobId, jobStates, JobInfoFilter } from '../../drivers-containers/abstract/run-driver';
 import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels } from '../../functions/config-functions';
@@ -93,7 +93,7 @@ export abstract class GenericJobManager extends JobManager
     this.printStatus({header: this.STATUSHEADERS.COPY})
     const result = new ValidatedOutput(true, undefined);
     // -- get information on all matching jobs -----------------------------------
-    var ji_result = this.container_drivers.runner.jobInfo({
+    var ji_result = this.jobInfo({
       "ids": options['ids'],
       "stack-paths": options["stack-paths"]
     })
@@ -111,10 +111,10 @@ export abstract class GenericJobManager extends JobManager
   delete(options: JobDeleteOptions) : ValidatedOutput<undefined>
   {
     const result = new ValidatedOutput(true, undefined)
-    const job_info = this.jobSelector(this.container_drivers, options)
+    const job_info = this.jobInfo(options)
     if(!job_info.success)
       return new ValidatedOutput(false, undefined)
-    if(job_info.value.length == 0)
+    if(job_info.value.length == 0 && options?.ids && options.ids.length > 0)
       return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
 
     job_info.value.map( (job: JobInfo) => result.absorb(this.deleteJob(job, options)) )
@@ -137,10 +137,10 @@ export abstract class GenericJobManager extends JobManager
   stop(options: JobStopOptions) : ValidatedOutput<undefined>
   {
     const result = new ValidatedOutput(true, undefined)
-    const job_info = this.jobSelector(this.container_drivers, options)
+    const job_info = this.jobInfo({ ... options, ... {states: ['running']}})
     if(!job_info.success)
       return new ValidatedOutput(false, undefined)
-    if(job_info.value.length == 0)
+    if(job_info.value.length == 0 && options?.ids && options.ids.length > 0)
       return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
 
     job_info.value.map( (job: JobInfo) => result.absorb(this.stopJob(job, options)) )
@@ -162,19 +162,14 @@ export abstract class GenericJobManager extends JobManager
 
   state(options: JobStateOptions) : ValidatedOutput<JobState[]>
   {
-    return jobStates(
-      this.container_drivers.runner.jobInfo({
-        'ids': options["ids"],
-        'stack-paths': options["stack-paths"]
-      })
-    )
+    return jobStates(this.jobInfo(options))
   }
 
   attach(options: JobAttachOptions) : ValidatedOutput<undefined>
   {
     // match with existing container ids
     const result = firstJobId(
-      this.container_drivers.runner.jobInfo({
+      this.jobInfo({
         "ids": [options['id']],
         "stack-paths": options['stack-paths'],
         "states": ["running"]
@@ -189,10 +184,11 @@ export abstract class GenericJobManager extends JobManager
   {
     // match with existing container ids
     const result = firstJobId(
-      this.container_drivers.runner.jobInfo({
-        "ids": [options['id']],
-        "stack-paths": options['stack-paths']
-      }))
+        this.jobInfo({
+            "ids": [options['id']],
+            "stack-paths": options['stack-paths']
+        })
+    )
     if(result.success)
       return this.container_drivers.runner.jobLog(result.value, options["lines"])
     else
@@ -201,7 +197,7 @@ export abstract class GenericJobManager extends JobManager
 
   list(options: JobListOptions) : ValidatedOutput<JobInfo[]>
   {
-    return this.container_drivers.runner.jobInfo(options.filter)  
+    return this.jobInfo(options.filter)  
   }
 
   build(stack_configuration: StackConfiguration<any>, build_options: JobBuildOptions) : ValidatedOutput<undefined>
@@ -226,29 +222,9 @@ export abstract class GenericJobManager extends JobManager
     if(contents?.message) console.log(contents.message)
   }
 
-  protected jobSelector(container_drivers: ContainerDrivers, options: JobStopOptions|JobDeleteOptions) : ValidatedOutput<JobInfo[]>
+  protected jobInfo(options?: JobInfoFilter) : ValidatedOutput<JobInfo[]>
   {
-    let job_info: ValidatedOutput<JobInfo[]>
-    if(options.selecter == "all") // -- delete all jobs ----------------------------------------
-      job_info = container_drivers.runner.jobInfo({
-        'stack-paths': options['stack-paths']
-      })
-    else if(options.selecter == "all-exited") // -- delete all jobs ----------------------------
-      job_info = container_drivers.runner.jobInfo({
-        'stack-paths': options['stack-paths'],
-        'states': ["exited"]
-      })
-    else if(options.selecter == "all-running")
-      job_info = container_drivers.runner.jobInfo({
-        'stack-paths': options['stack-paths'],
-        'states': ["running"]
-      })
-    else  // -- remove only specific jobs ------------------------------------------------------
-      job_info = container_drivers.runner.jobInfo({
-        'ids': options['ids'],
-        'stack-paths': options['stack-paths']
-      })
-    return job_info
+    return this.container_drivers.runner.jobInfo(options)
   }
 
   protected includeExcludeLabelToFlag(label: string) : Array<string>
