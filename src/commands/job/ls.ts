@@ -48,6 +48,7 @@ export default class List extends BasicCommand {
     }
 
     let table_parameters: Dictionary;
+    let resource_table_parameters: Dictionary
     let toArray: (e: JobInfo) => Array<string>
     let printTable
 
@@ -63,6 +64,12 @@ export default class List extends BasicCommand {
           column_widths:  [11, 103],
           text_widths:    [10, 102],
           silent_clip:    [true, true]
+      }
+      resource_table_parameters = {
+        row_headers:    ['RESOURCE', 'ADDRESS'],
+        column_widths:  [11, 103],
+        text_widths:    [10, 102],
+        silent_clip:    [false]
       }
 
       toArray = (j:JobInfo) => [j.id, j.image, j.stack, getLabel(j, lbl_stack_name), getLabel(j, lbl_command), j.status, getLabel(j, lbl_message)]
@@ -136,8 +143,24 @@ export default class List extends BasicCommand {
 
       toArray = (j:JobInfo) => (user_fields.map((field:TableFields) => field_params[field].getter(j)))
       printTable = printVerticalTable
+
+      resource_table_parameters = {
+        column_widths:  [17, 95],
+        text_widths:    [12, 95],
+        silent_clip:    [false, false]
+      }
+
     }
 
+    const resource_data = [
+        flags['resource'] || 'localhost',
+        `(${this.resource_configuration.getResource(flags['resource'] || "")?.address || '127.0.0.1'})`
+    ]
+
+    printTable({ ...resource_table_parameters, ...{
+        title:  "Resource",
+        data:   [resource_data]
+    }})
 
     if(!flags['exited'])
         printTable({ ...table_parameters, ...{
