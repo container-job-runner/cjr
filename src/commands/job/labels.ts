@@ -44,7 +44,7 @@ export default class Labels extends BasicCommand {
       job_info = runner.jobInfo({'stack-paths': stack_paths, 'states': ["running"]})
     else
     {
-      const ids = (argv.length > 0) ? argv : (await promptUserForJobId({runner: runner, builder: builder}, stack_paths, undefined, !this.settings.get('interactive')) || "")
+      const ids = (argv.length > 0) ? argv : (await promptUserForJobId(job_manager, stack_paths, undefined, !this.settings.get('interactive')) || "")
       if(ids === "") return // exit if user selects empty
       job_info = runner.jobInfo({'ids': JSTools.arrayWrap(ids), 'stack-paths': stack_paths})
     }

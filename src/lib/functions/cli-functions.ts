@@ -6,7 +6,7 @@ import fs = require('fs-extra')
 import constants = require('../constants')
 
 import { JobState, JobInfo, JobPortInfo} from '../drivers-containers/abstract/run-driver'
-import { ContainerDrivers, Configurations, JobBuildOptions } from '../job-managers/abstract/job-manager'
+import { ContainerDrivers, Configurations, JobBuildOptions, JobManager } from '../job-managers/abstract/job-manager'
 import { Dictionary, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths } from '../constants'
 import { JSTools } from '../js-tools'
 import { ValidatedOutput } from '../validated-output'
@@ -320,10 +320,10 @@ export function getProjectId(hostRoot: string) : ValidatedOutput<string>
 
 // == Interactive Functions ====================================================
 
-export async function promptUserForJobId(drivers: ContainerDrivers, stack_paths: Array<string>|undefined, states:Array<JobState>|undefined=undefined, silent: boolean = false)
+export async function promptUserForJobId(job_manager: JobManager, stack_paths: Array<string>|undefined, states:Array<JobState>|undefined=undefined, silent: boolean = false)
 {
   if(silent) return false;
-  const job_info = drivers.runner.jobInfo({"stack-paths":stack_paths, "states": states})
+  const job_info = job_manager.list({"filter": {"stack-paths":stack_paths, "states": states}})
   return await promptUserForId(job_info.value);
 }
 

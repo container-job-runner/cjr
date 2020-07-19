@@ -42,7 +42,7 @@ export abstract class BasicCommand extends Command
     {
       const visible_stack_paths = this.extractVisibleStacks(flags)
       const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: false, quiet: false, explicit: flags['explicit']})
-      const id = await promptUserForJobId(job_manager.container_drivers, visible_stack_paths, states, false)
+      const id = await promptUserForJobId(job_manager, visible_stack_paths, states, false)
       if(!id) return false
       return [id]
     }
