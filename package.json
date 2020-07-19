@@ -53,22 +53,22 @@
     ],
     "topics": {
       "config": {
-        "description": "View and change the cli configuration."
+        "description": "View and change general configuration settings."
       },
       "stack": {
-        "description": "List stacks, create new stacks, or build and delete stack images."
+        "description": "List stacks, create new stacks, and build or delete local stack images."
       },
       "job": {
-        "description": "View and manage local jobs."
+        "description": "List and manage local or remote jobs."
       },
-      "rjob": {
-        "description": "View and manage remote jobs."
-      },
-      "remote": {
-        "description": "View and manage remote resources."
+      "resource": {
+        "description": "List and manage remote resources."
       },
       "jupyter": {
-        "description": "Start and stop Jupyter lab and Jupyter notebook."
+        "description": "Start and stop Jupyter lab or Jupyter notebook servers on localhost."
+      },
+      "theia": {
+        "description": "Start and stop local Theia servers on localhost."
       },
       "project": {
         "description": "View and manage configuration options for projects."
