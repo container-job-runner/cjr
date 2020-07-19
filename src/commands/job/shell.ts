@@ -39,8 +39,8 @@ export default class Shell extends LocalJobCommand {
     // -- run basic exec -------------------------------------------------------
     const { job, job_data } = this.runSimpleExec(
       parent_id,
-      { ...flags, ... {quiet: false}},
-      this.settings.get("default-container-shell")
+      { ... flags, ... { quiet: false } },
+      [ this.settings.get("default-container-shell") ]
     )
     printValidatedOutput(job_data)
     printValidatedOutput(job)
