@@ -1,7 +1,7 @@
-import { RemoteCommand } from '../../lib/remote/commands/remote-command'
+import { ResourceCommand } from '../../lib/commands/resource-command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
-export default class Delete extends RemoteCommand {
+export default class Delete extends ResourceCommand {
   static description = 'Remove a remote resource.'
   static args   = [{name: 'remote-name', required: true}]
   static strict = true;

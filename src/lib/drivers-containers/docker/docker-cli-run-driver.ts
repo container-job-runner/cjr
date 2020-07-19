@@ -11,7 +11,7 @@ import { DockerStackConfigObject, DockerStackPortConfig, DockerStackMountConfig,
 import { trim, parseLineJSON, trimTrailingNewline } from '../../functions/misc-functions'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
-import { SshShellCommand } from '../../remote/ssh-shell-command'
+import { SshShellCommand } from '../../ssh-shell-command'
 
 // internal types: used for creating jobs
 export type DockerCreateOptions = DockerStackConfigObject & {

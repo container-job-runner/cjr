@@ -14,11 +14,11 @@
 import os = require('os')
 import fs = require('fs-extra')
 import path = require('path')
-import { ValidatedOutput } from '../validated-output'
-import { ShellCommand } from '../shell-command'
+import { ValidatedOutput } from './validated-output'
+import { ShellCommand } from './shell-command'
 import { SpawnSyncReturns } from 'child_process'
-import { trim } from '../functions/misc-functions'
-import { JSTools } from '../js-tools'
+import { trim } from './functions/misc-functions'
+import { JSTools } from './js-tools'
 
 type Dictionary = { [key: string]: any }
 type Resource = { "username": string, "address": string, "key"?:string }

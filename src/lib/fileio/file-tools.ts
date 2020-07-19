@@ -5,7 +5,7 @@ import { ValidatedOutput } from '../validated-output'
 import { ShellCommand } from '../shell-command'
 import { trim } from '../functions/misc-functions'
 import { PathTools } from './path-tools'
-import { SshShellCommand } from '../remote/ssh-shell-command'
+import { SshShellCommand } from '../ssh-shell-command'
 
 export class FileTools
 {

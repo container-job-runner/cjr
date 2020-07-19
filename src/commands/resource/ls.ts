@@ -1,9 +1,10 @@
 import { flags } from '@oclif/command'
-import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-command'
+import { ResourceCommand } from '../../lib/commands/resource-command'
 import { printVerticalTable, printHorizontalTable } from '../../lib/functions/misc-functions'
-import { Resource } from '../../lib/remote/config/resource-configuration'
+import { Resource } from '../../lib/config/resources/resource-configuration'
+import { Dictionary } from '../../lib/constants'
 
-export default class List extends RemoteCommand {
+export default class List extends ResourceCommand {
   static description = 'List all remote resources.'
   static args   = []
   static flags  = {

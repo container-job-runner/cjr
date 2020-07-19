@@ -1,13 +1,14 @@
 import path = require('path')
 import { flags } from '@oclif/command'
-import { RemoteCommand } from '../../lib/remote/commands/remote-command'
-import { Resource, ResourceType } from '../../lib/remote/config/resource-configuration'
+import { ResourceCommand } from '../../lib/commands/resource-command'
+import { Resource, ResourceType } from '../../lib/config/resources/resource-configuration'
 import { FileTools } from '../../lib/fileio/file-tools'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
-import { ErrorStrings } from '../../lib/remote/error-strings'
+import { ErrorStrings } from '../../lib/error-strings'
 
-export default class Add extends RemoteCommand {
+
+export default class Add extends ResourceCommand {
   static description = 'Add a remote resource.'
   static args  = [{name: 'remote-name', required: true}]
   static flags = {

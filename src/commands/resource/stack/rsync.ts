@@ -1,13 +1,14 @@
 import path = require('path')
+import constants = require('../../../lib/constants')
 import { flags } from '@oclif/command'
 import { ValidatedOutput } from '../../../lib/validated-output'
-import { RemoteCommand, Dictionary } from '../../../lib/remote/commands/remote-command'
-import { SshShellCommand } from '../../../lib/remote/ssh-shell-command'
+import { ResourceCommand } from '../../../lib/commands/resource-command'
+import { SshShellCommand } from '../../../lib/ssh-shell-command'
 import { printValidatedOutput, parseJSON } from '../../../lib/functions/misc-functions'
 import { PathTools } from '../../../lib/fileio/path-tools'
-import { remote_sshsocket_dirname } from '../../../lib/remote/constants'
+import { Dictionary } from '../../../lib/constants'
 
-export default class Rsync extends RemoteCommand {
+export default class Rsync extends ResourceCommand {
   static description = 'rsyncs local stacks-dir with remote resource or vice-versa.'
   static args = [{name: 'remote-name'}]
   static flags = {
@@ -32,7 +33,7 @@ export default class Rsync extends RemoteCommand {
     // -- get resource & ssh_shell ---------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    const ssh_shell = new SshShellCommand(flags.explicit, false, path.join(this.config.dataDir, remote_sshsocket_dirname))
+    const ssh_shell = new SshShellCommand(flags.explicit, false, path.join(this.config.dataDir, constants.subdirectories.data["ssh-sockets"]))
     ssh_shell.setResource(resource)
     // -- get local stack dir --------------------------------------------------
     const local_stacks_dir:string = flags['stacks-dir'] || this.settings.get('stacks-dir')

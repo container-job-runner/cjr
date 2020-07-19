@@ -12,7 +12,7 @@ import { YMLFile } from '../../../fileio/yml-file'
 import { ErrorStrings, WarningStrings } from '../../../error-strings'
 import { ShellCommand } from '../../../shell-command'
 import chalk = require('chalk')
-import { SshShellCommand } from '../../../remote/ssh-shell-command'
+import { SshShellCommand } from '../../../ssh-shell-command'
 
 // === START Config types =========================================================
 

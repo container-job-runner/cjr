@@ -1,9 +1,9 @@
-import {JSTools} from '../../js-tools'
-import {JSONFile} from '../../fileio/json-file'
-import {rc_vo_validator} from './resource-configuration-schema'
-import {remote_config_filename, default_remote_config} from '../constants'
-import { Dictionary } from '../commands/remote-command'
 
+import constants = require('../../constants')
+import { JSTools } from '../../js-tools'
+import { JSONFile } from '../../fileio/json-file'
+import { rc_vo_validator } from './resource-configuration-schema'
+import { Dictionary } from '../../constants'
 
 export type ResourceType = "ssh"
 export type Resource = {
@@ -14,12 +14,12 @@ export type Resource = {
   "options": Dictionary
 }
 
-export type ResourceField = "type"|"address"|"username"|"key"|"storage-dir"|"enabled"
+export type ResourceField = "type"|"address"|"username"|"key"
 
 export class ResourceConfiguration
 {
   private json_file: JSONFile
-  private raw_object: {[key:string]: Resource} = default_remote_config
+  private raw_object: {[key:string]: Resource} = constants.default_remote_config
 
   constructor(configuration_directory: string, auto_load:boolean=true)
   {
@@ -29,14 +29,14 @@ export class ResourceConfiguration
 
   loadFromFile()
   {
-    const result = this.json_file.validatedRead(remote_config_filename)
+    const result = this.json_file.validatedRead(constants.remote_config_filename)
     if(result.success) this.raw_object = result.value
     return result
   }
 
   writeToFile()
   {
-    return this.json_file.validatedWrite(remote_config_filename, this.raw_object)
+    return this.json_file.validatedWrite(constants.remote_config_filename, this.raw_object)
   }
 
   isResource(name: string)

@@ -9,7 +9,7 @@ import { JobConfiguration } from '../../config/jobs/job-configuration'
 import { ExecConfiguration } from '../../config/exec/exec-configuration'
 import { ShellCommand } from '../../shell-command'
 import { JSTools } from '../../js-tools'
-import { SshShellCommand } from '../../remote/ssh-shell-command'
+import { SshShellCommand } from '../../ssh-shell-command'
 
 // -- types --------------------------------------------------------------------
 export type JobPortInfo = {

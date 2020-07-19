@@ -1,4 +1,4 @@
-import { SshShellCommand } from '../../remote/ssh-shell-command';
+import { SshShellCommand } from '../../ssh-shell-command';
 import { DockerCliBuildDriver } from '../../drivers-containers/docker/docker-cli-build-driver';
 import { PodmanCliBuildDriver } from '../../drivers-containers/podman/podman-cli-build-driver';
 import { DockerCliRunDriver } from '../../drivers-containers/docker/docker-cli-run-driver';

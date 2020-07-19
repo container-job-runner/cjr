@@ -43,6 +43,7 @@ export const project_settings = {
       "profiles": "profiles",
     }
 }
+export const remote_config_filename   = "remote-config"
 
 // functions for quickly accessing filenames from project_root
 export const projectSettingsDirPath  = (project_root: string) => path.join(project_root, project_settings.dirname)
@@ -63,6 +64,9 @@ export const subdirectories =
   "stack": {
     "build": "build",
     "profiles": "profiles"
+  },
+  "config": {
+    "remote-keys": "keys"                       // used to store keys for remote resources
   }
 }
 
@@ -140,3 +144,6 @@ export const X11_POSIX_BIND = "/tmp/.X11-unix"
 
 // snapshot options
 export const SNAPSHOT_LATEST_TAG = 'latest'
+
+// remote configuration
+export const default_remote_config    = {}

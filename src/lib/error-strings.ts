@@ -50,7 +50,16 @@ export const ErrorStrings = {
     NOT_RUNNING: (project_root: string) => chalk`Theia is not running in project directory "{green ${project_root}}".`,
     NOURL: `Failed to obtain a url for the Theia.`,
     LIST_FAILED: `Failed to obtain list of running Theia servers`
-  }
+  },
+  REMOTE_RESOURCE: {
+    NAME_NON_EXISTANT : (name: string) => chalk`{bold Nonexistant Remote Resource} - a resource with the name ${name} does not exist.`,
+    KEYFILE_NON_EXISTANT : (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,
+    NEW: {
+      NAME_EXISTS: (name: string) => chalk`{bold Name Invalid} - a remote resource named ${name} already exists.`,
+      KEYFILE_NONEXISTANT: (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,
+      LOCALHOST_NAME: chalk`{bold Name Invalid} - you cannot name a remote resource localhost.`
+    }
+  },
 }
 
 export const WarningStrings = {

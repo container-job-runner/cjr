@@ -5,7 +5,7 @@ import { BuildDriver } from '../../drivers-containers/abstract/build-driver';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { ExecConfiguration, ExecConstructorOptions } from '../../config/exec/exec-configuration';
 import { ShellCommand } from '../../shell-command';
-import { SshShellCommand } from '../../remote/ssh-shell-command';
+import { SshShellCommand } from '../../ssh-shell-command';
 
 export type ContainerDrivers = {
   "runner": RunDriver

@@ -8,7 +8,7 @@ import { StackConfiguration } from '../config/stacks/abstract/stack-configuratio
 import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
 import { printValidatedOutput } from '../functions/misc-functions'
 import { JSTools } from '../js-tools'
-import { Dictionary } from '../remote/commands/remote-command'
+import { Dictionary } from '../constants'
 
 // ===========================================================================
 // NewJobCommand: An abstract Class for cli commands that start new jobs.

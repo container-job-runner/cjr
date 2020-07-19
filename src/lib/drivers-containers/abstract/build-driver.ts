@@ -2,7 +2,7 @@ import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { Dictionary } from '../../constants'
 import { ShellCommand } from '../../shell-command'
-import { SshShellCommand } from '../../remote/ssh-shell-command'
+import { SshShellCommand } from '../../ssh-shell-command'
 
 // - types ---------------------------------------------------------------------
 
