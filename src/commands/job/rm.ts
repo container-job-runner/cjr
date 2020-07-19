@@ -45,17 +45,16 @@ export default class Delete extends BasicCommand {
     printValidatedOutput(
       job_manager.delete({
         "ids": ids,
-        "selecter": this.parseSelector(flags),
+        "states": this.parseSelector(flags),
         "stack-paths": this.extractVisibleStacks(flags)
       })
     )
   }
 
-  parseSelector(flags: Dictionary) : undefined|"all"|"all-exited"|"all-running"
+  parseSelector(flags: Dictionary) : undefined|["exited"]|["running"]
   {
-    if(flags['all']) return "all"
-    if(flags["all-exited"]) return "all-exited"
-    if(flags["all-running"]) return "all-running"
+    if(flags["all-exited"]) return ["exited"]
+    if(flags["all-running"]) return ["running"]
     return undefined
   }
 

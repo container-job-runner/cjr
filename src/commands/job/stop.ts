@@ -27,7 +27,8 @@ export default class Stop extends BasicCommand {
     })
 
     // -- get job id -----------------------------------------------------------
-    const ids = await this.getJobIds(argv, flags, ['running'])
+    const selector_active = flags['all'] // do not prompt for id if these flags are selected
+    const ids = (selector_active) ? [] : await this.getJobIds(argv, flags, ['running'])
     if(ids === false) return // exit if user selects empty id or exits interactive dialog
 
     // -- stop job -------------------------------------------------------------
@@ -38,21 +39,13 @@ export default class Stop extends BasicCommand {
         quiet: flags['quiet'],
         explicit: flags['explicit']
       }
-
     )
     printValidatedOutput(
         job_manager.stop({
-        "ids": ids,
-        "selecter": this.parseSelector(flags),
+        "ids": ids || undefined,
         "stack-paths": this.extractVisibleStacks(flags)
       })
     )
-  }
-
-  parseSelector(flags: Dictionary) : undefined|"all-running"
-  {
-    if(flags['all']) return "all-running"
-    return undefined
   }
 
 }
