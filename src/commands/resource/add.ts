@@ -10,7 +10,7 @@ import { ErrorStrings } from '../../lib/error-strings'
 
 export default class Add extends ResourceCommand {
   static description = 'Add a remote resource.'
-  static args  = [{name: 'remote-name', required: true}]
+  static args  = [{name: 'resource', required: true}]
   static flags = {
     "type":        flags.string({required: true, options: ['ssh']}),
     "address":     flags.string({required: true}),
@@ -23,7 +23,7 @@ export default class Add extends ResourceCommand {
 
   async run() {
     const {args, flags} = this.parse(Add)
-    const name = args['remote-name']
+    const name = args['resource']
     // -- do not allow name localhost name -------------------------------------
     if(name === "localhost")
       return printValidatedOutput(

@@ -8,7 +8,7 @@ import { Resource } from '../../lib/config/resources/resource-configuration'
 export default class Set extends ResourceCommand {
   static description = 'Set a remote resource parameter.'
   static args   = [
-    {name: 'remote-name', required: true}
+    {name: 'resource', required: true}
   ]
   static flags  = {
     "type": flags.string({options: ['ssh']}),
@@ -22,7 +22,7 @@ export default class Set extends ResourceCommand {
   async run() {
     const {args, flags} = this.parse(Set)
     // -- validate name --------------------------------------------------------
-    const name = args['remote-name']
+    const name = args['resource']
     const result = this.validResourceName(name)
     if(!result.success) return printValidatedOutput(result)
     // -- verify same number of keys and values --------------------------------

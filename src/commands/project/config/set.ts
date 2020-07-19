@@ -10,7 +10,6 @@ export default class Set extends ProjectSettingsCommand {
     "stack": flags.string({env: 'STACK', description: "default stack for project"}),
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
     "project-root-auto": flags.boolean({}),
-    "remote-name": flags.string({env: 'REMOTENAME', description: "default remote resource for project"}),
     "resource": flags.string({env: 'RESOURCE', description: "default resource for project"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
     "config-files": flags.string({multiple: true}),
@@ -29,7 +28,6 @@ export default class Set extends ProjectSettingsCommand {
     if(flags['config-files']) project_settings.setConfigFiles(flags['config-files'])
     if(flags['visible-stacks']) project_settings.setVisibleStacks(flags['visible-stacks'])
     if(flags['stack']) project_settings.setStack(flags['stack'])
-    if(flags['remote-name']) project_settings.setRemoteName(flags['remote-name'])
     if(flags['resource']) project_settings.setResource(flags['resource'])
     if(flags['stacks-dir']) project_settings.setStacksDir(flags['stacks-dir'])
     if(flags['project-root-auto']) project_settings.setProjectRoot('auto')

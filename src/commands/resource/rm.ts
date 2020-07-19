@@ -3,13 +3,13 @@ import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Delete extends ResourceCommand {
   static description = 'Remove a remote resource.'
-  static args   = [{name: 'remote-name', required: true}]
+  static args   = [{name: 'resource', required: true}]
   static strict = true;
 
   async run() {
     const { args } = this.parse(Delete)
     // -- validate name --------------------------------------------------------
-    const name = args["remote-name"]
+    const name = args["resource"]
     const result = this.validResourceName(name)
     if(!result.success) return printValidatedOutput(result)
     // -- delete resource ------------------------------------------------------

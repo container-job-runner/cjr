@@ -5,7 +5,7 @@ import { Dictionary } from '../../constants'
 export const project_settings_schema = {
   "$id": "project-schema.json",
   "title": "Project Settings Schema",
-  "description": "Scheme for optional file .cjr/settings.yml",
+  "description": "Scheme for optional file .cjr/project-settings.yml",
   "type": "object",
   "properties": {
     "project-root" : {"$ref": "#/definitions/project-root"},
@@ -13,7 +13,6 @@ export const project_settings_schema = {
     "visible-stacks": {"$ref": "#/definitions/array-of-strings"},
     "config-files": {"$ref": "#/definitions/array-of-strings"},
     "stacks-dir": {"type": "string"},
-    "remote-name": {"type": "string"}, // remove once resource is fully implemented
     "resource": {"type": "string"},
     "default-profiles": {"$ref": "#/definitions/default-profiles"}
   },

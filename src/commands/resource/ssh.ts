@@ -8,9 +8,9 @@ import { ValidatedOutput } from '../../lib/validated-output'
 
 export default class Ssh extends ResourceCommand {
   static description = 'ssh into a remote resource.'
-  static args   = [{name: 'remote-name'}]
+  static args   = [{name: 'resource'}]
   static flags = {
-    "remote-name": flags.string({env: 'REMOTENAME'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "x11": flags.boolean({default: false, char: 'X'}),
     "explicit": flags.boolean({default: false})
   }
@@ -18,9 +18,9 @@ export default class Ssh extends ResourceCommand {
 
   async run() {
     const { flags, args } = this.parse(Ssh)
-    this.augmentFlagsWithProjectSettings(flags, {"remote-name": false})
+    this.augmentFlagsWithProjectSettings(flags, {"resource": false})
     // -- validate id ----------------------------------------------------------
-    const name = args["remote-name"] || flags["remote-name"] || ""
+    const name = args["resource"] || flags["resource"] || ""
     var result:ValidatedOutput<any> = this.validResourceName(name)
     if(!result.success) return printValidatedOutput(result)
     // -- get resource & driver ------------------------------------------------
