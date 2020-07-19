@@ -13,6 +13,8 @@ export default class List extends BasicCommand {
     "resource": flags.string({env: 'RESOURCE'}),
     "json": flags.boolean({default: false}),
     "all": flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
+    "running": flags.boolean({default: false, exclusive: ['excited']}),
+    "exited": flags.boolean({default: false, exclusive: ['running']}),
     "show-stashes": flags.boolean({default: false, description: "show stashes"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
@@ -35,7 +37,8 @@ export default class List extends BasicCommand {
         }
     )
     const job_info = job_manager.list({filter: {
-      'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags)
+      'stack-paths': (flags['all']) ? undefined : this.extractVisibleStacks(flags),
+      'states': this.extractStateFromFlags(flags)
     }})
     if(!job_info.success) return printValidatedOutput(job_info)
     const jobs = job_info.value
@@ -132,19 +135,22 @@ export default class List extends BasicCommand {
         table_parameters.silent_clip.push(field_params[field].silent_clip)
       })
 
-      toArray = (e:Dictionary) => (user_fields.map((field:TableFields) => field_params[field].getter(e)))
+      toArray = (j:JobInfo) => (user_fields.map((field:TableFields) => field_params[field].getter(j)))
       printTable = printVerticalTable
     }
 
-    printTable({ ...table_parameters, ...{
-        title:  "Running Jobs",
-        data:   jobs.filter((j:JobInfo) => (j.state === "running")).map((j:JobInfo) => toArray(j))
-    }})
 
-    printTable({ ...table_parameters, ...{
-        title:  "Completed Jobs",
-        data:   jobs.filter((j:JobInfo) => (j.state === "exited" && j?.labels?.[label_strings.job.type] !== "stash")).map((j:JobInfo) => toArray(j)),
-    }})
+    if(!flags['exited'])
+        printTable({ ...table_parameters, ...{
+            title:  "Running Jobs",
+            data:   jobs.filter((j:JobInfo) => (j.state === "running")).map((j:JobInfo) => toArray(j))
+        }})
+
+    if(!flags['running'])
+        printTable({ ...table_parameters, ...{
+            title:  "Completed Jobs",
+            data:   jobs.filter((j:JobInfo) => (j.state === "exited" && j?.labels?.[label_strings.job.type] !== "stash")).map((j:JobInfo) => toArray(j)),
+        }})
 
     if(flags['show-stashes'] || flags['all'])
       printTable({ ...table_parameters, ...{
@@ -152,6 +158,13 @@ export default class List extends BasicCommand {
           data:   jobs.filter((j:JobInfo) => (j?.labels?.[label_strings.job.type] === "stash")).map((j:JobInfo) => toArray(j)),
       }})
 
+  }
+
+  extractStateFromFlags(flags: Dictionary) : undefined|["exited"]|["running"]
+  {
+    if(flags["running"]) return ["running"]
+    if(flags["exited"]) return ["exited"]    
+    return undefined
   }
 
 }
