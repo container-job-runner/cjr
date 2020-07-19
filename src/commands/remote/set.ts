@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { RemoteCommand, Dictionary } from '../../lib/remote/commands/remote-command'
+import { RemoteCommand } from '../../lib/remote/commands/remote-command'
 import { JSTools } from '../../lib/js-tools'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../lib/validated-output'

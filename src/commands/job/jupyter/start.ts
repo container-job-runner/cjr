@@ -3,8 +3,6 @@ import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { initX11 } from '../../../lib/functions/cli-functions'
 import { ServerCommand } from '../../../lib/commands/server-command'
 import { getJupyterUrl, startJupyterApp, startJupyterInJob } from '../../../lib/functions/jupyter-functions'
-import { RemoteSshJobManager } from '../../../lib/job-managers/remote/remote-ssh-job-manager'
-import { JobManager } from '../../../lib/job-managers/abstract/job-manager'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server inside a job.'

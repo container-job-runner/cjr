@@ -1,6 +1,5 @@
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { Dictionary } from '../../lib/constants'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 
 export default class Stop extends BasicCommand {

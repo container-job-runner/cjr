@@ -1,4 +1,3 @@
-import * as path from 'path'
 import constants = require('../../lib/constants')
 import { flags} from '@oclif/command'
 import { printVerticalTable, printHorizontalTable, printValidatedOutput } from '../../lib/functions/misc-functions'
