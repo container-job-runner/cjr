@@ -49,22 +49,23 @@ export type JobCopyOptions = {
   "all-files"?: boolean                              // if true, then any rsync include or exclude files will be ignored
 }
 
-export type JobDeleteOptions = {
-  "ids": Array<string>                               // job ids that should be copied
-  "stack-paths"?: Array<string>                      // if specified, then the stack path of the jobs must be included in stack-paths or delete will fail
-  "selecter"?: "all"|"all-running"|"all-exited"      // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
+export type JobStopOptions = {
+  "ids"?: Array<string>                               // job ids that should be copied
+  "stack-paths"?: Array<string>                       // if specified, then the stack path of the jobs must be included in stack-paths or delete will fail
 }
 
-export type JobStopOptions = JobDeleteOptions
+export type JobDeleteOptions = JobStopOptions & {
+  "states"?: Array<JobState>                        // selector rules mode
+}
 
 export type JobStateOptions = {
-  "ids": Array<string>                               // job ids that should be copied
-  "stack-paths"?: Array<string>                      // only select jobs that pertain to this stack
+  "ids": Array<string>                                // job ids that should be copied
+  "stack-paths"?: Array<string>                       // only select jobs that pertain to this stack
 }
 
 type ID_OSTACK = {
-  "id": string                               // job ids that should be copied
-  "stack-paths"?: Array<string>                      // only select jobs that pertain to this stack
+  "id": string                                        // job ids that should be copied
+  "stack-paths"?: Array<string>                       // only select jobs that pertain to this stack
 }
 export type JobAttachOptions = ID_OSTACK
 export type JobLogOptions = ID_OSTACK & {
