@@ -29,14 +29,14 @@ export class ResourceConfiguration
 
   loadFromFile()
   {
-    const result = this.json_file.validatedRead(constants.remote_config_filename)
+    const result = this.json_file.validatedRead(constants.resource_config_filename)
     if(result.success) this.raw_object = result.value
     return result
   }
 
   writeToFile()
   {
-    return this.json_file.validatedWrite(constants.remote_config_filename, this.raw_object)
+    return this.json_file.validatedWrite(constants.resource_config_filename, this.raw_object)
   }
 
   isResource(name: string)

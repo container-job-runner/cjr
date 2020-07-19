@@ -43,7 +43,7 @@ export const project_settings = {
       "profiles": "profiles",
     }
 }
-export const remote_config_filename   = "remote-config"
+export const resource_config_filename   = "resource-config"
 
 // functions for quickly accessing filenames from project_root
 export const projectSettingsDirPath  = (project_root: string) => path.join(project_root, project_settings.dirname)
