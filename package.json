@@ -70,7 +70,7 @@
       "theia": {
         "description": "Start and stop local Theia servers on localhost."
       },
-      "project": {
+      "pconfig": {
         "description": "View and manage configuration options for projects."
       },
       "help": {

@@ -6,7 +6,7 @@ import { StackConfiguration } from '../lib/config/stacks/abstract/stack-configur
 import { ContainerDrivers, OutputOptions } from '../lib/job-managers/abstract/job-manager'
 
 export default class Shell extends LocalJobCommand {
-  static description = 'Start an interactive shell for developing in a stack container.'
+  static description = 'Start an interactive shell for development on localhost.'
   static args = []
   static flags = {
     "stack": flags.string({env: 'STACK'}),
