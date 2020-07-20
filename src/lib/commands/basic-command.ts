@@ -24,7 +24,7 @@ import { ResourceConfiguration, Resource } from '../config/resources/resource-co
 import { RemoteSshJobManager, RemoteSshJobManagerUserOptions } from '../job-managers/remote/remote-ssh-job-manager'
 import { SshShellCommand } from '../ssh-shell-command'
 
-export type ProjectSettingsFlags = "project-root" | "stack" | "stacks-dir" | "remote-name" | "visible-stacks" | "config-files" | "profile" | "resource"
+export type ProjectSettingsFlags = ps_prop_keys | "profile"
 
 export abstract class BasicCommand extends Command
 {
@@ -302,15 +302,12 @@ export abstract class BasicCommand extends Command
     if(resource === undefined)
         this.error(`There is no resource named ${resource_name}`)
 
-    // switch(resource.type) {
-    //     case 'ssh':
-    //         return this.newRemoteSshJobManager(resource, options)
-    //     default:
-    //         this.error('invalid resource type')
-    // }
-
-    this.error('remote resources are not currently supported')
-       
+    switch(resource.type) {
+        case 'ssh':
+            return this.newRemoteSshJobManager(resource, options)
+        default:
+            this.error('invalid resource type')
+    }       
   }
 
   protected newLocalJobManager(manager_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : LocalJobManager
