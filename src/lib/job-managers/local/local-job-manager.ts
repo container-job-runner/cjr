@@ -102,7 +102,8 @@ export class LocalJobManager extends GenericJobManager
     NO_MATCHING_ID: chalk`{bold No Matching Job ID}`,
     FAILED_START: chalk`{bold Failed to start job}`,
     JOBEXEC: {
-      NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job`
+      NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job.`,
+      NO_PARENT_VOLUME : (id: string) => chalk`{bold No Associated File Volume:} job ${id} has no associated file volume. Exec is not possible in this job.`
     }
   }
 
@@ -168,12 +169,10 @@ export class LocalJobManager extends GenericJobManager
     const parent_project_root = parent_job.labels?.[label_strings.job["project-root"]] || ""
     if(!parent_project_root)
       return result.pushError(this.ERRORSTRINGS.JOBEXEC.NO_PROJECTROOT(parent_job.id))
+    if(!parent_file_volume_id)
+      return result.pushError(this.ERRORSTRINGS.JOBEXEC.NO_PARENT_VOLUME(parent_job.id))
 
-    if(parent_file_volume_id) // -- bind parent job volume ----------------------
-      mountFileVolume(job_configuration.stack_configuration, parent_project_root, parent_file_volume_id)
-    else // -- bind parent job hostRoot -----------------------------------------
-      bindProjectRoot(job_configuration.stack_configuration, parent_project_root)
-
+    mountFileVolume(job_configuration.stack_configuration, parent_project_root, parent_file_volume_id)
     return result
   }
 
