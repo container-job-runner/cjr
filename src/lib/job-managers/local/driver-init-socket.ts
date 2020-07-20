@@ -7,25 +7,25 @@ import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-so
 
 export class DriverInitSocket extends DriverInitDockerConfig
 {
-    drivers(shell: ShellCommand, options: {"type": "podman"|"docker", "socket": string, "build-directory": string, "selinux": boolean})
+    drivers(shell: ShellCommand, options: {"engine": "podman"|"docker", "socket": string, "build-directory": string, "selinux": boolean})
     {
         return {
-            "builder": this.newBuildDriver(options.type, shell, options),
-            "runner":  this.newRunDriver(options.type, shell,  options)
+            "builder": this.newBuildDriver(options.engine, shell, options),
+            "runner":  this.newRunDriver(options.engine, shell,  options)
         }
     }
     
-    private newBuildDriver(type: "docker"|"podman", shell: ShellCommand, options: {"build-directory": string, "socket": string}) : DockerSocketBuildDriver | PodmanSocketBuildDriver
+    private newBuildDriver(engine: "docker"|"podman", shell: ShellCommand, options: {"build-directory": string, "socket": string}) : DockerSocketBuildDriver | PodmanSocketBuildDriver
     {        
-        if(type === "podman")
+        if(engine === "podman")
             return new PodmanSocketBuildDriver(shell, options);
         else
             return new DockerSocketBuildDriver(shell, options);
     }
 
-    private newRunDriver(type: "docker"|"podman", shell: ShellCommand, options: {"selinux": boolean, "socket": string}) : PodmanSocketRunDriver | DockerSocketRunDriver
+    private newRunDriver(engine: "docker"|"podman", shell: ShellCommand, options: {"selinux": boolean, "socket": string}) : PodmanSocketRunDriver | DockerSocketRunDriver
     {
-        if(type === "podman")
+        if(engine === "podman")
             return new PodmanSocketRunDriver(shell, options);
         else
             return new DockerSocketRunDriver(shell, options);

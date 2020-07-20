@@ -8,25 +8,25 @@ import { DriverInitDockerConfig } from '../abstract/driver-init-docker-config';
 
 export class DriverInitCli extends DriverInitDockerConfig
 {
-    drivers(shell: ShellCommand|SshShellCommand, options: {"type": "podman" | "docker", "selinux": boolean})
+    drivers(shell: ShellCommand|SshShellCommand, options: {"engine": "podman" | "docker", "selinux": boolean})
     {
         return {
-            "builder": this.newBuildDriver(options.type, shell),
-            "runner":  this.newRunDriver(options.type, shell,  options)
+            "builder": this.newBuildDriver(options.engine, shell),
+            "runner":  this.newRunDriver(options.engine, shell,  options)
         }
     }
     
-    private newBuildDriver(type: "podman"|"docker", shell: ShellCommand|SshShellCommand) : DockerCliBuildDriver | PodmanCliBuildDriver
+    private newBuildDriver(engine: "podman"|"docker", shell: ShellCommand|SshShellCommand) : DockerCliBuildDriver | PodmanCliBuildDriver
     {
-        if(type === "podman")
+        if(engine === "podman")
             return new PodmanCliBuildDriver(shell);
         else
             return new DockerCliBuildDriver(shell);
     }
 
-    private newRunDriver(type: "podman"|"docker", shell: ShellCommand|SshShellCommand, options: {"selinux": boolean}) : DockerCliRunDriver | PodmanCliRunDriver
+    private newRunDriver(engine: "podman"|"docker", shell: ShellCommand|SshShellCommand, options: {"selinux": boolean}) : DockerCliRunDriver | PodmanCliRunDriver
     {
-        if(type === "podman")
+        if(engine === "podman")
             return new PodmanCliRunDriver(shell, options);               
         else
             return new DockerCliRunDriver(shell, options);

@@ -314,7 +314,7 @@ export abstract class BasicCommand extends Command
     const driver = this.settings.get('driver'); // expecting podman-cli, podman-socket, docker-cli, docker-socket
     
     const options:LocalJobManagerUserOptions = {
-        "driver":       /^podman/.test(driver) ? "podman" : "docker",
+        "engine":       /^podman/.test(driver) ? "podman" : "docker",
         "driver-type":  /-cli$/.test(driver) ? "cli" : "socket",
         "socket":       this.settings.get('socket-path'),
         "selinux":      this.settings.get('selinux'),
@@ -344,7 +344,7 @@ export abstract class BasicCommand extends Command
   {
     const options:RemoteSshJobManagerUserOptions = {
         "resource":  resource,
-        "driver":    (resource.options?.['driver'] == "podman") ? "podman" : "docker",
+        "engine":    (resource.options?.['engine'] == "podman") ? "podman" : "docker",
         "selinux":   (resource.options?.['selinux']) ? true : false,
         "image-tag": this.settings.get('image-tag'),
         "explicit":  manager_options.explicit,

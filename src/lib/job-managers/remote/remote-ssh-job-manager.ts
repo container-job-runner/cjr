@@ -21,7 +21,7 @@ import { trim } from '../../functions/misc-functions';
 // ========================================================================
 
 export type RemoteSshJobManagerUserOptions = {
-    "driver"?: "podman"|"docker"
+    "engine"?: "podman"|"docker"
     "selinux"?: boolean                     // if true, then bind mounts will have selinux :Z mode
     "explicit": boolean,
     "output-options"?: OutputOptions
@@ -43,7 +43,7 @@ export type MultiplexOptions = {
 export class RemoteSshJobManager extends GenericJobManager
 {
     private options: Required<RemoteSshJobManagerUserOptions> = {
-        "driver": "podman",
+        "engine": "podman",
         "explicit": false,
         "output-options": {verbose: false, quiet: false},
         "selinux": false,
@@ -121,7 +121,7 @@ export class RemoteSshJobManager extends GenericJobManager
         this.container_drivers = initializer.drivers(
             this.shell,
             {
-                "type": this.options["driver"],
+                "engine": this.options["engine"],
                 "selinux": this.options["selinux"]
             }            
         )

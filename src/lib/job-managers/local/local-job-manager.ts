@@ -21,7 +21,7 @@ import { VolumeSyncManager, VolumeRsyncOptions } from '../../sync-managers/volum
 import { GenericJobManager } from '../abstract/generic-job-manager';
 
 export type LocalJobManagerUserOptions = {
-    "driver"?: "podman"|"docker"            // underlying container runner
+    "engine"?: "podman"|"docker"            // underlying container runner
     "driver-type"?: "cli"|"socket"          // once cli driver are depricated this field can be removed
     "output-options"?: OutputOptions    
     "selinux"?: boolean                     // if true, then bind mounts will have selinux :Z mode
@@ -37,7 +37,7 @@ export type LocalJobManagerUserOptions = {
 export class LocalJobManager extends GenericJobManager
 {
   options: Required<LocalJobManagerUserOptions> = {
-      "driver": "docker", 
+      "engine": "docker", 
       "driver-type": "socket", 
       "output-options": {"quiet": false, "verbose": false},
       "selinux": false,
@@ -70,7 +70,7 @@ export class LocalJobManager extends GenericJobManager
         this.container_drivers = initializer.drivers(
             shell,
             {
-                "type": this.options["driver"], 
+                "engine": this.options["engine"], 
                 "socket": this.options["socket"],
                 "selinux": this.options["selinux"],
                 "build-directory": this.options["directories"]['build'], 
@@ -85,7 +85,7 @@ export class LocalJobManager extends GenericJobManager
         this.container_drivers = initializer.drivers(
             shell,
             {
-                "type": this.options["driver"],
+                "engine": this.options["engine"],
                 "selinux": this.options["selinux"]
             }            
         )
