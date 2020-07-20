@@ -18,7 +18,6 @@ export default class Init extends ProjectSettingsCommand {
     "stack": flags.string({env: 'STACK', description: "default stack for project"}),
     "project-root-auto": flags.boolean({}),
     "resource": flags.string({env: 'RESOURCE', description: "default resource for project"}),
-    "config-files": flags.string({multiple: true, description: "additional overriding configuration files for project stack"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified, only these stacks will be visible when running cjr from within this project directory."}),
   }
@@ -55,9 +54,7 @@ export default class Init extends ProjectSettingsCommand {
       if(flags['stacks-dir']) project_settings.setStacksDir(flags['stacks-dir'])
       if(flags['visible-stacks']) project_settings.setVisibleStacks(flags['visible-stacks'])
       if(flags['project-root-auto']) project_settings.setProjectRoot('auto')
-      if(flags['config-files']?.length > 0) flags['config-files'].map(
-        (file:string) => project_settings.addConfigFile(path.resolve(file))
-      )
+
       // -- write files --------------------------------------------------------
       const result = project_settings.writeToFile(projectSettingsYMLPath(project_root))
       if(!result.success) return printValidatedOutput(result)

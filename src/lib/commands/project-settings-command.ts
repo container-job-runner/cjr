@@ -29,12 +29,6 @@ export abstract class ProjectSettingsCommand extends BasicCommand
       this.printKeyVal(key, value_str)
     })
 
-    const relPathToAbsPath = (s:string) => (path.isAbsolute(s)) ? s : path.resolve(
-      path.join(project_root, constants.project_settings.dirname, s)
-    )
-    // -- print config-files ---------------------------------------------------
-    const abs_config_paths = project_settings.getConfigFiles()?.map(relPathToAbsPath) || []
-    this.printKeyVal("config-files", this.arrayToConsoleStr(abs_config_paths))
     // -- print default-profiles -----------------------------------------------
     const default_profiles = project_settings.getDefaultProfiles()
     const default_profiles_names = Object.keys(default_profiles || {});

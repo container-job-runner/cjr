@@ -17,7 +17,6 @@ export type ps_props = {
   "stacks-dir"?: string,
   "resource"?: string,
   "visible-stacks"?: Array<string>
-  "config-files"?: Array<string>,
   "default-profiles"?: { [key: string] : Array<string> }
 }
 
@@ -62,11 +61,6 @@ export class ProjectSettings
     return this.raw_object["visible-stacks"]
   }
 
-  getConfigFiles() : Array<string>|undefined
-  {
-    return this.raw_object["config-files"]
-  }
-
   getDefaultProfiles() : {[key:string] : string[]} | undefined
   {
     return this.raw_object["default-profiles"]
@@ -99,11 +93,6 @@ export class ProjectSettings
     this.raw_object["visible-stacks"] = visible_stacks
   }
 
-  setConfigFiles(config_files: Array<string>)
-  {
-    this.raw_object["config-files"] = config_files
-  }
-
   setDefaultProfiles(default_profiles: { [key: string] : Array<string> })
   {
     this.raw_object["default-profiles"] = default_profiles
@@ -115,14 +104,6 @@ export class ProjectSettings
       this.raw_object["visible-stacks"] = []
     const vstacks = this.raw_object["visible-stacks"]
     vstacks.push( ... stacks.filter( (s:string) => !vstacks.includes(s)) )
-  }
-
-  addConfigFile(abs_path: string)
-  {
-    if(!this.raw_object["config-files"])
-      this.raw_object["config-files"] = []
-    this.raw_object["config-files"]?.push(abs_path)
-    return true
   }
 
   addDefaultProfile(profile: string, stacks?: Array<string>)
@@ -144,11 +125,6 @@ export class ProjectSettings
   removeVisibleStacks(stacks: Array<string>)
   {
     this.raw_object["visible-stacks"] = this.raw_object["visible-stacks"]?.filter( (s: string) => !stacks.includes(s) )
-  }
-
-  removeConfigFile(abs_path: string)
-  {
-    this.raw_object["config-files"] = this.raw_object["config-files"]?.filter( (s: string) => s !== abs_path )
   }
 
   removeDefaultProfile(profile: string, stacks?: Array<string>)
@@ -190,13 +166,6 @@ export class ProjectSettings
     return []
   }
 
-  processedConfigFiles() : Array<string>
-  {
-    return this.configFilesToAbsPath(
-      this.raw_object["config-files"] || [],
-      this.file_path).value
-  }
-
   // ---------------------------------------------------------------------------
   // LOADPROJECTSETTINGS: loads any project settings from the cjr dir in hostRoot
   // -- Parameters -------------------------------------------------------------
@@ -224,8 +193,7 @@ export class ProjectSettings
     const project_settings:ps_props = read_result.value || {}
     this.stackToAbsPath(project_settings, file_path)
     result.absorb(
-      this.stacksDirToAbsPath(project_settings, file_path),
-      this.configFilesToAbsPath(project_settings["config-files"] || [], file_path)
+      this.stacksDirToAbsPath(project_settings, file_path)
     )
     this.raw_object = project_settings
     this.file_path = file_path

@@ -9,7 +9,6 @@ export default class Set extends ProjectSettingsCommand {
   static args = []
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
-    "config-file": flags.string({ description: "manually remove a path to a config file" }),
     "default-profile": flags.string(),
     "stack": flags.string({ multiple: true, dependsOn: ['default-profile'], description: "profile will only activate for stacks matching this name. If this flag is not supplied, profile will apply to all stacks" }),
     "visible-stack": flags.string({ multiple: true }),
@@ -26,8 +25,6 @@ export default class Set extends ProjectSettingsCommand {
 
     if(flags['default-profile']) // add a default profile
       project_settings.removeDefaultProfile(flags['default-profile'], flags['stack'])
-    if(flags['config-file'])
-      project_settings.removeConfigFile(flags['config-file'])
     if(flags['visible-stack']) // add a visible stack
       project_settings.removeVisibleStacks(flags['visible-stack'])
 

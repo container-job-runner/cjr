@@ -11,7 +11,6 @@ export const project_settings_schema = {
     "project-root" : {"$ref": "#/definitions/project-root"},
     "stack": {"type": "string"},
     "visible-stacks": {"$ref": "#/definitions/array-of-strings"},
-    "config-files": {"$ref": "#/definitions/array-of-strings"},
     "stacks-dir": {"type": "string"},
     "resource": {"type": "string"},
     "default-profiles": {"$ref": "#/definitions/default-profiles"}

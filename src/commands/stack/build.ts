@@ -22,7 +22,7 @@ export default class Build extends BasicCommand {
   async run()
   {
     const {args, flags} = this.parse(Build)
-    this.augmentFlagsWithProjectSettings(flags, {"stack": false, "config-files": false, "stacks-dir": true})
+    this.augmentFlagsWithProjectSettings(flags, {"stack": false, "stacks-dir": true})
     flags["stack"] = args?.['stack'] || flags["stack"]
     this.augmentFlagsWithProfile(flags)
 

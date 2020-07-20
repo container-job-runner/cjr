@@ -21,7 +21,7 @@ export default class RMI extends BasicCommand {
   async run()
   {
     const { argv, flags } = this.parse(RMI)
-    this.augmentFlagsWithProjectSettings(flags, {stack:false, "stacks-dir": false, "config-files": false})
+    this.augmentFlagsWithProjectSettings(flags, {stack:false, "stacks-dir": false})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
     const job_manager = this.newJobManager('localhost', {verbose: true, quiet: flags.quiet, explicit: flags.explicit})
     const container_drivers = job_manager.container_drivers

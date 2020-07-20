@@ -33,7 +33,7 @@ export default class Bundle extends BasicCommand {
   async run()
   {
     const {args, flags} = this.parse(Bundle)
-    this.augmentFlagsWithProjectSettings(flags, {stack:true, "config-files": false, "project-root":true, "stacks-dir": false})
+    this.augmentFlagsWithProjectSettings(flags, {"stack": true, "project-root": true, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
     const job_manager = this.newJobManager('localhost', {verbose: flags.verbose, quiet: false, explicit: flags.explicit})

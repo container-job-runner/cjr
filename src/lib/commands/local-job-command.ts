@@ -61,7 +61,6 @@ export abstract class LocalJobCommand extends BasicCommand
       "resource": false,
       "stack": true,
       "profile": false,
-      "config-files": false,
       "project-root":false,
       "stacks-dir": false
     })

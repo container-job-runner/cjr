@@ -12,7 +12,6 @@ export default class Set extends ProjectSettingsCommand {
     "project-root-auto": flags.boolean({}),
     "resource": flags.string({env: 'RESOURCE', description: "default resource for project"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
-    "config-files": flags.string({multiple: true}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "quiet": flags.boolean({default: false, char: 'q'})
   }
@@ -25,7 +24,6 @@ export default class Set extends ProjectSettingsCommand {
     const project_root: string = flags["project-root"] || ""
     const project_settings = loadProjectSettings(project_root).value
 
-    if(flags['config-files']) project_settings.setConfigFiles(flags['config-files'])
     if(flags['visible-stacks']) project_settings.setVisibleStacks(flags['visible-stacks'])
     if(flags['stack']) project_settings.setStack(flags['stack'])
     if(flags['resource']) project_settings.setResource(flags['resource'])
