@@ -1,9 +1,9 @@
 import { Start } from './job/start'
 import { initX11 } from '../lib/functions/cli-functions'
-import { LocalJobCommand } from '../lib/commands/local-job-command'
+import { JobCommand } from '../lib/commands/job-command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 
-export class StartShortcut extends LocalJobCommand {
+export class StartShortcut extends JobCommand {
   static description = Start.description
   static args = Start.args
   static flags = Start.flags

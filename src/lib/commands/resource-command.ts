@@ -10,9 +10,9 @@ import { PathTools } from '../fileio/path-tools'
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings } from '../error-strings'
 import { ResourceConfiguration } from '../config/resources/resource-configuration'
-import { LocalJobCommand } from './local-job-command'
+import { JobCommand } from './job-command'
 
-export abstract class ResourceCommand extends LocalJobCommand
+export abstract class ResourceCommand extends JobCommand
 {
     protected resource_configuration = new ResourceConfiguration(this.config.configDir)
 

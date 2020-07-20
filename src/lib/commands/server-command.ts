@@ -1,10 +1,10 @@
 import path = require('path')
-import { LocalJobCommand } from './local-job-command'
+import { JobCommand } from './job-command'
 import { ContainerDrivers, JobManager } from '../job-managers/abstract/job-manager'
 import { nextAvailablePort } from '../functions/cli-functions'
 import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manager'
 
-export abstract class ServerCommand extends LocalJobCommand
+export abstract class ServerCommand extends JobCommand
 {
     readonly localhost_ip = 'localhost' // use localhost instead of 127.0.0.1 for theia webviews
     
