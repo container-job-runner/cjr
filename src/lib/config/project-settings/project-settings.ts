@@ -219,21 +219,6 @@ export class ProjectSettings
       props.stack = this.pathsToExistingAbs([props.stack], path.dirname(file_path)).pop() || props.stack
   }
 
-  // -- HELPER: ensures overwriting project-config files exist and have absolute paths ---
-  private configFilesToAbsPath(config_files: Array<string>, file_path: string) : ValidatedOutput<Array<string>>
-  {
-    const error_accumulator = new ValidatedOutput(true, undefined)
-    // convert config files to absolute
-    const abs_config_files = this.pathsToExistingAbs(
-      config_files,
-      path.dirname(file_path),
-      (path_str:string) => {
-        error_accumulator.pushWarning(WarningStrings.PROJECTSETTINGS.MISSING_CONFIG_FILE(file_path, path_str))
-      }
-    )
-    return new ValidatedOutput(true, abs_config_files).absorb(error_accumulator)
-  }
-
   // -- HELPER: ensures project-settings stacks-dir is absolute ----------------
   private stacksDirToAbsPath(props: ps_props, file_path: string) : ValidatedOutput<undefined>
   {
