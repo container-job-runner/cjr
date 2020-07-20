@@ -501,4 +501,16 @@ export class RemoteSshJobManager extends GenericJobManager
 
     // == END JOB FUNCTIONS ====================================================
 
+    protected jobInfo(options?: JobInfoFilter, remap_stack: boolean = true) : ValidatedOutput<JobInfo[]>
+    {
+        // map stack paths
+        const mapped_options:JobInfoFilter = JSTools.rCopy(options || {})
+        if(remap_stack)
+            mapped_options['stack-paths'] = mapped_options?.["stack-paths"]?.map( 
+                (local_stack_path:string) => this.cachedPathConverter(local_stack_path, 'stacks')
+            )
+
+        return super.jobInfo(mapped_options)
+    }
+
 }
