@@ -1,7 +1,7 @@
 import path = require('path')
 import chalk = require('chalk');
-import { SshShellCommand } from '../../remote/ssh-shell-command';
-import { Resource } from '../../remote/config/resource-configuration';
+import { SshShellCommand } from '../../ssh-shell-command';
+import { Resource } from '../../config/resources/resource-configuration';
 import { Dictionary, label_strings } from '../../constants';
 import { ValidatedOutput } from '../../validated-output';
 import { JSTools } from '../../js-tools';
@@ -9,7 +9,7 @@ import { StackConfiguration } from '../../config/stacks/abstract/stack-configura
 import { DriverInitCli } from '../local/driver-init-cli';
 import { ContainerDrivers, Configurations, OutputOptions, JobRunOptions, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobBuildOptions } from '../abstract/job-manager';
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration';
-import { NewJobInfo, JobInfo } from '../../drivers-containers/abstract/run-driver';
+import { NewJobInfo, JobInfo, JobInfoFilter } from '../../drivers-containers/abstract/run-driver';
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { GenericJobManager } from '../abstract/generic-job-manager';
 import { PathTools } from '../../fileio/path-tools';
@@ -54,7 +54,7 @@ export class RemoteSshJobManager extends GenericJobManager
             "restart-existing-connection": false,
         },
         "resource": {
-            "type": "cjr", 
+            "type": "ssh", 
             "address": "", 
             "username": "", 
             "options": {}
