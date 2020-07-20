@@ -1,5 +1,5 @@
-import {ValidatedOutput} from "../validated-output"
-import {TextFile} from "./text-file"
+import { ValidatedOutput } from "../validated-output"
+import { TextFile } from "./text-file"
 
 export class JSONFile extends TextFile
 {

@@ -1,5 +1,5 @@
 import * as Ajv from 'ajv'
-import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
+import { ajvValidatorToValidatedOutput } from '../../functions/misc-functions'
 
 export const resource_configuration_schema = {
   "$id": "resource-configuration-schema.json",

@@ -1,5 +1,5 @@
 import * as Ajv from 'ajv'
-import {ajvValidatorToValidatedOutput} from '../../functions/misc-functions'
+import { ajvValidatorToValidatedOutput } from '../../functions/misc-functions'
 
 export const run_shortcuts_schema = {
   "$id": "run-shortcuts.json",

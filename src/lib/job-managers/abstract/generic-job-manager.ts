@@ -1,9 +1,9 @@
 import chalk = require('chalk');
 import os = require('os')
-import { JobManager, JobRunOptions, ContainerDrivers, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions } from '../abstract/job-manager'
+import { JobManager, JobRunOptions, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
-import { firstJob, NewJobInfo, JobInfo, jobIds, JobState, firstJobId, jobStates, JobInfoFilter } from '../../drivers-containers/abstract/run-driver';
+import { firstJob, NewJobInfo, JobInfo, JobState, firstJobId, jobStates, JobInfoFilter } from '../../drivers-containers/abstract/run-driver';
 import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels } from '../../functions/config-functions';

@@ -1,19 +1,15 @@
 import chalk = require('chalk');
-import path = require('path');
-import fs = require('fs-extra')
 import { JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
-import { NewJobInfo, JobInfo, jobIds, JobState, } from '../../drivers-containers/abstract/run-driver';
+import { NewJobInfo, JobInfo } from '../../drivers-containers/abstract/run-driver';
 import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
-import { addX11, setRelativeWorkDir, addGenericLabels, bindProjectRoot, mountFileVolume } from '../../functions/config-functions';
+import { bindProjectRoot, mountFileVolume } from '../../functions/config-functions';
 import { ShellCommand } from '../../shell-command';
-import { FileTools } from '../../fileio/file-tools';
 import { DockerCliRunDriver } from '../../drivers-containers/docker/docker-cli-run-driver';
 import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-socket-run-driver';
 import { trim } from '../../functions/misc-functions';
-import { TextFile } from '../../fileio/text-file';
 import { JSTools } from '../../js-tools';
 import { DriverInitSocket } from './driver-init-socket';
 import { DriverInitCli } from './driver-init-cli';

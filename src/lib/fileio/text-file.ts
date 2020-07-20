@@ -1,6 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import {ValidatedOutput} from "../validated-output"
+import { ValidatedOutput } from "../validated-output"
 
 export class TextFile
 {
