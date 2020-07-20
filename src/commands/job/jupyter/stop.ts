@@ -22,7 +22,7 @@ export default class Stop extends BasicCommand {
   async run()
   {
     const { args, flags } = this.parse(Stop)
-    this.augmentFlagsWithProjectSettings(flags, {"project-root": false})
+    this.augmentFlagsWithProjectSettings(flags, {"project-root": false, "resource": false})
     this.augmentFlagsWithHere(flags)
     const job_manager = this.newJobManager(
       flags['resource'] || "localhost", 

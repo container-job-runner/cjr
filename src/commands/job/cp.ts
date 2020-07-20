@@ -25,7 +25,8 @@ export default class Copy extends BasicCommand {
     const {argv, flags} = this.parse(Copy)
     this.augmentFlagsWithProjectSettings(flags, {
       "visible-stacks":false,
-      "stacks-dir": false
+      "stacks-dir": false,
+      "resource": false
     })
     // -- get job ids ----------------------------------------------------------
     const ids = await this.getJobIds(argv, flags)

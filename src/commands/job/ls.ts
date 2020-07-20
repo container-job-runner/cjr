@@ -25,7 +25,7 @@ export default class List extends BasicCommand {
   async run()
   {
     const { flags } = this.parse(List)
-    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false})
+    this.augmentFlagsWithProjectSettings(flags, {"visible-stacks":false, "stacks-dir": false, "resource": false})
     const job_manager  = this.newJobManager(
         flags['resource'] || 'localhost',
         {

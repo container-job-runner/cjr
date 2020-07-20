@@ -19,7 +19,8 @@ export default class State extends BasicCommand {
     const { argv, flags } = this.parse(State)
     this.augmentFlagsWithProjectSettings(flags, {
       "visible-stacks":false,
-      "stacks-dir": false
+      "stacks-dir": false,
+      "resource": false
     })
 
     const job_manager = this.newJobManager(

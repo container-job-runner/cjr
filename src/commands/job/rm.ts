@@ -25,7 +25,8 @@ export default class Delete extends BasicCommand {
     const { argv, flags } = this.parse(Delete)
     this.augmentFlagsWithProjectSettings(flags, {
       "visible-stacks":false,
-      "stacks-dir": false
+      "stacks-dir": false,
+      "resource": false
     })
 
     // -- get job id -----------------------------------------------------------

@@ -22,7 +22,8 @@ export default class Stop extends BasicCommand {
     const { argv, flags } = this.parse(Stop)
     this.augmentFlagsWithProjectSettings(flags, {
       "visible-stacks":false,
-      "stacks-dir": false
+      "stacks-dir": false,
+      "resource": false
     })
 
     // -- get job id -----------------------------------------------------------

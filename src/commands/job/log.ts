@@ -22,6 +22,7 @@ export default class Log extends BasicCommand {
     this.augmentFlagsWithProjectSettings(flags, {
       "visible-stacks":false,
       "stacks-dir": false,
+      "resource": false
     })
     // -- get job id -----------------------------------------------------------
     const job_id = await this.getJobId(argv, flags)
