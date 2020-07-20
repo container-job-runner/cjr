@@ -174,8 +174,12 @@ export abstract class GenericJobManager extends JobManager
         "stack-paths": options['stack-paths'],
         "states": ["running"]
       }))
-    if(result.success)
-      return this.container_drivers.runner.jobAttach(result.value)
+    if(result.success) {
+      const id  = result.value
+      const log = this.container_drivers.runner.jobLog(id, 'all')
+      console.log(log.value) // print logs before attach
+      return this.container_drivers.runner.jobAttach(id)
+    }
     else
       return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
   }
