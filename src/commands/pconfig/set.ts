@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
-import { ProjectSettingsCommand } from '../../../lib/commands/project-settings-command'
-import { projectSettingsYMLPath} from "../../../lib/constants"
-import { printValidatedOutput } from '../../../lib/functions/misc-functions'
-import { loadProjectSettings } from '../../../lib/functions/cli-functions'
+import { ProjectSettingsCommand } from '../../lib/commands/project-settings-command'
+import { projectSettingsYMLPath} from "../../lib/constants"
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
+import { loadProjectSettings } from '../../lib/functions/cli-functions'
 
 export default class Set extends ProjectSettingsCommand {
-  static description = 'Overwrite one or multiple project settings.'
+  static description = 'Overwrite one or more project settings.'
   static flags = {
     "stack": flags.string({env: 'STACK', description: "default stack for project"}),
     "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),

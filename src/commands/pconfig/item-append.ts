@@ -1,8 +1,8 @@
 import { flags } from '@oclif/command'
-import { ProjectSettingsCommand } from '../../../lib/commands/project-settings-command'
-import { projectSettingsYMLPath } from "../../../lib/constants"
-import { printValidatedOutput } from '../../../lib/functions/misc-functions'
-import { loadProjectSettings } from '../../../lib/functions/cli-functions'
+import { ProjectSettingsCommand } from '../../lib/commands/project-settings-command'
+import { projectSettingsYMLPath } from "../../lib/constants"
+import { printValidatedOutput } from '../../lib/functions/misc-functions'
+import { loadProjectSettings } from '../../lib/functions/cli-functions'
 
 export default class Set extends ProjectSettingsCommand {
   static description = 'Adds one element to an array configuration property'
@@ -14,7 +14,7 @@ export default class Set extends ProjectSettingsCommand {
     "visible-stack": flags.string({ multiple: true }),
     "quiet": flags.boolean({ default: false, char: 'q' })
   }
-  static strict = false;
+  static strict = true;
 
   async run()
   {
