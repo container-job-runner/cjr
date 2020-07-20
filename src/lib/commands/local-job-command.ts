@@ -173,7 +173,8 @@ export abstract class LocalJobCommand extends BasicCommand
       job_configuration,
       this.runOptions(flags)
     )
-    this.printJobId(job, flags)
+    if(this.shouldPrintJobId(job_manager, job, job_configuration.synchronous, flags))
+        this.printJobId(job, job_configuration.synchronous)
     return {"job": job, "job_data": job_data}
   }
 
@@ -215,14 +216,24 @@ export abstract class LocalJobCommand extends BasicCommand
     return false
   }
 
-  private printJobId(job: ValidatedOutput<NewJobInfo>, flags: CLIJobFlags)
+  private shouldPrintJobId(job_manager: JobManager, job: ValidatedOutput<NewJobInfo>, synchronous: boolean, flags: CLIJobFlags) : boolean
   {
-    const skip_print = !job.success || flags.quiet || flags.verbose
-    if(skip_print) return
-    else if (flags.async)
-      console.log(job.value.id)
-    else if(!flags.async && this.settings.get('always-print-job-id'))
-      console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job.value.id}`)
+    if (!job.success || flags.quiet || flags.verbose) 
+        return false // no print if job failed, quiet flag active, or verbose flag is active (job manager already printed id)
+    else if (!synchronous || this.settings.get('always-print-job-id')) 
+        return true // always print for async jobs or if setting is active
+    else if (synchronous && job_manager.state({ids: [job.value.id]}).value?.pop() == 'running') 
+        return true // print if user detached from job.
+    else
+        return false
+  }
+  
+  private printJobId(job: ValidatedOutput<NewJobInfo>, synchronous: boolean)
+  {
+    if (synchronous)
+        console.log(chalk`-- {bold Job Id }${'-'.repeat(54)}\n${job.value.id}`) 
+    else
+        console.log(job.value.id)
   }
 
   // generates JobExecOptions based on cli flags
@@ -252,7 +263,8 @@ export abstract class LocalJobCommand extends BasicCommand
       job_configuration,
       this.execOptions(parent_id, flags)
     )
-    this.printJobId(job, flags)
+    if(this.shouldPrintJobId(job_manager, job, job_configuration.synchronous, flags))
+        this.printJobId(job, job_configuration.synchronous)
     return {"job": job, "job_data": job_data}
   }
 
