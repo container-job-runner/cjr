@@ -8,7 +8,7 @@ import { Dictionary } from '../../../constants'
 import { SshShellCommand } from '../../../ssh-shell-command'
 import { ShellCommand } from '../../../shell-command'
 
-export type StackSnapshotOptions = {mode: 'flag'|'always'|'prompt'|'off', username?: string, server: string, password?: string, token?: string}
+export type StackSnapshotOptions = {mode: 'always'|'prompt', username?: string, server: string, password?: string, token?: string}
 
 export abstract class StackConfiguration<T>
 {

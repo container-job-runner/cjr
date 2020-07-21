@@ -164,7 +164,7 @@ export default class Create extends BasicCommand {
     snapshot_configuration.setImage(path.posix.join(options.username, stack_name))
     snapshot_configuration.setTag(`${Date.now()}`)
     snapshot_configuration.setSnapshotOptions({
-      "mode": options.mode as 'always'|'prompt'|'flag',
+      "mode": options.mode as 'always'|'prompt',
       "username": options.username,
       "token": options.token,
       "server": options.server
@@ -219,7 +219,7 @@ export default class Create extends BasicCommand {
       {
         name: "mode",
         message: `Snapshot mode`,
-        choices: ['always', 'prompt', 'flag'],
+        choices: ['always', 'prompt'],
         type: "list",
       }
     ])

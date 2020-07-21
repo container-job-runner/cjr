@@ -128,7 +128,7 @@ export const docker_stack_configuration_schema = {
        "properties": {
          "mode" : {
            "type": "string",
-           "pattern": "^(flag)|(always)|(prompt)|(off)$"
+           "pattern": "^(always)|(prompt)$"
          },
          "username": {
            "type": "string"
