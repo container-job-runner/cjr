@@ -162,7 +162,7 @@ export class SshShellCommand
       if(this.resource.key) flags.i = {value: this.resource.key, noequals: true}
       const args = [`${this.resource.username}@${this.resource.address}`]
       const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
-      return this.multiplexExists(options)
+      return (result.success && this.multiplexExists(options))
     }
 
     multiplexStop(user_options:MultiplexOptions={}) : boolean // stop the multiplex master
@@ -176,7 +176,7 @@ export class SshShellCommand
       }
       const args = [`${this.resource.username}@${this.resource.address}`]
       const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
-      return (!this.multiplexExists(options))
+      return (result.success && !this.multiplexExists(options))
     }
 
     multiplexAlive(user_options:MultiplexOptions={}) : boolean // check status of the multiplex master
