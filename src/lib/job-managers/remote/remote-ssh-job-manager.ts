@@ -89,7 +89,10 @@ export class RemoteSshJobManager extends GenericJobManager
         NO_MATCHING_ID: chalk`{bold No Matching Job ID}`,
         FAILED_START: chalk`{bold Failed to start job}`,
         JOBEXEC: {
-            NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job`
+            NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job.`
+        },
+        JOBCOPY: {
+            MANUALCOPY_UNSUPPORTED: chalk`{bold Unsupported Copy Mode:} manual copy is not possible with this resource.`
         }
     }
     protected control_persist = 15 // default timeout for ssh multiplex master
@@ -433,6 +436,10 @@ export class RemoteSshJobManager extends GenericJobManager
     {
         const result = new ValidatedOutput(false, undefined)
         
+        // -- check copy mode --------------------------------------------------
+        if(options.mode == "manual") 
+            return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.JOBCOPY.MANUALCOPY_UNSUPPORTED)
+
         // -- 1. extract label information -------------------------------------
         const id = job.id;
         const local_project_root  = job.labels?.[label_strings.job["project-root"]] || ""
