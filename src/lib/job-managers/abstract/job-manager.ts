@@ -42,9 +42,8 @@ export type JobExecOptions = {
 export type JobCopyOptions = {
   "ids": Array<string>                               // job ids that should be copied
   "stack-paths"?: Array<string>                      // if specified, then the stack path of the jobs must be included in stack-paths or copy will fail
-  "mode": "update"|"overwrite"|"mirror"              // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
+  "mode": "update"|"overwrite"|"mirror"|"manual"     // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete, manual => interactive shell)
   "host-path"?: string                               // location where files should be copied. if specified this setting overrides job hostDir
-  "manual"?: boolean                                 // manually copy - runs sh shell instead of rsync command
   "all-files"?: boolean                              // if true, then any rsync include or exclude files will be ignored
 }
 

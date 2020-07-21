@@ -196,7 +196,6 @@ export class LocalJobManager extends GenericJobManager
         "mode": copy_options.mode,
         "verbose": this.output_options.verbose,
         "rules": rsync_rules,
-        "manual": copy_options["manual"]
       }
       result.absorb(
         this.sync_manager.copyToHost(this, rsync_options)
