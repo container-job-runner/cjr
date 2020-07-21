@@ -1,3 +1,4 @@
+import fs = require('fs')
 import chalk = require('chalk');
 import { JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
@@ -100,6 +101,9 @@ export class LocalJobManager extends GenericJobManager
     JOBEXEC: {
       NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job.`,
       NO_PARENT_VOLUME : (id: string) => chalk`{bold No Associated File Volume:} job ${id} has no associated file volume. Exec is not possible in this job.`
+    },
+    JOBCOPY: {
+        MISSING_DESTINATION: (path: string) => chalk`{bold Non Existant Copy Destination:} the directory\n  "${path}"\ndoes not exist and must be created on host before copy is possible.`
     }
   }
 
@@ -183,15 +187,19 @@ export class LocalJobManager extends GenericJobManager
       const download_include = job.labels?.[label_strings.job["download-include"]] || ""
       if(!projectRoot) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_PROJECTROOT(id))
       if(!file_volume_id) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_VOLUME(id))
-      // -- 2. write include & exclude settings to files -------------------------
+      // -- 2. set include & exclude settings -----------------------------------
       let rsync_rules:{include?: string[], exclude?: string[]} = {}
       if(!copy_options["all-files"]) {
         rsync_rules['include'] = this.includeExcludeLabelToFlag(download_include)
         rsync_rules['exclude'] = this.includeExcludeLabelToFlag(download_exclude)
       }
-      // -- 3. copy files ------------------------------------------------------
+      // -- 3. verify copy destination exists on host ------------------------
+      const copy_destination = copy_options?.['host-path'] || projectRoot // set copy-path to job hostRoot if it's not specified
+      if (! fs.existsSync(copy_destination))
+        return result.pushError(this.ERRORSTRINGS.JOBCOPY.MISSING_DESTINATION(copy_destination))
+      // -- 4. copy files ------------------------------------------------------
       const rsync_options: VolumeRsyncOptions = {
-        "host-path": copy_options?.["host-path"] || projectRoot, // set copy-path to job hostRoot if it's not specified
+        "host-path": copy_destination, 
         "volume": file_volume_id,
         "mode": copy_options.mode,
         "verbose": this.output_options.verbose,

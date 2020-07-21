@@ -1,3 +1,4 @@
+import fs = require('fs')
 import path = require('path')
 import chalk = require('chalk');
 import { SshShellCommand } from '../../ssh-shell-command';
@@ -92,7 +93,8 @@ export class RemoteSshJobManager extends GenericJobManager
             NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job.`
         },
         JOBCOPY: {
-            MANUALCOPY_UNSUPPORTED: chalk`{bold Unsupported Copy Mode:} manual copy is not possible with this resource.`
+            MANUALCOPY_UNSUPPORTED: chalk`{bold Unsupported Copy Mode:} manual copy is not possible with this resource.`,
+            MISSING_DESTINATION: (path: string) => chalk`{bold Non Existant Copy Destination:} the directory\n  "${path}"\ndoes not exist and must be created on host before copy is possible.`
         }
     }
     protected control_persist = 15 // default timeout for ssh multiplex master
@@ -453,10 +455,15 @@ export class RemoteSshJobManager extends GenericJobManager
         if(!remote_project_root) 
             return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_REMOTE_PROJECTROOT(id))
         
-        // -- 2. copy files ----------------------------------------------------
+        // -- 2. verify copy destination exists on host ------------------------
+        const copy_destination = options?.['host-path'] || local_project_root
+        if (! fs.existsSync(copy_destination))
+            return result.pushError(this.ERRORSTRINGS.JOBCOPY.MISSING_DESTINATION(copy_destination))
+
+        // -- 3. copy files ----------------------------------------------------
         return result.absorb(
             this.shell.rsync(
-                local_project_root,
+                copy_destination,
                 PathTools.addTrailingSeparator(remote_project_root, 'posix'),
                 'pull',
                 this.rsyncCopyFlags(labels_ie, options)
