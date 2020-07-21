@@ -257,8 +257,10 @@ export function getXAuthSecret(shell: ShellCommand|SshShellCommand) : ValidatedO
 {
   const failure = new ValidatedOutput<string>(false, "")
   const xauth_list = trim(shell.output("xauth list $DISPLAY"))
-  const xauth_fields = xauth_list.value.split("  ") // assume format: HOST  ACCESS-CONTROL  SECRET
   if(!xauth_list.success) return failure
+  const sockets  = xauth_list.value.split(/[\n\r]+/) // split on new line in case there are multiple x11 sockets running
+  if(sockets && sockets.length < 1) return failure
+  const xauth_fields = sockets.pop()?.split("  ") || [] // assume format: HOST  ACCESS-CONTROL  SECRET
   if(xauth_fields.length != 3) return failure
   return new ValidatedOutput<string>(true, xauth_fields[2])
 }
