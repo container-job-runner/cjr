@@ -19,7 +19,7 @@ export class StartShortcut extends JobCommand {
             'explicit': flags.explicit
         })
     // -- run basic job --------------------------------------------------------
-    const fixed_flags = {"remove-on-exit": (flags['file-access'] === "bind")}
+    const fixed_flags = {"remove-on-exit": (flags['file-access'] === "shared")}
     const { job, job_data } = this.runSimpleJobAndCopy({ ... flags, ... fixed_flags }, argv)
     printValidatedOutput(job_data)
     printValidatedOutput(job)

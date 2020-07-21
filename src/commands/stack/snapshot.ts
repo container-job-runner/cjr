@@ -47,7 +47,7 @@ export default class Snapshot extends JobCommand {
     // -- run basic job --------------------------------------------------------
     const shell_flags = {
       "quiet": false,
-      "file-access": "bind",
+      "file-access": "shared",
       "label": [],
       "sync": true,
       "remove-on-exit": false

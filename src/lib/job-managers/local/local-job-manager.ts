@@ -137,7 +137,7 @@ export class LocalJobManager extends GenericJobManager
     )
     if(!build_result.success) return failed_result.absorb(build_result)
     // -- 2. mount project files ------------------------------------------------
-    if(job_options["project-root"] && job_options["project-root-file-access"] === "bind")
+    if(job_options["project-root"] && job_options["project-root-file-access"] === "shared")
       bindProjectRoot(stack_configuration, job_options["project-root"])
     else if(job_options["project-root"] && job_options["project-root-file-access"] === "volume")
     {

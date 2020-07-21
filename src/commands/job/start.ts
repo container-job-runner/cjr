@@ -23,7 +23,7 @@ export class Start extends JobCommand {
     "message": flags.string({description: "use this flag to tag a job with a user-supplied message"}),
     "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     "autocopy": flags.boolean({default: false, exclusive: ["async"], description: "automatically copy files back to the projec root on exit"}),
-    "file-access": flags.string({default: "volume", options: ["volume", "bind"], description: "how files are accessed from the container. Options are: volume and bind."}),
+    "file-access": flags.string({default: "volume", options: ["volume", "shared"], description: "how files are accessed from the container."}),
     "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
@@ -41,7 +41,7 @@ export class Start extends JobCommand {
             'explicit': flags.explicit
         })
     // -- run basic job --------------------------------------------------------
-    const fixed_flags = {"remove-on-exit": (flags['file-access'] === "bind")}
+    const fixed_flags = {"remove-on-exit": (flags['file-access'] === "shared")}
     const { job, job_data } = this.runSimpleJobAndCopy({ ... flags, ... fixed_flags }, argv)
     printValidatedOutput(job_data)
     printValidatedOutput(job)

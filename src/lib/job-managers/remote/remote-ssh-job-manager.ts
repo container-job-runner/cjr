@@ -361,7 +361,7 @@ export class RemoteSshJobManager extends GenericJobManager
 
         // -- upload job data --------------------------------------------------
         this.printStatus({header: this.STATUSHEADERS.UPLOAD_JOBFILES})
-        const cached = options['project-root-file-access'] === 'bind'
+        const cached = options['project-root-file-access'] === 'shared'
         const upload = this.uploadJobFiles(
             options['project-root'],
             job_configuration.stack_configuration.getRsyncUploadSettings(true),

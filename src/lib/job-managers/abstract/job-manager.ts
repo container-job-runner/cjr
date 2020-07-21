@@ -25,7 +25,7 @@ export type OutputOptions = {
 
 export type JobRunOptions = {
   "reuse-image": boolean
-  "project-root-file-access": "volume"|"bind"
+  "project-root-file-access": "volume"|"shared"
   "project-root"?: string
   "cwd"?: string
   "x11"?: boolean

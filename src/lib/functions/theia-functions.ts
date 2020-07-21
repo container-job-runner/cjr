@@ -61,7 +61,7 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
       "cwd": theia_options["project-root"],
       "x11": theia_options["x11"],
       "reuse-image": (theia_options?.["reuse-image"] !== undefined) ? theia_options["reuse-image"] : true,
-      "project-root-file-access": "bind"
+      "project-root-file-access": "shared"
     }
   )
   if(!job.success) return new ValidatedOutput(false, {"id": "", isnew: true}).absorb(job)

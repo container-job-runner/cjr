@@ -59,7 +59,7 @@ export function startJupyterInProject(job_manager: JobManager, jupyter_options: 
       "cwd": jupyter_options["project-root"],
       "x11": jupyter_options["x11"],
       "reuse-image": (jupyter_options?.["reuse-image"] !== undefined) ? jupyter_options["reuse-image"] : true,
-      "project-root-file-access": "bind"
+      "project-root-file-access": "shared"
     }
   )
   if(!job.success) 

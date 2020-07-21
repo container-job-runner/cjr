@@ -9,6 +9,7 @@ import { NewJobInfo, firstJob } from '../drivers-containers/abstract/run-driver'
 import { printValidatedOutput } from '../functions/misc-functions'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
+import { LocalJobManager } from '../job-managers/local/local-job-manager'
 
 // ===========================================================================
 // NewJobCommand: An abstract Class for cli commands that start new jobs.
@@ -151,7 +152,7 @@ export abstract class JobCommand extends BasicCommand
   {
     return {
         "reuse-image": this.extractReuseImage(flags),
-        "project-root-file-access":  (flags['file-access'] as "volume"|"bind"),
+        "project-root-file-access":  (flags['file-access'] as "volume"|"shared"),
         "project-root": flags["project-root"] || "",
         "x11": flags["x11"],
         "cwd": flags['working-directory']
@@ -202,7 +203,7 @@ export abstract class JobCommand extends BasicCommand
   {
     // -- check flag status ----------------------------------------------------
     if(!flags["project-root"]) return false
-    if(flags["file-access"] === 'bind') return false
+    if( (job_manager instanceof LocalJobManager) && (flags["file-access"] === 'shared') ) return false
     // -- check that job has stopped -------------------------------------------
     const result = firstJob(
         job_manager.list({
