@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
-import { startTheiaInProject, getTheiaUrl, startTheiaApp } from '../../lib/functions/theia-functions'
+import { startTheiaInProject, getTheiaUrl, runTheiaOnStartCommand } from '../../lib/functions/theia-functions'
 import { JSTools } from '../../lib/js-tools'
 
 export default class Start extends ServerCommand {
@@ -35,7 +35,6 @@ export default class Start extends ServerCommand {
     const { args, flags } = this.parse(Start)
     this.augmentFlagsForJob(flags)
     this.augmentFlagsWithProjectRootArg(args, flags)
-    const webapp_path = this.settings.get('webapp');
 
     // -- create stack for running theia -------------------------------------
     const create_stack = this.createStack(flags)
@@ -75,10 +74,11 @@ export default class Start extends ServerCommand {
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
+    const onstart_cmd = this.settings.get('on-server-start');
     if(flags['quiet']) // exit silently
         return
-    else if(webapp_path) // open webapp
-        startTheiaApp(url_result.value, webapp_path || "", flags.explicit)  
+    else if(onstart_cmd) // open webapp
+        runTheiaOnStartCommand(url_result.value, onstart_cmd, flags.explicit)  
     else // print server url
         console.log(url_result.value)
 

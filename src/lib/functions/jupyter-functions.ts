@@ -189,21 +189,14 @@ export async function getJupyterUrl(job_manager: JobManager, identifier: JobIden
 }
 
 // -- starts the Jupyter Electron app  -----------------------------------------
-export function startJupyterApp(url: string, app_path: string, explicit: boolean = false) : ValidatedOutput<undefined>
+export function runJupyterOnStartCommand(url: string, onstart_cmd: string, explicit: boolean = false) : ValidatedOutput<undefined>
 {
-  if(!app_path) return new ValidatedOutput(false, undefined)
-  const platform = os.platform()
-  var app_cmd: string = ""
-  if(platform == "darwin")
-    app_cmd = `open -n ${app_path}`
-  else
-    app_cmd = app_path
-
+  if(!onstart_cmd) return new ValidatedOutput(false, undefined)
   const command = [
         `export URL=${ShellCommand.bashEscape(url)}`,
         `export ICON=jupyter`,
-        app_cmd
-    ].join(' && ');
+        onstart_cmd
+    ].join(' ; ');
   return new ValidatedOutput(true, undefined)
     .absorb(new ShellCommand(explicit, false).execAsync(command))
 }

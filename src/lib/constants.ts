@@ -75,16 +75,19 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
 {
   let driver
   let socket
+  let on_server_start_cmd
   switch(os.platform())
   {
     case "darwin":
     case "win32":
       driver = "docker-cli"
       socket = "/var/run/docker.sock"
+      on_server_start_cmd = 'open $URL'
       break
     default:
       driver = "podman-cli"
       socket = path.join(data_dir, subdirectories.data["podman-socket"], "podman.sock")
+      on_server_start_cmd = 'xdg-open $URL'
   }
 
   return {
@@ -106,7 +109,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "default-container-shell": "bash",
       "selinux": false,
       "jupyter-command": "jupyter lab",
-      "webapp": "",
+      "on-server-start": on_server_start_cmd,
       "timeout-jupyter": "10",
       "timeout-theia": "10",
       "xquartz-autostart": false

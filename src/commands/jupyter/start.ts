@@ -2,7 +2,7 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
-import { startJupyterInProject, getJupyterUrl, startJupyterApp } from '../../lib/functions/jupyter-functions'
+import { startJupyterInProject, getJupyterUrl, runJupyterOnStartCommand } from '../../lib/functions/jupyter-functions'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server.'
@@ -34,7 +34,6 @@ export default class Start extends ServerCommand {
     const { args, flags } = this.parse(Start)
     this.augmentFlagsForJob(flags)
     this.augmentFlagsWithProjectRootArg(args, flags)
-    const webapp_path = this.settings.get('webapp');
 
     // -- create stack for running jupyter -----------------------------------
     const create_stack = this.createStack(flags)
@@ -75,10 +74,11 @@ export default class Start extends ServerCommand {
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
+    const onstart_cmd = this.settings.get('on-server-start');
     if(flags['quiet']) // exit silently
       return    
-    else if(webapp_path) // open webapp
-      startJupyterApp(url_result.value, webapp_path || "", flags.explicit)
+    else if(onstart_cmd) // open webapp
+      runJupyterOnStartCommand(url_result.value, onstart_cmd, flags.explicit)
     else // only print url
       console.log(url_result.value)
     

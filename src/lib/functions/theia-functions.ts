@@ -125,24 +125,16 @@ export function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"
 }
 
 // -- starts the Theia Electron app  -------------------------------------------
-export function startTheiaApp(url: string, app_path: string, explicit: boolean = false) : ValidatedOutput<undefined>
+export function runTheiaOnStartCommand(url: string, onstart_cmd: string, explicit: boolean = false) : ValidatedOutput<undefined>
 {
-  if(!app_path) return new ValidatedOutput(false, undefined)
-  var app_cmd: string = ""
-  const platform = os.platform()
-  if(platform == "darwin")
-    app_cmd = `open -n ${app_path}`
-  else
-    app_cmd = app_path
-
+  if(!onstart_cmd) return new ValidatedOutput(false, undefined)
   const command = [
         `export URL=${ShellCommand.bashEscape(url)}`,
         `export ICON=theia`,
-        app_cmd
-    ].join(' && ');
-  return new ValidatedOutput(false, undefined).absorb(
-    (new ShellCommand(explicit, false)).execAsync(command)
-  )
+        onstart_cmd
+    ].join(' ; ');
+  return new ValidatedOutput(true, undefined)
+    .absorb(new ShellCommand(explicit, false).execAsync(command))
 }
 
 // === Helper functions ========================================================
