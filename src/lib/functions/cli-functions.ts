@@ -471,18 +471,24 @@ export async function augmentImagePushParameters(options: PushAuth)
   return options
 }
 
-export function snapshot(job_id: string, stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, registry_options: PushAuth = {})
+export function snapshot(job_id: string, stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, registry_options: PushAuth = {}) : ValidatedOutput<undefined>
 {
   const sc_time = stack_configuration.copy()
   sc_time.setTag(`${Date.now()}`)
   const sc_latest = stack_configuration.copy()
   sc_latest.setTag(constants.SNAPSHOT_LATEST_TAG)
 
-  drivers.runner.jobToImage(job_id, sc_time.getImage())
-  drivers.builder.tagImage(sc_time, sc_latest.getImage())
+  const result = new ValidatedOutput(true, undefined)
+  result.absorb(drivers.runner.jobToImage(job_id, sc_time.getImage()))
+  if(!result.success) return result
+  result.absorb(drivers.builder.tagImage(sc_time, sc_latest.getImage()))
+  if(!result.success) return result
 
-  drivers.builder.pushImage(sc_time, registry_options, "inherit")
-  drivers.builder.pushImage(sc_latest, registry_options, "inherit")
+  result.absorb(drivers.builder.pushImage(sc_time, registry_options, "inherit"))
+  if(!result.success) return result
+  result.absorb(drivers.builder.pushImage(sc_latest, registry_options, "inherit"))
+  if(!result.success) return result
+  return result
 }
 
 // == Helper Functions for Podman Socket ===========================================
