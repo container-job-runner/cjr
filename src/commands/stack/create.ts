@@ -26,9 +26,9 @@ export default class Create extends BasicCommand {
   static description = 'Initialize a project in the current directory.'
   static args = [{name: "name", required: true}]
   static flags = {
-    "dockerfile": flags.string({exclusive: ['image', 'snapshot'], description: "Path to local dockerfile."}),
-    "image": flags.string({exclusive: ['dockerfile', 'snapshot'], description: "Base docker image for stack."}),
-    "snapshot": flags.boolean({exclusive: ['dockerfile', 'image'], description: "Create new stack with snapshotting."}),
+    "dockerfile": flags.string({exclusive: ['image', 'snapshot'], description: "Create a new stack with using this Dockerfile."}),
+    "image": flags.string({exclusive: ['dockerfile', 'snapshot'], description: "Create a new stack based on an existing docker Image."}),
+    "snapshot": flags.boolean({exclusive: ['dockerfile', 'image'], description: "Create a new stack that supports snapshots."}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "explicit": flags.boolean({default: false})
   }
