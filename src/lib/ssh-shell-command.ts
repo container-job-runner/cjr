@@ -91,7 +91,7 @@ export class SshShellCommand
         ssh_flags.o = "LogLevel=QUIET"
       }
       if(ssh_options.x11)
-        this.addSshX11Flags(ssh_options)
+        this.addSshX11Flags(ssh_flags)
       if(!use_multiplex && this.resource.key) // no resource needed if socket exists
         ssh_flags.i = {value: this.resource.key, noequals: true}
       if(use_multiplex)
