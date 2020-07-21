@@ -92,8 +92,8 @@ export class RemoteSshJobManager extends GenericJobManager
             NO_PROJECTROOT : (id:string) => chalk`{bold No Associated Job Files:} job ${id} has no associated project root. Exec is not possible in this job`
         }
     }
+    protected control_persist = 15 // default timeout for ssh multiplex master
 
-    
     shell: SshShellCommand
     container_drivers: ContainerDrivers
     configurations: Configurations
@@ -112,7 +112,7 @@ export class RemoteSshJobManager extends GenericJobManager
             {ssh: {interactive: true}, multiplex: {}}
         )
         this.shell.setResource(options.resource)
-        this.shell.base_options['multiplex']['controlpersist'] = 15
+        this.shell.base_options['multiplex']['controlpersist'] = this.control_persist
         if(this.options.multiplexOptions.autoconnect)
             this.connect()
 
@@ -159,17 +159,17 @@ export class RemoteSshJobManager extends GenericJobManager
 
     protected activateX11() 
     {
-        this.shell.base_options['ssh']['x11'] = true;
-        this.shell.base_options['multiplex']['x11'] = true;
-        this.shell.base_options['multiplex']['tag'] = 'x11-';
+        this.shell.base_options['ssh']['x11'] = true
+        this.shell.base_options['multiplex']['x11'] = true
+        this.shell.base_options['multiplex']['tag'] = 'x11-'
         this.connect()
     }
 
     protected deactivateX11() 
     {
-        this.shell.base_options['ssh']['x11'] = false;
-        this.shell.base_options['multiplex']['x11'] = false;
-        this.shell.base_options['multiplex']['tag'] = '';
+        this.shell.base_options['ssh']['x11'] = false
+        this.shell.base_options['multiplex']['x11'] = false
+        this.shell.base_options['multiplex']['tag'] = ''
         this.connect()
     }
 
@@ -379,8 +379,8 @@ export class RemoteSshJobManager extends GenericJobManager
         remote_job_configuration.addLabel(this.REMOTELABELS.CACHED_PROJECT_ROOT, (cached) ? 'TRUE' : 'FALSE')
 
         // -- start new x11 multiplexor ----------------------------------------
-        if(options['x11']) 
-            this.activateX11()
+        if(options['x11']) // note: x11 currently does not support async jobs
+            this.activateX11() 
 
         // -- run job ----------------------------------------------------------
         const result = super.run(remote_job_configuration, options)
@@ -405,7 +405,7 @@ export class RemoteSshJobManager extends GenericJobManager
         const remote_job_configuration = upload_stack.value
         
         // -- start new x11 multiplexor ----------------------------------------
-        if(exec_options['x11']) 
+        if(exec_options['x11']) // note: x11 currently does not support async jobs
             this.activateX11()
         
         const result = super.exec(remote_job_configuration, exec_options)
