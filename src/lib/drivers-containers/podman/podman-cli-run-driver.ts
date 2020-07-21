@@ -130,6 +130,10 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     {
       flags["network"] = run_object?.flags?.['network']
     }
+    if(run_object?.flags?.['user'])
+    {
+      flags["user"] = run_object?.flags?.['user']
+    }
     return flags
   }
 

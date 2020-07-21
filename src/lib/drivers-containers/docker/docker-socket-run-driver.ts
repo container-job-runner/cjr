@@ -18,6 +18,7 @@ import { DockerAPIPostProcessor } from './docker-socket-build-driver'
 export type DockerAPI_CreateObject =
 {
   "Image"?: string,
+  "User"?: string,
   "Entrypoint"?: Array<string>,
   "Cmd"?: Array<string>,
   "WorkingDir"?: string,
@@ -613,6 +614,9 @@ export class DockerSocketRunDriver extends RunDriver
     // -- Entrypoint -----------------------------------------------------------
     if(configuration.config?.entrypoint)
       create_object.Entrypoint = configuration.config?.entrypoint
+    // -- User -----------------------------------------------------------------
+    if(configuration.config.flags?.['user'])
+      create_object.User = configuration.config.flags?.['user']
   }
 
   // === END API Functions =====================================================

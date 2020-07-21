@@ -433,6 +433,10 @@ export class DockerCliRunDriver extends RunDriver
     {
       flags["mac-address"] = run_object?.flags?.['mac-address']
     }
+    if(run_object?.flags?.['user'])
+    {
+      flags["user"] = run_object?.flags?.['user']
+    }
   }
 
   protected addMountFlags(flags: Dictionary, run_object: DockerCreateOptions)
