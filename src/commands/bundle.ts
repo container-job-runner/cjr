@@ -50,9 +50,9 @@ export default class Bundle extends BasicCommand {
     }
 
     if(flags['config-only']) // -- bundle project configuration ------------------------------------
-      result = bundleProjectSettings(job_manager.container_drivers, job_manager.configurations, options)
+      result = bundleProjectSettings(job_manager.configurations, options)
     else // -- bundle all files --------------------------
-      result = bundleProject(job_manager.container_drivers, job_manager.configurations, options)
+      result = bundleProject(job_manager.configurations, options)
     printValidatedOutput(result)
 
     // -- copy bundle to user specified location -------------------------------

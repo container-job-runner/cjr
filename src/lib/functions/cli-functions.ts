@@ -6,7 +6,7 @@ import fs = require('fs-extra')
 import constants = require('../constants')
 
 import { JobState, JobInfo, JobPortInfo} from '../drivers-containers/abstract/run-driver'
-import { ContainerDrivers, Configurations, JobBuildOptions, JobManager } from '../job-managers/abstract/job-manager'
+import { ContainerDrivers, Configurations, JobManager } from '../job-managers/abstract/job-manager'
 import { Dictionary, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths } from '../constants'
 import { JSTools } from '../js-tools'
 import { ValidatedOutput } from '../validated-output'
@@ -48,7 +48,7 @@ export type PushAuth = {
   "token"?:    string
 };
 
-export function bundleProject(drivers: ContainerDrivers, configurations: Configurations, options: ProjectBundleOptions)
+export function bundleProject(configurations: Configurations, options: ProjectBundleOptions)
 {
   const settings_dir = constants.projectSettingsDirPath(options["bundle-path"])   // directory that stores project settings yml & stack
   // -- ensure directory structure ---------------------------------------------
@@ -57,10 +57,10 @@ export function bundleProject(drivers: ContainerDrivers, configurations: Configu
   fs.removeSync(settings_dir) // remove any existing settings
   // -- bundle project settings ------------------------------------------------
   const ps_options:ProjectBundleOptions = { ... options, ... { 'bundle-path': settings_dir } }
-  return bundleProjectSettings(drivers, configurations, ps_options)
+  return bundleProjectSettings(configurations, ps_options)
 }
 
-export function bundleProjectSettings(container_runtime: ContainerDrivers, configurations: Configurations, options: ProjectBundleOptions) : ValidatedOutput<undefined>
+export function bundleProjectSettings(configurations: Configurations, options: ProjectBundleOptions) : ValidatedOutput<undefined>
 {
     printStatusHeader(StatusStrings.BUNDLE.PROJECT_SETTINGS, options?.verbose || false)
     const result = new ValidatedOutput(true, undefined)
@@ -108,7 +108,7 @@ export function bundleProjectSettings(container_runtime: ContainerDrivers, confi
     const bundle_stacks_dir = path.join(options["bundle-path"], 'stacks')
     fs.ensureDirSync(bundle_stacks_dir)
     result.absorb(
-        bundleStack(container_runtime, configurations, {
+        bundleStack(configurations, {
             "stack-path":   options['stack-path'],
             "config-files": options["config-files"],
             "bundle-path":  path.join(bundle_stacks_dir, stack_name),
@@ -119,7 +119,7 @@ export function bundleProjectSettings(container_runtime: ContainerDrivers, confi
     return result
 }
 
-export function bundleStack(container_runtime: ContainerDrivers, configurations: Configurations, options: StackBundleOptions) : ValidatedOutput<StackConfiguration>
+export function bundleStack(configurations: Configurations, options: StackBundleOptions) : ValidatedOutput<StackConfiguration<any>>
 {
   // -- ensure that stack can be loaded ----------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.STACK_BUILD(options['stack-path']), options?.verbose || false)
