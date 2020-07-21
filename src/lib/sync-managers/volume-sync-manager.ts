@@ -22,12 +22,11 @@ type RsyncRules = {
 export type VolumeRsyncOptions = {
   "host-path": string                                                           // path on host where files should be copied to
   "volume": string                                                              // id of volume that contains files
-  "mode": "update" | "overwrite" | "mirror"                                         // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
+  "mode": "update" | "overwrite" | "mirror" | "manual"                          // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete)
   "verbose"?: boolean                                                           // if true rsync will by run with -v flag
   "files"?: RsyncIncludeExclude                                                 // rsync include-from and rsync exclude-from
   "rules"?: RsyncRules
   "chown"?: string                                                              // string that specifies the username or id to use with command chown
-  "manual"?: boolean                                                            // if true starts interactive shell instead of rsync job
 }
 
 export class VolumeSyncManager extends SyncManager
@@ -91,7 +90,7 @@ export class VolumeSyncManager extends SyncManager
             rsync_flags
         )
 
-        if(options['manual']) {
+        if(options.mode == 'manual') {
             rsync_job_configuration.command = ['sh']
             rsync_job_configuration.working_directory = rsync_constants.manual_working_dir
         }
