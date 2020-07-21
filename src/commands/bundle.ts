@@ -21,10 +21,9 @@ export default class Bundle extends BasicCommand {
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "explicit": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false}),
-    "zip": flags.boolean({default: false, exclusive: ['tar'], description: 'produces a zip output file (requires gzip)'}),
-    "tar": flags.boolean({default: false, exclusive: ['zip'], description: 'produces a tar.gz output file (requires zip)'}),
-    "include-files": flags.boolean({default: false, description: 'include project files in bundle'}),
-    "include-stacks-dir": flags.boolean({default: false, description: 'include all stacks in stacks directory'}),
+    "zip": flags.boolean({default: false, exclusive: ['tar'], description: 'produces a zip output file (requires zip)'}),
+    "tar": flags.boolean({default: false, exclusive: ['zip'], description: 'produces a tar.gz output file (requires tar)'}),
+    "config-only": flags.boolean({default: false, description: 'only bundle project configuration'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"})
   }
@@ -46,19 +45,18 @@ export default class Bundle extends BasicCommand {
       "project-root": (flags["project-root"] as string),
       "stack-path":   stack_path,
       "config-files": flags["config-files"],
-      "bundle-path":  (flags['include-files']) ? path.join(tmp_dir, path.basename(flags['project-root'] as string)) : path.join(tmp_dir, constants.project_settings.dirname),
+      "bundle-path":  (flags['config-only']) ? path.join(tmp_dir, constants.project_settings.dirname) : path.join(tmp_dir, path.basename(flags['project-root'] as string)),
       "verbose":      flags.verbose
     }
-    if(flags['include-stacks-dir']) options["stacks-dir"] = flags["stacks-dir"]
 
-    if(flags['include-files']) // -- bundle all files --------------------------
-      result = bundleProject(job_manager.container_drivers, job_manager.configurations, options)
-    else // -- bundle project configuration ------------------------------------
+    if(flags['config-only']) // -- bundle project configuration ------------------------------------
       result = bundleProjectSettings(job_manager.container_drivers, job_manager.configurations, options)
+    else // -- bundle all files --------------------------
+      result = bundleProject(job_manager.container_drivers, job_manager.configurations, options)
     printValidatedOutput(result)
 
     // -- copy bundle to user specified location -------------------------------
-    const bundle_dest_path = this.bundleDestPath(flags, args.save_dir, path.basename(options["bundle-path"])) // final location for user
+    const bundle_dest_path = this.bundleDestPath(flags, args.save_dir) // final location for user
     const overwrite = await this.allowOverwrite(bundle_dest_path, this.settings.get('interactive'))
     if(overwrite && flags.tar)
       this.tar(options["bundle-path"], bundle_dest_path, flags.explicit)
@@ -84,12 +82,11 @@ export default class Bundle extends BasicCommand {
     return response.overwrite
   }
 
-  bundleDestPath(flags:Dictionary, save_dir:string, source_name: string)
+  bundleDestPath(flags:Dictionary, save_path:string)
   {
-    if((flags.zip || flags.tar)) source_name = source_name.replace(/^\./, "")   // name of settings folder (remove . if creating zip or tar file)
-    if(flags.zip) source_name = `${source_name}.zip`
-    if(flags.tar) source_name = `${source_name}.tar.gz`
-    return path.join(process.cwd(), save_dir, source_name)
+    if(flags.zip && !/\.zip$/.test(save_path)) save_path += '.zip'
+    else if(flags.tar && !/\.tar.gz/.test(save_path)) save_path += '.tar.gz'
+    return path.resolve(save_path)
   }
 
   zip(source_dir: string, destination: string, explicit:boolean)

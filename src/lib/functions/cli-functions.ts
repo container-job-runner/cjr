@@ -28,8 +28,6 @@ export type ProjectBundleOptions =
   "stack-path":   string,
   "config-files": Array<string>,
   "bundle-path":  string
-  "stacks-dir"?:  string,
-  "build-options"?: JobBuildOptions,
   "verbose"?:     boolean
 }
 
@@ -52,50 +50,76 @@ export type PushAuth = {
 
 export function bundleProject(drivers: ContainerDrivers, configurations: Configurations, options: ProjectBundleOptions)
 {
-  const settings_dir = projectSettingsDirPath(options["bundle-path"])   // directory that stores project settings yml & stack
+  const settings_dir = constants.projectSettingsDirPath(options["bundle-path"])   // directory that stores project settings yml & stack
   // -- ensure directory structure ---------------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.COPYING_FILES, options?.verbose || false)
   fs.copySync(options["project-root"], options["bundle-path"])
   fs.removeSync(settings_dir) // remove any existing settings
   // -- bundle project settings ------------------------------------------------
-  const ps_options:ProjectBundleOptions = { ... options, ...{'bundle-path': settings_dir}}
+  const ps_options:ProjectBundleOptions = { ... options, ... { 'bundle-path': settings_dir } }
   return bundleProjectSettings(drivers, configurations, ps_options)
 }
 
 export function bundleProjectSettings(container_runtime: ContainerDrivers, configurations: Configurations, options: ProjectBundleOptions) : ValidatedOutput<undefined>
 {
-  printStatusHeader(StatusStrings.BUNDLE.PROJECT_SETTINGS, options?.verbose || false)
-  const result = new ValidatedOutput(true, undefined)
-  const load_result = loadProjectSettings(options["project-root"])
-  if(!load_result.success) return new ValidatedOutput(false, undefined).absorb(load_result)
-  const project_settings = load_result.value;
-  // -- ensure directory structure ---------------------------------------------
-  const bundle_stacks_dir = path.join(options["bundle-path"], 'stacks')
-  fs.ensureDirSync(bundle_stacks_dir)
-  // -- adjust project settings ------------------------------------------------
-  project_settings.remove('stacks-dir')
-  project_settings.remove('config-files')
-  project_settings.remove('remote-name')
-  project_settings.setStack(`./stacks/${path.basename(options["stack-path"])}`)
-  if(options?.["stacks-dir"]) project_settings.setStacksDir('stacks')
-  const wf_result = project_settings.writeToFile(path.join(options['bundle-path'], constants.project_settings.filenames["project-settings"]))
-  if(!wf_result.success) return new ValidatedOutput(false, undefined).absorb(wf_result)
-  // -- copy stacks into bundle ------------------------------------------------
-  const stacks = ((options?.["stacks-dir"]) ? listStackNames(options["stacks-dir"], true) : []).concat(options["stack-path"])
-  const unique_stacks = [... new Set(stacks)]
-  unique_stacks.map((stack_path:string) => {
-    const bundle_result = bundleStack(container_runtime, configurations, {
-      "stack-path": stack_path,
-      "config-files": options["config-files"],
-      "bundle-path": path.join(bundle_stacks_dir, path.basename(stack_path)),
-      "verbose": options.verbose || false
-      })
-    if(!bundle_result.success) result.pushWarning(WarningStrings.BUNDLE.FAILED_BUNDLE_STACK(stack_path))
-    })
-  return result
+    printStatusHeader(StatusStrings.BUNDLE.PROJECT_SETTINGS, options?.verbose || false)
+    const result = new ValidatedOutput(true, undefined)
+    const load_result = loadProjectSettings(options["project-root"])
+    if(!load_result.success) return new ValidatedOutput(false, undefined).absorb(load_result)
+    
+    const project_settings = load_result.value;
+    const stack_name = path.basename(options["stack-path"])
+
+    // -- create project-settings for bundle -----------------------------------
+    const bundle_project_settings = new ProjectSettings()  
+    bundle_project_settings.setProjectRoot('auto')
+    bundle_project_settings.setStacksDir(
+        constants.project_settings.subdirectories.stacks
+    )  
+    bundle_project_settings.setStack(
+        path.join(
+            constants.project_settings.subdirectories.stacks,
+            stack_name
+        )
+    )
+    bundle_project_settings.setDefaultProfiles(
+        bundleDefaultProfiles(
+            project_settings, 
+            options['stack-path'], 
+            bundle_project_settings.getStack() || ""
+        )
+    )
+
+    // -- populate project settings directory ----------------------------------
+    // 1. copy profile
+    if(fs.existsSync(constants.projectSettingsProfilePath(options["project-root"])))
+        fs.copySync(
+            constants.projectSettingsProfilePath(options["project-root"]),
+            path.join(options['bundle-path'], constants.project_settings.subdirectories.profiles)
+        )
+    // 2. create project-settings files
+    bundle_project_settings.writeToFile(
+        path.join(
+            options["bundle-path"], 
+            constants.project_settings.filenames["project-settings"]
+        )
+    )
+    // 3. copy stack
+    const bundle_stacks_dir = path.join(options["bundle-path"], 'stacks')
+    fs.ensureDirSync(bundle_stacks_dir)
+    result.absorb(
+        bundleStack(container_runtime, configurations, {
+            "stack-path":   options['stack-path'],
+            "config-files": options["config-files"],
+            "bundle-path":  path.join(bundle_stacks_dir, stack_name),
+            "verbose":      options.verbose || false
+        })
+    )
+
+    return result
 }
 
-export function bundleStack(container_runtime: ContainerDrivers, configurations: Configurations, options: StackBundleOptions) : ValidatedOutput<undefined>
+export function bundleStack(container_runtime: ContainerDrivers, configurations: Configurations, options: StackBundleOptions) : ValidatedOutput<StackConfiguration>
 {
   // -- ensure that stack can be loaded ----------------------------------------
   printStatusHeader(StatusStrings.BUNDLE.STACK_BUILD(options['stack-path']), options?.verbose || false)
@@ -148,7 +172,25 @@ export function bundleStack(container_runtime: ContainerDrivers, configurations:
   // --> 4. copy additional files
   copy_ops.map((e:{source:string, destination:string}) =>
     fs.copySync(e.source, e.destination, {preserveTimestamps: true}))
-  return new ValidatedOutput(true, undefined)
+  return new ValidatedOutput(true, stack_configuration)
+}
+
+function bundleDefaultProfiles(project_settings: ProjectSettings, host_stack_path: string, bundle_stack_path: string) : { [key: string] : string[] }
+{
+    const default_profiles = project_settings.getDefaultProfiles() || {}
+    const bundle_default_profiles:{ [key: string] : string[] } = {}
+    const patternsMatchHostStack = (accumulator: boolean, pattern: string) => accumulator || (new RegExp(`${pattern}$`).test(host_stack_path))
+
+    // only keep profile rules that activate with current host stack
+    const profiles = Object.keys(default_profiles);
+    profiles.forEach( (p:string) => {
+        if(default_profiles[p].includes(project_settings.profile_all_stacks_keyword)) // include if profile applies to all
+            bundle_default_profiles[p] = [project_settings.profile_all_stacks_keyword]
+        else if (default_profiles[p].reduce(patternsMatchHostStack, false)) // include if profile applies to all
+            bundle_default_profiles[p] = [bundle_stack_path]
+    });
+
+  return bundle_default_profiles
 }
 
 // helper function user by startjob to print status
