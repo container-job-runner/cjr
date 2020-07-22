@@ -26,7 +26,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     flags["format"] = 'json'
   }
 
-   // converts data from docker ps into a JobObject
+  // converts data from docker ps into a JobObject
   protected psToJobInfo() : ValidatedOutput<Array<JobInfo>>
   {
     const ps_result = this.ps()
@@ -35,18 +35,29 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
 
     const jobs:Array<JobInfo> = ps_result.value.map( (x:Dictionary) : JobInfo => {
       return {
-        id: x.ID,
+        id: x.ID || x.Id, // Note: podman > 2.0 has field x.Id, podman < 2.0 has field x.ID
         image: x.Image,
         names: x.Names,
-        command: x.Command,
-        state: this.psStatusToJobInfoState(x.Status),
+        command: (Array.isArray(x.Command)) ? x.Command.join(" ") : x.Command, // NOTE: podman > 2.0 x.Command is an array, podman < 2.0 x.Command is a string. This field is overwritten using inspect data, since podman ps command also shows entrypoint.
+        state: this.psStatusToJobInfoState(x.Status || x.State),
         stack: x?.Labels?.[label_strings.job["stack-path"]] || "",
         labels: x?.Labels || {},
         ports: [], // info for this field is not provided from podman ps
-        status: x.Status
+        status: x.Status || x.State // podman 2.0 does not have status field, use Status for now?
       }
     })
     return new ValidatedOutput(true, jobs)
+  }
+
+  protected psStatusToJobInfoState(x: String) : JobState
+  {
+    const state = super.psStatusToJobInfoState(x) // used for podman < 2.0 (which prints Status field like docker)
+    if(state != "unknown") return state
+    // this code is for podman >= 2.0
+    if(x.match(/^exited/)) return "exited"
+    if(x.match(/^created/)) return "created"
+    if(x.match(/^running/)) return "running"
+    return "unknown"
   }
 
   // filters that can be immediately applied after running ps
