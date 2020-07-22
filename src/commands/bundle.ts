@@ -14,7 +14,7 @@ import { ValidatedOutput } from '../lib/validated-output'
 
 export default class Bundle extends BasicCommand {
   static description = 'Bundle a stack or project into a zip or tar for sharing.'
-  static args = [{name: 'save_dir', required: true}]
+  static args = [{name: 'bundle-path', required: true}]
   static flags = {
     "stack": flags.string({env: 'STACK'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
@@ -56,7 +56,7 @@ export default class Bundle extends BasicCommand {
     printValidatedOutput(result)
 
     // -- copy bundle to user specified location -------------------------------
-    const bundle_dest_path = this.bundleDestPath(flags, args.save_dir) // final location for user
+    const bundle_dest_path = this.bundleDestPath(flags, args['bundle-path']) // final location for user
     const overwrite = await this.allowOverwrite(bundle_dest_path, this.settings.get('interactive'))
     if(overwrite && flags.tar)
       this.tar(options["bundle-path"], bundle_dest_path, flags.explicit)
