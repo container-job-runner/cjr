@@ -17,7 +17,7 @@ export default class Set extends BasicCommand {
     }),
     "always-print-job-id": flags.string({
       options: ["true", "false"],
-      description: "if true, then cjr $ command will always print the user id even if --async flag is not selected."
+      description: "if true, then cjr job:start command will always print the user id even if --async flag is not selected."
     }),
     "autocopy-sync-job": flags.string({
       options: ["true", "false"],
@@ -31,7 +31,7 @@ export default class Set extends BasicCommand {
       description: "the default path to a folder that contains cjr stacks."
     }),
     "run-shortcuts-file": flags.string({
-      description: "location of a yml file that can be used to specify run shortcuts for `cjr $` command; To disable set value to ''"
+      description: "location of a yml file that can be used to specify run shortcuts for the cjr job:start command; To disable set value to ''"
     }),
     "driver": flags.string({
       options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
