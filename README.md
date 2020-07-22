@@ -27,7 +27,7 @@ USAGE
 # Commands
 <!-- commands -->
 * [`cjr $ COMMAND`](#cjr--command)
-* [`cjr bundle SAVE_DIR`](#cjr-bundle-save_dir)
+* [`cjr bundle BUNDLE-PATH`](#cjr-bundle-bundle-path)
 * [`cjr config:ls`](#cjr-configls)
 * [`cjr config:set`](#cjr-configset)
 * [`cjr help [COMMAND]`](#cjr-help-command)
@@ -35,7 +35,7 @@ USAGE
 * [`cjr job:attach [ID]`](#cjr-jobattach-id)
 * [`cjr job:cp [ID]`](#cjr-jobcp-id)
 * [`cjr job:exec ID COMMAND`](#cjr-jobexec-id-command)
-* [`cjr job:jupyter:ls [COMMAND]`](#cjr-jobjupyterls-command)
+* [`cjr job:jupyter:ls`](#cjr-jobjupyterls)
 * [`cjr job:jupyter:start [ID]`](#cjr-jobjupyterstart-id)
 * [`cjr job:jupyter:stop [ID]`](#cjr-jobjupyterstop-id)
 * [`cjr job:log [ID]`](#cjr-joblog-id)
@@ -45,7 +45,7 @@ USAGE
 * [`cjr job:start COMMAND`](#cjr-jobstart-command)
 * [`cjr job:state ID`](#cjr-jobstate-id)
 * [`cjr job:stop [ID]`](#cjr-jobstop-id)
-* [`cjr jupyter:ls [COMMAND]`](#cjr-jupyterls-command)
+* [`cjr jupyter:ls`](#cjr-jupyterls)
 * [`cjr jupyter:start [PROJECT-ROOT]`](#cjr-jupyterstart-project-root)
 * [`cjr jupyter:stop [PROJECT-ROOT]`](#cjr-jupyterstop-project-root)
 * [`cjr pconfig:item-append`](#cjr-pconfigitem-append)
@@ -66,7 +66,7 @@ USAGE
 * [`cjr stack:pull URL`](#cjr-stackpull-url)
 * [`cjr stack:rmi [STACK]`](#cjr-stackrmi-stack)
 * [`cjr stack:snapshot [STACK]`](#cjr-stacksnapshot-stack)
-* [`cjr theia:ls [COMMAND]`](#cjr-theials-command)
+* [`cjr theia:ls`](#cjr-theials)
 * [`cjr theia:start [PROJECT-ROOT]`](#cjr-theiastart-project-root)
 * [`cjr theia:stop [PROJECT-ROOT]`](#cjr-theiastop-project-root)
 
@@ -123,13 +123,13 @@ OPTIONS
 
 _See code: [src/commands/$.ts](https://github.com/container-job-runner/cjr/blob/v0.4.0/src/commands/$.ts)_
 
-## `cjr bundle SAVE_DIR`
+## `cjr bundle BUNDLE-PATH`
 
 Bundle a stack or project into a zip or tar for sharing.
 
 ```
 USAGE
-  $ cjr bundle SAVE_DIR
+  $ cjr bundle BUNDLE-PATH
 
 OPTIONS
   --config-files=config-files  [default: ] additional configuration file to override stack configuration
@@ -204,7 +204,7 @@ OPTIONS
                                                               subset of the fields "id", "stack", "stackName", "status",
                                                               "command", "message"
 
-  --jupyter-command=jupyter-command                           command that should be run to start Jupyter (e.g. "jupyter
+  --jupyter-command=jupyter lab|jupyter notebook              command that should be run to start Jupyter (e.g. "jupyter
                                                               lab" or "jupyter notebook").
 
   --run-shortcuts-file=run-shortcuts-file                     location of a yml file that can be used to specify run
@@ -371,13 +371,13 @@ OPTIONS
 
 _See code: [src/commands/job/exec.ts](https://github.com/container-job-runner/cjr/blob/v0.4.0/src/commands/job/exec.ts)_
 
-## `cjr job:jupyter:ls [COMMAND]`
+## `cjr job:jupyter:ls`
 
 List running jupiter servers.
 
 ```
 USAGE
-  $ cjr job:jupyter:ls [COMMAND]
+  $ cjr job:jupyter:ls
 
 OPTIONS
   --explicit
@@ -674,13 +674,13 @@ OPTIONS
 
 _See code: [src/commands/job/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.4.0/src/commands/job/stop.ts)_
 
-## `cjr jupyter:ls [COMMAND]`
+## `cjr jupyter:ls`
 
 List running jupiter servers.
 
 ```
 USAGE
-  $ cjr jupyter:ls [COMMAND]
+  $ cjr jupyter:ls
 
 OPTIONS
   --explicit
@@ -1113,13 +1113,13 @@ OPTIONS
 
 _See code: [src/commands/stack/snapshot.ts](https://github.com/container-job-runner/cjr/blob/v0.4.0/src/commands/stack/snapshot.ts)_
 
-## `cjr theia:ls [COMMAND]`
+## `cjr theia:ls`
 
 List Running theia servers.
 
 ```
 USAGE
-  $ cjr theia:ls [COMMAND]
+  $ cjr theia:ls
 
 OPTIONS
   --explicit
