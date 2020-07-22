@@ -9,8 +9,6 @@ cjr is a tool for running jobs in linux containers
 <!-- toc -->
 * [Usage](#usage)
 * [Commands](#commands)
-* [Usage](#usage-1)
-* [Commands](#commands-1)
 <!-- tocstop -->
 # Usage
 <!-- usage -->
@@ -173,8 +171,8 @@ USAGE
 OPTIONS
   -q, --quiet
 
-  --always-print-job-id=true|false                            if true, then cjr $ command will always print the user id
-                                                              even if --async flag is not selected.
+  --always-print-job-id=true|false                            if true, then cjr job:start command will always print the
+                                                              user id even if --async flag is not selected.
 
   --auto-project-root=true|false                              if true, then cjr will automatically traverse up the
                                                               directory tree looking for .cjr directories where
@@ -210,31 +208,8 @@ OPTIONS
                                                               lab" or "jupyter notebook").
 
   --run-shortcuts-file=run-shortcuts-file                     location of a yml file that can be used to specify run
-                                                              shortcuts for `cjr cjr
-=======
-
-cjr is a tool for running jobs in linux containers
-
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/gitbucket/gitbucket/blob/master/LICENSE)
-
-<!-- toc -->
-# Usage
-<!-- usage -->
-```sh-session
-$ npm install -g cjr
-$ cjr COMMAND
-running command...
-$ cjr (-v|--version|version)
-cjr/0.4.0 linux-x64 node-v12.16.1
-$ cjr --help [COMMAND]
-USAGE
-  $ cjr COMMAND
-...
-```
-<!-- usagestop -->
-# Commands
- command; To disable set value to ''
+                                                              shortcuts for the cjr job:start command; To disable set
+                                                              value to ''
 
   --selinux=true|false                                        if true, then the :Z option will be applied to all bind
                                                               mounts.
