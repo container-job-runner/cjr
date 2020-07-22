@@ -154,12 +154,14 @@ export class ProjectSettings
   getActiveProfiles(stack: string) : Array<string>
   {
     const default_profiles = this.raw_object["default-profiles"]
+    const patternsMatchHostStack = (accumulator: boolean, pattern: string) => accumulator || (new RegExp(`${pattern}$`).test(stack))
+
     if(stack && default_profiles !== undefined)
     {
       const profile_names = Object.keys(default_profiles)
       return profile_names.filter(
         (p_name:string) => default_profiles?.[p_name]?.includes(this.profile_all_stacks_keyword) ||
-          default_profiles?.[p_name]?.includes(stack) ||
+          default_profiles?.[p_name]?.reduce(patternsMatchHostStack, false) ||
           false
       )
     }
