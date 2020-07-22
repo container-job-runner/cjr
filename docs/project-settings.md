@@ -1,7 +1,16 @@
-Project Configurations
+Projects
 ================================================================================
 
-The default values for the flags `--stack`, `--resource`, `--profile`, and `--stacks-dir` can be
+The most convenient way to use cjr for developing and running code, is to start a project in the root directory of your project files. You can start a project by running the command
+```console
+$ cjr init
+```
+in the root directory of your project. In the same spirit as git, this creates a .cjr folder in the directory. If you use the default settings, then cjr will automatically set the flag `--project-root` whenever you working anywhere inside the project directory. My modifying the project configuration you can also set the default values of other flags that determines the stack, the stack directory, the resource, and profiles. We describe this in detail in the next section.
+
+
+## Project Configurations
+
+Within any project, the default values for the flags `--stack`, `--resource`, `--profile`, and `--stacks-dir` can be
 configured by modifying the *project-settings.yml* file, located in the .cjr directory of a project's
 root folder. Cjr will then automatically set specified defaults flag values  whenever it is called
 from within the project root or its child directories. All automatically loaded values can be overridden
@@ -87,4 +96,11 @@ default-profiles:
     - "ubuntu"
 ```
 
+Profiles
+---------
+
+Project specific profiles can be stored in the directory .cjr/profiles found in a project's root directory. This is the first place that cjr will look for a profile that has been specified either by the `--profile` flag, or by the default-profile settings in *project-settings.yml*. To add profiles, you can either manually copy the config files into the project profile directory or you can use the command
+```console
+$ cjr pconfig:profile:add $PATH_TO_PROFILE_FILE
+```
 
