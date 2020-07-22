@@ -6,7 +6,7 @@ import { listTheia, TheiaJobInfo } from '../../lib/functions/theia-functions'
 
 export default class List extends BasicCommand {
   static description = 'List Running theia servers.'
-  static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
+  static args = []
   static flags = {
     "explicit": flags.boolean({default: false}),
     "json": flags.boolean({default: false})

@@ -6,7 +6,7 @@ import { JupyterJobInfo, listJupyter } from '../../lib/functions/jupyter-functio
 
 export default class List extends BasicCommand {
   static description = 'List running jupiter servers.'
-  static args = [{name: 'command', options: ['start', 'stop', 'list', 'url', 'app'], default: 'start'}]
+  static args = []
   static flags = {
     "explicit": flags.boolean({default: false}),
     "json": flags.boolean({default: false})
