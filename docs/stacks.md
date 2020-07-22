@@ -12,8 +12,15 @@ Stacks typically contain the following files and folder folders:
 A stack directory may also contain any number of additonal files or folders.  Broadly speaking there are two main kinds of stack.
 1. *Dockerfile stacks* that contain a build directory with a Dockerfile
 2. *Image-based stacks* that only contain a configuration that references a container image from a registry.
+3. *Snapshottable stacks* are a special kind of image-based stack can be incrementally modified. They are described in more detail in the [snapshot](##Snapshottable-Stacks) section.
 
-Below we describe the build directory and the specification for config.yml in more detail.
+You can create empty templates for each type of stack using the command
+```console
+cjr stack:create $STACKNAME
+```
+The flag `--dockerfile=$PATH_TO_DOCKERFILE` creates an empty Dockerfile-based stack, the flag `--image=$IMAGE` creates an image-based stack, and the flag `--snapshot` creates an snapshotable stack.
+
+Next we describe the build directory and the specification for config.yml in more detail.
 
 The Build Directory
 -------------------
@@ -33,12 +40,22 @@ build:
   args: OBJECT_OF_STRINGS
   args-dynamic: OBJECT_OF_STRINGS
 entrypoint: ARRAY_OF_STRINGS
-environment: OBJECT_OF_STRING  
-environment-dynamic: OBJECT_OF_STRING
+environment: OBJECT_OF_STRINGS  
+environment-dynamic: OBJECT_OF_STRINGS
 mounts: ARRAY_OF_OBJECTS
 ports: ARRAY_OF_OBJECTS
-files: OBJECT
-snapshots: OBJECT
+files:
+  containerRoot: STRING
+  rsync:
+    upload-exclude-from: STRING
+    upload-include-from: STRING
+    download-exclude-from: STRING
+    download-include-from: STRING
+snapshot:
+  mode: 'prompt' 
+  username: user
+  server: https://index.docker.io/v1/ 
+  token: $USER_TOKEN
 resources:
   cpus: STRING
   memory: STRING
@@ -270,3 +287,45 @@ In general, cjr looks for profiles in two places:
 - the project root in .cjr/profiles
 - inside the profiles directory in the user selected selected stack
 The user can also configure which profiles get automatically added to a stack inside a specific project.
+
+## Snapshottable Stacks
+
+A snapshotable stack starts with from a base image, generally from a remote repository, and provides a simple way for you to incrementally make modifications. 
+Each time you modify the image, cjr will push the changes to a container registry of your choice.
+
+To create a snapshottable stack use the command
+```console
+$ cjr stack:create $IMAGENAME --snapshot
+```
+The command will start an interactive dialog that prompts the user for more information
+```console
+$ cjr stack:create $IMAGENAME --snapshot
+? Base Image: fedora:latest                         # the starting image (this starts from the latest official fedora image)
+? Auth Server: https://index.docker.io/v1/          # container registry auth server (leave default for dockerhub)
+? Username: user                                    # username for container registry
+? Access Token (Optional): [input is hidden]        # token for container registry
+? Snapshot mode (Use arrow keys)
+❯ always                                            # select this if you want the image to always save after running cjr stack:snapshot
+  prompt                                            # select this if you want the image to prompt whether to save after running cjr stack:snapshot
+```
+Cjr will then pull the base image, retag it as user/$IMAGENAME:latest and push it to your remote repository. 
+When you want to update the image, you can use the command
+```console
+$ cjr stack:snapshot $IMAGENAME
+```
+This will open an interactive shell where you can install packages or make any other custom odifications. 
+When you exit the command cjr will commit the changes to a new container and push the changes to your remote registry.
+
+### Stack Configuration yml
+A basic config.yml for a snapshotable stack looks roughly as follows:
+```yaml
+build:
+  image: user/$IMAGENAME:latest          # the tag is always set to latest
+snapshot:
+  mode: 'prompt' 
+  username: user
+  server: https://index.docker.io/v1/ 
+  token: $USER_TOKEN
+```
+When cjr pushes a new snapshot to your remote repository it will be tagged as `user/$IMAGENAME:$UNIXTIME` where $UNIXTIME will be the current unix time. Cjr will also retag `user/$IMAGENAME:latest` to point to the latest snapshot.
+You can manually configure a snapshotable without the stack:create $IMAGENAME by modeling of the yml shown above.
