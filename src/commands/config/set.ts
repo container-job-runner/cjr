@@ -47,6 +47,7 @@ export default class Set extends BasicCommand {
       description: 'default shell that should be started for shell and job:shell commands (e.g. sh, bash, zsh).'
     }),
     "jupyter-command": flags.string({
+      options: ['jupyter lab', 'jupyter notebook'],
       description: 'command that should be run to start Jupyter (e.g. "jupyter lab" or "jupyter notebook").'
     }),
     "webapp": flags.string({
