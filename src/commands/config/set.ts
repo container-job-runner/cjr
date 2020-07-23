@@ -50,8 +50,8 @@ export default class Set extends BasicCommand {
       options: ['jupyter lab', 'jupyter notebook'],
       description: 'command that should be run to start Jupyter (e.g. "jupyter lab" or "jupyter notebook").'
     }),
-    "webapp": flags.string({
-      description: 'absolute path to cjr electron WebApp.'
+    "on-server-start": flags.string({
+      description: 'command that should be run after a Jupyter or Theia server starts'
     }),
     "job-default-run-mode": flags.string({
       options: ['sync', 'async'],
