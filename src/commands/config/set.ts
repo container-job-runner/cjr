@@ -9,7 +9,7 @@ export default class Set extends BasicCommand {
   static flags = {
     "auto-project-root": flags.string({
       options: ["true", "false"],
-      description: 'if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory'
+      description: 'if true, then cjr will automatically traverse up the directory tree looking for .cjr directories where .cjr/project-settings.yml has project-root: "auto". If it finds such a project then it will set the default --project-root flag to this directory.'
     }),
     "interactive": flags.string({
       options: ["true", "false"],
@@ -31,17 +31,17 @@ export default class Set extends BasicCommand {
       description: "the default path to a folder that contains cjr stacks."
     }),
     "run-shortcuts-file": flags.string({
-      description: "location of a yml file that can be used to specify run shortcuts for the cjr job:start command; To disable set value to ''"
+      description: "location of a yml file that can be used to specify run shortcuts for the cjr job:start command; To disable set value to ''."
     }),
     "driver": flags.string({
       options: ['podman-cli', 'docker-cli', 'docker-socket', 'podman-socket'],
-      description: "container engine used to build and run images"
+      description: "container engine used to build and run images."
     }),
     "image-tag": flags.string({
-      description: "tag that cli uses when building all its images"
+      description: "tag that cli uses when building all its images."
     }),
     "job-ls-fields": flags.string({
-      description: 'specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "status", "command", "message"'
+      description: 'specifies which fields appear when running job:list. The string must be a comma separated list that contains any subset of the fields "id", "stack", "stackName", "status", "command", "message".'
     }),
     "default-container-shell": flags.string({
       description: 'default shell that should be started for shell and job:shell commands (e.g. sh, bash, zsh).'
@@ -51,20 +51,20 @@ export default class Set extends BasicCommand {
       description: 'command that should be run to start Jupyter (e.g. "jupyter lab" or "jupyter notebook").'
     }),
     "on-server-start": flags.string({
-      description: 'command that should be run after a Jupyter or Theia server starts'
+      description: 'command that should be run after a Jupyter or Theia server starts.'
     }),
     "job-default-run-mode": flags.string({
       options: ['sync', 'async'],
       description: 'determines if new jobs run sync or async by default.'
     }),
     "socket-path": flags.string({
-      description: 'location of container runtime socket'
+      description: 'location of container runtime socket.'
     }),
     "container-registry": flags.string({
       description: 'url of default container registry for pushing snapshots.'
     }),
     "container-registry-user": flags.string({
-      description: 'container registry username for pushing snapshots'
+      description: 'container registry username for pushing snapshots.'
     }),
     "timeout-jupyter": flags.string({
       description: 'maximum number of seconds that cjr should wait for jupyter server to start.'
