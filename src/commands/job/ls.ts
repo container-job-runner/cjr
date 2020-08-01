@@ -169,7 +169,7 @@ export default class List extends BasicCommand {
 
     if(!flags['running'])
         printTable({ ... table_parameters, ... {
-            title:  "Completed Jobs",
+            title:  "Exited Jobs",
             data:   jobs.filter((j:JobInfo) => (j.state === "exited")).map((j:JobInfo) => toArray(j)),
         }})
 
@@ -178,7 +178,7 @@ export default class List extends BasicCommand {
   extractStateFromFlags(flags: Dictionary) : undefined|["exited"]|["running"]
   {
     if(flags["running"]) return ["running"]
-    if(flags["exited"]) return ["exited"]    
+    if(flags["exited"]) return ["exited"]
     return undefined
   }
 
