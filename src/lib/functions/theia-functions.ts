@@ -130,7 +130,7 @@ export function runTheiaOnStartCommand(url: string, onstart_cmd: string, explici
   if(!onstart_cmd) return new ValidatedOutput(false, undefined)
   const command = [
         `export URL=${ShellCommand.bashEscape(url)}`,
-        `export ICON=theia`,
+        `export SERVER=theia`,
         onstart_cmd
     ].join(' ; ');
   return new ValidatedOutput(true, undefined)

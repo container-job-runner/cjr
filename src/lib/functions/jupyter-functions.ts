@@ -194,7 +194,7 @@ export function runJupyterOnStartCommand(url: string, onstart_cmd: string, expli
   if(!onstart_cmd) return new ValidatedOutput(false, undefined)
   const command = [
         `export URL=${ShellCommand.bashEscape(url)}`,
-        `export ICON=jupyter`,
+        `export SERVER=jupyter`,
         onstart_cmd
     ].join(' ; ');
   return new ValidatedOutput(true, undefined)
