@@ -7,6 +7,7 @@ export default class Build extends BasicCommand {
   static description = 'Manually build an image for a stack.'
   static args = [{name: 'stack'}]
   static flags = {
+    "resource": flags.string({env: 'RESOURCE'}),
     "stack": flags.string({env: 'STACK'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "explicit": flags.boolean({default: false}),
@@ -22,12 +23,12 @@ export default class Build extends BasicCommand {
   async run()
   {
     const {args, flags} = this.parse(Build)
-    this.augmentFlagsWithProjectSettings(flags, {"stack": false, "stacks-dir": true})
+    this.augmentFlagsWithProjectSettings(flags, {"stack": false, "stacks-dir": true,  "resource": false})
     flags["stack"] = args?.['stack'] || flags["stack"]
     this.augmentFlagsWithProfile(flags)
 
     const stack_list = (flags.stack) ? [ flags.stack ] : []
-    const job_manager = this.newJobManager('localhost', {verbose: true, quiet: flags.quiet, explicit: flags.explicit})
+    const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: true, quiet: flags.quiet, explicit: flags.explicit})
     stack_list.map((stack_name:string) => {
       const init_stack = this.initStackConfiguration({
         "stack": stack_name,
