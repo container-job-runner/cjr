@@ -78,11 +78,6 @@ export abstract class GenericJobManager extends JobManager
     if(!file_config.success)
       return failed_result.absorb(file_config)
     
-    // -- start job -------------------------------------------------------------
-    const build_result = this.build(job_configuration.stack_configuration, {"reuse-image": exec_options["reuse-image"]})
-    if(!build_result.success)
-        return failed_result
-
     return this.container_drivers.runner.jobStart(job_configuration, job_configuration.synchronous ? 'inherit' : 'pipe')
   }
 
