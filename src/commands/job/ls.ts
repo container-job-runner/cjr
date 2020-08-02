@@ -4,6 +4,7 @@ import { printVerticalTable, printHorizontalTable, printValidatedOutput } from '
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { Dictionary, label_strings } from '../../lib/constants'
 import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
+import { JSTools } from '../../lib/js-tools'
 
 export default class List extends BasicCommand {
   static description = 'List all running and completed jobs.'
@@ -65,10 +66,10 @@ export default class List extends BasicCommand {
           silent_clip:    [true, true]
       }
       resource_table_parameters = {
-        row_headers:    ['RESOURCE', 'ADDRESS'],
+        row_headers:    ['RESOURCE', 'ADDRESS', 'TYPE'],
         column_widths:  [11, 103],
         text_widths:    [10, 102],
-        silent_clip:    [false]
+        silent_clip:    [false, false, false]
       }
 
       toArray = (j:JobInfo) => [j.id, j.image, j.stack, getLabel(j, lbl_stack_name), getLabel(j, lbl_command), j.status, getLabel(j, lbl_message)]
@@ -144,34 +145,43 @@ export default class List extends BasicCommand {
       printTable = printVerticalTable
 
       resource_table_parameters = {
-        column_widths:  [17, 95],
-        text_widths:    [12, 95],
-        silent_clip:    [false, false]
+        column_headers: ['RESOURCE', 'ADDRESS', 'TYPE'],
+        column_widths:  [17, 20, 10],
+        text_widths:    [12, 20, 10],
+        silent_clip:    [false, false, false]
       }
 
     }
 
+    const table_width = JSTools.sum(table_parameters.column_widths || []);
+    const resource = this.resource_configuration.getResource(flags['resource'] || "")
     const resource_data = [
         flags['resource'] || 'localhost',
-        `(${this.resource_configuration.getResource(flags['resource'] || "")?.address || '127.0.0.1'})`
+        `${resource?.address || 'n.a.'}`,
+        `${resource?.type || 'n.a.'}`
     ]
 
+    console.log("=".repeat(table_width));
     printTable({ ... resource_table_parameters, ... {
-        title:  "Resource",
         data:   [resource_data]
     }})
 
-    if(!flags['exited'])
+    if(!flags['exited']) {
+        console.log();
         printTable({ ... table_parameters, ... {
             title:  "Running Jobs",
             data:   jobs.filter((j:JobInfo) => (j.state === "running")).map((j:JobInfo) => toArray(j))
         }})
+    }
 
-    if(!flags['running'])
+    if(!flags['running']) {
+        console.log();
         printTable({ ... table_parameters, ... {
             title:  "Exited Jobs",
             data:   jobs.filter((j:JobInfo) => (j.state === "exited")).map((j:JobInfo) => toArray(j)),
         }})
+    }
+    console.log("=".repeat(table_width));
 
   }
 
