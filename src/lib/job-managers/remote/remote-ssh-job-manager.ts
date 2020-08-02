@@ -324,52 +324,26 @@ export class RemoteSshJobManager extends GenericJobManager
 
     // == START JOB FUNCTIONS ==================================================
 
-    // generates a JobConfiguration object for remote job, uploads stack to remote resource and builds it 
-    
-    protected uploadLocalStackAndBuild(local_job_configuration: JobConfiguration<StackConfiguration<any>>, build_options: JobBuildOptions) : ValidatedOutput<JobConfiguration<StackConfiguration<any>>>
-    {
-        const remote_job_configuration = this.generateRemoteJobConfiguration(local_job_configuration)
-        const result = new ValidatedOutput(true, remote_job_configuration)
-
-        // -- create remote working directories --------------------------------
-        const cwdir = this.createWorkingDirectories()
-        if(!cwdir.success) return result.absorb(cwdir)
-
-        // -- upload stack data ------------------------------------------------
-        this.printStatus({header: this.STATUSHEADERS.UPLOAD_STACK})
-        const stack_upload = this.uploadStackFiles(local_job_configuration.stack_configuration)
-        if(!stack_upload.success) return result.absorb(stack_upload)
-
-        // -- build stack ------------------------------------------------------
-        this.printStatus({"header": this.STATUSHEADERS.BUILD})
-        const build = this.build(
-            remote_job_configuration.stack_configuration, 
-            build_options
-        )
-        if(!build.success) return result.absorb(build)
-        return result
-    }
-
-
-    run( job_configuration: JobConfiguration<StackConfiguration<any>>, options: JobRunOptions ) : ValidatedOutput<NewJobInfo> 
+    run( local_job_configuration: JobConfiguration<StackConfiguration<any>>, options: JobRunOptions ) : ValidatedOutput<NewJobInfo> 
     {
         const failure = new ValidatedOutput(false, {id: "", output: "", "exit-code": -1});
         
-        // -- upload stack, build, and generate remote job configuration -------
-        const upload_stack = this.uploadLocalStackAndBuild(
-            job_configuration, 
+        // -- upload stack, build ----------------------------------------------
+        const build_stack = this.build(
+            local_job_configuration.stack_configuration,
             {"reuse-image": options['reuse-image']}
-        )
-        if(!upload_stack.success)
-            return failure.absorb(upload_stack)
-        const remote_job_configuration = upload_stack.value
-
+        );
+        if(!build_stack.success)
+            return failure.absorb(build_stack)
+        //--  generate remote job configuration --------------------------------
+        const remote_job_configuration = this.generateRemoteJobConfiguration(local_job_configuration)
+        
         // -- upload job data --------------------------------------------------
         this.printStatus({header: this.STATUSHEADERS.UPLOAD_JOBFILES})
         const cached = options['project-root-file-access'] === 'shared'
         const upload = this.uploadJobFiles(
             options['project-root'],
-            job_configuration.stack_configuration.getRsyncUploadSettings(true),
+            local_job_configuration.stack_configuration.getRsyncUploadSettings(true),
             cached
         )
         if(!upload.success) return failure.absorb(upload);
@@ -400,14 +374,15 @@ export class RemoteSshJobManager extends GenericJobManager
     {
         const failure = new ValidatedOutput(false, {id: "", output: "", "exit-code": -1});
         
-        // -- upload stack, build, and generate remote job configuration -------
-        const upload_stack = this.uploadLocalStackAndBuild(
-            local_job_configuration, 
+        // -- upload stack, build ----------------------------------------------
+        const build_stack = this.build(
+            local_job_configuration.stack_configuration,
             {"reuse-image": exec_options['reuse-image']}
-        )
-        if(!upload_stack.success)
-            return failure.absorb(upload_stack)
-        const remote_job_configuration = upload_stack.value
+        );
+        if(!build_stack.success)
+            return failure.absorb(build_stack)
+        //--  generate remote job configuration --------------------------------
+        const remote_job_configuration = this.generateRemoteJobConfiguration(local_job_configuration)
         
         // -- start new x11 multiplexor ----------------------------------------
         if(exec_options['x11']) // note: x11 currently does not support async jobs
@@ -419,6 +394,32 @@ export class RemoteSshJobManager extends GenericJobManager
             this.deactivateX11()
 
         return result
+    }
+
+    build(local_stack_configuration: StackConfiguration<any>, build_options: JobBuildOptions) : ValidatedOutput<undefined>
+    {
+        const remote_stack_configuration = this.generateRemoteStackConfiguration(local_stack_configuration)
+        const result = new ValidatedOutput(true, undefined)
+
+        // -- create remote working directories --------------------------------
+        const cwdir = this.createWorkingDirectories()
+        if(!cwdir.success) return result.absorb(cwdir)
+
+        // exit and do not upload if image is already built and "reuse-image" is selected
+        if(build_options["reuse-image"] && this.container_drivers.builder.isBuilt(remote_stack_configuration))
+            return result
+
+        // -- upload stack data ------------------------------------------------
+        this.printStatus({header: this.STATUSHEADERS.UPLOAD_STACK})
+        const stack_upload = this.uploadStackFiles(local_stack_configuration)
+        if(!stack_upload.success) return result.absorb(stack_upload)
+
+        // -- build stack ------------------------------------------------------
+        this.printStatus({"header": this.STATUSHEADERS.BUILD})
+        return super.build(
+            remote_stack_configuration, 
+            build_options
+        )
     }
 
     protected configureExecFileMounts(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions, parent_job: JobInfo) : ValidatedOutput<undefined>
