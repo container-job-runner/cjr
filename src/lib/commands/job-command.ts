@@ -63,7 +63,8 @@ export abstract class JobCommand extends BasicCommand
       "stack": true,
       "profile": false,
       "project-root":false,
-      "stacks-dir": false
+      "stacks-dir": false,
+      "visible-stacks": false
     })
     this.augmentFlagsWithProfile(flags)
     this.printNonEmptyFlags(flags)
