@@ -178,6 +178,11 @@ export class JSTools
     return lines
   }
 
+  static sum(array: Array<number>) : number
+  {
+    return array.reduce((accum:number, cur: number) => accum + cur, 0)
+  }
+
   static regexEscape(text:string)
   {
     return text.replace(/[.*+\-?^${}()|[\]\\]/g, '\\$&')
