@@ -162,6 +162,16 @@ export class LocalJobManager extends GenericJobManager
     return super.run(job_configuration, job_options)
   }
 
+  exec(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions) : ValidatedOutput<NewJobInfo>
+  {
+    const failed_result = new ValidatedOutput(false, this.failed_nji);
+    // -- build stack ----------------------------------------------------------
+    const build_result = this.build(job_configuration.stack_configuration, {"reuse-image": exec_options["reuse-image"]})
+    if(!build_result.success)
+        return failed_result.absorb(build_result)
+    return super.exec(job_configuration, exec_options)
+  }
+
   protected configureExecFileMounts(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions, parent_job: JobInfo) : ValidatedOutput<undefined>
   {
     const result = new ValidatedOutput(true, undefined)
