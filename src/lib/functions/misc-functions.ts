@@ -147,3 +147,8 @@ export function printHorizontalTable(configuration: Dictionary)
   // -- print data -------------------------------------------------------------
   configuration.data.map((item: Array<string>, index: number) => printItem(item, index))
 }
+
+export function printOutputHeader(header: string, line_width:number = 80) 
+{
+  console.log(chalk`-- {bold ${header}} ${'-'.repeat(Math.max(0, line_width - header.length - 4))}`)
+}
