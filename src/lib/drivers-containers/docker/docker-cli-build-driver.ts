@@ -19,7 +19,9 @@ export class DockerCliBuildDriver extends BuildDriver
       "INVALID_STACK_TYPE": chalk`{bold Invalid Configuration} - StackConfiguration is of unkown type`,
       "FAILED_TO_EXTRACT_IMAGE_NAME": chalk`{bold Failed to Load tar} - could not extract image name`,
       "FAILED_TO_BUILD": chalk`{bold Image Build Failed} - stack configuration likely contains errors`,
-      "FAILED_TO_DELETE_IMAGE": chalk`{bold Image Remove Failed} - unable to remove image`
+      "FAILED_TO_DELETE_IMAGE": chalk`{bold Image Remove Failed} - unable to remove image`,
+      "FAILED_REGISTRY_LOGIN": chalk`{bold Container Registry Authentication Failed} - login was not successful.`,
+      "FAILED_REGISTRY_PUSH": chalk`{bold Container Registry Push Failed} - unable to push image.`
     }
 
     protected WARNINGSTRINGS = {
@@ -169,15 +171,20 @@ export class DockerCliBuildDriver extends BuildDriver
 
     pushImage(configuration: DockerStackConfiguration, options: Dictionary, stdio: "inherit"|"pipe") : ValidatedOutput<undefined>
     {
+      const result = new ValidatedOutput(true, undefined);
       const login_flags:Dictionary = {}
       if(options.username) login_flags['username'] = options.username
       if(options.token) login_flags['password'] = options.token
       if(options.password) login_flags['password'] = options.password
       const login_args = []
       if(options.server) login_args.push(options.server)
-      this.shell.exec(`${this.base_command} login`, login_flags, login_args)
-      this.shell.exec(`${this.base_command} push`, {}, [configuration.getImage()], {"stdio": stdio})
-      return new ValidatedOutput(true, undefined)
+      const login = this.shell.exec(`${this.base_command} login`, login_flags, login_args, {stdio: "pipe"})
+      if(!login.success)
+        return result.pushError(this.ERRORSTRINGS.FAILED_REGISTRY_LOGIN)
+      const push = this.shell.exec(`${this.base_command} push`, {}, [configuration.getImage()], {"stdio": stdio})
+      if(!push.success)
+        return result.pushError(this.ERRORSTRINGS.FAILED_REGISTRY_PUSH)
+      return result
     }
 
     removeImage(configuration:DockerStackConfiguration) : ValidatedOutput<undefined>
