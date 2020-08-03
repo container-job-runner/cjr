@@ -479,12 +479,14 @@ export function snapshot(job_id: string, stack_configuration: StackConfiguration
   sc_latest.setTag(constants.SNAPSHOT_LATEST_TAG)
 
   const result = new ValidatedOutput(true, undefined)
+  printStatusHeader(`Saving ${sc_time.getImage()}`, true);
   result.absorb(drivers.runner.jobToImage(job_id, sc_time.getImage()))
   if(!result.success) return result
-  result.absorb(drivers.builder.tagImage(sc_time, sc_latest.getImage()))
-  if(!result.success) return result
-
+  printStatusHeader(`Pushing ${sc_time.getImage()}`, true);
   result.absorb(drivers.builder.pushImage(sc_time, registry_options, "inherit"))
+  if(!result.success) return result
+  printStatusHeader(`Updating ${sc_latest.getImage()}`, true);
+  result.absorb(drivers.builder.tagImage(sc_time, sc_latest.getImage()))
   if(!result.success) return result
   result.absorb(drivers.builder.pushImage(sc_latest, registry_options, "inherit"))
   if(!result.success) return result
