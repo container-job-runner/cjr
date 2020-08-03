@@ -72,7 +72,6 @@ export default class Snapshot extends JobCommand {
 
   async updateSnapshot(job_id: string, stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, output_options: OutputOptions) : Promise<ValidatedOutput<undefined>>
   {
-    const vPrint = (s:string, newline: boolean = true) => (output_options.quiet) ? undefined : ((newline) ? console.log(s) : process.stdout.write(s))
     const snapshot_options = stack_configuration.getSnapshotOptions();
 
     if(snapshot_options === undefined)
@@ -81,7 +80,6 @@ export default class Snapshot extends JobCommand {
     if(snapshot_options['mode'] === "prompt" && !(await promptUserToSnapshot(this.settings.get('interactive'))))
       return new ValidatedOutput(true, undefined)
 
-    vPrint("Saving snapshot...", false)
     const registry_options = {
       "username": snapshot_options.username || this.settings.get('container-registry-user'),
       "server": snapshot_options.server || this.settings.get('container-registry'),
@@ -90,7 +88,6 @@ export default class Snapshot extends JobCommand {
 
     await augmentImagePushParameters(registry_options)
     const result = snapshot(job_id, stack_configuration, drivers, registry_options)
-    vPrint("done")
     return result
   }
 
