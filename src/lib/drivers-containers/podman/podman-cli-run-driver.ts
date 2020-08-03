@@ -15,6 +15,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
 {
   protected base_command = 'podman'
   protected JSONOutputParser = parseJSON
+  enable_unshare = false
 
   protected extractCommand(job_configuration: DockerJobConfiguration) : Array<string>
   {
@@ -102,6 +103,28 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     valid_keys?.map((key:keyof DockerStackResourceConfig) => {
       if(run_object?.resources?.[key]) flags[key] = run_object.resources[key]
     })
+  }
+
+  protected create(image_name: string, command: Array<string>, run_options:DockerCreateOptions) : ValidatedOutput<string>
+  {
+    // add support for podman unshare command for binds
+    const unshare_result = new ValidatedOutput(true, "")
+    const unshare_id_arg = run_options?.flags?.['podman-chown-binds'];
+
+    // only call unshare if enable_unshare is set to true, and unshare_id_arg is of the form uid:gid
+    if(this.enable_unshare && unshare_id_arg && /\d+:\d+/.test(unshare_id_arg)) {
+        const bind_mounts = run_options.mounts?.filter((mount:DockerStackMountConfig) => mount.type === "bind") || [];
+        bind_mounts.map( (mount:DockerStackMountConfig) => {
+            if(mount.hostPath) 
+                unshare_result.absorb(
+                    this.shell.output(`${this.base_command} unshare chown`, {R: {}}, [unshare_id_arg, mount.hostPath])
+                )
+        })
+        if(!unshare_result.success)
+            return unshare_result
+    }
+
+    return super.create(image_name, command, run_options)
   }
 
   protected mountObjectToFlagStr(mo: DockerStackMountConfig)
