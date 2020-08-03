@@ -16,6 +16,8 @@ import { DriverInitSocket } from './driver-init-socket';
 import { DriverInitCli } from './driver-init-cli';
 import { VolumeSyncManager, VolumeRsyncOptions } from '../../sync-managers/volume-sync-manager';
 import { GenericJobManager } from '../abstract/generic-job-manager';
+import { PodmanCliRunDriver } from '../../drivers-containers/podman/podman-cli-run-driver';
+import { PodmanSocketRunDriver } from '../../drivers-containers/podman/podman-socket-run-driver';
 
 export type LocalJobManagerUserOptions = {
     "engine"?: "podman"|"docker"            // underlying container runner
@@ -149,7 +151,7 @@ export class LocalJobManager extends GenericJobManager
       const create_file_volume = this.createNewFileVolume(
           job_options['project-root'], 
           stack_configuration.getRsyncUploadSettings(true),
-          this.volumeChownId(stack_configuration.getFlag('chown-file-volume')) // special volume chown for docker
+          this.volumeChownId(stack_configuration)
       )
       if(!create_file_volume.success)
         return failed_result.absorb(create_file_volume)
@@ -259,29 +261,37 @@ export class LocalJobManager extends GenericJobManager
     )
   }
 
-  // -- check if runtime is docker and chownvolume flags is active -------------
-  private volumeChownId(chown_file_volume_flag: string|undefined) : string | undefined
+  // -- returns id for chowing volumes -------------
+  private volumeChownId(stack_configuration: StackConfiguration<any>) : string | undefined
   {
-    if( ! chown_file_volume_flag )
-        return undefined
+    let chown_id
     
-    // -- this setting only affects docker -------------------------------------
-    // (volumes always owned by root https://github.com/moby/moby/issues/2259)
+    // docker volume chown (allows nonroot container users to access volumes, since volumes always owned by root https://github.com/moby/moby/issues/2259)
     const using_docker = (this.container_drivers.runner instanceof DockerCliRunDriver) || (this.container_drivers.runner instanceof DockerSocketRunDriver)
-    if( ! using_docker )
-        return undefined
+    const docker_chown_file_volume = stack_configuration.getFlag('docker-chown-file-volume') || stack_configuration.getFlag('chown-file-volume'); // keep old flag for backwards compatability, but remove in 0.5.0
+    if( using_docker && docker_chown_file_volume )
+        chown_id = docker_chown_file_volume
     
+    // podman volume chown (allows nonroot container users to access volumes without hostid=containerid and userns=host)    
+    const using_podman = (this.container_drivers.runner instanceof PodmanCliRunDriver) || (this.container_drivers.runner instanceof PodmanSocketRunDriver)
+    const podman_chown_file_volume = stack_configuration.getFlag('podman-chown-file-volume');
+    if( using_podman && podman_chown_file_volume )
+        chown_id = podman_chown_file_volume
+
+    if( ! chown_id )
+        return undefined
+        
     // -- if flag is set to 'host-user' replace with current user id -----------
-    if( chown_file_volume_flag === 'host-user' ) {
+    if( chown_id === 'host-user' ) {
         const id_result = trim(new ShellCommand(false, false).output('id', {u:{}}, [], {}))
         if(!id_result.success) return undefined
-        chown_file_volume_flag = id_result.value
+        chown_id = id_result.value
     }
 
     // -- verify flag is a valid integer ---------------------------------------
-    if ( isNaN(parseInt(chown_file_volume_flag)) )
+    if ( isNaN(parseInt(chown_id)) )
         return undefined
-    return chown_file_volume_flag
+    return chown_id
   }
 
 }
