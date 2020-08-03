@@ -423,13 +423,13 @@ export async function promptUserToSnapshot(interactive: boolean = false) : Promi
       {
         name: "flag",
         message: `Save Snapshot?`,
-        default: false,
+        default: true,
         type: "confirm",
       }
     ])
     return (response?.flag == true)
   }
-  return false
+  return true
 }
 
 export async function augmentImagePushParameters(options: PushAuth)
