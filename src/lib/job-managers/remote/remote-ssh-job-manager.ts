@@ -15,6 +15,7 @@ import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { GenericJobManager } from '../abstract/generic-job-manager';
 import { PathTools } from '../../fileio/path-tools';
 import { trim } from '../../functions/misc-functions';
+import { PodmanCliRunDriver } from '../../drivers-containers/podman/podman-cli-run-driver';
 
 // ========================================================================
 // A Job Manager for remote resources that transfers files to host with 
@@ -134,6 +135,10 @@ export class RemoteSshJobManager extends GenericJobManager
             "image-tag": this.options["image-tag"]
         });
         this.output_options = this.options['output-options']
+
+        // enable experimental unshare functionality
+        if(this.container_drivers.runner instanceof PodmanCliRunDriver)
+            this.container_drivers.runner.enable_unshare = true;
 
     }
 
