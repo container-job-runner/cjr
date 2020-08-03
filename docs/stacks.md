@@ -236,12 +236,15 @@ Flags contains special options for a stack. Some flags will only be picked up by
 
 **Docker Specific**
 
-1. *chown-file-volume* (string) if this flag is set to "host-user", then job file volumes will be chowned to the id of the host user (i.e. `id -u`). If this value is set to a numerical value such as "20" then the job file volumes will be chowned to user 20. This flag should be used for all images that run with non root users.
+1. *docker-chown-file-volume* (string) if this flag is set to "host-user", then job file volumes will be chowned to the id of the host user (i.e. `id -u`). If this value is set to a numerical value such as "20" then the job file volumes will be chowned to user 20. This flag should be used for all images that run with non root users.
+2. *chown-file-volume* (string) **DEPRICATED** equivalent to docker-chown-file-volume. Will be removed in future version of cjr.
 
 **Podman Specific**
 
 1. *security-opt* (string) same as podman --security-opt flag
 2. *userns* (string) same as podman --userns flag (e.g. setting `userns: host` preserves mapping of user ids on host and in container).
+3. *podman-chown-file-volume* (string) if this flag is set to "host-user", then job file volumes will be chowned to the id of the host user (i.e. `id -u`). If this value is set to a numerical value such as "20" then the job file volumes will be chowned to user 20. This flag should be used for all images that run with non root users. Note: for rootless podman ids are relative to the default userns mapping.
+4. *podman-chown-binds* (string) **EXPERIMENTAL** setting that currently only applies to stacks running remotely. String should be of format "$UID:$GUI" where $UID and $GUI are number representing the user id and group id of the container user. If this flag is set, then podman unshare command will be run on any bound directories before a job is started. 
 
 **General**
 
@@ -253,7 +256,6 @@ Flags contains special options for a stack. Some flags will only be picked up by
 ### `snapshot` : { mode: "always"|"prompt", username: string, server: string, token: string}
 
 Snapshot contains the options for snapshotting a stack that will be used by the command `cjr stack:snapshot`. Note that snapshottable stacks normally have an image that is of the form `username/$IMAGENAME:latest` where $IMAGENAME can be anything. The field descriptions are:
-
 
 1. *mode*: if set to 'always' `stack:snapshot` command always creates a snapshot on exit. If set to `prompt` `stack:snapshot` asks the user whether to create a snapshot.
 2. *username*: username for registry account where snapshottable stack will be pushed
