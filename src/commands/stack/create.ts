@@ -6,7 +6,7 @@ import constants = require('../../lib/constants')
 import { flags } from '@oclif/command'
 import { BasicCommand } from '../../lib/commands/basic-command'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { printValidatedOutput } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, printOutputHeader } from '../../lib/functions/misc-functions'
 import { ErrorStrings } from '../../lib/error-strings'
 import { FileTools } from '../../lib/fileio/file-tools'
 import { DockerStackConfiguration } from '../../lib/config/stacks/docker/docker-stack-configuration'
@@ -123,20 +123,28 @@ export default class Create extends BasicCommand {
       return result.absorb(options_prompt)
     const options = options_prompt.value
     // -- pull stack, retag for user, and create new configuration -------------
+    printOutputHeader(`Pulling ${options.image}`)
     const new_config_result = this.newSnapshotStackConfiguration(container_drivers, stack_name, options)
     if(!new_config_result.success)
       return result.absorb(new_config_result)
     const snapshot_configuration = new_config_result.value.snapshot
     const latest_configuration = new_config_result.value.latest
     // -- push stack image to user remote registry -----------------------------
+    printOutputHeader(`Pushing ${snapshot_configuration.getImage()}`)
     const push_options = await augmentImagePushParameters(options)
     result.absorb(
-      container_drivers.builder.pushImage(snapshot_configuration, push_options, "inherit"),
-      container_drivers.builder.pushImage(latest_configuration, push_options, "inherit")
+      container_drivers.builder.pushImage(snapshot_configuration, push_options, "inherit")
+    )
+    if(!result.success) 
+        return result
+    // -- update latest snapshot -----------------------------------------------    
+    printOutputHeader(`Updating ${latest_configuration.getImage()}`)
+    result.absorb(
+        container_drivers.builder.pushImage(latest_configuration, push_options, "inherit")
     )
     if(!result.success)
-      return result
-
+        return result
+    
     snapshot_configuration.setTag('latest');
     return this.createConfigStack(stacks_dir, stack_name, snapshot_configuration)
   }
