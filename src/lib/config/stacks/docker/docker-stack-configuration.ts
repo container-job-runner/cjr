@@ -210,13 +210,19 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   // resolves fields build.[environment-dynamic] and run.[environment-dynamic]
   protected loadYMLFile(abs_path: string, shell?: ShellCommand | SshShellCommand) : ValidatedOutput<DockerStackConfigObject>
   {
-    const read_result = this.yml_file.validatedRead(abs_path) // json Schema used to validate object
+    const failure = new ValidatedOutput(false, {});
+    
+    // read yml file
+    const read_result = this.yml_file.read(abs_path)
     if(!read_result.success)
-      return new ValidatedOutput(false, {})
-        .pushError(this.ERRORSTRINGS.YML_PARSE_ERROR(abs_path))
-        .absorb(read_result)
-
-    const raw_yml_object = read_result.value
+      return failure.absorb(read_result)
+    
+    // validate yml (allow blank files)
+    const raw_yml_object = read_result.value || {}; // convert empty files to empty object
+    if(!dsc_vo_validator(raw_yml_object).success)
+      return failure.absorb(read_result)
+      .pushError(this.ERRORSTRINGS.YML_PARSE_ERROR(abs_path))
+     
     // resolve dynamic environment
     raw_yml_object.environment = this.processRawArgs(
       raw_yml_object?.environment,
