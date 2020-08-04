@@ -89,8 +89,10 @@ export default class Create extends BasicCommand {
     // -- create stack and copy dockerfile -------------------------------------
     result.absorb(this.createEmptyStack(stacks_dir, stack_name))
     const build_dir = path.join(stacks_dir, stack_name, constants.subdirectories.stack.build)
+    const config_path = path.join(stacks_dir, stack_name, new DockerStackConfiguration().config_filename)
     fs.mkdirSync(build_dir)
     fs.copyFileSync(dockerfile, path.join(build_dir, 'Dockerfile'))
+    fs.createFileSync(config_path)
 
     return result
   }
