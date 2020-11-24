@@ -156,18 +156,6 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     if(run_object?.flags?.["security-opt"]) { // used for binding X11 directory
       flags["security-opt"] = run_object.flags["security-opt"]
     }
-    if(run_object?.flags?.['mac-address'])
-    {
-      flags["mac-address"] = run_object?.flags?.['mac-address']
-    }
-    if(run_object?.flags?.['network'])
-    {
-      flags["network"] = run_object?.flags?.['network']
-    }
-    if(run_object?.flags?.['user'])
-    {
-      flags["user"] = run_object?.flags?.['user']
-    }
     return flags
   }
 
