@@ -6,7 +6,7 @@ import fs = require('fs-extra')
 import constants = require('../constants')
 
 import { JobState, JobInfo, JobPortInfo} from '../drivers-containers/abstract/run-driver'
-import { ContainerDrivers, Configurations, JobManager } from '../job-managers/abstract/job-manager'
+import { ContainerDrivers, Configurations, JobManager, JobProperties } from '../job-managers/abstract/job-manager'
 import { Dictionary, projectSettingsDirPath, projectSettingsYMLPath, stack_bundle_rsync_file_paths } from '../constants'
 import { JSTools } from '../js-tools'
 import { ValidatedOutput } from '../validated-output'
@@ -507,6 +507,12 @@ export function snapshot(job_id: string, stack_configuration: StackConfiguration
   result.absorb(drivers.builder.pushImage(sc_latest, registry_options, "inherit"))
   if(!result.success) return result
   return result
+}
+
+export function printJobProperties(job_info: JobProperties) {
+    Object.entries(job_info).map( 
+        (kv:[string, string]) => console.log(chalk`  {italic ${kv[0]}:} ${kv[1]}`)
+    )
 }
 
 // == Helper Functions for Podman Socket ===========================================
