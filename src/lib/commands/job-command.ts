@@ -39,6 +39,7 @@ type CLIJobFlags = {
     "working-directory": string
     "remove-on-exit"?: boolean
     "autocopy"?:boolean
+    "no-autocopy"?:boolean
     "visible-stacks"?: Array<string>
 }
 
@@ -212,6 +213,7 @@ export abstract class JobCommand extends BasicCommand
         })
     )
     if(!result.success) return false
+    if(flags["no-autocopy"]) return false
     if(flags["autocopy"]) return true
     const synchronous = flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))
     if(synchronous && this.settings.get('autocopy-sync-job')) return true
