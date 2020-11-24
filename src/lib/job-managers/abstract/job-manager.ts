@@ -69,6 +69,10 @@ export type JobAttachOptions = ID_OSTACK
 export type JobLogOptions = ID_OSTACK & {
   "lines": string
 }
+export type JobPropertiesOptions = {
+  "ids": Array<string>                                // job ids that should be copied
+  "stack-paths"?: Array<string>                       // only select jobs that pertain to this stack
+}
 
 export type JobBuildOptions = {
   'reuse-image': boolean  // will not build if image with proper name already exists
@@ -78,6 +82,8 @@ export type JobBuildOptions = {
 export type JobListOptions = {
     filter?: JobInfoFilter
 }
+
+export type JobProperties = {[key: string] : string}
 
 export abstract class JobManager // High-Level Job Driver
 {
@@ -110,6 +116,8 @@ export abstract class JobManager // High-Level Job Driver
   abstract log( options: JobLogOptions ) : ValidatedOutput<string>
 
   abstract list( options: JobListOptions ) : ValidatedOutput<JobInfo[]>
+
+  abstract properties( options: JobPropertiesOptions ) : ValidatedOutput<JobProperties[]>
 
   abstract build (
       stack_configuration: StackConfiguration<any>,

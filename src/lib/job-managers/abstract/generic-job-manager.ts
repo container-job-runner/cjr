@@ -1,6 +1,6 @@
 import chalk = require('chalk');
 import os = require('os')
-import { JobManager, JobRunOptions, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions } from '../abstract/job-manager'
+import { JobManager, JobRunOptions, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions, JobProperties, JobPropertiesOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
 import { firstJob, NewJobInfo, JobInfo, JobState, firstJobId, jobStates, JobInfoFilter } from '../../drivers-containers/abstract/run-driver';
@@ -197,6 +197,33 @@ export abstract class GenericJobManager extends JobManager
   list(options: JobListOptions) : ValidatedOutput<JobInfo[]>
   {
     return this.jobInfo(options.filter)  
+  }
+
+  properties(options: JobPropertiesOptions) : ValidatedOutput<JobProperties[]>
+  {
+    const job_info_request = this.jobInfo(options)
+    const job_properties:JobProperties[] = []
+
+    job_info_request.value.map((j:JobInfo) => {
+        job_properties.push(this.extractJobProperties(j))
+    })
+
+    return new ValidatedOutput(true, job_properties).absorb(job_info_request)
+  }
+
+  protected extractJobProperties(j:JobInfo)
+  {
+      return {
+            "id": j.id,
+            "image": j.image,
+            "stack": j.stack,
+            "ports": j.ports.join(", "),
+            "project-root": j.labels?.[label_strings.job["project-root"]] || "",
+            "container-root": j.labels?.[label_strings.job["container-root"]] || "",
+            "command": j.labels?.[label_strings.job["command"]],
+            "download-include": j.labels?.[label_strings.job["download-include"]] || "",
+            "download-exclude": j.labels?.[label_strings.job["download-exclude"]] || ""
+        }
   }
 
   build(stack_configuration: StackConfiguration<any>, build_options: JobBuildOptions) : ValidatedOutput<undefined>

@@ -533,4 +533,11 @@ export class RemoteSshJobManager extends GenericJobManager
         return super.jobInfo(mapped_options)
     }
 
+    protected extractJobProperties(j:JobInfo)
+    {
+      return { ... super.extractJobProperties(j), ... {
+            "remote-project-root": j.labels?.[this.REMOTELABELS["REMOTE_PROJECT_ROOT"]] || "",
+            "cached-project-root": j.labels?.[this.REMOTELABELS["CACHED_PROJECT_ROOT"]] || ""
+        }}
+    }
 }
