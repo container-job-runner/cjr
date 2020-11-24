@@ -362,6 +362,22 @@ export function getProjectId(hostRoot: string) : ValidatedOutput<string>
 
 // == Interactive Functions ====================================================
 
+export async function promptUserForGitPull(interactive: boolean)
+{
+    if(interactive) {
+        const response = await inquirer.prompt([
+        {
+            name: "flag",
+            message: `Stack directory already exists. Do you want to pull the latest version?`,
+            default: true,
+            type: "confirm",
+        }
+        ])
+        return (response?.flag == true)
+    }
+    return true
+}
+
 export async function promptUserForJobId(job_manager: JobManager, stack_paths: Array<string>|undefined, states:Array<JobState>|undefined=undefined, silent: boolean = false)
 {
   if(silent) return false;

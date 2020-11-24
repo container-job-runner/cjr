@@ -6,6 +6,7 @@ import { ShellCommand } from '../../lib/shell-command'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { FileTools } from '../../lib/fileio/file-tools'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
+import { promptUserForGitPull } from '../../lib/functions/cli-functions'
 
 export default class Pull extends BasicCommand {
   static description = 'Clones or pulls a stack using git directly into the stack folder.'
@@ -27,11 +28,15 @@ export default class Pull extends BasicCommand {
     fs.ensureDirSync(local_stacks_path)
     const repo_name = args.url.split("/").pop().replace(/.git$/, "")
     const stack_abs_path = path.join(local_stacks_path, repo_name)
-    if(FileTools.existsDir(stack_abs_path))
-      result = shell.output('git pull', {}, [], {cwd: stack_abs_path})
-    else
-      result = shell.output('git clone', {depth: "1"}, [args.url], {cwd: local_stacks_path})
-    printValidatedOutput(result);
+    // -- exit if git does not exist -------------------------------------------
+    if(!shell.output('git', {version: {}}).success)
+        return printValidatedOutput(new ValidatedOutput(true, []).pushError('cannot pull stack, git is not installed.'));
+    
+    const stack_exists = FileTools.existsDir(stack_abs_path)
+    if(stack_exists && await promptUserForGitPull(this.settings.get('interactive')))
+      result = shell.exec('git pull', {}, [], {cwd: stack_abs_path})
+    else if(!stack_exists)
+      result = shell.exec('git clone', {depth: "1"}, [args.url], {cwd: local_stacks_path})
   }
 
 }
