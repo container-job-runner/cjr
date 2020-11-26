@@ -1,5 +1,6 @@
 import * as chalk from 'chalk'
 import * as path from 'path'
+import constants = require('../../constants')
 import { BuildDriver } from '../abstract/build-driver'
 import { ValidatedOutput } from '../../validated-output'
 import { JSTools } from '../../js-tools'
@@ -130,7 +131,7 @@ export class DockerCliBuildDriver extends BuildDriver
       // -- load tar file --------------------------------------------------
       const command = `${this.base_command} load`;
       const flags = {input: archive_name}
-      const load_result = this.shell.output(command,flags, [], {cwd: configuration.stack_path})
+      const load_result = this.shell.output(command,flags, [], {cwd: path.join(configuration.stack_path, constants.subdirectories.stack.build)})
       if(!load_result.success) return result.absorb(load_result)
       // -- extract name and retag -----------------------------------------
       const image_name = load_result.value?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"

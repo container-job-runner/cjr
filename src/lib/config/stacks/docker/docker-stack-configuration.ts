@@ -166,9 +166,9 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
 
     if(FileTools.existsFile(path.join(stack_path, this.build_context, 'Dockerfile')))
       return new ValidatedOutput(true, "dockerfile")
-    else if(FileTools.existsFile(path.join(stack_path, `${this.archive_filename}.tar.gz`)))
+    else if(FileTools.existsFile(path.join(stack_path, this.build_context, `${this.archive_filename}.tar.gz`)))
       return new ValidatedOutput(true, "tar.gz")
-    else if(FileTools.existsFile(path.join(stack_path, `${this.archive_filename}.tar`)))
+    else if(FileTools.existsFile(path.join(stack_path, this.build_context, `${this.archive_filename}.tar`)))
       return new ValidatedOutput(true, "tar")
     else if(FileTools.existsFile(path.join(stack_path, this.config_filename)))
       return new ValidatedOutput(true, "config")
