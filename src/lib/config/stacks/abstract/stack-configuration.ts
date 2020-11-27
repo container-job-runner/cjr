@@ -62,6 +62,7 @@ export abstract class StackConfiguration<T>
 
   // == access functions =======================================================
   abstract getImage(): string;
+  abstract getTag(): string;
   abstract getEntrypoint() : Array<string> | undefined;
   abstract getName(): string;
 

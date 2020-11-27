@@ -729,4 +729,9 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return paths
   }
 
+  getTag() : string
+  {
+      return this.getImage().split(':')?.[1] || "latest"
+  }
+
 }
