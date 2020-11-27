@@ -8,7 +8,18 @@ import { Dictionary } from '../../../constants'
 import { SshShellCommand } from '../../../ssh-shell-command'
 import { ShellCommand } from '../../../shell-command'
 
-export type StackSnapshotOptions = {mode: 'always'|'prompt', username?: string, server: string, password?: string, token?: string}
+export type RegistryStackSnapshotOptions = {
+    "storage-location": 'registry'
+    "mode": 'always'|'prompt', 
+    "username": string, 
+    "server": string,
+    "token"?: string
+}
+export type ArchiveStackSnapshotOptions = {
+    "storage-location": 'archive'
+    "mode": 'always'|'prompt'
+}
+export type StackSnapshotOptions = RegistryStackSnapshotOptions | ArchiveStackSnapshotOptions
 
 export abstract class StackConfiguration<T>
 {

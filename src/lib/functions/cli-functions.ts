@@ -18,6 +18,7 @@ import { ShellCommand } from '../shell-command'
 import { FileTools } from '../fileio/file-tools'
 import { ChildProcess } from 'child_process'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
+import { DockerStackConfiguration } from '../config/stacks/docker/docker-stack-configuration'
 
 // == TYPES ====================================================================
 
@@ -487,15 +488,15 @@ export async function augmentImagePushParameters(options: PushAuth)
   return options
 }
 
-export function snapshot(job_id: string, stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, registry_options: PushAuth = {}) : ValidatedOutput<undefined>
+export function snapshotToRegistry(job_id: string, job_stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, registry_options: PushAuth = {}) : ValidatedOutput<undefined>
 {
-  const sc_time = stack_configuration.copy()
+  const sc_time = job_stack_configuration.copy()
   sc_time.setTag(`${Date.now()}`)
-  const sc_latest = stack_configuration.copy()
+  const sc_latest = job_stack_configuration.copy()
   sc_latest.setTag(constants.SNAPSHOT_LATEST_TAG)
 
   const result = new ValidatedOutput(true, undefined)
-  printStatusHeader(`Saving ${sc_time.getImage()}`, true);
+  printStatusHeader(`Creating ${sc_time.getImage()}`, true);
   result.absorb(drivers.runner.jobToImage(job_id, sc_time.getImage()))
   if(!result.success) return result
   printStatusHeader(`Pushing ${sc_time.getImage()}`, true);
@@ -507,6 +508,48 @@ export function snapshot(job_id: string, stack_configuration: StackConfiguration
   result.absorb(drivers.builder.pushImage(sc_latest, registry_options, "inherit"))
   if(!result.success) return result
   return result
+}
+
+export function snapshotToArchive(job_id: string, job_stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers) : ValidatedOutput<undefined>
+{
+    if(!job_stack_configuration.stack_path)
+        return new ValidatedOutput(false, undefined).pushError('Cannot snapshot stack (stack_path is undefined)')
+    
+    const sc_time = job_stack_configuration.copy()
+    sc_time.setTag(`${Date.now()}`)
+
+    const result = new ValidatedOutput(true, undefined)
+    printStatusHeader(`Creating ${sc_time.getImage()}`, true);
+    result.absorb(
+        drivers.runner.jobToImage(job_id, sc_time.getImage())
+    )
+    if(!result.success) return result
+    
+    printStatusHeader(`Saving ${sc_time.getImage()}`, true);
+    const snapshot_path = constants.stackNewSnapshotPath(job_stack_configuration.stack_path, sc_time.getTag())
+    const stack_image_path = constants.stackArchiveImagePath(job_stack_configuration.stack_path)
+
+    result.absorb(
+        drivers.builder.saveImage(sc_time, 
+            {
+                path: snapshot_path,
+                compress: true
+            }, 
+            "inherit"
+        )
+    )
+    if(!result.success) return result
+  
+    fs.unlinkSync(stack_image_path)
+    fs.linkSync(snapshot_path, stack_image_path)
+
+    // -- rebuild original stack -----------------------------------------------
+    const stack_configuration = new DockerStackConfiguration()
+    stack_configuration.load(job_stack_configuration.stack_path, [])
+    printStatusHeader(`Updating ${stack_configuration.getImage()}`, true);
+    drivers.builder.build(stack_configuration, "inherit", {"no-cache": true})
+    
+    return result
 }
 
 export function printJobProperties(job_info: JobProperties) {

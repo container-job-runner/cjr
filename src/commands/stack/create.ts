@@ -14,16 +14,12 @@ import { StackConfiguration } from '../../lib/config/stacks/abstract/stack-confi
 import { augmentImagePushParameters } from '../../lib/functions/cli-functions'
 import { ContainerDrivers } from '../../lib/job-managers/abstract/job-manager'
 
-type NewSnapshotOptions = {
-  "image": string,
-  "username": string,
-  "token"?: string,
-  "server": string,
-  "mode": string
-}
+type RemoteSnapshotOptions = { "image": string, "storage-location": "registry", "mode": "always"|"prompt", "username": string, "token"?: string, "server": string }
+type ArchiveSnapshotOptions = { "image": string, "storage-location": "archive", "mode": "always"|"prompt" }
+type NewSnapshotOptions = RemoteSnapshotOptions | ArchiveSnapshotOptions
 
 export default class Create extends BasicCommand {
-  static description = 'Initialize a project in the current directory.'
+  static description = 'Create a new cjr stack.'
   static args = [{name: "name", required: true}]
   static flags = {
     "dockerfile": flags.string({exclusive: ['image', 'snapshot'], description: "Create a new stack with using this Dockerfile."}),
@@ -70,10 +66,14 @@ export default class Create extends BasicCommand {
     return result.pushError(ErrorStrings.STACK.INVALID_NAME)
   }
 
-  createEmptyStack(stacks_dir: string, stack_name: string) : ValidatedOutput<undefined>
+  createEmptyStack(stacks_dir: string, stack_name: string, directories?: {build?: boolean, snapshots?: boolean}) : ValidatedOutput<undefined>
   {
     fs.mkdirpSync(path.join(stacks_dir, stack_name))
     fs.mkdirpSync(path.join(stacks_dir, stack_name, constants.subdirectories.stack.profiles))
+    if(directories?.build)
+        fs.mkdirpSync(path.join(stacks_dir, stack_name, constants.subdirectories.stack.build))
+    if(directories?.snapshots)
+        fs.mkdirpSync(path.join(stacks_dir, stack_name, constants.subdirectories.stack.snapshots))   
     return new ValidatedOutput(true, undefined)
   }
 
@@ -113,7 +113,7 @@ export default class Create extends BasicCommand {
     )
   }
 
-  async createImageStackWithSnapshots(stacks_dir: string, stack_name: string, explicit: boolean)
+  async createImageStackWithSnapshots(stacks_dir: string, stack_name: string, explicit: boolean) : Promise<ValidatedOutput<undefined>>
   {
     const result = new ValidatedOutput(true, undefined)
     const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: explicit})
@@ -124,21 +124,57 @@ export default class Create extends BasicCommand {
     if(!options_prompt.success)
       return result.absorb(options_prompt)
     const options = options_prompt.value
-    // -- pull stack, retag for user, and create new configuration -------------
-    printOutputHeader(`Pulling ${options.image}`)
-    const new_config_result = this.newSnapshotStackConfiguration(container_drivers, stack_name, options)
+    
+    // -- prepare image and write stack
+    let new_config_result: ValidatedOutput<DockerStackConfiguration> 
+    
+    if(options["storage-location"] == "archive") {
+        this.createEmptyStack(stacks_dir, stack_name, {snapshots: true, build: true});
+        new_config_result = this.newArchiveSnapshotStackConfiguration(container_drivers, stacks_dir, stack_name, options)
+    } else {
+        new_config_result = await this.newRemoteSnapshotStackConfiguration(container_drivers, stack_name, options)
+    }
+
     if(!new_config_result.success)
-      return result.absorb(new_config_result)
-    const snapshot_configuration = new_config_result.value.snapshot
-    const latest_configuration = new_config_result.value.latest
+        return result.absorb(new_config_result)
+    
+    return this.createConfigStack(stacks_dir, stack_name, new_config_result.value)
+  }
+
+  // ---------------------------------------------------------------------------
+  // pulls a remote image, then retags it as
+  //    1. user/image-base-name:timestamp
+  //    2. user/image-base-name:latest
+  // then pushes images to users repository and returns snapshot config
+  // ---------------------------------------------------------------------------
+
+  async newRemoteSnapshotStackConfiguration(container_drivers: ContainerDrivers, stack_name: string, options: RemoteSnapshotOptions) : Promise<ValidatedOutput<DockerStackConfiguration>>
+  {
+    const result = new ValidatedOutput(true, new DockerStackConfiguration())
+
+    // -- pull and tag images --------------------------------------------------
+    printOutputHeader(`Pulling ${options.image}`)
+    const image_name = path.posix.join(options.username, stack_name)
+    const pr_result = this.pullAndTag(options.image, {
+            "snapshot": `${image_name}:${Date.now()}`,
+            "latest": `${image_name}:${constants.SNAPSHOT_LATEST_TAG}`
+        }, container_drivers) as ValidatedOutput<{latest: DockerStackConfiguration, snapshot: DockerStackConfiguration}>
+    
+    if(!result.success)
+        return result
+
+    const snapshot_configuration =  pr_result.value.snapshot
+    const latest_configuration = pr_result.value.latest
+
     // -- push stack image to user remote registry -----------------------------
     printOutputHeader(`Pushing ${snapshot_configuration.getImage()}`)
     const push_options = await augmentImagePushParameters(options)
     result.absorb(
-      container_drivers.builder.pushImage(snapshot_configuration, push_options, "inherit")
+        container_drivers.builder.pushImage(snapshot_configuration, push_options, "inherit")
     )
     if(!result.success) 
         return result
+    
     // -- update latest snapshot -----------------------------------------------    
     printOutputHeader(`Updating ${latest_configuration.getImage()}`)
     result.absorb(
@@ -146,24 +182,29 @@ export default class Create extends BasicCommand {
     )
     if(!result.success)
         return result
-    
+
+    // -- set stapshot options
+    snapshot_configuration.setSnapshotOptions({
+      "storage-location": "registry",
+      "mode": options.mode,
+      "username": options.username,
+      "token": options.token,
+      "server": options.server
+    })
     snapshot_configuration.setTag('latest');
-    return this.createConfigStack(stacks_dir, stack_name, snapshot_configuration)
+    
+    // -- return validated output with tagged image ----------------------------
+    return  new ValidatedOutput(true, snapshot_configuration) 
   }
 
-  // ---------------------------------------------------------------------------
-  // pulls a remote image, then retags it as
-  //    1. user/image-base-name:timestamp
-  // ---------------------------------------------------------------------------
-
-  newSnapshotStackConfiguration(container_drivers: ContainerDrivers, stack_name: string, options: NewSnapshotOptions) : ValidatedOutput<{latest: DockerStackConfiguration, snapshot: DockerStackConfiguration}>
+  private pullAndTag(image: string, tags: {[key:string] : string}, container_drivers: ContainerDrivers) : ValidatedOutput<{[key:string] : DockerStackConfiguration}>
   {
-    const snapshot_configuration = new DockerStackConfiguration()
-    const result = new ValidatedOutput(true, {latest: snapshot_configuration, snapshot: snapshot_configuration})
+    const configurations:{[key:string] : DockerStackConfiguration} = {}
+    const result = new ValidatedOutput(true, configurations)
 
     // -- pull image -----------------------------------------------------------
     const configuration = new DockerStackConfiguration()
-    configuration.setImage(options.image)
+    configuration.setImage(image)
     result.absorb(
       container_drivers.builder.build(configuration, "inherit", {pull: true})
     )
@@ -171,75 +212,148 @@ export default class Create extends BasicCommand {
       return result
 
     // -- retag image ----------------------------------------------------------
-    snapshot_configuration.setImage(path.posix.join(options.username, stack_name))
-    snapshot_configuration.setTag(`${Date.now()}`)
+    for (let key in tags)
+    {
+        const tagged_configuration = new DockerStackConfiguration()
+        tagged_configuration.setImage(tags[key])
+        result.absorb(
+            container_drivers.builder.tagImage(configuration, tagged_configuration.getImage())
+        )
+        configurations[key] = tagged_configuration
+    }
+    
+    return result
+  }
+
+  newArchiveSnapshotStackConfiguration(container_drivers: ContainerDrivers, stack_dir: string, stack_name: string, options: ArchiveSnapshotOptions) : ValidatedOutput<DockerStackConfiguration>
+  {
+    const result = new ValidatedOutput(true, new DockerStackConfiguration())
+
+    // -- pull and tag images -------------------------------------------------
+    printOutputHeader(`Pulling ${options.image}`)
+    const pr_result = this.pullAndTag(options.image, {
+            "snapshot": `${stack_name}:${Date.now()}`
+        }, container_drivers) as ValidatedOutput<{snapshot: DockerStackConfiguration}>
+    
+    if(!result.success)
+        return result
+
+    // -- set snapshot options ------------------------------------------------
+    const snapshot_configuration = pr_result.value["snapshot"]
     snapshot_configuration.setSnapshotOptions({
-      "mode": options.mode as 'always'|'prompt',
-      "username": options.username,
-      "token": options.token,
-      "server": options.server
+      "storage-location": "archive",
+      "mode": options.mode
     })
-    const latest_configuration = snapshot_configuration.copy()
-    latest_configuration.setTag(constants.SNAPSHOT_LATEST_TAG)
-    result.value.latest = latest_configuration
+
+    // -- save tar of image ---------------------------------------------------
+    printOutputHeader(`Saving ${options.image} to tar.gz`)
+    const stack_path = path.join(stack_dir, stack_name)
+    const snapshot_tar = constants.stackNewSnapshotPath(stack_path, snapshot_configuration.getTag())
+    const stack_image_tar = constants.stackArchiveImagePath(stack_path)
 
     result.absorb(
-      container_drivers.builder.tagImage(configuration, snapshot_configuration.getImage()),
-      container_drivers.builder.tagImage(configuration, latest_configuration.getImage())
+        container_drivers.builder.saveImage(snapshot_configuration, 
+            {
+                path: snapshot_tar,
+                compress: true
+            }, 
+            "inherit"
+        )
     )
+
     if(!result.success)
-      return result
+        return result
+
+    // -- create hardlink ------------------------------------------------------
+    fs.link(snapshot_tar, stack_image_tar)
 
     // -- return validated output with tagged image ----------------------------
-    return result
+    const stack_configuration = new DockerStackConfiguration()
+    stack_configuration.setSnapshotOptions({
+      "storage-location": "archive",
+      "mode": options.mode
+    })
+    
+    return  new ValidatedOutput(true, stack_configuration)
   }
 
   async promptSnapshotOptions() : Promise<ValidatedOutput<NewSnapshotOptions>>
   {
-    const failure = new ValidatedOutput(false, {image: "", username: "", server: "", mode: "off"})
+    const failure = new ValidatedOutput<NewSnapshotOptions>(false, {image: "", "storage-location": "registry", username: "", server: "", mode: "prompt"})
     const errors = {
       "EMPTYIMAGE": chalk`{bold Invalid Parameters} - Empty Image.`,
       "EMPTYSERVER": chalk`{bold Invalid Parameters} - Empty auth server endpoint.`,
       "EMPTYUSERNAME": chalk`{bold Invalid Parameters} - empty username.`
     }
 
-    const response = await inquirer.prompt([
+    const prompt_general = await inquirer.prompt([
       {
         name: "image",
         message: `Base Image:`,
         type: "input",
       },
       {
-        name: "server",
-        message: `Auth Server:`,
-        default: this.settings.get('container-registry-auth'),
-        type: "input",
-      },
-      {
-        name: "username",
-        message: `Username:`,
-        default: this.settings.get('container-registry-user'),
-        type: "input",
-      },
-      {
-        name: "token",
-        message: `Access Token (Optional):`,
-        type: "password",
+        name: "location",
+        message: `Snapshot storage location`,
+        choices: ['remote registry', 'local archive'],
+        type: "list",
       },
       {
         name: "mode",
         message: `Snapshot mode`,
-        choices: ['always', 'prompt'],
+        choices: ['prompt', 'always'],
         type: "list",
       }
-    ])
+    ]);
+
+    let response:NewSnapshotOptions
+    
+    if( prompt_general["location"] == "local archive" )
+    {
+        response = {
+            "storage-location": "archive",
+            "image": prompt_general["image"],
+            "mode": prompt_general["mode"],
+        };
+    }
+    else
+    {
+        const prompt_registry = await inquirer.prompt([
+            {
+                name: "server",
+                message: `Auth Server:`,
+                default: this.settings.get('container-registry-auth'),
+                type: "input",
+            },
+            {
+                name: "username",
+                message: `Username:`,
+                default: this.settings.get('container-registry-user'),
+                type: "input",
+            },
+            {
+                name: "token",
+                message: `Access Token (Optional):`,
+                type: "password",
+            }
+        ])
+        response = {
+            "storage-location": "registry",
+            "image": prompt_general["image"],
+            "mode": prompt_general["mode"],
+            "username": prompt_registry["username"], 
+            "token": prompt_registry["token"],
+            "server": prompt_registry["server"]
+        };
+
+        if(!response.server)
+            return failure.pushError(errors['EMPTYSERVER'])
+        if(!response.username)
+            return failure.pushError(errors['EMPTYUSERNAME'])
+    }
 
     if(!response.image)
       return failure.pushError(errors['EMPTYIMAGE'])
-    if(!response.server)
-      return failure.pushError(errors['EMPTYSERVER'])
-    if(!response.username)
-      return failure.pushError(errors['EMPTYUSERNAME'])
 
     return new ValidatedOutput(true, response)
 

@@ -18,7 +18,12 @@ export const docker_stack_configuration_schema = {
     "environment-dynamic": {"$ref": "#/definitions/args"},
     "resources": {"$ref": "#/definitions/resources"},
     "files": {"$ref": "#/definitions/files"},
-    "snapshots": {"$ref": "#/definitions/snapshots"},
+    "snapshots": {
+        "anyOf": [
+            {"$ref": "#/definitions/remote-snapshots"},
+            {"$ref": "#/definitions/archive-snapshots"}
+        ],
+    },
     "flags": {"$ref": "#/definitions/flags"}
   },
   "additionalProperties": false,
@@ -123,23 +128,51 @@ export const docker_stack_configuration_schema = {
       },
       "additionalProperties": false
     },
-    "snapshots": {
+    "remote-snapshots": {
        "type": "object",
        "properties": {
-         "mode" : {
-           "type": "string",
-           "pattern": "^(always)|(prompt)$"
-         },
-         "username": {
-           "type": "string"
-         },
-         "server": {
-           "type": "string"
-         },
-         "token": {
-           "type": "string"
-         }
+          "storage-location" : {
+             "type": "string",
+             "pattern": "^(registry)$"
+           }, 
+          "mode" : {
+             "type": "string",
+             "pattern": "^(always)|(prompt)$"
+           },
+           "username": {
+             "type": "string"
+           },
+           "server": {
+             "type": "string"
+           },
+           "token": {
+             "type": "string"
+           }
        },
+       "required": [
+          "storage-location", 
+          "mode",
+          "username",
+          "server"
+        ],
+       "additionalProperties": false
+    },
+    "archive-snapshots": {
+       "type": "object",
+       "properties": {
+          "storage-location" : {
+             "type": "string",
+             "pattern": "^(archive)$"
+           }, 
+          "mode" : {
+             "type": "string",
+             "pattern": "^(always)|(prompt)$"
+           }
+       },
+       "required": [
+          "storage-location", 
+          "mode"
+       ],
        "additionalProperties": false
     },
     "flags" : {

@@ -63,12 +63,17 @@ export const subdirectories =
   },
   "stack": {
     "build": "build",
-    "profiles": "profiles"
+    "profiles": "profiles",
+    "snapshots": "snapshots"                    // used to store snapshots for tar stack
   },
   "config": {
     "remote-keys": "keys"                       // used to store keys for remote resources
   }
 }
+
+// functions for quickly accessing stack directories
+export const stackNewSnapshotPath = (stack_path: string, unixtime: string|number) => path.join(stack_path, subdirectories.stack.snapshots, `image-${unixtime}.tar.gz`)
+export const stackArchiveImagePath = (stack_path: string, extension: string = "tar.gz") => path.join(stack_path, subdirectories.stack.build, `image.${extension}`)
 
 // default cli options that are stored in cli settings json file
 export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir: string) =>
