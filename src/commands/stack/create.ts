@@ -24,7 +24,7 @@ export default class Create extends BasicCommand {
   static flags = {
     "dockerfile": flags.string({exclusive: ['image', 'snapshot'], description: "Create a new stack with using this Dockerfile."}),
     "image": flags.string({exclusive: ['dockerfile', 'snapshot'], description: "Create a new stack based on an existing docker Image."}),
-    "snapshot": flags.boolean({exclusive: ['dockerfile', 'image'], description: "Create a new stack that supports snapshots."}),
+    "snapshottable": flags.boolean({exclusive: ['dockerfile', 'image'], description: "Create a new stack that supports snapshots."}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "explicit": flags.boolean({default: false})
   }
@@ -51,7 +51,7 @@ export default class Create extends BasicCommand {
       result = this.createDockerfileStack(stacks_path, stack_name, flags['dockerfile'])
     else if (flags['image'])
       result = this.createImageStack(stacks_path, stack_name, flags['image'])
-    else if (flags['snapshot'])
+    else if (flags['snapshottable'])
       result = await this.createImageStackWithSnapshots(stacks_path, stack_name, flags['explicit'])
     else
       result = this.createEmptyStack(stacks_path, stack_name)
