@@ -32,7 +32,9 @@ export class DockerSocketBuildDriver extends BuildDriver
     "FAILED_TO_LOAD": (file:string) => chalk`{bold Image Load Failed} - failed to load ${file}.`,
     "FAILED_TO_DELETE": (id:string) => chalk`{bold Image Remove Failed} - could not remove image ${id}.`,
     "FAILED_TO_LISTIMAGES": chalk`{bold Image List Failed} - could not get list of current images.`,
-    "FAILED_TO_TAG": (id:string) => chalk`{bold Image Tag Failed} - could not tag image ${id}.`
+    "FAILED_TO_TAG": (id:string) => chalk`{bold Image Tag Failed} - could not tag image ${id}.`,
+    "FAILED_IMAGE_SAVE": chalk`{bold Image Save Failed} - unable to write image file.`,
+    "FAILED_IMAGE_SAVE_FORMAT": (path:string) => chalk`{bold Image Save Failed} - path must end in ${path}.`
   }
 
   constructor(shell: ShellCommand, options: {"socket": string, "build-directory": string})
@@ -236,6 +238,11 @@ export class DockerSocketBuildDriver extends BuildDriver
     const api_list = this.API_ImageListWithStackLabel(stack_path)
     result.absorb(api_list, this.API_RemoveImage(api_list.value))
     return result
+  }
+
+  saveImage(configuration: DockerStackConfiguration, options: {path: string, compress: boolean}, stdio: "inherit"|"pipe") : ValidatedOutput<undefined>
+  {
+    return this.API_saveImage(configuration.getImage(), options.path, options.compress)
   }
 
   // ===========================================================================
@@ -450,6 +457,60 @@ export class DockerSocketBuildDriver extends BuildDriver
 
     // -- return true if -------------------------------------------------------
     result.value = api_result.value.body
+    return result
+  }
+
+  protected API_saveImage(image: string, save_path: string, compress: boolean): ValidatedOutput<undefined>
+  {
+    // Note: curl class currently does not allow for output flag --output (due to headers)
+    // and therefore we cannot pipe output to file or to gz. For now this command was manually implemented using shell.
+    // Comment: The following solutions suggest alterative ways to re-implement the curl class by separating headers and outputs.
+    // 1. pipe output to file and headers to sdc out. For example:
+    //    curl -sw '%{http_code}' --unix-socket /var/run/docker.sock -X GET http://localhost/v1.40/images/7ea1116658fc/get -o test.tar
+    //    This is the solution used below. By writing output to file things will be slower but we also eliminate the possibility of filling
+    //    the node buffer for large outputs. However it will be slower and will require cjr to delete the temp files. 
+    //    For related interesting comment see: https://superuser.com/a/862395
+    // 2. Write the headers to a file using the -D flag, and read the headers while pushing output to stdout. See: 
+    //      https://stackoverflow.com/questions/11836238/using-curl-to-download-file-and-view-headers-and-status-code
+
+    const result = new ValidatedOutput(true, undefined)
+
+    // check save_path is valid
+    if(compress && !/tar.gz$/.test(save_path))
+        return result.pushError(this.ERRORSTRINGS.FAILED_IMAGE_SAVE_FORMAT('.tar.gz'))
+    if(!compress && !/.tar$/.test(save_path))
+        return result.pushError(this.ERRORSTRINGS.FAILED_IMAGE_SAVE_FORMAT('.tar'))
+
+    const tar_path = save_path.replace(/.gz$/, '')
+    const save_request = this.shell.output(
+        'curl', 
+        {
+            s: {},
+            w: {value: '%{http_code}', noequals: true},
+            "unix-socket": {value: this.socket, noequals: true},
+            output: {value: tar_path, noequals: true},
+            X: {value: "GET", noequals: true}
+        },
+        [`${this.base_url}/images/${encodeURI(image)}/get`]
+    )
+    if(!save_request.success)
+        return result.absorb(save_request)
+    
+    const exit_code = parseInt(save_request.value)
+    if(exit_code != 200)
+        return result.pushError(this.ERRORSTRINGS.FAILED_IMAGE_SAVE)
+
+    if(compress) 
+    {
+        const gzip_request = this.shell.output(
+            'gzip',
+            {},
+            [tar_path]
+        )
+        if(!gzip_request.success)
+            return result.pushError(this.ERRORSTRINGS.FAILED_IMAGE_SAVE)
+    }
+
     return result
   }
 

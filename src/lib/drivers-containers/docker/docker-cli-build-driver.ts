@@ -22,7 +22,8 @@ export class DockerCliBuildDriver extends BuildDriver
       "FAILED_TO_BUILD": chalk`{bold Image Build Failed} - stack configuration likely contains errors`,
       "FAILED_TO_DELETE_IMAGE": chalk`{bold Image Remove Failed} - unable to remove image`,
       "FAILED_REGISTRY_LOGIN": chalk`{bold Container Registry Authentication Failed} - login was not successful.`,
-      "FAILED_REGISTRY_PUSH": chalk`{bold Container Registry Push Failed} - unable to push image.`
+      "FAILED_REGISTRY_PUSH": chalk`{bold Container Registry Push Failed} - unable to push image.`,
+      "FAILED_IMAGE_SAVE": chalk`{bold Image Save Failed} - unable to write image file.`
     }
 
     protected WARNINGSTRINGS = {
@@ -219,6 +220,26 @@ export class DockerCliBuildDriver extends BuildDriver
       )
       const command = `${this.base_command} rmi $(${image_id_cmd})`
       return (new ValidatedOutput(true, undefined)).absorb(this.shell.exec(command))
+    }
+
+    saveImage(configuration: DockerStackConfiguration, options: {path: string, compress: boolean}, stdio: "inherit"|"pipe") : ValidatedOutput<undefined>
+    {
+      const result = new ValidatedOutput(true, undefined);
+      if(options.compress == false)
+        result.absorb(
+            this.shell.exec(`${this.base_command} save`, {output: options.path}, [configuration.getImage()], {"stdio": stdio})
+        )
+      else {
+          const save_command = this.shell.commandString(`${this.base_command} save`, {}, [configuration.getImage()])
+          const gzip_command = this.shell.commandString('gzip >', {}, [options["path"]])
+          result.absorb(
+              this.shell.exec(`${save_command} | ${gzip_command}`)
+          )
+      }
+      if(!result.success)
+        result.pushError(this.ERRORSTRINGS.FAILED_IMAGE_SAVE)
+      
+      return result
     }
 
     protected addJSONFormatFlag(flags: Dictionary)

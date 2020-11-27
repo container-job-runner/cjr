@@ -21,5 +21,6 @@ export abstract class BuildDriver
   abstract removeAllImages(stack_path:string): ValidatedOutput<undefined>;
   abstract tagImage(configuration: StackConfiguration<any>, name: string) : ValidatedOutput<undefined>
   abstract pushImage(configuration: StackConfiguration<any>, options: Dictionary, stdio:"inherit"|"pipe") : ValidatedOutput<undefined>
+  abstract saveImage(configuration: StackConfiguration<any>, options: {path: string, compress: boolean}, stdio:"inherit"|"pipe") : ValidatedOutput<undefined>
 
 }
