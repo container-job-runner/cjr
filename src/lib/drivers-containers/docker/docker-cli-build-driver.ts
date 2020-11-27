@@ -133,7 +133,7 @@ export class DockerCliBuildDriver extends BuildDriver
       const command = `${this.base_command} load`;
       const flags = {input: archive_name}
       const load_result = this.shell.output(command,flags, [], {cwd: path.join(configuration.stack_path, constants.subdirectories.stack.build)})
-      if(!load_result.success) return result.absorb(load_result)
+      if(!load_result.success) return result.absorb(load_result).pushError(this.ERRORSTRINGS.FAILED_TO_BUILD)
       // -- extract name and retag -----------------------------------------
       const image_name = load_result.value?.split(/:(.+)/)?.[1]?.trim(); // split on first ":"
       if(!image_name) return result.pushError(this.ERRORSTRINGS.FAILED_TO_EXTRACT_IMAGE_NAME);
