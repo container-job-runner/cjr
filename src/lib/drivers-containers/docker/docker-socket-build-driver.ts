@@ -2,6 +2,7 @@
 import chalk = require('chalk')
 import path = require('path')
 import fs = require('fs-extra')
+import constants = require('../../constants')
 
 import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
@@ -107,6 +108,7 @@ export class DockerSocketBuildDriver extends BuildDriver
     // -- make api request -----------------------------------------------------
     const archive = path.join(
       configuration.stack_path,
+      constants.subdirectories.stack.build,
       `${configuration.archive_filename}.${configuration.stack_type}`
     )
     const encoding = (configuration.stack_type == 'tar.gz') ? 'gzip' : 'tar'
@@ -250,7 +252,9 @@ export class DockerSocketBuildDriver extends BuildDriver
   // this function parses objects that contain the field {stream : ""}
   protected extractStreamStrings(body: any) : Array<string>
   {
-    if(!JSTools.isArray(body))
+    if(JSTools.isObject(body) && (typeof body.stream === "string")) // special case for single stream {stream: "value"}
+        return [body.stream]
+    if(!JSTools.isArray(body)) // otherwise assume [ {stream: value}, ..., {stream: value} ]
       return []
     const stream: Array<string> = []
     body?.map( (a:any) => {
@@ -333,7 +337,7 @@ export class DockerSocketBuildDriver extends BuildDriver
 
   protected API_ExtractLoadImageId(load_output: string) : string
   {
-    return load_output.match(/(?<=sha256:)[a-zA-z0-9]+/)?.pop() || ""
+    return load_output.match(/(?<=sha256:)[a-zA-z0-9]+/)?.pop() || load_output.match(/(?<=Loaded\simage:\s)[a-zA-Z0-9\-\.\:\_]+/)?.pop() || "";
   }
 
   protected API_TagImage(id: string, repo: string, tag: string) : ValidatedOutput<undefined>
