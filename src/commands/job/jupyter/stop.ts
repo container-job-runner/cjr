@@ -35,13 +35,13 @@ export default class Stop extends BasicCommand {
 
     if(flags['all'])
       return printValidatedOutput(
-        stopAllJupyters(job_manager, "in-job")
+        stopAllJupyters(job_manager, false, "in-job")
       )
     // -- get job ids --------------------------------------------------------
     const job_id = await this.getJobId([args['id']], flags)
     if(job_id === false) return // exit if user selects empty id or exits interactive dialog
     printValidatedOutput(
-      stopJupyter(job_manager, {"job-id": job_id})
+      stopJupyter(job_manager, false, {"job-id": job_id})
     )
   }
 

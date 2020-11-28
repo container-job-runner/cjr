@@ -69,7 +69,7 @@ export function startTheiaInProject(job_manager: JobManager, theia_options: Thei
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
-export function stopAllTheias(job_manager: JobManager) : ValidatedOutput<undefined>
+export function stopAllTheias(job_manager: JobManager, copy_on_exit: boolean) : ValidatedOutput<undefined>
 {
   const result = new ValidatedOutput(true, undefined)
   const jobs = listTheia(job_manager)
@@ -77,6 +77,14 @@ export function stopAllTheias(job_manager: JobManager) : ValidatedOutput<undefin
     return result.pushError(ErrorStrings.THEIA.LIST_FAILED)
 
   const job_ids = jobs.value.map( (job: TheiaJobInfo) : string => job.id )
+  if(copy_on_exit)
+    result.absorb(
+        job_manager.copy({
+            "ids": job_ids,
+            "mode": "update"
+        })
+    )
+  
   result.absorb(
     job_manager.container_drivers.runner.jobStop(job_ids)
   )
@@ -84,13 +92,22 @@ export function stopAllTheias(job_manager: JobManager) : ValidatedOutput<undefin
 }
 
 // -- extract the url for a theia notebook  ------------------------------------
-export function stopTheia(job_manager: JobManager, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
+export function stopTheia(job_manager: JobManager, copy_on_exit: boolean, identifier: {"project-root"?: string}) : ValidatedOutput<undefined>
 {
   const runner = job_manager.container_drivers.runner
   const job_id = theiaJobId(identifier, job_manager)
   if(!job_id.success)
     return (new ValidatedOutput(false, undefined)).pushError(ErrorStrings.THEIA.NOT_RUNNING(identifier['project-root'] || ""))
-  return runner.jobStop([job_id.value])
+  const job_ids = [job_id.value]
+  const result = new ValidatedOutput(true, undefined)
+  if(copy_on_exit)
+    result.absorb(
+        job_manager.copy({
+            "ids": job_ids,
+            "mode": "update"
+        })
+    )  
+  return result.absorb(runner.jobStop(job_ids))
 }
 
 export function listTheia(job_manager: JobManager) : ValidatedOutput<TheiaJobInfo[]>

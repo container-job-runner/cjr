@@ -96,23 +96,33 @@ export function startJupyterInJob(job_manager: JobManager, jupyter_options: Jupy
 }
 
 // -- extract the url for a jupyter notebook  ---------------------------------
-export function stopJupyter(job_manager: JobManager, identifier: JobIdentifer) : ValidatedOutput<undefined>
+export function stopJupyter(job_manager: JobManager, copy_on_exit: boolean, identifier: JobIdentifer) : ValidatedOutput<undefined>
 {
-  const failure = new ValidatedOutput(false, undefined)
+  const result = new ValidatedOutput(true, undefined)
   // -- standardize identifier ------------------------------------------------
   const SJI = toStandardJupyterIdentifier(job_manager, identifier)
-  if(!SJI.success) return failure.absorb(SJI)
+  if(!SJI.success) return result.absorb(SJI)
   // stop jupyter
   const runner = job_manager.container_drivers.runner
   const fetch_job_id = jupyterJobId(identifier, job_manager)
+  const job_ids = [fetch_job_id.value];
+      
   if(!fetch_job_id.success)
-    return failure.pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
-  else
-    return runner.jobStop([fetch_job_id.value])
+    return result.pushError(ErrorStrings.JUPYTER.NOT_RUNNING(identifier))
+  
+  if(copy_on_exit)
+    result.absorb(
+        job_manager.copy({
+            "ids": job_ids,
+            "mode": "update"
+        })
+    )
+    
+  return result.absorb(runner.jobStop(job_ids)) 
 }
 
 // -- extract the url for a jupyter notebook  ----------------------------------
-export function stopAllJupyters(job_manager: JobManager, filter:"all"|"in-project"|"in-job") : ValidatedOutput<undefined>
+export function stopAllJupyters(job_manager: JobManager, copy_on_exit: boolean, filter:"all"|"in-project"|"in-job") : ValidatedOutput<undefined>
 {
   const result = new ValidatedOutput(true, undefined)
   const jobs = listJupyter(job_manager, filter)
@@ -120,6 +130,14 @@ export function stopAllJupyters(job_manager: JobManager, filter:"all"|"in-projec
     return result.pushError(ErrorStrings.JUPYTER.LIST_FAILED)
 
   const job_ids = jobs.value.map( (job: JupyterJobInfo) : string => job.id )
+  if(copy_on_exit)
+    result.absorb(
+        job_manager.copy({
+            "ids": job_ids,
+            "mode": "update"
+        })
+    )
+  
   result.absorb(
     job_manager.container_drivers.runner.jobStop(job_ids)
   )

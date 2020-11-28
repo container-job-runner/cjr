@@ -3,6 +3,7 @@ import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { stopJupyter, stopAllJupyters } from '../../lib/functions/jupyter-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
+import { LocalJobManager } from '../../lib/job-managers/local/local-job-manager'
 
 export default class Stop extends ServerCommand {
   static description = 'Stop a running Jupyter server.'
@@ -32,11 +33,17 @@ export default class Stop extends ServerCommand {
     })
     let result:ValidatedOutput<undefined>;
     if(flags['all'])
-      result = stopAllJupyters(job_manager, "in-project")
+      result = stopAllJupyters(
+          job_manager, 
+          (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
+          "in-project"
+        )
     else
-      result = stopJupyter(job_manager, {
-        "project-root": flags['project-root']
-      });
+      result = stopJupyter(
+        job_manager, 
+        (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
+        { "project-root": flags['project-root'] }
+      );
     printValidatedOutput(result)
   }
 

@@ -3,6 +3,7 @@ import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { stopTheia, stopAllTheias } from '../../lib/functions/theia-functions'
 import { ValidatedOutput } from '../../lib/validated-output'
+import { LocalJobManager } from '../../lib/job-managers/local/local-job-manager'
 
 export default class Stop extends ServerCommand {
   static description = 'Stop a running Theia server.'
@@ -32,11 +33,16 @@ export default class Stop extends ServerCommand {
     })
     let result:ValidatedOutput<undefined>;
     if(flags['all'])
-      result = stopAllTheias(job_manager)
+      result = stopAllTheias(
+          job_manager, 
+          (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
+        )
     else
-      result = stopTheia(job_manager, {
-        "project-root": flags['project-root']
-      });
+      result = stopTheia(
+        job_manager,
+        (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
+        {"project-root": flags['project-root']}
+      );
     printValidatedOutput(result)
   }
 
