@@ -170,10 +170,9 @@ export class DockerSocketBuildDriver extends BuildDriver
     const build_path = path.join(configuration.stack_path, configuration.build_context)
     const archive_name = path.join(tmp_dir, 'build.tar.gz')
     const tar = this.shell.exec(
-      'tar',
+      `cd ${ShellCommand.bashEscape(build_path)} ; tar`, 
       {'czf': {shorthand: true}},
       [archive_name, "."], // tar build directory into TMPFolder/build.tar.gz
-      {cwd: build_path} // run tar from within stack folder
     )
     if(!tar.success) {
       fs.removeSync(tmp_dir)
