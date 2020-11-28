@@ -3,6 +3,7 @@ import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { startJupyterInProject, getJupyterUrl, runJupyterOnStartCommand } from '../../lib/functions/jupyter-functions'
+import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server.'
@@ -74,6 +75,11 @@ export default class Start extends ServerCommand {
     const url_result = await getJupyterUrl(job_manager, {"project-root": flags["project-root"]}, max_tries, Math.floor(timeout / max_tries))
     if(!url_result.success)
       return printValidatedOutput(url_result)
+
+    if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
+        this.startTunnel(job_manager, {
+            "port": jupyter_port.hostPort, 
+        })
 
     const onstart_cmd = this.settings.get('on-server-start');
     if(flags['quiet']) // exit silently

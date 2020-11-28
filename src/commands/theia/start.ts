@@ -4,6 +4,7 @@ import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { startTheiaInProject, getTheiaUrl, runTheiaOnStartCommand } from '../../lib/functions/theia-functions'
 import { JSTools } from '../../lib/js-tools'
+import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Theia server.'
@@ -73,6 +74,11 @@ export default class Start extends ServerCommand {
     const url_result = getTheiaUrl(job_manager, {"project-root": flags["project-root"]})
     if(!url_result.success)
       return printValidatedOutput(url_result)
+
+    if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
+        this.startTunnel(job_manager, {
+            "port": theia_port.hostPort, 
+        })
 
     const onstart_cmd = this.settings.get('on-server-start');
     if(flags['quiet']) // exit silently
