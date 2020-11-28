@@ -10,6 +10,7 @@ export default class Start extends ServerCommand {
   static description = 'Start a Theia server.'
   static args = [ { name: "project-root" } ]
   static flags = {
+    "resource": flags.string({env: 'RESOURCE'}),
     "project-root": flags.string({env: 'PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "stack": flags.string({env: 'STACK'}),
