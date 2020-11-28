@@ -102,6 +102,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "stacks-dir": path.join(config_dir, "stacks"),
       "always-print-job-id": false,
       "autocopy-sync-job": true,
+      "autocopy-on-service-exit": true,
       "job-default-run-mode": "sync",
       "run-shortcuts-file": "",
       "driver": driver,

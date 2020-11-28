@@ -23,6 +23,10 @@ export default class Set extends BasicCommand {
       options: ["true", "false"],
       description: "if true, then cjr will automatically run job:copy at the end of all synchronous jobs."
     }),
+    "autocopy-on-service-exit": flags.string({
+      options: ["true", "false"],
+      description: "if true, then cjr will automatically run job:copy when remote services like Jupyter and Theia are stopped using the jupyter:stop and theia:stop commands."
+    }),
     "selinux": flags.string({
       options: ["true", "false"],
       description: "if true, then the :Z option will be applied to all bind mounts."
