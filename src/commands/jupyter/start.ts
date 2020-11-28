@@ -9,6 +9,7 @@ export default class Start extends ServerCommand {
   static args = [ { name: "project-root" } ]
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "stack": flags.string({env: 'STACK'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),

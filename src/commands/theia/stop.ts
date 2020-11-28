@@ -9,6 +9,7 @@ export default class Stop extends ServerCommand {
   static args = [ { name: "project-root" } ]
   static flags = {
     "project-root": flags.string({env: 'PROJECTROOT'}),
+    "resource": flags.string({env: 'RESOURCE'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "all": flags.boolean({description: "stop all jupyter servers running in host directories"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
@@ -24,7 +25,7 @@ export default class Stop extends ServerCommand {
     this.augmentFlagsWithProjectRootArg(args, flags)
     this.augmentFlagsWithHere(flags)
 
-    const job_manager = this.newJobManager('localhost', {
+    const job_manager = this.newJobManager(flags["resource"] || 'localhost', {
         verbose: flags['verbose'], 
         quiet: flags['quiet'], 
         explicit: flags['explicit']

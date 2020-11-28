@@ -8,6 +8,7 @@ export default class List extends BasicCommand {
   static description = 'List running jupiter servers.'
   static args = []
   static flags = {
+    "resource": flags.string({env: 'RESOURCE'}),
     "explicit": flags.boolean({default: false}),
     "json": flags.boolean({default: false})
   }
@@ -16,7 +17,8 @@ export default class List extends BasicCommand {
   async run()
   {
     const { flags } = this.parse(List)
-    const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
+    this.augmentFlagsWithProjectSettings(flags, {"resource": false})
+    const job_manager = this.newJobManager(flags['resource'] || 'localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
     const result = listJupyter(job_manager, "in-project")
     if(!result.success)
       return printValidatedOutput(result)
