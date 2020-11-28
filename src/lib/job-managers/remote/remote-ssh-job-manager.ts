@@ -206,7 +206,9 @@ export class RemoteSshJobManager extends GenericJobManager
             remote_project_root = mktemp_request.value
         }
 
-        const rsync_flags: Dictionary = {a: {}, delete: {}}
+        const rsync_flags: Dictionary = {a: {}}
+        if(!cached) 
+            rsync_flags['delete'] = {}
         if(rules.include) 
             rsync_flags['include-from'] = rules.include
         if(rules.exclude) 
