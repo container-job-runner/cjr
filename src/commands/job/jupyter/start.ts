@@ -3,6 +3,7 @@ import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { initX11 } from '../../../lib/functions/cli-functions'
 import { ServerCommand } from '../../../lib/commands/server-command'
 import { getJupyterUrl, runJupyterOnStartCommand, startJupyterInJob } from '../../../lib/functions/jupyter-functions'
+import { RemoteSshJobManager } from '../../../lib/job-managers/remote/remote-ssh-job-manager'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server inside a job.'
@@ -20,7 +21,6 @@ export default class Start extends ServerCommand {
     "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
     "server-port": flags.string({default: "auto", description: "default port for the jupyter server"}),
     "expose": flags.boolean({default: false}),
-    "tunnel": flags.boolean({default: false, description: "tunnel remote traffic through ssh"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "explicit": flags.boolean({default: false}),
@@ -78,7 +78,7 @@ export default class Start extends ServerCommand {
     if(!url_result.success)
       return printValidatedOutput(url_result)
 
-    if(flags['tunnel']) 
+    if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
         this.startTunnel(job_manager, {
             "port": jupyter_port.hostPort, 
         })

@@ -30,13 +30,13 @@ export abstract class ServerCommand extends JobCommand
 
     // functions for remote servers
 
-    getAccessIp(job_manager: JobManager, flags?: {tunnel?: boolean, resource?: string})
+    getAccessIp(job_manager: JobManager, flags?: {tunnel?: boolean, resource?: string, expose: boolean})
     {
         if(!flags?.resource)
             return this.localhost_ip
         
         if(job_manager instanceof RemoteSshJobManager) {
-            if(flags?.['tunnel'])
+            if(flags?.['tunnel'] || flags?.['expose'] != true)
                 return this.localhost_ip
             return this.resource_configuration.getResource(flags['resource'])?.address || '0.0.0.0'
         }
