@@ -45,7 +45,7 @@ export class SshShellCommand
     multiplex: boolean = true
     data_dir: string // directory where ssh master socket will be stored
     base_options: Required<SshShellOptions>  // multiplex and ssh options will inherit from these optioons
-    tags = {tunnel: 'tunnel_'} // tags used for multiplex master socket when creating tunnel
+    tags = {tunnel: 'tunnel-'} // tags used for multiplex master socket when creating tunnel
 
     constructor(explicit: boolean, silent: boolean, data_dir: string, base_options: Required<SshShellOptions> = {ssh: {}, multiplex: {}})
     {
@@ -217,13 +217,13 @@ export class SshShellCommand
     {
       const default_ip = '127.0.0.1'
       const multiplex_options = { 
-          "tag": options.multiplex?.tag || 'tunnel-' , 
+          "tag": options.multiplex?.tag || this.tags.tunnel, 
           "controlpersist": options.multiplex?.controlpersist || 600,
           "x11": options.multiplex?.x11 || false
      }
 
       if(!options.multiplex?.["reuse-connection"] || !this.multiplexAlive(multiplex_options)) {
-        if(!this.tunnelStop()) return false // -- stop any existing tunnel
+        if(!this.tunnelStop(multiplex_options)) return false // -- stop any existing tunnel
         if(!this.multiplexStart(multiplex_options)) return false
       }
       
@@ -240,9 +240,12 @@ export class SshShellCommand
       return this.multiplexExists(multiplex_options)
     }
 
-    tunnelStop() : boolean
+    tunnelStop(user_options:MultiplexOptions={}) : boolean
     {
-      const multiplex_options = {tag: this.tags.tunnel}
+      const multiplex_options = { 
+          ... {tag: this.tags.tunnel},
+          ... user_options
+      }
       return this.multiplexStop(multiplex_options)
     }
 
