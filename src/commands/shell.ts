@@ -27,6 +27,7 @@ export default class Shell extends JobCommand {
   async run()
   {
     const {flags} = this.parse(Shell)
+    this.overrideResourceFlagForDevCommand(flags)
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11({
             'interactive': this.settings.get('interactive'),
@@ -48,5 +49,5 @@ export default class Shell extends JobCommand {
     printValidatedOutput(job_data)
     printValidatedOutput(job)
   }
-
+  
 }

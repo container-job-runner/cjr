@@ -111,6 +111,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "job-ls-fields": 'id, stackName, command, status',
       'container-registry-auth': 'https://index.docker.io/v1/',
       'container-registry-user': '',
+      'enable-remote-dev': false,
       // container props
       "default-container-shell": "bash",
       "selinux": false,

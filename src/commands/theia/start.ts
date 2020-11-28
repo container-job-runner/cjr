@@ -37,6 +37,7 @@ export default class Start extends ServerCommand {
     const { args, flags } = this.parse(Start)
     this.augmentFlagsForJob(flags)
     this.augmentFlagsWithProjectRootArg(args, flags)
+    this.overrideResourceFlagForDevCommand(flags)
 
     // -- create stack for running theia -------------------------------------
     const create_stack = this.createStack(flags)

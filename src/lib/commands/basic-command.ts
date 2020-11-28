@@ -114,6 +114,12 @@ export abstract class BasicCommand extends Command
     })
   }
 
+  overrideResourceFlagForDevCommand(flags: {resource?: string}) // used for local development flags
+  {
+      if(this.settings.get('enable-remote-dev') != true)
+        flags['resource'] = 'localhost'
+  }
+
   // ===========================================================================
   // Stack Configuration Loading Functions
   // ===========================================================================
