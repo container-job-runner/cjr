@@ -249,4 +249,26 @@ export class SshShellCommand
       return this.multiplexStop(multiplex_options)
     }
 
+    tunnelRelease(options:SshTunnelOptions) : boolean
+    {
+        const default_ip = '127.0.0.1'
+        const multiplex_options = { 
+            "tag": options.multiplex?.tag || this.tags.tunnel, 
+            "controlpersist": options.multiplex?.controlpersist || 600,
+            "x11": options.multiplex?.x11 || false
+        }
+
+        if( ! this.multiplexAlive(multiplex_options))
+            return true
+        
+        const command = 'ssh'
+        const flags = {
+            O: {value: 'cancel', noequals: true},
+            L: {value: `${options.remotePort}:${options.localIP || default_ip}:${options.localPort}`, noequals: true},
+            S: {value: this.multiplexSocketPath(multiplex_options), noequals: true}
+        }
+        const args = [`${this.resource.username}@${this.resource.address}`]        
+        return this.shell.exec(command, flags, args, {stdio: 'ignore'}).success
+    }
+
 }
