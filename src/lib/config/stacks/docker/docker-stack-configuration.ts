@@ -353,6 +353,10 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     this.config.entrypoint = value
   }
 
+  removeEntrypoint() {
+      delete this.config.entrypoint
+  }
+
   setRsyncUploadSettings(value: {include: string, exclude: string}) {
     if(this.config?.files == undefined) this.config.files = {}
     if(this.config?.files.rsync == undefined) this.config.files.rsync = {}
