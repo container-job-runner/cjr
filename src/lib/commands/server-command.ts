@@ -59,4 +59,16 @@ export abstract class ServerCommand extends JobCommand
         })
     }
 
+    releaseTunnelPort(job_manager: JobManager, options: {port: number})
+    {
+        if(!(job_manager instanceof RemoteSshJobManager))
+            return
+        
+        job_manager.shell.tunnelRelease({
+            "localIP": this.localhost_ip,
+            "remotePort": options.port,
+            "localPort": options.port
+        })   
+    }
+
 }
