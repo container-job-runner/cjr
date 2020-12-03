@@ -54,7 +54,7 @@ export default class Start extends ServerCommand {
             'explicit': flags.explicit
         })
     // -- select port --------------------------------------------------------
-    const jupyter_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"])
+    const jupyter_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], 7001)
     // -- select lab or notebook ---------------------------------------------
     const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
     // -- start jupyter ------------------------------------------------------

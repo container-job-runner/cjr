@@ -55,7 +55,7 @@ export default class Start extends ServerCommand {
             'explicit': flags.explicit
         })
     // -- select port --------------------------------------------------------
-    const theia_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"])
+    const theia_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], 8009)
     // -- start theia ----------------------------------------------------------
     const theia_service = new TheiaService(job_manager)
     const start_request = theia_service.start(

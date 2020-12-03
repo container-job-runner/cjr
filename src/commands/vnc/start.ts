@@ -48,7 +48,7 @@ export default class Start extends ServerCommand {
     if(flags['override-entrypoint']) stack_configuration.setEntrypoint(['/bin/bash', '-c'])
     
     // -- select port --------------------------------------------------------
-    const vnc_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"])
+    const vnc_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], 9001)
     // -- start vnc ----------------------------------------------------------
     const vnc_service = new VNCService(job_manager, {resolution: this.settings.get('vnc-resolution')})
     const start_request = vnc_service.start(

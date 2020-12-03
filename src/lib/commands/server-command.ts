@@ -8,7 +8,7 @@ export abstract class ServerCommand extends JobCommand
 {
     readonly localhost_ip = 'localhost' // use localhost instead of 127.0.0.1 for theia webviews
     
-    defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean)
+    defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean, starting_port:number=7001)
     {
         const default_address = (expose) ? '0.0.0.0' : '127.0.0.1'
         const port = this.parsePortFlag([server_port_flag]).pop()
@@ -18,7 +18,7 @@ export abstract class ServerCommand extends JobCommand
             port.address = default_address
             return port
         }
-        const default_port = nextAvailablePort(drivers, 7001)
+        const default_port = nextAvailablePort(drivers, starting_port)
         return {"hostPort": default_port, "containerPort": default_port, "address": default_address}
     }
 
