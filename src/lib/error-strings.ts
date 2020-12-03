@@ -105,6 +105,9 @@ export const NoticeStrings = {
     },
     THEIA: {
         RUNNING: (id:string, project_root: string) => chalk`Theia is already running in project directory "{green ${project_root}}".`
+    },
+    VNC: {
+        RUNNING: (id:string, project_root: string) => chalk`vnc is already running in project directory "{green ${project_root}}".`
     }
 }
 

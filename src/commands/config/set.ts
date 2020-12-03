@@ -31,6 +31,9 @@ export default class Set extends BasicCommand {
       options: ["true", "false"],
       description: "if true, then the :Z option will be applied to all bind mounts."
     }),
+    "enable-remote-dev": flags.string({
+      description: 'enable the resource flag for development commands shell, jupyter, theia, and vnc.'
+    }),
     "stacks-dir": flags.string({
       description: "the default path to a folder that contains cjr stacks."
     }),
@@ -56,6 +59,12 @@ export default class Set extends BasicCommand {
     }),
     "on-server-start": flags.string({
       description: 'command that should be run after a Jupyter or Theia server starts.'
+    }),
+    "on-vnc-start": flags.string({
+      description: 'command that should be run after a vnc server starts.'
+    }),
+    "vnc-resolution": flags.string({
+        description: 'vnc default resolution'
     }),
     "job-default-run-mode": flags.string({
       options: ['sync', 'async'],
