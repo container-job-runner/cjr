@@ -38,8 +38,8 @@ type CLIJobFlags = {
     "stacks-dir": string,
     "working-directory": string
     "remove-on-exit"?: boolean
-    "autocopy"?:boolean
-    "no-autocopy"?:boolean
+    "copy"?:boolean
+    "no-copy"?:boolean
     "visible-stacks"?: Array<string>
 }
 
@@ -190,7 +190,7 @@ export abstract class JobCommand extends BasicCommand
     // -- copy back results ----------------------------------------------------
     const { job_manager } = job_data.value
     const job_id = job.value.id
-    if(this.shouldAutocopy(flags, job_manager, job_id))
+    if(this.shouldCopy(flags, job_manager, job_id))
       printValidatedOutput(
         job_manager.copy({
           "ids": [job_id],
@@ -201,7 +201,7 @@ export abstract class JobCommand extends BasicCommand
 
   }
 
-  shouldAutocopy(flags: CLIJobFlags, job_manager: JobManager, job_id: string)
+  shouldCopy(flags: CLIJobFlags, job_manager: JobManager, job_id: string)
   {
     // -- check flag status ----------------------------------------------------
     if(!flags["project-root"]) return false
@@ -213,8 +213,8 @@ export abstract class JobCommand extends BasicCommand
         })
     )
     if(!result.success) return false
-    if(flags["no-autocopy"]) return false
-    if(flags["autocopy"]) return true
+    if(flags["no-copy"]) return false
+    if(flags["copy"]) return true
     const synchronous = flags['sync'] || (!flags['async'] && (this.settings.get('job-default-run-mode') == 'sync'))
     if(synchronous && this.settings.get('autocopy-sync-job')) return true
     return false
