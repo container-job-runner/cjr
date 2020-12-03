@@ -150,8 +150,8 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
   protected addSpecialFlags(flags: Dictionary, run_object: DockerCreateOptions)
   {
     super.addSpecialFlags(flags, run_object)
-    if(run_object?.flags?.userns) { // used for consistant file permissions
-      flags["userns"] = run_object.flags.userns
+    if(run_object?.flags?.['podman-userns']) { // used for consistant file permissions
+      flags["userns"] = run_object.flags['podman-userns']
     }
     if(run_object?.flags?.["podman-security-opt"]) { // used for binding X11 directory
       flags["security-opt"] = run_object.flags["podman-security-opt"]

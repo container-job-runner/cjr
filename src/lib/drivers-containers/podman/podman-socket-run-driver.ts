@@ -16,8 +16,8 @@ export class PodmanSocketRunDriver extends DockerSocketRunDriver
   // {
   //   super.addApiCreateObjectMisc(configuration, create_object)
   //   // -- User Namespace -------------------------------------------------------
-  //   if(["auto","host","keep-id"].includes(configuration.config?.flags?.userns || "")) {
-  //     create_object.userns = {"nsmode": configuration.config?.flags?.userns}
+  //   if(["auto","host","keep-id"].includes(configuration.config?.flags?.['podman-userns'] || "")) {
+  //     create_object.userns = {"nsmode": configuration.config?.flags?.['podman-userns']}
   //   }
   //   // -- Security options -----------------------------------------------------
   //   if(run_object?.flags?.["security-opt"]) {
