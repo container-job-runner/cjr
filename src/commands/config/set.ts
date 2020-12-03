@@ -57,7 +57,7 @@ export default class Set extends BasicCommand {
       options: ['lab', 'notebook'],
       description: 'Determine if jupyter:start command should run Jupyter lab or Jupyter notebook.'
     }),
-    "on-server-start": flags.string({
+    "on-http-start": flags.string({
       description: 'command that should be run after a Jupyter or Theia server starts.'
     }),
     "on-vnc-start": flags.string({

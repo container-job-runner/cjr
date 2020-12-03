@@ -80,7 +80,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
 {
   let driver
   let socket
-  let on_server_start_cmd
+  let on_http_start_cmd
   let on_vnc_start_cmd
   switch(os.platform())
   {
@@ -88,13 +88,13 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
     case "win32":
       driver = "docker-cli"
       socket = "/var/run/docker.sock"
-      on_server_start_cmd = 'open $URL'
+      on_http_start_cmd = 'open $URL'
       on_vnc_start_cmd = 'open "vnc://$URL"'
       break
     default:
       driver = "podman-cli"
       socket = path.join(data_dir, subdirectories.data["podman-socket"], "podman.sock")
-      on_server_start_cmd = 'xdg-open $URL'
+      on_http_start_cmd = 'xdg-open $URL'
       on_vnc_start_cmd = 'xdg-open "vnc://$URL"'
   }
 
@@ -119,7 +119,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "default-container-shell": "bash",
       "selinux": false,
       "jupyter-interface": "lab",
-      "on-server-start": on_server_start_cmd,
+      "on-http-start": on_http_start_cmd,
       "vnc-resolution": "1920x1080",
       "on-vnc-start": on_vnc_start_cmd,
       "timeout-jupyter": "10",

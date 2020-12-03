@@ -103,7 +103,7 @@ export default class Start extends ServerCommand {
 
     // -- execute on start commend ---------------------------------------------
     const access_url = `${start_request.value.url}:${start_request.value.port}`
-    const onstart_cmd = this.settings.get('on-server-start');
+    const onstart_cmd = this.settings.get('on-http-start');
     if(flags['quiet']) // exit silently
         return
     else if(onstart_cmd) // open webapp

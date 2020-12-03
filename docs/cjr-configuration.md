@@ -50,8 +50,8 @@ Location of the podman or docker socket that should be used by the drivers. This
 ### Jupyter and Theia
 1. **jupyter-interface**: 'lab' | 'notebook'  
 Choose between Jupyter lab or Jupyter notebook.
-2. **on-server-start**: string  
-A command that should be run after a Jupyter or Theia server has started. When the command is run the environment variable $URL will contain the url of the server.
+2. **on-http-start**: string  
+A command that should be run after an http server (Jupyter or Theia) has started. When the command is run the environment variable $URL will contain the url of the server.
 For example, 'xdg-open $URL' can be used to open the server in the default browser.
 3. **timeout-jupyter**: number  
 The maximum number of seconds to wait for a Jupyter server to start.
