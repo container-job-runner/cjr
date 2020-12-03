@@ -2,6 +2,7 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { initX11 } from '../lib/functions/cli-functions'
 import { JobCommand } from '../lib/commands/job-command'
+import { LocalJobManager } from '../lib/job-managers/local/local-job-manager'
 
 export default class Shell extends JobCommand {
   static description = 'Start an interactive shell for development on localhost.'
@@ -48,6 +49,21 @@ export default class Shell extends JobCommand {
     )
     printValidatedOutput(job_data)
     printValidatedOutput(job)
+    // // -- enable autocopy for remote shell -------------------------------------
+    // // Note: requires changing line 44 to:  "remove-on-exit": (job_data.value.job_manager instanceof LocalJobManager)
+
+    // if(job.success && job_data.success && !(job_data.value.job_manager instanceof LocalJobManager))
+    // {
+    //     if(this.settings.get("autocopy-on-service-exit"))
+    //         printValidatedOutput(
+    //             job_data.value.job_manager.copy({
+    //                 "ids": [job.value.id],
+    //                 "mode": "update"
+    //             })
+    //         )
+    //     if(job_data.value.job_manager.state({ids: [job.value.id]}).value?.pop() != "running")
+    //         job_data.value.job_manager.container_drivers.runner.jobDelete([job.value.id])        
+    // }
   }
-  
+
 }
