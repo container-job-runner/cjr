@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
-import { stopTheia, stopAllTheias } from '../../lib/functions/theia-functions'
-import { ValidatedOutput } from '../../lib/validated-output'
-import { LocalJobManager } from '../../lib/job-managers/local/local-job-manager'
+import { TheiaService } from '../../lib/services/TheiaService'
+import { ServiceInfo } from '../../lib/services/abstract/AbstractService'
+import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 
 export default class Stop extends ServerCommand {
   static description = 'Stop a running Theia server.'
@@ -22,7 +22,7 @@ export default class Stop extends ServerCommand {
   async run()
   {
     const { args, flags } = this.parse(Stop)
-    this.augmentFlagsWithProjectSettings(flags, {"project-root": false})
+    this.augmentFlagsWithProjectSettings(flags, {"project-root": false, "resource": false})
     this.augmentFlagsWithProjectRootArg(args, flags)
     this.augmentFlagsWithHere(flags)
 
@@ -31,19 +31,21 @@ export default class Stop extends ServerCommand {
         quiet: flags['quiet'], 
         explicit: flags['explicit']
     })
-    let result:ValidatedOutput<undefined>;
-    if(flags['all'])
-      result = stopAllTheias(
-          job_manager, 
-          (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
+
+    const theia_service = new TheiaService(job_manager)
+    const theia_identifier = (flags['all']) ? undefined : {"project-root": flags['project-root']}
+    
+    // -- release any tunnel ports ---------------------------------------------
+    if( job_manager instanceof RemoteSshJobManager )
+    {
+        theia_service.list(theia_identifier).value.map( 
+            (si: ServiceInfo) => this.releaseTunnelPort(job_manager, {"port": si.port}) 
         )
-    else
-      result = stopTheia(
-        job_manager,
-        (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
-        {"project-root": flags['project-root']}
-      );
-    printValidatedOutput(result)
+    } 
+
+    printValidatedOutput(
+        theia_service.stop(theia_identifier)
+    )
   }
 
 }
