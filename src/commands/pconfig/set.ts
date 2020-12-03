@@ -7,10 +7,10 @@ import { loadProjectSettings } from '../../lib/functions/cli-functions'
 export default class Set extends ProjectSettingsCommand {
   static description = 'Overwrite one or more project settings.'
   static flags = {
-    "stack": flags.string({env: 'STACK', description: "default stack for project"}),
-    "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
+    "stack": flags.string({env: 'CJR_STACK', description: "default stack for project"}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT', description: "location where settings should be written"}),
     "project-root-auto": flags.boolean({}),
-    "resource": flags.string({env: 'RESOURCE', description: "default resource for project"}),
+    "resource": flags.string({env: 'CJR_RESOURCE', description: "default resource for project"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "quiet": flags.boolean({default: false, char: 'q'})

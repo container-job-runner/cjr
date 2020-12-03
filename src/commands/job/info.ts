@@ -8,7 +8,7 @@ export default class Info extends BasicCommand {
   static description = 'Get detailed information on the hidden properties of a job.'
   static args = [{name: 'id'}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),

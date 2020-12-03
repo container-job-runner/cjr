@@ -7,10 +7,10 @@ export class Start extends JobCommand {
   static description = 'Start a job that runs a shell command.'
   static args = [{name: 'command', required: true}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
-    "stack": flags.string({env: 'STACK'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
+    "stack": flags.string({env: 'CJR_STACK'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
-    "project-root": flags.string({env: 'PROJECTROOT'}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT'}),
     "here": flags.boolean({default: false, exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "explicit": flags.boolean({default: false}),

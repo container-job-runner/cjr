@@ -8,7 +8,7 @@ export default class Remove extends ProjectSettingsCommand {
   static description = 'Removes one element of an array configuration property.'
   static args = []
   static flags = {
-    "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT', description: "location where settings should be written"}),
     "default-profile": flags.string(),
     "stack": flags.string({ multiple: true, dependsOn: ['default-profile'], description: "profile will only activate for stacks matching this name. If this flag is not supplied, profile will apply to all stacks" }),
     "visible-stack": flags.string({ multiple: true }),

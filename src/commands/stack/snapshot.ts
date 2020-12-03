@@ -10,8 +10,8 @@ export default class Snapshot extends JobCommand {
   static description = 'Start an interactive shell for development on localhost.'
   static args = [{name: 'stack'}]
   static flags = {
-    "stack": flags.string({env: 'STACK'}),
-    "project-root": flags.string({env: 'PROJECTROOT'}),
+    "stack": flags.string({env: 'CJR_STACK'}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),

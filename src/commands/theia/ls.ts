@@ -9,7 +9,7 @@ export default class List extends ServerCommand {
   static description = 'List running Theia servers.'
   static args = []
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
     "explicit": flags.boolean({default: false}),
     "json": flags.boolean({default: false})
   }

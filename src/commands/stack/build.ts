@@ -7,14 +7,14 @@ export default class Build extends BasicCommand {
   static description = 'Manually build an image for a stack.'
   static args = [{name: 'stack'}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
-    "stack": flags.string({env: 'STACK'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
+    "stack": flags.string({env: 'CJR_STACK'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "explicit": flags.boolean({default: false}),
     "no-cache": flags.boolean({default: false}),
     "pull": flags.boolean({default: false}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "project-root": flags.string({env: 'PROJECTROOT'}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "quiet": flags.boolean({default: false, char: 'q'})
   }

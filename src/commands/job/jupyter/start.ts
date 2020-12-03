@@ -9,10 +9,10 @@ export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server inside a job.'
   static args = [{name: 'id', default: ""}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
-    "project-root": flags.string({env: 'PROJECTROOT'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT'}),
     "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
-    "stack": flags.string({env: 'STACK'}),
+    "stack": flags.string({env: 'CJR_STACK'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),

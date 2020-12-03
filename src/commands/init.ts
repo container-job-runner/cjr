@@ -15,9 +15,9 @@ export default class Init extends ProjectSettingsCommand {
   static args = []
   static flags = {
     "template": flags.string({default: 'default', options: ['empty', 'default', 'project-stacks']}),
-    "stack": flags.string({env: 'STACK', description: "default stack for project"}),
+    "stack": flags.string({env: 'CJR_STACK', description: "default stack for project"}),
     "project-root-auto": flags.boolean({}),
-    "resource": flags.string({env: 'RESOURCE', description: "default resource for project"}),
+    "resource": flags.string({env: 'CJR_RESOURCE', description: "default resource for project"}),
     "stacks-dir": flags.string({description: "override default stack directory for project"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified, only these stacks will be visible when running cjr from within this project directory."}),
   }

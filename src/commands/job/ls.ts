@@ -10,7 +10,7 @@ export default class List extends BasicCommand {
   static description = 'List all running and completed jobs.'
   static args = []
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
     "json": flags.boolean({default: false}),
     "all": flags.boolean({default: false, description: "if this flag is added then list shows jobs from all stacks, regardless of whether stack flag is set"}),
     "running": flags.boolean({default: false, exclusive: ['excited']}),

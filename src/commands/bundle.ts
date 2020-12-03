@@ -16,8 +16,8 @@ export default class Bundle extends BasicCommand {
   static description = 'Bundle a stack or project into a zip or tar for sharing.'
   static args = [{name: 'bundle-path', required: true}]
   static flags = {
-    "stack": flags.string({env: 'STACK'}),
-    "project-root": flags.string({env: 'PROJECTROOT'}),
+    "stack": flags.string({env: 'CJR_STACK'}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "explicit": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false}),

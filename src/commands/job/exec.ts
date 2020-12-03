@@ -7,8 +7,8 @@ export default class Exec extends JobCommand {
   static description = 'Start a new job using files from a completed or currently running job.'
   static args = [{name: 'id', required: true}, {name: 'command', required: true}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
-    "stack": flags.string({env: 'STACK'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
+    "stack": flags.string({env: 'CJR_STACK'}),
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "async": flags.boolean({exclusive: ['sync']}),

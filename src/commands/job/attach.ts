@@ -6,7 +6,7 @@ export default class Attach extends BasicCommand {
   static description = 'Attach to a running job.'
   static args = [{name: 'id', required: false}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),

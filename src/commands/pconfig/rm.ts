@@ -10,10 +10,10 @@ export default class Delete extends ProjectSettingsCommand {
   static description = 'Remove one or more project settings.'
   static args = []
   static flags = {
-    "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT', description: "location where settings should be written"}),
     "stack": flags.boolean({description: "remove default stack for project"}),
     "project-root-auto": flags.boolean({description: "remove auto load for project"}),
-    "resource": flags.boolean({env: 'RESOURCE', description: "remove default resource for project"}),
+    "resource": flags.boolean({env: 'CJR_RESOURCE', description: "remove default resource for project"}),
     "default-profiles": flags.boolean({description: "remove all additional overriding configuration files for project stack"}),
     "stacks-dir": flags.boolean({description: "remove any overriding default stack directory for project"}),
     "visible-stacks": flags.boolean({description: "if specified only these stacks will be affected by this command"}),

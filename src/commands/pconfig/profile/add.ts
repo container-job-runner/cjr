@@ -5,7 +5,7 @@ export default class Set extends ProjectSettingsCommand {
   static description = 'Copies a configuration file into the current project profile directory.'
   static args = [{name: "path", require: true}]
   static flags = {
-    "project-root": flags.string({ env: 'PROJECTROOT'})
+    "project-root": flags.string({ env: 'CJR_PROJECTROOT'})
   }
   static strict = true;
 

@@ -9,7 +9,7 @@ export default class RMI extends BasicCommand {
   static description = 'Delete an image one or more stacks.'
   static args = [{name:'stack'}]
   static flags = {
-    "stack": flags.string({env: 'STACK', multiple: true}),
+    "stack": flags.string({env: 'CJR_STACK', multiple: true}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "explicit": flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),

@@ -7,7 +7,7 @@ export default class ls extends ProjectSettingsCommand {
   static description = 'List all project settings.'
   static args = []
   static flags = {
-    "project-root": flags.string({env: 'PROJECTROOT', description: "location where settings should be written"}),
+    "project-root": flags.string({env: 'CJR_PROJECTROOT', description: "location where settings should be written"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
   }
   static strict = true;

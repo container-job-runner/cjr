@@ -10,7 +10,7 @@ export default class Ssh extends ResourceCommand {
   static description = 'ssh into a remote resource.'
   static args   = [{name: 'resource'}]
   static flags = {
-    "resource": flags.string({env: 'RESOURCE'}),
+    "resource": flags.string({env: 'CJR_RESOURCE'}),
     "x11": flags.boolean({default: false, char: 'X'}),
     "explicit": flags.boolean({default: false})
   }
