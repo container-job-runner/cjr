@@ -32,8 +32,7 @@ export default class Stop extends ServerCommand {
         explicit: flags['explicit']
     })
         
-    const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
-    const jupyter_service = new JupyterService(job_manager, {"interface": mode})
+    const jupyter_service = new JupyterService(job_manager, {"interface" : this.settings.get('jupyter-interface')})
     const jupyter_identifier = (flags['all']) ? undefined : {"project-root": flags['project-root']}
     
     // -- release any tunnel ports ---------------------------------------------

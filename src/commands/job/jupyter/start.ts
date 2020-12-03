@@ -52,8 +52,6 @@ export default class Start extends ServerCommand {
         })
     // -- select port --------------------------------------------------------
     const jupyter_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"])
-    // -- select lab or notebook ---------------------------------------------
-    const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
     // -- start jupyter ------------------------------------------------------
     const result = startJupyterInJob(
       job_manager,
@@ -61,7 +59,7 @@ export default class Start extends ServerCommand {
         "stack_configuration": stack_configuration,
         "args": argv.slice(1),
         "reuse-image" : this.extractReuseImage(flags),
-        "mode": mode,
+        "mode": (this.settings.get('jupyter-interface') == "notebook") ? "notebook" : "lab",
         "job-id": job_id,
         "port": jupyter_port,
         "x11": flags['x11'],

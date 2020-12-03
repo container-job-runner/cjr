@@ -55,10 +55,8 @@ export default class Start extends ServerCommand {
         })
     // -- select port --------------------------------------------------------
     const jupyter_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], 7001)
-    // -- select lab or notebook ---------------------------------------------
-    const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
     // -- start jupyter ------------------------------------------------------
-    const jupyter_service = new JupyterService(job_manager, {"interface" : mode})
+    const jupyter_service = new JupyterService(job_manager, {"interface" : this.settings.get('jupyter-interface')})
     const start_request = jupyter_service.start(
         { "project-root": flags["project-root"] },
         {

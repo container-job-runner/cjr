@@ -53,9 +53,9 @@ export default class Set extends BasicCommand {
     "default-container-shell": flags.string({
       description: 'default shell that should be started for shell and job:shell commands (e.g. sh, bash, zsh).'
     }),
-    "jupyter-command": flags.string({
-      options: ['jupyter lab', 'jupyter notebook'],
-      description: 'command that should be run to start Jupyter (e.g. "jupyter lab" or "jupyter notebook").'
+    "jupyter-interface": flags.string({
+      options: ['lab', 'notebook'],
+      description: 'Determine if jupyter:start command should run Jupyter lab or Jupyter notebook.'
     }),
     "on-server-start": flags.string({
       description: 'command that should be run after a Jupyter or Theia server starts.'

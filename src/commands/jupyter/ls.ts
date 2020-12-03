@@ -20,8 +20,7 @@ export default class List extends ServerCommand {
     const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"resource": false})
     const job_manager = this.newJobManager(flags['resource'] || 'localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
-    const jupyter_interface = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
-    const jupyter_service = new JupyterService(job_manager, {"interface" : jupyter_interface})
+    const jupyter_service = new JupyterService(job_manager, {"interface" : this.settings.get('jupyter-interface')})
     
     const list_request = jupyter_service.list()
     if( ! list_request.success )
