@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
-import { stopJupyter, stopAllJupyters } from '../../lib/functions/jupyter-functions'
-import { ValidatedOutput } from '../../lib/validated-output'
-import { LocalJobManager } from '../../lib/job-managers/local/local-job-manager'
+import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
+import { ServiceInfo } from '../../lib/services/abstract/AbstractService'
+import { JupyterService } from '../../lib/services/JupyterService'
 
 export default class Stop extends ServerCommand {
   static description = 'Stop a running Jupyter server.'
@@ -22,7 +22,7 @@ export default class Stop extends ServerCommand {
   async run()
   {
     const { args, flags } = this.parse(Stop)
-    this.augmentFlagsWithProjectSettings(flags, {"project-root": false})
+    this.augmentFlagsWithProjectSettings(flags, {"project-root": false, "resource": false})
     this.augmentFlagsWithProjectRootArg(args, flags)
     this.augmentFlagsWithHere(flags)
 
@@ -31,20 +31,22 @@ export default class Stop extends ServerCommand {
         quiet: flags['quiet'], 
         explicit: flags['explicit']
     })
-    let result:ValidatedOutput<undefined>;
-    if(flags['all'])
-      result = stopAllJupyters(
-          job_manager, 
-          (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
-          "in-project"
+        
+    const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
+    const jupyter_service = new JupyterService(job_manager, {"interface": mode})
+    const jupyter_identifier = (flags['all']) ? undefined : {"project-root": flags['project-root']}
+    
+    // -- release any tunnel ports ---------------------------------------------
+    if( job_manager instanceof RemoteSshJobManager )
+    {
+        jupyter_service.list(jupyter_identifier).value.map( 
+            (si: ServiceInfo) => this.releaseTunnelPort(job_manager, {"port": si.port}) 
         )
-    else
-      result = stopJupyter(
-        job_manager, 
-        (job_manager instanceof LocalJobManager) ? false : this.settings.get("autocopy-on-service-exit"),
-        { "project-root": flags['project-root'] }
-      );
-    printValidatedOutput(result)
+    } 
+
+    printValidatedOutput(
+        jupyter_service.stop(jupyter_identifier)
+    )
   }
 
 }

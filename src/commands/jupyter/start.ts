@@ -1,9 +1,12 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, waitUntilTrue } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
-import { startJupyterInProject, getJupyterUrl, runJupyterOnStartCommand } from '../../lib/functions/jupyter-functions'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
+import { JupyterService } from '../../lib/services/JupyterService'
+import { ValidatedOutput } from '../../lib/validated-output'
+import { NoticeStrings } from '../../lib/error-strings'
+import { ShellCommand } from '../../lib/shell-command'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Jupyter server.'
@@ -38,12 +41,13 @@ export default class Start extends ServerCommand {
     this.augmentFlagsWithProjectRootArg(args, flags)
     this.overrideResourceFlagForDevCommand(flags)
 
-    // -- create stack for running jupyter -----------------------------------
+    // -- create stack for running vnc ---------------------------------------
     const create_stack = this.createStack(flags)
     if(!create_stack.success)
-      return printValidatedOutput(create_stack)
-    const {stack_configuration, job_manager} = create_stack.value
-    // -- check x11 user settings --------------------------------------------
+        return printValidatedOutput(create_stack)
+    const {stack_configuration, job_manager } = create_stack.value
+    if(flags['override-entrypoint']) stack_configuration.setEntrypoint(['/bin/bash', '-c'])
+        // -- check x11 user settings --------------------------------------------
     if(flags['x11']) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),
@@ -54,42 +58,60 @@ export default class Start extends ServerCommand {
     // -- select lab or notebook ---------------------------------------------
     const mode = (this.settings.get('jupyter-command') == "jupyter lab") ? "lab" : "notebook"
     // -- start jupyter ------------------------------------------------------
-    const result = startJupyterInProject(
-      job_manager,
-      {
-        "stack_configuration": stack_configuration,
-        "args": [],
-        "reuse-image" : this.extractReuseImage(flags),
-        "mode": mode,
-        "project-root": flags["project-root"],
-        "port": jupyter_port,
-        "x11": flags['x11'],
-        "override-entrypoint": flags['override-entrypoint'],
-        "access-ip": this.getAccessIp(job_manager)
-      }
+    const jupyter_service = new JupyterService(job_manager, {"interface" : mode})
+    const start_request = jupyter_service.start(
+        { "project-root": flags["project-root"] },
+        {
+            "stack_configuration": stack_configuration,
+            "project-root": flags["project-root"],
+            "reuse-image" : this.extractReuseImage(flags),
+            "port": jupyter_port,
+            "url": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
+            "x11": flags['x11']
+        }
     )
-    printValidatedOutput(result)
-    if(!result.success) return
+    
+    if( ! start_request.success ) 
+        return printValidatedOutput(start_request)
+    
+    // notify user if vnc was already running
+    if( ! start_request.value.isnew )
+    {
+        printValidatedOutput(
+            new ValidatedOutput(true, undefined)
+            .pushNotice(NoticeStrings.JUPYTER.RUNNING(
+                start_request.value.id, 
+                {"project-root": start_request.value["project-root"] || ""}
+            ))
+        )
+    }
+    else // wait for new server to start
+    {
+        await waitUntilTrue(
+            () => jupyter_service.ready({"project-root": flags["project-root"]}),
+            3000,
+            5
+        )
+    }
 
-    const timeout = (result.value.isnew) ? (Math.floor(parseFloat(this.settings.get('timeout-jupyter')) * 1000) || 10000) : 0
-    const max_tries = (result.value.isnew) ? 5 : 1
-    const url_result = await getJupyterUrl(job_manager, {"project-root": flags["project-root"]}, max_tries, Math.floor(timeout / max_tries))
-    if(!url_result.success)
-      return printValidatedOutput(url_result)
-
+    // -- start tunnel ---------------------------------------------------------
     if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
         this.startTunnel(job_manager, {
-            "port": jupyter_port.hostPort, 
+            "port": start_request.value.port, 
         })
 
+    // -- execute on start commend ---------------------------------------------
+    const access_url = `${start_request.value.url}:${start_request.value.port}`
     const onstart_cmd = this.settings.get('on-server-start');
     if(flags['quiet']) // exit silently
-      return    
+        return
     else if(onstart_cmd) // open webapp
-      runJupyterOnStartCommand(url_result.value, onstart_cmd, flags.explicit)
-    else // only print url
-      console.log(url_result.value)
-    
+        printValidatedOutput(
+            new ShellCommand(flags['explicit'], flags['quiet'])
+            .execAsync(onstart_cmd, {}, [], {env: { ... process.env, ...{URL: access_url, SERVER: "jupyter"}}})
+        )   
+    else // print server url
+        console.log(access_url)
   }
 
 }
