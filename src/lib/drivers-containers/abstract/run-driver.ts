@@ -166,3 +166,10 @@ export function firstJob(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedO
   return new ValidatedOutput(true, job_info.value[0])
 }
 
+export function firstJobAsArray(job_info: ValidatedOutput<Array<JobInfo>>) : ValidatedOutput<JobInfo[]>
+{
+  const failure_output:JobInfo[] = [{id: "", image: "", names: [], command: "", status: "", state: "dead", stack: "", labels: {}, ports: []}]
+  if(job_info.value.length < 1)
+    return new ValidatedOutput(false, failure_output)
+  return new ValidatedOutput(job_info.success, [job_info.value[0]])
+}
