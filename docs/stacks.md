@@ -237,7 +237,6 @@ Flags contains special options for a stack. Some flags will only be picked up by
 **Docker Specific**
 
 1. *docker-chown-file-volume* (string) if this flag is set to "host-user", then job file volumes will be chowned to the id of the host user (i.e. `id -u`). If this value is set to a numerical value such as "20" then the job file volumes will be chowned to user 20. This flag should be used for all images that run with non root users.
-2. *chown-file-volume* (string) **DEPRICATED** equivalent to docker-chown-file-volume. Will be removed in future version of cjr.
 
 **Podman Specific**
 

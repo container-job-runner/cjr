@@ -268,7 +268,7 @@ export class LocalJobManager extends GenericJobManager
     
     // docker volume chown (allows nonroot container users to access volumes, since volumes always owned by root https://github.com/moby/moby/issues/2259)
     const using_docker = (this.container_drivers.runner instanceof DockerCliRunDriver) || (this.container_drivers.runner instanceof DockerSocketRunDriver)
-    const docker_chown_file_volume = stack_configuration.getFlag('docker-chown-file-volume') || stack_configuration.getFlag('chown-file-volume'); // keep old flag for backwards compatability, but remove in 0.5.0
+    const docker_chown_file_volume = stack_configuration.getFlag('docker-chown-file-volume')
     if( using_docker && docker_chown_file_volume )
         chown_id = docker_chown_file_volume
     
