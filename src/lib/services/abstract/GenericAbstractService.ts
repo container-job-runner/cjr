@@ -6,6 +6,7 @@ import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { JobInfo, jobIds, firstJobAsArray } from '../../drivers-containers/abstract/run-driver';
 import { JSTools } from '../../js-tools';
 import { LocalJobManager } from '../../job-managers/local/local-job-manager';
+import chalk = require('chalk');
 
 export abstract class GenericAbstractService extends AbstractService
 {
@@ -17,6 +18,15 @@ export abstract class GenericAbstractService extends AbstractService
     protected SERVICE_LABELS = {
         "port": "service-public-port",
         "url": "service-access-url"
+    }
+
+    protected ERRORS = {
+        NOT_RUNNING: (identifier?:ServiceIdentifier) => {
+            if(identifier?.['project-root'])
+                return chalk`${this.SERVICE_JOB_PREFIX} is not running in project directory "{green ${identifier['project-root']}}".`;
+            else
+                return chalk`${this.SERVICE_JOB_PREFIX} is not running.`;
+        },
     }
 
     protected identifierToJobName(identifier: ServiceIdentifier) : string 
@@ -98,7 +108,7 @@ export abstract class GenericAbstractService extends AbstractService
         result.absorb(job_info_request)
 
         if(!result.success)
-            return result
+            return result.pushError(this.ERRORS.NOT_RUNNING(identifier))
         
         if(copy)
             result.absorb(
