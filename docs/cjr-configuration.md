@@ -58,6 +58,9 @@ The maximum number of seconds to wait for a Jupyter server to start.
 4. **timeout-theia**: number  
 The number of seconds to wait for a Theia server to start.
 
+### Vnc
+1. **on-vnc-start**: command that should be run after vnc starts. the environment variable $URL will contain the url of the server.
+2. **vnc-resolution**: resolution for vnc. Value should be a string of the form NUMBERxNUMBER (for example "1920x1080"),
 
 ### Snapshots
 1. **container-registry-auth**: string  
