@@ -152,3 +152,15 @@ export function printOutputHeader(header: string, line_width:number = 80)
 {
   console.log(chalk`-- {bold ${header}} ${'-'.repeat(Math.max(0, line_width - header.length - 4))}`)
 }
+
+// function can send repeated requests if the first one fails
+export async function waitUntilTrue(status: () => ValidatedOutput<boolean>, timeout:number = 2000, max_tries:number = 5) : Promise<ValidatedOutput<boolean>>
+{
+  let result: ValidatedOutput<boolean>
+  for(var i = 0; i < max_tries; i ++) {
+    if(timeout > 0) await JSTools.sleep(timeout)
+    result = status()
+    if(result.success && result.value) return result
+  }
+  return new ValidatedOutput(false, false);
+}
