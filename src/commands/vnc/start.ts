@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput, waitUntilTrue } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, waitUntilSuccess } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 import { VNCService } from '../../lib/services/VNCService'
@@ -58,7 +58,7 @@ export default class Start extends ServerCommand {
             "project-root": flags["project-root"],
             "reuse-image" : this.extractReuseImage(flags),
             "port": vnc_port,
-            "url": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
+            "ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
             "x11": flags['x11']
         }
     )
@@ -79,7 +79,7 @@ export default class Start extends ServerCommand {
     }
     else // wait for new server to start
     {
-        await waitUntilTrue(
+        await waitUntilSuccess(
             () => vnc_service.ready({"project-root": flags["project-root"]}),
             3000,
             5
@@ -93,7 +93,7 @@ export default class Start extends ServerCommand {
         })
 
     // -- execute on start commend ---------------------------------------------
-    const access_url = `${start_request.value.url}:${start_request.value.port}`
+    const access_url = `vnc://${start_request.value.ip}:${start_request.value.port}`
     const onstart_cmd = this.settings.get('on-vnc-start') 
     if(flags['quiet']) // exit silently
         return

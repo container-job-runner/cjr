@@ -88,14 +88,14 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
     case "win32":
       driver = "docker-cli"
       socket = "/var/run/docker.sock"
-      on_http_start_cmd = 'open $URL'
-      on_vnc_start_cmd = 'open "vnc://$URL"'
+      on_http_start_cmd = 'open "$URL"'
+      on_vnc_start_cmd = 'open "$URL"'
       break
     default:
       driver = "podman-cli"
       socket = path.join(data_dir, subdirectories.data["podman-socket"], "podman.sock")
-      on_http_start_cmd = 'xdg-open $URL'
-      on_vnc_start_cmd = 'xdg-open "vnc://$URL"'
+      on_http_start_cmd = 'xdg-open "$URL"'
+      on_vnc_start_cmd = 'xdg-open "$URL"'
   }
 
   return {

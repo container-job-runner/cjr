@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput, waitUntilTrue } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, waitUntilSuccess } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
@@ -64,7 +64,7 @@ export default class Start extends ServerCommand {
             "project-root": flags["project-root"],
             "reuse-image" : this.extractReuseImage(flags),
             "port": jupyter_port,
-            "url": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
+            "ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
             "x11": flags['x11']
         }
     )
@@ -73,23 +73,28 @@ export default class Start extends ServerCommand {
         return printValidatedOutput(start_request)
     
     // notify user if vnc was already running
+    const identifier = {"project-root": start_request.value["project-root"] || ""}
+    let token: string
     if( ! start_request.value.isnew )
     {
+        
         printValidatedOutput(
             new ValidatedOutput(true, undefined)
             .pushNotice(NoticeStrings.JUPYTER.RUNNING(
                 start_request.value.id, 
-                {"project-root": start_request.value["project-root"] || ""}
+                identifier
             ))
         )
+        token = jupyter_service.ready(identifier).value.token
     }
     else // wait for new server to start
     {
-        await waitUntilTrue(
+        const result = await waitUntilSuccess(
             () => jupyter_service.ready({"project-root": flags["project-root"]}),
             3000,
             5
         )
+        token = result.value["token"]
     }
 
     // -- start tunnel ---------------------------------------------------------
@@ -99,7 +104,7 @@ export default class Start extends ServerCommand {
         })
 
     // -- execute on start commend ---------------------------------------------
-    const access_url = `${start_request.value.url}:${start_request.value.port}`
+    const access_url = `http://${start_request.value.ip}:${start_request.value.port}?token=${token}`
     const onstart_cmd = this.settings.get('on-http-start');
     if(flags['quiet']) // exit silently
         return

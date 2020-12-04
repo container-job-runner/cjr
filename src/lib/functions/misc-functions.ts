@@ -154,13 +154,13 @@ export function printOutputHeader(header: string, line_width:number = 80)
 }
 
 // function can send repeated requests if the first one fails
-export async function waitUntilTrue(status: () => ValidatedOutput<boolean>, timeout:number = 2000, max_tries:number = 5) : Promise<ValidatedOutput<boolean>>
+export async function waitUntilSuccess<T>(status: () => ValidatedOutput<T>, timeout:number = 2000, max_tries:number = 5) : Promise<ValidatedOutput<T>>
 {
-  let result: ValidatedOutput<boolean>
-  for(var i = 0; i < max_tries; i ++) {
+  let result: ValidatedOutput<any>|undefined
+  for(var i = 0; i < Math.max(1, max_tries); i ++) {
     if(timeout > 0) await JSTools.sleep(timeout)
     result = status()
-    if(result.success && result.value) return result
+    if(result.success) return result
   }
-  return new ValidatedOutput(false, false);
+  return result || status();
 }

@@ -17,7 +17,7 @@ export abstract class GenericAbstractService extends AbstractService
 
     protected SERVICE_LABELS = {
         "port": "service-public-port",
-        "url": "service-access-url"
+        "ip": "service-access-ip"
     }
 
     protected ERRORS = {
@@ -59,7 +59,7 @@ export abstract class GenericAbstractService extends AbstractService
         return new ValidatedOutput(true, {
                 "id": job.value.id,
                 "port": options.port.hostPort,
-                "url": options["url"],
+                "ip": options["ip"],
                 "project-root": identifier["project-root"],
                 "isnew": true
             }).absorb(job)
@@ -94,7 +94,7 @@ export abstract class GenericAbstractService extends AbstractService
     {
         job_configuration.addLabel(constants.label_strings.job.name, this.identifierToJobName(identifier))
         job_configuration.addLabel(this.SERVICE_LABELS["port"], `${options.port.hostPort}`);
-        job_configuration.addLabel(this.SERVICE_LABELS["url"], `${options.url}`);
+        job_configuration.addLabel(this.SERVICE_LABELS["ip"], `${options.ip}`);
         return job_configuration
     }
     
@@ -138,7 +138,7 @@ export abstract class GenericAbstractService extends AbstractService
         return {
             "id": job_info.id,
             "port": parseInt(job_info.labels[this.SERVICE_LABELS['port']]),
-            "url": job_info.labels[this.SERVICE_LABELS["url"]],
+            "ip": job_info.labels[this.SERVICE_LABELS["ip"]],
             "project-root": job_info.labels[constants.label_strings.job["project-root"]],
             "isnew": false
         }
@@ -155,11 +155,10 @@ export abstract class GenericAbstractService extends AbstractService
         return (identifier == undefined) ? job_info_request : firstJobAsArray(job_info_request)
     }
 
-    ready(identifier: ServiceIdentifier): ValidatedOutput<boolean>
+    ready(identifier: ServiceIdentifier): ValidatedOutput<{output:string}>
     {
-        const failure = new ValidatedOutput(false, false);
-        const success = new ValidatedOutput(true, true);
-
+        const failure = new ValidatedOutput(false, {output: ""});
+        
         // -- get job id -------------------------------------------------------
         const job_info_request = this.getJobInfo(identifier)
         const job_info = job_info_request.value.pop()
@@ -174,7 +173,7 @@ export abstract class GenericAbstractService extends AbstractService
         // -- validate output --------------------------------------------------
         const output = exec_request.value.output
         if(new RegExp(this.READY_CONFIG["regex-string"]).test(output))
-            return success
+            return new ValidatedOutput(true, {"output": output});
 
         return failure
     }

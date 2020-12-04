@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput, waitUntilTrue } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, waitUntilSuccess } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
@@ -7,6 +7,8 @@ import { TheiaService } from '../../lib/services/TheiaService'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { ShellCommand } from '../../lib/shell-command'
 import { NoticeStrings } from '../../lib/error-strings'
+import { URL } from 'url'
+import { accessSync } from 'fs-extra'
 
 export default class Start extends ServerCommand {
   static description = 'Start a Theia server.'
@@ -65,7 +67,7 @@ export default class Start extends ServerCommand {
             "project-root": flags["project-root"],
             "reuse-image" : this.extractReuseImage(flags),
             "port": theia_port,
-            "url": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
+            "ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}), // change url to ip in service
             "x11": flags['x11']
         }
     )
@@ -88,7 +90,7 @@ export default class Start extends ServerCommand {
     {
         const timeout = Math.floor(parseFloat(this.settings.get('timeout-theia')))
         if(!isNaN(timeout) && timeout > 0) theia_service.READY_CONFIG.command = ['sleep', `${timeout}`]        
-        await waitUntilTrue(
+        await waitUntilSuccess(
             () => theia_service.ready({"project-root": flags["project-root"]}),
             3000,
             5
@@ -102,7 +104,7 @@ export default class Start extends ServerCommand {
         })
 
     // -- execute on start commend ---------------------------------------------
-    const access_url = `${start_request.value.url}:${start_request.value.port}`
+    const access_url = `http://${start_request.value.ip}:${start_request.value.port}`
     const onstart_cmd = this.settings.get('on-http-start');
     if(flags['quiet']) // exit silently
         return
