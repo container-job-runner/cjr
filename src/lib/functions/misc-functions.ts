@@ -3,6 +3,7 @@ import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings } from '../error-strings'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
+import { URL } from 'url'
 
 export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary) : ValidatedOutput<undefined>
 {
@@ -163,4 +164,31 @@ export async function waitUntilSuccess<T>(status: () => ValidatedOutput<T>, time
     if(result.success) return result
   }
   return result || status();
+}
+
+// create default environment for url variables that are exported by service commands
+export function urlEnvironmentObject(url_str: string, additional_vars: {[key:string]: string} = {}, use_process_env:boolean = true) : {[key:string]: string}
+{
+    let href_env: {[key:string]: string} = {"URL": url_str}
+    try {
+        const url = new URL(url_str)
+        return {
+            "URL": url_str,
+            "URL_HREF": url.href,
+            "URL_HOSTNAME": url.hostname,
+            "URL_PORT": url.port,
+            "URL_ORIGIN": url.origin,
+            "URL_PATHNAME": url.pathname,
+            "URL_SEARCH": url.search
+        }        
+    } catch {}
+
+    const process_env = (use_process_env) ? process.env : {}
+
+    return {
+        ... (process.env as {[key:string]: string}),
+        ... href_env,
+        ... additional_vars
+    }
+
 }

@@ -1,5 +1,5 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput, waitUntilSuccess } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, waitUntilSuccess, urlEnvironmentObject } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
@@ -111,7 +111,9 @@ export default class Start extends ServerCommand {
     else if(onstart_cmd) // open webapp
         printValidatedOutput(
             new ShellCommand(flags['explicit'], flags['quiet'])
-            .execAsync(onstart_cmd, {}, [], {env: { ... process.env, ...{URL: access_url, SERVER: "theia"}}})
+            .execAsync(onstart_cmd, {}, [], {
+                env: urlEnvironmentObject(access_url, { SERVER: "theia" })
+            })
         )   
     else // print server url
         console.log(access_url)
