@@ -172,7 +172,7 @@ export function urlEnvironmentObject(url_str: string, additional_vars: {[key:str
     let href_env: {[key:string]: string} = {"URL": url_str}
     try {
         const url = new URL(url_str)
-        return {
+        href_env = {
             "URL": url_str,
             "URL_HREF": url.href,
             "URL_HOSTNAME": url.hostname,
@@ -182,8 +182,6 @@ export function urlEnvironmentObject(url_str: string, additional_vars: {[key:str
             "URL_SEARCH": url.search
         }        
     } catch {}
-
-    const process_env = (use_process_env) ? process.env : {}
 
     return {
         ... (process.env as {[key:string]: string}),
