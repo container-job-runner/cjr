@@ -36,7 +36,7 @@ export default class Build extends BasicCommand {
         "stacks-dir": flags["stacks-dir"],
         },
         job_manager.configurations,
-        new ShellCommand(flags.explicit, flags.quiet)
+        job_manager.shell
       )
       if(!init_stack.success)
         return printValidatedOutput(init_stack)
