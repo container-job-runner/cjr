@@ -156,7 +156,10 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     if(run_object?.flags?.["podman-security-opt"]) { // used for binding X11 directory
       flags["security-opt"] = run_object.flags["podman-security-opt"]
     }
-    return flags
+    if(run_object?.flags?.['podman-privileged'] == "true") // specific privilaged only for podman
+    {
+        flags["privileged"] = {}
+    }
   }
 
   protected addEntrypointFlags(flags: Dictionary, run_object: DockerCreateOptions)

@@ -437,6 +437,10 @@ export class DockerCliRunDriver extends RunDriver
     {
       flags["user"] = run_object?.flags?.['user']
     }
+    if(run_object?.flags?.['privileged'] === "true" || run_object?.flags?.['docker-privileged'] === "true")
+    {
+        flags["privileged"] = {}
+    }
   }
 
   protected addMountFlags(flags: Dictionary, run_object: DockerCreateOptions)

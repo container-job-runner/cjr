@@ -45,6 +45,7 @@ type DockerAPI_HostConfig =
   "CpuQuota"?: number,
   "Memory"?: number,
   "MemorySwap"?: number
+  "Privileged"?: boolean
 }
 
 type DockerAPI_Mount =
@@ -617,6 +618,13 @@ export class DockerSocketRunDriver extends RunDriver
     // -- User -----------------------------------------------------------------
     if(configuration.config.flags?.['user'])
       create_object.User = configuration.config.flags?.['user']
+    // -- Privileged -----------------------------------------------------------
+    if(configuration.config.flags?.['privileged'] === "true" || configuration.config.flags?.['docker-privileged'] === "true")
+    {
+       if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
+       create_object.HostConfig.Privileged = true
+    }
+
   }
 
   // === END API Functions =====================================================
