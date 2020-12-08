@@ -66,6 +66,9 @@ export default class Set extends BasicCommand {
     "vnc-resolution": flags.string({
         description: 'vnc default resolution'
     }),
+    "vnc-password": flags.string({
+        description: 'vnc default password'
+    }),
     "job-default-run-mode": flags.string({
       options: ['sync', 'async'],
       description: 'determines if new jobs run sync or async by default.'

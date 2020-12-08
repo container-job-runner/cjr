@@ -121,6 +121,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "jupyter-interface": "lab",
       "on-http-start": on_http_start_cmd,
       "vnc-resolution": "1920x1080",
+      "vnc-password": "password",
       "on-vnc-start": on_vnc_start_cmd,
       "timeout-jupyter": "10",
       "timeout-theia": "10",

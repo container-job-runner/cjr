@@ -50,7 +50,10 @@ export default class Start extends ServerCommand {
     // -- select port --------------------------------------------------------
     const vnc_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], 9001)
     // -- start vnc ----------------------------------------------------------
-    const vnc_service = new VNCService(job_manager, {resolution: this.settings.get('vnc-resolution')})
+    const vnc_service = new VNCService(job_manager, {
+        resolution: this.settings.get('vnc-resolution'),
+        password: this.settings.get('vnc-password')
+    })
     const start_request = vnc_service.start(
         { "project-root": flags["project-root"] },
         {
