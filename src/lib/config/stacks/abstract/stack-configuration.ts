@@ -38,6 +38,7 @@ export abstract class StackConfiguration<T>
 
   // == modifiers ==============================================================
   abstract setImage(value: string): void
+  abstract setBuildAuth(auth: Dictionary) : void
   abstract setTag(value: string): void
   abstract setEntrypoint(value: Array<string>): void;
   abstract setRsyncUploadSettings(value: {include: string, exclude: string}): void;
@@ -52,6 +53,7 @@ export abstract class StackConfiguration<T>
   abstract removeAllVolumes() : ValidatedOutput<undefined>;
   abstract removeLocalBinds() : ValidatedOutput<undefined>;
   abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>; // note: this function should be removed once updated remote code is finished
+  abstract removeBuildAuth() : boolean
   // ----> resource modifiers
   abstract setMemory(value: number, units:"GB"|"MB"|"KB"|"B") : void
   abstract setSwapMemory(value: number, units:"GB"|"MB"|"KB"|"B") : void
@@ -77,7 +79,7 @@ export abstract class StackConfiguration<T>
   abstract getTag(): string;
   abstract getEntrypoint() : Array<string> | undefined;
   abstract getName(): string;
-
+  abstract getBuildAuth() : Dictionary | undefined
   abstract getSnapshotOptions(): undefined | StackSnapshotOptions
   abstract getContainerRoot() : string;
   abstract getRsyncUploadSettings(filter_nonexisting: boolean): {include: string, exclude: string}

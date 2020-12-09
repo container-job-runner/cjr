@@ -4,7 +4,7 @@ import constants = require('../../constants')
 import { BuildDriver } from '../abstract/build-driver'
 import { ValidatedOutput } from '../../validated-output'
 import { JSTools } from '../../js-tools'
-import { DockerStackConfiguration} from '../../config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfiguration, DockerRegistryAuthConfig} from '../../config/stacks/docker/docker-stack-configuration'
 import { parseLineJSON } from '../../functions/misc-functions'
 import { Dictionary, cli_name, label_strings } from '../../constants'
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration'
@@ -158,6 +158,10 @@ export class DockerCliBuildDriver extends BuildDriver
       if(this.isBuilt(configuration) && !(configuration?.config?.build?.["pull"] || options?.['pull']))
         return result
 
+      const build_auth = configuration.getBuildAuth();
+      if( build_auth !== undefined)
+        this.registryLogin(build_auth)
+      
       const exec_result = this.shell.exec(`${this.base_command} pull`, {}, [configuration.getImage()], {"stdio": stdio})
       result.value = ShellCommand.stdout(exec_result.value)
       result.absorb(exec_result)
@@ -175,13 +179,11 @@ export class DockerCliBuildDriver extends BuildDriver
     pushImage(configuration: DockerStackConfiguration, options: Dictionary, stdio: "inherit"|"pipe") : ValidatedOutput<undefined>
     {
       const result = new ValidatedOutput(true, undefined);
-      const login_flags:Dictionary = {}
-      if(options.username) login_flags['username'] = options.username
-      if(options.token) login_flags['password'] = options.token
-      if(options.password) login_flags['password'] = options.password
-      const login_args = []
-      if(options.server) login_args.push(options.server)
-      const login = this.shell.exec(`${this.base_command} login`, login_flags, login_args, {stdio: "pipe"})
+      const login = this.registryLogin({
+          "username": options.username,
+          "token": options.password || options.token || "",
+          "server": options.server || ""
+      })
       if(!login.success)
         return result.pushError(this.ERRORSTRINGS.FAILED_REGISTRY_LOGIN)
       const push = this.shell.exec(`${this.base_command} push`, {}, [configuration.getImage()], {"stdio": stdio})
@@ -241,6 +243,20 @@ export class DockerCliBuildDriver extends BuildDriver
         result.pushError(this.ERRORSTRINGS.FAILED_IMAGE_SAVE)
       
       return result
+    }
+
+    protected registryLogin(auth: DockerRegistryAuthConfig)
+    {
+        const login_flags:Dictionary = { "username": auth.username }
+        const login_args = ( auth.server ) ? [ auth.server ] : [ ] // if server is blank don't add arg
+        let command = `${this.base_command} login` 
+        let options: Dictionary = {}
+        if(auth.token) { // if token is specified do not have interactive login         
+            login_flags["password-stdin"] = {}            
+            command = `echo ${ShellCommand.bashEscape(auth.token)} | ${command}`
+            options["stdio"] = "pipe"
+        }
+        return this.shell.exec(command, login_flags, login_args, options)
     }
 
     protected addJSONFormatFlag(flags: Dictionary)

@@ -8,7 +8,7 @@ import { ValidatedOutput } from "../../validated-output"
 import { StackConfiguration } from "../../config/stacks/abstract/stack-configuration"
 import { ShellCommand } from "../../shell-command"
 import { BuildDriver } from '../abstract/build-driver'
-import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfiguration, DockerRegistryAuthConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { Dictionary, cli_name } from '../../constants'
 import { RequestOutput, Curl } from '../../curl'
 import { FileTools } from '../../fileio/file-tools'
@@ -144,7 +144,7 @@ export class DockerSocketBuildDriver extends BuildDriver
       return result
 
     // -- make api request -----------------------------------------------------
-    const pull_result = this.API_PullImage(configuration.getImage())
+    const pull_result = this.API_PullImage(configuration)
     result.value = pull_result.value.output
 
     result.absorb(pull_result)
@@ -202,14 +202,11 @@ export class DockerSocketBuildDriver extends BuildDriver
 
   pushImage(configuration: DockerStackConfiguration, options: Dictionary, stdio: "inherit"|"pipe")
   {
-    // -- create auth string (must be encoded in base64) -----------------------
-    const auth_string = JSON.stringify({
-      "username": options.username,
-      "password": options.password || options.token,
-      "serveraddress": options.server
+    const registry_auth = this.API_authHeader({
+        "username": options.username,
+        "token": options.password || options.token || "",
+        "server" : options.server
     })
-    const buff = Buffer.from(auth_string)
-    const registry_auth = buff.toString('base64')
 
     // -- submit pull request --------------------------------------------------
     const pull_result = this.curlPostProcessor(
@@ -368,15 +365,19 @@ export class DockerSocketBuildDriver extends BuildDriver
 
   }
 
-  protected API_PullImage(image_reference: string) : ValidatedOutput<{output: string}>
+  protected API_PullImage(configuration: DockerStackConfiguration) : ValidatedOutput<{output: string}>
   {
+    const image_reference = configuration.getImage()
+    const build_auth = configuration.getBuildAuth();
+    
     const result = new ValidatedOutput(true, {output: ""})
     const pull_result = this.curlPostProcessor(
       this.curl.post({
         "url": "/images/create",
         "params": {
           "fromImage": image_reference
-        }
+        },
+        "header": (build_auth) ? [`X-Registry-Auth: ${this.API_authHeader(build_auth)}`] : undefined
       })
     )
     if(!this.validJSONAPIResponse(pull_result, 200))
@@ -511,6 +512,19 @@ export class DockerSocketBuildDriver extends BuildDriver
     }
 
     return result
+  }
+
+  protected API_authHeader(auth: DockerRegistryAuthConfig) : string
+  {
+    // -- create auth string (must be encoded in base64) -----------------------
+    const auth_string = JSON.stringify({
+      "username": auth.username,
+      "password": auth.token,
+      "serveraddress": auth.server
+    })
+    const buff = Buffer.from(auth_string)
+    const auth_str = buff.toString('base64')
+    return auth_str
   }
 
 }

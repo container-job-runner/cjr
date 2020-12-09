@@ -53,11 +53,18 @@ export type DockerStackResourceConfig = {
   "memory-swap"?: string
 }
 
+export type DockerRegistryAuthConfig = {
+    "username": string
+    "server": string
+    "token": string
+}
+
 export type DockerStackBuildConfig = {
   "image"?: string
   "no-cache"?: boolean
   "pull"?: boolean
   "args"?: { [key:string] : string }
+  "auth"?: DockerRegistryAuthConfig
 }
 
 export type DockerStackFileConfig = {
@@ -384,6 +391,18 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     this.config.snapshots = options;
   }
 
+  setBuildAuth(auth: DockerRegistryAuthConfig)
+  {
+    if(!this.config?.build) this.config.build = {}
+    this.config.build.auth = auth
+  }
+
+  removeBuildAuth()
+  {
+      delete this.config.build?.auth
+      return true
+  }
+
   // ---- mount modifiers -----------------------------------------------------
 
   addBind(hostPath: string, containerPath: string, options?: Dictionary)
@@ -634,6 +653,11 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
         const path_hash = JSTools.md5(this.stack_path || "EMPTY") // image contains hash based on path
         return `${prefix}-${path_hash}-${this.stack_name}:${this.image_tag}`
     }
+  }
+
+  getBuildAuth(): DockerRegistryAuthConfig | undefined
+  {
+      return this.config?.build?.auth
   }
 
   getEntrypoint() : Array<string> | undefined

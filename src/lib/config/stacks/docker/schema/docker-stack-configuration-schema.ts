@@ -44,8 +44,12 @@ export const docker_stack_configuration_schema = {
         "pull": {
           "type": "boolean"
         },
+        "auth": {"$ref": "#/definitions/registry-auth"},
         "args": {"$ref": "#/definitions/args"},
         "args-dynamic": {"$ref": "#/definitions/args"}
+      },
+      "dependencies": {
+        "auth": ["image"]
       },
       "additionalProperties": false
     },
@@ -258,6 +262,26 @@ export const docker_stack_configuration_schema = {
       "additionalProperties": {
         "type": "string"
       }
+    },
+    "registry-auth": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "server": {
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
+        }
+       },
+      "required": [
+        "username",
+        "server",
+        "token"
+      ],
+      "additionalProperties": false
     }
   }
 }
