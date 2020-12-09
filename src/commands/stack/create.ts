@@ -9,22 +9,35 @@ import { ValidatedOutput } from '../../lib/validated-output'
 import { printValidatedOutput, printOutputHeader } from '../../lib/functions/misc-functions'
 import { ErrorStrings } from '../../lib/error-strings'
 import { FileTools } from '../../lib/fileio/file-tools'
-import { DockerStackConfiguration } from '../../lib/config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfiguration, DockerRegistryAuthConfig } from '../../lib/config/stacks/docker/docker-stack-configuration'
 import { StackConfiguration } from '../../lib/config/stacks/abstract/stack-configuration'
 import { augmentImagePushParameters } from '../../lib/functions/cli-functions'
 import { ContainerDrivers } from '../../lib/job-managers/abstract/job-manager'
 
-type RemoteSnapshotOptions = { "image": string, "storage-location": "registry", "mode": "always"|"prompt", "username": string, "token"?: string, "server": string }
-type ArchiveSnapshotOptions = { "image": string, "storage-location": "archive", "mode": "always"|"prompt" }
+type NewImageStackOptions = { 
+    "image": string, 
+    "auth"?: DockerRegistryAuthConfig 
+}
+type RemoteSnapshotOptions = { 
+    "source" : NewImageStackOptions, 
+    "storage-location": "registry", 
+    "mode": "always"|"prompt", 
+    "auth": DockerRegistryAuthConfig
+}
+type ArchiveSnapshotOptions = { 
+    "source" : NewImageStackOptions,
+    "storage-location": "archive",
+    "mode": "always"|"prompt"
+}
 type NewSnapshotOptions = RemoteSnapshotOptions | ArchiveSnapshotOptions
 
 export default class Create extends BasicCommand {
   static description = 'Create a new cjr stack.'
   static args = [{name: "name", required: true}]
   static flags = {
-    "dockerfile": flags.string({exclusive: ['image', 'snapshot'], description: "Create a new stack with using this Dockerfile."}),
-    "image": flags.string({exclusive: ['dockerfile', 'snapshot'], description: "Create a new stack based on an existing docker Image."}),
-    "snapshottable": flags.boolean({exclusive: ['dockerfile', 'image'], description: "Create a new stack that supports snapshots."}),
+    "dockerfile": flags.string({exclusive: ['image', 'snapshottable'], description: "Create a new stack with using this Dockerfile."}),
+    "image": flags.string({exclusive: ['dockerfile'], description: "Create a new stack based on an existing docker Image."}),
+    "snapshottable": flags.boolean({exclusive: ['dockerfile'], dependsOn: ['image'], description: "Create a new stack that supports snapshots."}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "explicit": flags.boolean({default: false})
   }
@@ -35,7 +48,7 @@ export default class Create extends BasicCommand {
     const { args, flags } = this.parse(Create)
     this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": true})
     const stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
-    const stack_name = args['name']
+    const stack_name = args['name'].toLowerCase()
 
     // -- validate name --------------------------------------------------------
     const valid_name = this.validStackName(args.name)
@@ -49,10 +62,10 @@ export default class Create extends BasicCommand {
     let result: ValidatedOutput<undefined>
     if(flags.dockerfile)
       result = this.createDockerfileStack(stacks_path, stack_name, flags['dockerfile'])
-    else if (flags['image'])
-      result = this.createImageStack(stacks_path, stack_name, flags['image'])
-    else if (flags['snapshottable'])
-      result = await this.createImageStackWithSnapshots(stacks_path, stack_name, flags['explicit'])
+    else if (flags['image'] && !flags['snapshottable'])
+      result = await this.createImageStack(stacks_path, stack_name, flags['image'])
+    else if (flags['image'] && flags['snapshottable'])
+      result = await this.createImageStackWithSnapshots(stacks_path, stack_name, flags['image'], flags['explicit'])
     else
       result = this.createEmptyStack(stacks_path, stack_name)
     printValidatedOutput(result)
@@ -97,10 +110,19 @@ export default class Create extends BasicCommand {
     return result
   }
 
-  createImageStack(stacks_dir: string, stack_name: string, image: string)
+  async createImageStack(stacks_dir: string, stack_name: string, image: string) : Promise<ValidatedOutput<undefined>>
   {
+    const options_request = await this.promptImageOptions(image)
+    if(!options_request.success) return new ValidatedOutput(false, undefined).absorb(options_request)
+     
     const configuration = new DockerStackConfiguration()
-    configuration.setImage(image)
+    configuration.setImage(options_request.value.image)
+    if(options_request.value.auth)
+        configuration.setBuildAuth({
+            "username": options_request.value.auth.username,
+            "token": options_request.value.auth?.token || "",
+            "server": options_request.value.auth.server
+        })
     return this.createConfigStack(stacks_dir, stack_name, configuration)
   }
 
@@ -113,14 +135,14 @@ export default class Create extends BasicCommand {
     )
   }
 
-  async createImageStackWithSnapshots(stacks_dir: string, stack_name: string, explicit: boolean) : Promise<ValidatedOutput<undefined>>
+  async createImageStackWithSnapshots(stacks_dir: string, stack_name: string, image: string, explicit: boolean) : Promise<ValidatedOutput<undefined>>
   {
     const result = new ValidatedOutput(true, undefined)
     const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: explicit})
     const container_drivers = job_manager.container_drivers
 
     // -- prompt user for stack options ----------------------------------------
-    const options_prompt = await this.promptSnapshotOptions()
+    const options_prompt = await this.promptSnapshotOptions(image)
     if(!options_prompt.success)
       return result.absorb(options_prompt)
     const options = options_prompt.value
@@ -141,6 +163,76 @@ export default class Create extends BasicCommand {
     return this.createConfigStack(stacks_dir, stack_name, new_config_result.value)
   }
 
+  async promptImageOptions(image: string) : Promise<ValidatedOutput<NewImageStackOptions>>
+  {
+    const options:NewImageStackOptions = {"image": image}
+    const failure = new ValidatedOutput(false, options)
+    const errors = {
+      "EMPTYIMAGE": chalk`{bold Invalid Parameters} - Empty Image.`
+    }
+
+    if(!image)
+        return failure.pushError(errors['EMPTYIMAGE'])
+
+    const prompt_general = await inquirer.prompt([
+      {
+        name: "image-access",
+        message: `Is ${image} a public image?`,
+        type: "confirm",
+      }
+    ]);
+
+    if(!prompt_general["image-access"])
+    {
+        const prompt_auth = await this.promptRegistryAuthOptions()
+        if(!prompt_auth.success) return failure.absorb(prompt_auth)
+        options.auth = prompt_auth.value
+    }
+
+    return new ValidatedOutput(true, options)
+  }
+  
+  async promptRegistryAuthOptions(header?: string) : Promise<ValidatedOutput<DockerRegistryAuthConfig>>
+  {
+    const failure = new ValidatedOutput<DockerRegistryAuthConfig>(false, {username: "", server: "", token: ""})
+    const errors = {
+      "EMPTYSERVER": chalk`{bold Invalid Parameters} - Empty auth server endpoint.`,
+      "EMPTYUSERNAME": chalk`{bold Invalid Parameters} - empty username.`
+    }
+    
+    const prompt_registry = await inquirer.prompt([
+        {
+            name: "server",
+            message: `Auth Server:`,
+            default: this.settings.get('container-registry-auth'),
+            type: "input",
+        },
+        {
+            name: "username",
+            message: `Username:`,
+            default: this.settings.get('container-registry-user'),
+            type: "input",
+        },
+        {
+            name: "token",
+            message: `Access Token:`,
+            type: "password",
+        }
+    ])
+
+    if(!prompt_registry.server)
+        return failure.pushError(errors['EMPTYSERVER'])
+    if(!prompt_registry.username)
+        return failure.pushError(errors['EMPTYUSERNAME'])
+
+    return new ValidatedOutput(true, {
+        "server": prompt_registry["server"],
+        "username": prompt_registry["username"],
+        "token": prompt_registry["token"]
+    })
+
+  }
+
   // ---------------------------------------------------------------------------
   // pulls a remote image, then retags it as
   //    1. user/image-base-name:timestamp
@@ -153,9 +245,9 @@ export default class Create extends BasicCommand {
     const result = new ValidatedOutput(true, new DockerStackConfiguration())
 
     // -- pull and tag images --------------------------------------------------
-    printOutputHeader(`Pulling ${options.image}`)
-    const image_name = path.posix.join(options.username, stack_name)
-    const pr_result = this.pullAndTag(options.image, {
+    printOutputHeader(`Pulling ${options.source.image}`)
+    const image_name = path.posix.join(options.auth.username, stack_name)
+    const pr_result = this.pullAndTag(options.source, {
             "snapshot": `${image_name}:${Date.now()}`,
             "latest": `${image_name}:${constants.SNAPSHOT_LATEST_TAG}`
         }, container_drivers) as ValidatedOutput<{latest: DockerStackConfiguration, snapshot: DockerStackConfiguration}>
@@ -168,7 +260,7 @@ export default class Create extends BasicCommand {
 
     // -- push stack image to user remote registry -----------------------------
     printOutputHeader(`Pushing ${snapshot_configuration.getImage()}`)
-    const push_options = await augmentImagePushParameters(options)
+    const push_options = await augmentImagePushParameters(options.auth)
     result.absorb(
         container_drivers.builder.pushImage(snapshot_configuration, push_options, "inherit")
     )
@@ -187,9 +279,9 @@ export default class Create extends BasicCommand {
     snapshot_configuration.setSnapshotOptions({
       "storage-location": "registry",
       "mode": options.mode,
-      "username": options.username,
-      "token": options.token,
-      "server": options.server
+      "username": options.auth.username,
+      "token": options.auth.token,
+      "server": options.auth.server
     })
     snapshot_configuration.setTag('latest');
     
@@ -197,14 +289,15 @@ export default class Create extends BasicCommand {
     return  new ValidatedOutput(true, snapshot_configuration) 
   }
 
-  private pullAndTag(image: string, tags: {[key:string] : string}, container_drivers: ContainerDrivers) : ValidatedOutput<{[key:string] : DockerStackConfiguration}>
+  private pullAndTag(source: NewImageStackOptions, tags: {[key:string] : string}, container_drivers: ContainerDrivers) : ValidatedOutput<{[key:string] : DockerStackConfiguration}>
   {
     const configurations:{[key:string] : DockerStackConfiguration} = {}
     const result = new ValidatedOutput(true, configurations)
 
     // -- pull image -----------------------------------------------------------
     const configuration = new DockerStackConfiguration()
-    configuration.setImage(image)
+    configuration.setImage(source.image)
+    if(source.auth) configuration.setBuildAuth(source.auth)
     result.absorb(
       container_drivers.builder.build(configuration, "inherit", {pull: true})
     )
@@ -230,8 +323,8 @@ export default class Create extends BasicCommand {
     const result = new ValidatedOutput(true, new DockerStackConfiguration())
 
     // -- pull and tag images -------------------------------------------------
-    printOutputHeader(`Pulling ${options.image}`)
-    const pr_result = this.pullAndTag(options.image, {
+    printOutputHeader(`Pulling ${options.source.image}`)
+    const pr_result = this.pullAndTag(options.source, {
             "snapshot": `${stack_name}:${Date.now()}`
         }, container_drivers) as ValidatedOutput<{snapshot: DockerStackConfiguration}>
     
@@ -246,7 +339,7 @@ export default class Create extends BasicCommand {
     })
 
     // -- save tar of image ---------------------------------------------------
-    printOutputHeader(`Saving ${options.image} to tar.gz`)
+    printOutputHeader(`Saving ${options.source.image} to tar.gz`)
     const stack_path = path.join(stack_dir, stack_name)
     const snapshot_tar = constants.stackNewSnapshotPath(stack_path, snapshot_configuration.getTag())
     const stack_image_tar = constants.stackArchiveImagePath(stack_path)
@@ -277,21 +370,17 @@ export default class Create extends BasicCommand {
     return  new ValidatedOutput(true, stack_configuration)
   }
 
-  async promptSnapshotOptions() : Promise<ValidatedOutput<NewSnapshotOptions>>
+  async promptSnapshotOptions(image: string) : Promise<ValidatedOutput<NewSnapshotOptions>>
   {
-    const failure = new ValidatedOutput<NewSnapshotOptions>(false, {image: "", "storage-location": "registry", username: "", server: "", mode: "prompt"})
-    const errors = {
-      "EMPTYIMAGE": chalk`{bold Invalid Parameters} - Empty Image.`,
-      "EMPTYSERVER": chalk`{bold Invalid Parameters} - Empty auth server endpoint.`,
-      "EMPTYUSERNAME": chalk`{bold Invalid Parameters} - empty username.`
-    }
+    const failure = new ValidatedOutput<NewSnapshotOptions>(false, {"source": {"image": ""}, "storage-location": "archive", mode: "prompt"})
+    
+    // 1. prompt options for source image
+    const image_prompt_request = await this.promptImageOptions(image)
+    const image_prompt = image_prompt_request.value
+    if(!image_prompt_request.success) return failure.absorb(image_prompt_request)
 
+    // 2. Determine storage location of snapshots
     const prompt_general = await inquirer.prompt([
-      {
-        name: "image",
-        message: `Base Image:`,
-        type: "input",
-      },
       {
         name: "location",
         message: `Snapshot storage location`,
@@ -306,54 +395,37 @@ export default class Create extends BasicCommand {
       }
     ]);
 
+    // 3. Return all information
     let response:NewSnapshotOptions
     
-    if( prompt_general["location"] == "local archive" )
+    if( prompt_general["location"] == "local archive" ) // -- archive snapshot -
     {
         response = {
+            "source": {
+                "image": image_prompt.image,
+                "auth": image_prompt.auth
+            },            
             "storage-location": "archive",
-            "image": prompt_general["image"],
             "mode": prompt_general["mode"],
         };
     }
-    else
+    else // -- registry snapshot -----------------------------------------------
     {
-        const prompt_registry = await inquirer.prompt([
-            {
-                name: "server",
-                message: `Auth Server:`,
-                default: this.settings.get('container-registry-auth'),
-                type: "input",
-            },
-            {
-                name: "username",
-                message: `Username:`,
-                default: this.settings.get('container-registry-user'),
-                type: "input",
-            },
-            {
-                name: "token",
-                message: `Access Token (Optional):`,
-                type: "password",
-            }
-        ])
+        const prompt_registry = (await this.promptRegistryAuthOptions()).value
         response = {
+            "source": {
+                "image": image_prompt.image,
+                "auth": image_prompt.auth
+            },           
             "storage-location": "registry",
-            "image": prompt_general["image"],
             "mode": prompt_general["mode"],
-            "username": prompt_registry["username"], 
-            "token": prompt_registry["token"],
-            "server": prompt_registry["server"]
-        };
-
-        if(!response.server)
-            return failure.pushError(errors['EMPTYSERVER'])
-        if(!response.username)
-            return failure.pushError(errors['EMPTYUSERNAME'])
+            "auth": {
+                "username": prompt_registry["username"],
+                "token": prompt_registry["token"],
+                "server": prompt_registry["server"]
+            }
+        }
     }
-
-    if(!response.image)
-      return failure.pushError(errors['EMPTYIMAGE'])
 
     return new ValidatedOutput(true, response)
 
