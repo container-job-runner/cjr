@@ -177,13 +177,14 @@ export default class Create extends BasicCommand {
 
     const prompt_general = await inquirer.prompt([
       {
-        name: "image-access",
-        message: `Is ${image} a public image?`,
+        name: "private",
+        message: `Is ${image} a private image?`,
         type: "confirm",
+        default: false
       }
     ]);
 
-    if(!prompt_general["image-access"])
+    if(prompt_general["private"])
     {
         this.printStatusHeader("Auth settings to access private repository", true)
         const prompt_auth = await this.promptRegistryAuthOptions()
@@ -421,6 +422,7 @@ export default class Create extends BasicCommand {
                 name: `private`,
                 message: `Is ${prompt_registry.username}/${stack_name} a private repo?`,
                 type: "confirm",
+                default: false
             }
         ]);        
         
