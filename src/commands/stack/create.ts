@@ -185,6 +185,7 @@ export default class Create extends BasicCommand {
 
     if(!prompt_general["image-access"])
     {
+        this.printStatusHeader("Auth settings to access private repository", true)
         const prompt_auth = await this.promptRegistryAuthOptions()
         if(!prompt_auth.success) return failure.absorb(prompt_auth)
         options.auth = prompt_auth.value
@@ -381,6 +382,7 @@ export default class Create extends BasicCommand {
     if(!image_prompt_request.success) return failure.absorb(image_prompt_request)
 
     // 2. Determine storage location of snapshots
+    this.printStatusHeader("Snapshot Settings", true)
     const prompt_general = await inquirer.prompt([
       {
         name: "location",
@@ -412,6 +414,7 @@ export default class Create extends BasicCommand {
     }
     else // -- registry snapshot -----------------------------------------------
     {
+        this.printStatusHeader("Registry auth for storing snapshots", true)
         const prompt_registry = (await this.promptRegistryAuthOptions()).value
         const prompt_user_repo = await inquirer.prompt([
             {
@@ -439,6 +442,12 @@ export default class Create extends BasicCommand {
 
     return new ValidatedOutput(true, response)
 
+  }
+
+  printStatusHeader(message: string, verbose: boolean, line_width:number = 80) {
+    console.log('-'.repeat(line_width))
+    console.log(chalk`  ${message}`)
+    console.log('-'.repeat(line_width))
   }
 
 }
