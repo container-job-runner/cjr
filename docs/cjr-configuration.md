@@ -34,10 +34,15 @@ If true, then cjr will automatically copy back data at the end of all synchronou
 2. **run-shortcuts-file**: string
 The location of a yml file that can be used to specify run shortcuts for `cjr job:start` command. See file format description below.
 
+### Services
+1. autocopy-on-service-exit: 'true' | 'false'    
+If true then cjr will auomatically copy back data after remote development service (juptyer, theia, vnc) are stopped.
+2. enable-remote-dev: 'true' | 'false'  
+If true, commands `theia`, `jupyter`, and `vnc` will respond to the flag --resource. 
 
 ### Containers
 1. **default-container-shell**: string  
-The default shell that should be used in containers for job:shell commands (e.g. sh, bash, zsh).
+The default shell that should be used in containers for job:shell commands (e.g. sh, bash, zsh, fish). Note: container must have this shell installed or cjr:shell will fail.
 2. **driver**: "podman-cli"|"docker-cli"|"docker-socket"|"podman-socket"  
 The driver used to communicate with container engine. To use the docker engine, select docker drivers and to use the podman engine use podman drivers. Note that socket drivers are currently experimental.
 3. **image-tag**: string  
@@ -61,6 +66,7 @@ The number of seconds to wait for a Theia server to start.
 ### Vnc
 1. **on-vnc-start**: command that should be run after vnc starts. the environment variable $URL will contain the url of the server.
 2. **vnc-resolution**: resolution for vnc. Value should be a string of the form NUMBERxNUMBER (for example "1920x1080"),
+2. **vnc-password**: password for accessing vnc.
 
 ### Snapshots
 1. **container-registry-auth**: string  

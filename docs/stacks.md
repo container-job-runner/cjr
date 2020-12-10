@@ -39,6 +39,10 @@ build:
   pull: STRING
   args: OBJECT_OF_STRINGS
   args-dynamic: OBJECT_OF_STRINGS
+  auth:
+    user: STRING
+    token: STRING
+    password: STRING
 entrypoint: ARRAY_OF_STRINGS
 environment: OBJECT_OF_STRINGS  
 environment-dynamic: OBJECT_OF_STRINGS
@@ -52,10 +56,12 @@ files:
     download-exclude-from: STRING
     download-include-from: STRING
 snapshot:
-  mode: 'prompt' 
-  username: user
-  server: https://index.docker.io/v1/ 
-  token: $USER_TOKEN
+  mode: "prompt" | "always"
+  storage-location: "remote" | "archive"
+  auth:
+    user: STRING
+    token: STRING
+    password: STRING
 resources:
   cpus: STRING
   memory: STRING
@@ -103,6 +109,19 @@ build:
 will build the container using the arguments ARG1 and ARG2 that will be set to the host user id and group id.
 
 **WARNING**: dynamic args allow for arbitary code execution on the host box. Always verify dynamic args if you download stacks form remote sources.
+
+### `build.auth` : { username : string , server : string, token : string}
+
+This flag is only valid if the build object contains the field image. The auth field contains all the information for pulling an image that is stored in a private repository. This field can be ommited if the image is stored in a public repository, 
+```yaml
+build:
+  image: "image:tag"
+  auth:
+    username: "user"
+    server: "https://index.docker.io/v1/"
+    token: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+```
+The token field can be either be an access [token](https://docs.docker.com/docker-hub/access-tokens/) (recommended) or an account password (not recommended).
 
 ### `entrypoint` : string[]
 
@@ -237,13 +256,15 @@ Flags contains special options for a stack. Some flags will only be picked up by
 **Docker Specific**
 
 1. *docker-chown-file-volume* (string) if this flag is set to "host-user", then job file volumes will be chowned to the id of the host user (i.e. `id -u`). If this value is set to a numerical value such as "20" then the job file volumes will be chowned to user 20. This flag should be used for all images that run with non root users.
+2. *docker-privileged* ("true" | "false") use the docker flag --privileged only for docker
 
 **Podman Specific**
 
 1. *podman-security-opt* (string) same as podman --security-opt flag
 2. *podman-userns* (string) same as podman --userns flag (e.g. setting `userns: host` preserves mapping of user ids on host and in container).
-3. *podman-chown-file-volume* (string) if this flag is set to "host-user", then job file volumes will be chowned to the id of the host user (i.e. `id -u`). If this value is set to a numerical value such as "20" then the job file volumes will be chowned to user 20. This flag should be used for all images that run with non root users. Note: for rootless podman ids are relative to the default userns mapping.
-4. *podman-chown-binds* (string) **EXPERIMENTAL** setting that currently only applies to stacks running remotely. String should be of format "$UID:$GUI" where $UID and $GUI are number representing the user id and group id of the container user. If this flag is set, then podman unshare command will be run on any bound directories before a job is started. 
+3. *podman-privileged* ("true" | "false") use the flag --privileged only for podman
+4. *podman-chown-file-volume* (string) if this flag is set to "host-user", then job file volumes will be chowned to the id of the host user (i.e. `id -u`). If this value is set to a numerical value such as "20" then the job file volumes will be chowned to user 20. This flag should be used for all images that run with non root users. Note: for rootless podman ids are relative to the default userns mapping.
+5. *podman-chown-binds* (string) **EXPERIMENTAL** setting that currently only applies to stacks running remotely. String should be of format "$UID:$GUI" where $UID and $GUI are number representing the user id and group id of the container user. If this flag is set, then podman unshare command will be run on any bound directories before a job is started. 
 
 **General**
 
@@ -251,6 +272,7 @@ Flags contains special options for a stack. Some flags will only be picked up by
 2. *user* (string) container will run with this user. This flag was primarily added for snapshottable stacks with non root users.
 3. *mac-address* (string) same as Docker --mac-address flag. a mac address of the container. Note: requires rootfull podman.
 4. *network* (string) same as Docker --network flag
+5. *privileged* ("true" | "false") equivalent to the Docker flag --privileged
 
 ### `snapshot` : { mode: "always"|"prompt", username: string, server: string, token: string}
 
@@ -291,42 +313,78 @@ The user can also configure which profiles get automatically added to a stack in
 
 ## Snapshottable Stacks
 
-A snapshotable stack starts with from a base image, generally from a remote repository, and provides a simple way for you to incrementally make modifications. 
-Each time you modify the image, cjr will push the changes to a container registry of your choice.
+A snapshotable stack starts with from a base image, generally from a remote repository, and provide a simple way for you to incrementally make modifications to an image. 
+There are two types of snapshottable stacks: those with images that are stored on a remote container registry, and those with images that are stored locally as .tar.gz files.
 
-To create a snapshottable stack use the command
+#### Remote snapshottable stacks
+These type of stacks store their images on a remote container registry. Each time you create a new snapshot, cjr will push the changes to a container registry. The repository will have the same name as the stack and the tags will coorespond to the unix timestamps when a snapshot was taken.
+To use these types of stacks you will need to have an account on a container registry like DockerHub.
+
+#### Remote snapshottable stacks
+These types of stacks store their images inside the stack folder in the subdirectory *snapshots*. No information is ever pushed to a remote repository, and no container registry account is needed.
+
+#### Creating A snapshottable stack
+
+To create a snapshottable stack that is based on an existing image $STARTINGIMAGE (e.g. STARTINGIMAGE=fedora:latest) use the command
 ```console
-$ cjr stack:create $IMAGENAME --snapshot
+$ cjr stack:create $STACKNAME --image=$STARTINGIMAGE --snapshottable
 ```
-The command will start an interactive dialog that prompts the user for more information
+The command starts an interactive dialog that prompts the user for more information
 ```console
-$ cjr stack:create $IMAGENAME --snapshot
-? Base Image: fedora:latest                         # the starting image (this starts from the latest official fedora image)
-? Auth Server: https://index.docker.io/v1/          # container registry auth server (leave default for dockerhub)
-? Username: user                                    # username for container registry
-? Access Token (Optional): [input is hidden]        # token for container registry
+$ cjr stack:create example --image=fedora:latest --snapshot
+? Is fedora:latest a private image? No          # tell cjr if the image is accessible without a password                   
+--------------------------------------------------------------------------------
+  Auth settings to access private repository    # IMPORTANT: the next three prompts only appear for private images
+--------------------------------------------------------------------------------
+? Auth Server: https://index.docker.io/v1/      # container registry auth server (leave default for dockerhub) 
+? Username: user                                # username for container registry
+? Access Token: [hidden]                        # token for container registry
+--------------------------------------------------------------------------------
+  Snapshot Settings
+--------------------------------------------------------------------------------
+? Snapshot storage location (Use arrow keys)
+❯ remote registry                               # select this if snapshot images are stored remotely
+  local archive                                 # select this if snapshot images are stored locally
 ? Snapshot mode (Use arrow keys)
-❯ always                                            # select this if you want the image to always save after running cjr stack:snapshot
-  prompt                                            # select this if you want the image to prompt whether to save after running cjr stack:snapshot
+❯ always                                        # select this if you want the image to always save after running cjr stack:snapshot
+  prompt                                        # select this if you want the image to prompt whether to save after running cjr stack:snapshot
+--------------------------------------------------------------------------------
+  Registry auth for storing snapshots           # IMPORATANT: this prompt only appears for remote snapshots
+--------------------------------------------------------------------------------
+? Auth Server: https://index.docker.io/v1/      # container registry auth server (leave default for dockerhub) 
+? Username: user                                # username for container registry
+? Access Token: [hidden]                        # token for container registry
+? Is user/example a private repo? (Y/n)         # adds auth info to stack config if this repository is private
 ```
-Cjr will then pull the base image, retag it as user/$IMAGENAME:latest and push it to your remote repository. 
+Cjr will then pull the base image, retag it as user/$IMAGENAME:latest and save it to a tar.gz file (if storage location is set to achive) or push it to your remote repository (if storage location is set to remote registry) . 
 When you want to update the image, you can use the command
 ```console
-$ cjr stack:snapshot $IMAGENAME
+$ cjr stack:snapshot $STACKNAME
 ```
-This will open an interactive shell where you can install packages or make any other custom odifications. 
-When you exit the command cjr will commit the changes to a new container and push the changes to your remote registry.
+This will open an interactive shell where you can install packages or make any other custom modifications. 
+When you exit the shell cjr will commit the changes to a new container and save the changes to a new tar file or push the changes to your remote registry.
 
-### Stack Configuration yml
-A basic config.yml for a snapshotable stack looks roughly as follows:
+### Stack configuration yml for remote snapshots
+A basic config.yml for a remote snapshotable stack looks roughly as follows:
 ```yaml
 build:
   image: user/$IMAGENAME:latest          # the tag is always set to latest
 snapshot:
-  mode: 'prompt' 
-  username: user
-  server: https://index.docker.io/v1/ 
-  token: $USER_TOKEN
+  mode: 'prompt'
+  storage-location: "remote"
+  auth:
+    username: user
+    server: https://index.docker.io/v1/ 
+    token: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 ```
 When cjr pushes a new snapshot to your remote repository it will be tagged as `user/$IMAGENAME:$UNIXTIME` where $UNIXTIME will be the current unix time. Cjr will also retag `user/$IMAGENAME:latest` to point to the latest snapshot.
 You can manually configure a snapshotable without the stack:create $IMAGENAME by modeling of the yml shown above.
+
+### Stack configuration yml for local snapshots
+A basic config.yml for a local snapshotable stack looks roughly as follows:
+```yaml
+snapshot:
+  mode: 'prompt'
+  storage-location: "archive"
+```
+The stack directory should have an file image.tar.gz in the build directory and a subdirectory called snapshots. The command `stack:snapshot` will create a new image and save it as a compressed tar file named `image-$UNIXTIME.tar.gz` in the snapshots directory. To avoid file duplication, cjr then creates a hard symbolic link with the new snapshot as the source, and build/image.tar.gz as the target.
