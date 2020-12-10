@@ -22,7 +22,8 @@ type RemoteSnapshotOptions = {
     "source" : NewImageStackOptions, 
     "storage-location": "registry", 
     "mode": "always"|"prompt", 
-    "auth": DockerRegistryAuthConfig
+    "auth": DockerRegistryAuthConfig,
+    "private": boolean
 }
 type ArchiveSnapshotOptions = { 
     "source" : NewImageStackOptions,
@@ -142,7 +143,7 @@ export default class Create extends BasicCommand {
     const container_drivers = job_manager.container_drivers
 
     // -- prompt user for stack options ----------------------------------------
-    const options_prompt = await this.promptSnapshotOptions(image)
+    const options_prompt = await this.promptSnapshotOptions(image, stack_name)
     if(!options_prompt.success)
       return result.absorb(options_prompt)
     const options = options_prompt.value
@@ -192,7 +193,7 @@ export default class Create extends BasicCommand {
     return new ValidatedOutput(true, options)
   }
   
-  async promptRegistryAuthOptions(header?: string) : Promise<ValidatedOutput<DockerRegistryAuthConfig>>
+  async promptRegistryAuthOptions() : Promise<ValidatedOutput<DockerRegistryAuthConfig>>
   {
     const failure = new ValidatedOutput<DockerRegistryAuthConfig>(false, {username: "", server: "", token: ""})
     const errors = {
@@ -282,6 +283,8 @@ export default class Create extends BasicCommand {
       "auth": options.auth
     })
     snapshot_configuration.setTag('latest');
+    if(options.private)
+        snapshot_configuration.setBuildAuth(options.auth)
     
     // -- return validated output with tagged image ----------------------------
     return  new ValidatedOutput(true, snapshot_configuration) 
@@ -368,7 +371,7 @@ export default class Create extends BasicCommand {
     return  new ValidatedOutput(true, stack_configuration)
   }
 
-  async promptSnapshotOptions(image: string) : Promise<ValidatedOutput<NewSnapshotOptions>>
+  async promptSnapshotOptions(image: string, stack_name: string) : Promise<ValidatedOutput<NewSnapshotOptions>>
   {
     const failure = new ValidatedOutput<NewSnapshotOptions>(false, {"source": {"image": ""}, "storage-location": "archive", mode: "prompt"})
     
@@ -409,7 +412,15 @@ export default class Create extends BasicCommand {
     }
     else // -- registry snapshot -----------------------------------------------
     {
-        const prompt_registry = (await this.promptRegistryAuthOptions()).value   
+        const prompt_registry = (await this.promptRegistryAuthOptions()).value
+        const prompt_user_repo = await inquirer.prompt([
+            {
+                name: `private`,
+                message: `Is ${prompt_registry.username}/${stack_name} a private repo?`,
+                type: "confirm",
+            }
+        ]);        
+        
         response = {
             "source": {
                 "image": image_prompt.image,
@@ -421,7 +432,8 @@ export default class Create extends BasicCommand {
                 "username": prompt_registry["username"],
                 "token": prompt_registry["token"],
                 "server": prompt_registry["server"]
-            }
+            },
+            "private": prompt_user_repo.private
         }
     }
 
