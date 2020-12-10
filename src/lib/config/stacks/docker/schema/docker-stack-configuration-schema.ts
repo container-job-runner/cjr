@@ -143,21 +143,14 @@ export const docker_stack_configuration_schema = {
              "type": "string",
              "pattern": "^(always)|(prompt)$"
            },
-           "username": {
-             "type": "string"
+           "auth": {
+               "$ref": "#/definitions/registry-auth"
            },
-           "server": {
-             "type": "string"
-           },
-           "token": {
-             "type": "string"
-           }
        },
        "required": [
           "storage-location", 
           "mode",
-          "username",
-          "server"
+          "auth"
         ],
        "additionalProperties": false
     },

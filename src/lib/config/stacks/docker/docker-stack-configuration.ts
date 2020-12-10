@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { ValidatedOutput } from '../../../validated-output'
-import { StackConfiguration, StackSnapshotOptions } from '../abstract/stack-configuration'
+import { StackConfiguration } from '../abstract/stack-configuration'
 import { dsc_vo_validator } from './schema/docker-stack-configuration-schema'
 import { trim } from '../../../functions/misc-functions'
 import { DefaultContainerRoot, cli_name, Dictionary } from '../../../constants'
@@ -25,7 +25,7 @@ export type DockerStackConfigObject = {
   "resources"?: DockerStackResourceConfig
   "files"?: DockerStackFileConfig
   "entrypoint"?: Array<string>
-  "snapshots"?: StackSnapshotOptions
+  "snapshots"?: DockerStackSnapshotOptions
   "flags"?: { [key:string] : string }
 }
 
@@ -76,6 +76,19 @@ export type DockerStackFileConfig = {
     "download-include-from"?: string
   }
 }
+
+export type DockerRegistryStackSnapshotOptions = {
+    "storage-location": 'registry'
+    "mode": 'always'|'prompt' 
+    "auth": DockerRegistryAuthConfig
+}
+
+export type DockerArchiveStackSnapshotOptions = {
+    "storage-location": 'archive'
+    "mode": 'always'|'prompt'
+}
+
+export type DockerStackSnapshotOptions = DockerRegistryStackSnapshotOptions | DockerArchiveStackSnapshotOptions
 
 export type StackType = "remote-image"|"tar"|"tar.gz"|"dockerfile"|"config"
 // remote: no local stack folder, only a remote image is specified
@@ -386,7 +399,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     else delete this.config.files.rsync["download-exclude-from"]
   }
 
-  setSnapshotOptions(options: StackSnapshotOptions)
+  setSnapshotOptions(options: DockerStackSnapshotOptions)
   {
     this.config.snapshots = options;
   }
@@ -739,7 +752,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return this.config?.ports || []
   }
 
-  getSnapshotOptions(): undefined | StackSnapshotOptions
+  getSnapshotOptions(): undefined | DockerStackSnapshotOptions
   {
     return this.config?.snapshots
   }

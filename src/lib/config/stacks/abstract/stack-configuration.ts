@@ -8,19 +8,6 @@ import { Dictionary } from '../../../constants'
 import { SshShellCommand } from '../../../ssh-shell-command'
 import { ShellCommand } from '../../../shell-command'
 
-export type RegistryStackSnapshotOptions = {
-    "storage-location": 'registry'
-    "mode": 'always'|'prompt', 
-    "username": string, 
-    "server": string,
-    "token"?: string
-}
-export type ArchiveStackSnapshotOptions = {
-    "storage-location": 'archive'
-    "mode": 'always'|'prompt'
-}
-export type StackSnapshotOptions = RegistryStackSnapshotOptions | ArchiveStackSnapshotOptions
-
 export abstract class StackConfiguration<T>
 {
   stack_path: string|undefined
@@ -43,7 +30,7 @@ export abstract class StackConfiguration<T>
   abstract setEntrypoint(value: Array<string>): void;
   abstract setRsyncUploadSettings(value: {include: string, exclude: string}): void;
   abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;
-  abstract setSnapshotOptions(options: StackSnapshotOptions): void
+  abstract setSnapshotOptions(options: Dictionary): void
   abstract removeEntrypoint() : void
   // ----> mount modifiers
   abstract addBind(hostPath: string, containerPath: string, options?:Dictionary): boolean;
@@ -80,7 +67,7 @@ export abstract class StackConfiguration<T>
   abstract getEntrypoint() : Array<string> | undefined;
   abstract getName(): string;
   abstract getBuildAuth() : Dictionary | undefined
-  abstract getSnapshotOptions(): undefined | StackSnapshotOptions
+  abstract getSnapshotOptions(): undefined | Dictionary
   abstract getContainerRoot() : string;
   abstract getRsyncUploadSettings(filter_nonexisting: boolean): {include: string, exclude: string}
   abstract getRsyncDownloadSettings(filter_nonexisting: boolean): {include: string, exclude: string}

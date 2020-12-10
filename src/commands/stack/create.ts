@@ -279,9 +279,7 @@ export default class Create extends BasicCommand {
     snapshot_configuration.setSnapshotOptions({
       "storage-location": "registry",
       "mode": options.mode,
-      "username": options.auth.username,
-      "token": options.auth.token,
-      "server": options.auth.server
+      "auth": options.auth
     })
     snapshot_configuration.setTag('latest');
     
@@ -411,7 +409,7 @@ export default class Create extends BasicCommand {
     }
     else // -- registry snapshot -----------------------------------------------
     {
-        const prompt_registry = (await this.promptRegistryAuthOptions()).value
+        const prompt_registry = (await this.promptRegistryAuthOptions()).value   
         response = {
             "source": {
                 "image": image_prompt.image,

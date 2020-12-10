@@ -18,7 +18,7 @@ import { ShellCommand } from '../shell-command'
 import { FileTools } from '../fileio/file-tools'
 import { ChildProcess } from 'child_process'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
-import { DockerStackConfiguration } from '../config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfiguration, DockerRegistryAuthConfig } from '../config/stacks/docker/docker-stack-configuration'
 
 // == TYPES ====================================================================
 
@@ -41,13 +41,6 @@ export type StackBundleOptions =
   "config-files-only"?:   boolean, // if selected only configuration files are bundled
   "verbose"?:             boolean
 }
-
-export type PushAuth = {
-  "username"?: string,
-  "password"?: string,
-  "server"?:   string,
-  "token"?:    string
-};
 
 export function bundleProject(configurations: Configurations, options: ProjectBundleOptions)
 {
@@ -449,7 +442,7 @@ export async function promptUserToSnapshot(interactive: boolean = false) : Promi
   return true
 }
 
-export async function augmentImagePushParameters(options: PushAuth)
+export async function augmentImagePushParameters(options: DockerRegistryAuthConfig) : Promise<DockerRegistryAuthConfig>
 {
   if( ! options.server ) {
       const response = await inquirer.prompt([
@@ -474,21 +467,21 @@ export async function augmentImagePushParameters(options: PushAuth)
     options.username = response.username
   }
 
-  if( ! options.password && !options.token ) {
+  if( ! options.token ) {
     const response = await inquirer.prompt([
       {
-        name: "password",
-        message: `Registry Password (or Token):`,
+        name: "token",
+        message: `Registry Token (or Password):`,
         type: "password",
       }
     ])
-    options.password = response.password
+    options.token = response.token
   }
 
   return options
 }
 
-export function snapshotToRegistry(job_id: string, job_stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, registry_options: PushAuth = {}) : ValidatedOutput<undefined>
+export function snapshotToRegistry(job_id: string, job_stack_configuration: DockerStackConfiguration, drivers: ContainerDrivers, registry_options: DockerRegistryAuthConfig) : ValidatedOutput<undefined>
 {
   const sc_time = job_stack_configuration.copy()
   sc_time.setTag(`${Date.now()}`)
@@ -510,7 +503,7 @@ export function snapshotToRegistry(job_id: string, job_stack_configuration: Stac
   return result
 }
 
-export function snapshotToArchive(job_id: string, job_stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers) : ValidatedOutput<undefined>
+export function snapshotToArchive(job_id: string, job_stack_configuration: DockerStackConfiguration, drivers: ContainerDrivers) : ValidatedOutput<undefined>
 {
     if(!job_stack_configuration.stack_path)
         return new ValidatedOutput(false, undefined).pushError('Cannot snapshot stack (stack_path is undefined)')
