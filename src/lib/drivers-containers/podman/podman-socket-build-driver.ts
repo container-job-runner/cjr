@@ -4,6 +4,7 @@ import { ValidatedOutput } from '../../validated-output'
 import { RequestOutput, Curl } from '../../curl'
 import { ShellCommand } from '../../shell-command'
 import { JSTools } from '../../js-tools'
+import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 
 export class PodmanSocketBuildDriver extends DockerSocketBuildDriver
 {
@@ -15,10 +16,10 @@ export class PodmanSocketBuildDriver extends DockerSocketBuildDriver
     super(shell, options)
   }
 
-  protected API_Build(options: {archive: string, imageName?: string, encoding: "tar"|"gzip", buildargs?: {[key: string] : string}, pull?: boolean, nocache?: boolean}) : ValidatedOutput<{output: string}>
+  protected API_Build(configuration: DockerStackConfiguration, options: {archive: string, encoding: "tar"|"gzip", pull?: boolean, nocache?: boolean}) : ValidatedOutput<{output: string}>
   {
     options.encoding = "tar" // as of podman 1.9.2 API returns error if header is set to x-tar.
-    return super.API_Build(options)
+    return super.API_Build(configuration, options)
   }
 
   protected API_ExtractLoadImageId(load_output: string) : string
