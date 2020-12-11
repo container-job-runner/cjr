@@ -112,7 +112,7 @@ will build the container using the arguments ARG1 and ARG2 that will be set to t
 
 ### `build.auth` : { username : string , server : string, token : string}
 
-This flag is only valid if the build object contains the field image. The auth field contains all the information for pulling an image that is stored in a private repository. This field can be ommited if the image is stored in a public repository, 
+The auth field contains all the information for pulling an image that is stored in a private repository. This field can be ommited if the image is stored in a public repository, 
 ```yaml
 build:
   image: "image:tag"
@@ -368,10 +368,11 @@ When you exit the shell cjr will commit the changes to a new container and save 
 A basic config.yml for a remote snapshotable stack looks roughly as follows:
 ```yaml
 build:
-  image: user/$IMAGENAME:latest          # the tag is always set to latest
+  image: user/repo:latest          # the image is always user/repo:latest is always set to latest
 snapshot:
   mode: 'prompt'
   storage-location: "remote"
+  repository: repo
   auth:
     username: user
     server: https://index.docker.io/v1/ 
