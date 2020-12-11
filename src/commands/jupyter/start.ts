@@ -113,13 +113,17 @@ export default class Start extends ServerCommand {
     const onstart_cmd = this.settings.get('on-http-start');
     if(flags['quiet']) // exit silently
         return
-    else if(onstart_cmd) // open webapp
-        printValidatedOutput(
-            new ShellCommand(flags['explicit'], flags['quiet'])
+    else if(onstart_cmd) // launch custom command
+    {
+        const exec = new ShellCommand(flags['explicit'], flags['quiet'])
             .execAsync(onstart_cmd, {}, [], {
+                detached: true,
+                stdio: 'ignore',
                 env: urlEnvironmentObject(access_url, { SERVER: "jupyter" })
             })
-        )   
+        if(exec.success) exec.value.unref()
+        printValidatedOutput(exec)
+    }
     else // print server url
         console.log(access_url)
   }
