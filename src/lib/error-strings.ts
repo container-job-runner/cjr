@@ -51,6 +51,9 @@ export const ErrorStrings = {
     NOURL: `Failed to obtain a url for the Theia.`,
     LIST_FAILED: `Failed to obtain list of running Theia servers`
   },
+  SERVICES: {
+      INVALID_PROJECT_ROOT: (project_root: string) => `the directory ${project_root} does not exist.`
+  },
   REMOTE_RESOURCE: {
     NAME_NON_EXISTANT : (name: string) => chalk`{bold Nonexistant Remote Resource} - a resource with the name ${name} does not exist.`,
     KEYFILE_NON_EXISTANT : (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,

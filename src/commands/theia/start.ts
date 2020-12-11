@@ -43,6 +43,11 @@ export default class Start extends ServerCommand {
     this.augmentFlagsWithProjectRootArg(args, flags)
     this.overrideResourceFlagForDevCommand(flags)
 
+    // -- validate project root ------------------------------------------------
+    const pr_check = this.validProjectRoot(flags['project-root'])
+    if(!pr_check.success)
+        return printValidatedOutput(pr_check)
+
     // -- create stack for running theia ---------------------------------------
     const create_stack = this.createStack(flags)
     if(!create_stack.success)

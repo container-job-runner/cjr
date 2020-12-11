@@ -1,8 +1,11 @@
 import path = require('path')
+import fs = require('fs')
 import { JobCommand } from './job-command'
 import { ContainerDrivers, JobManager } from '../job-managers/abstract/job-manager'
 import { nextAvailablePort } from '../functions/cli-functions'
 import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manager'
+import { ValidatedOutput } from '../validated-output'
+import { ErrorStrings } from '../error-strings'
 
 export abstract class ServerCommand extends JobCommand
 {
@@ -69,6 +72,21 @@ export abstract class ServerCommand extends JobCommand
             "remotePort": options.port,
             "localPort": options.port
         })   
+    }
+
+    validProjectRoot(project_root?: string) : ValidatedOutput<undefined>
+    {
+        const success = new ValidatedOutput(true, undefined);
+        const failure = new ValidatedOutput(true, undefined)
+            .pushError(ErrorStrings.SERVICES.INVALID_PROJECT_ROOT(project_root || ""));
+        
+        if(!project_root)
+            return success
+        
+        if(fs.existsSync(project_root))
+            return success
+        
+        return failure
     }
 
 }
