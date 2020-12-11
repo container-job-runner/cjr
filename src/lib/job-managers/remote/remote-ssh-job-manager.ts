@@ -226,7 +226,7 @@ export class RemoteSshJobManager extends GenericJobManager
         )        
     }
 
-    // uploadStackFiles uploads all files required to run a job with a stack
+    // uploadStackFiles uploads all files required to build stack
 
     private uploadStackFiles(local_stack_configuration: StackConfiguration<any>) : ValidatedOutput<undefined>
     { 
@@ -253,8 +253,14 @@ export class RemoteSshJobManager extends GenericJobManager
                 )
             )
         }
-         
-        // -- upload remote binds ----------------------------------------------
+        
+        return result
+    }
+
+    private uploadRemoteBinds(local_stack_configuration: StackConfiguration<any>) : ValidatedOutput<undefined>
+    {
+        const result = new ValidatedOutput(true, undefined)
+        
         const rsync_flags_binds:Dictionary = {a: {}, delete: {}}
         if(this.output_options.verbose) 
             rsync_flags_binds['v'] = {}
@@ -269,7 +275,7 @@ export class RemoteSshJobManager extends GenericJobManager
                 )
             )
         })
-
+        
         return result
     }
 
@@ -363,6 +369,11 @@ export class RemoteSshJobManager extends GenericJobManager
         )
         remote_job_configuration.addLabel(this.REMOTELABELS.REMOTE_PROJECT_ROOT, remote_project_root)
         remote_job_configuration.addLabel(this.REMOTELABELS.CACHED_PROJECT_ROOT, (cached) ? 'TRUE' : 'FALSE')
+
+        // -- upload remote binds -----------------------------------------------
+        const upload_remote_binds = this.uploadRemoteBinds(local_job_configuration.stack_configuration)
+        if(!upload_remote_binds.success)
+            return failure.absorb(upload_remote_binds)
 
         // -- start new x11 multiplexor ----------------------------------------
         if(options['x11']) // note: x11 currently does not support async jobs
