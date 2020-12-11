@@ -1,7 +1,7 @@
 {
   "name": "cjr",
   "description": "Runs jobs in linux containers",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "author": "buvoli",
   "bin": {
     "cjr": "./bin/run"
