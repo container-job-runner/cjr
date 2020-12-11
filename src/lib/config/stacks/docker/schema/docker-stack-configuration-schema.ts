@@ -48,9 +48,6 @@ export const docker_stack_configuration_schema = {
         "args": {"$ref": "#/definitions/args"},
         "args-dynamic": {"$ref": "#/definitions/args"}
       },
-      "dependencies": {
-        "auth": ["image"]
-      },
       "additionalProperties": false
     },
     "entrypoint": {

@@ -179,14 +179,14 @@ export class DockerSocketBuildDriver extends BuildDriver
       return result.absorb(tar)
     }
     // -- 3. call api to build Archive ------------------------------------------
-    const build_result = this.API_Build({
-      "archive": archive_name,
-      "imageName": configuration.getImage(),
-      "buildargs": configuration.getBuildArgs(),
-      "encoding": 'gzip',
-      "pull": options?.pull || false,
-      "nocache": options?.nocache || false
-    })
+    const build_result = this.API_Build(
+        configuration,
+        {
+            "archive": archive_name,
+            "encoding": 'gzip',
+            "pull": options?.pull || false,
+            "nocache": options?.nocache || false
+        })
     result.absorb(build_result)
     result.value = build_result.value.output
     // -- 4. remove tmp folder -------------------------------------------------
@@ -285,21 +285,23 @@ export class DockerSocketBuildDriver extends BuildDriver
   // Function Wrappers for API calls
   // ===========================================================================
 
-  protected API_Build(options: {archive: string, imageName?: string, encoding: "tar"|"gzip", buildargs?: {[key: string] : string}, pull?: boolean, nocache?: boolean}) : ValidatedOutput<{output: string}>
+  protected API_Build(configuration: DockerStackConfiguration, options: {archive: string, encoding: "tar"|"gzip", pull?: boolean, nocache?: boolean}) : ValidatedOutput<{output: string}>
   {
     const result = new ValidatedOutput(true, {output: ""})
+    const build_auth = configuration.getBuildAuth();
     const build_result = this.curlPostProcessor(
       this.curl.post({
         "url": `/build`,
         "encoding": options.encoding,
         "params": JSTools.rRemoveEmpty({
-          "buildargs": JSON.stringify(options?.buildargs || {}),
+          "buildargs": JSON.stringify(configuration.getBuildArgs() || {}),
           "labels" : JSON.stringify({"builder": cli_name}),
           "nocache": options?.nocache || false,
           "pull": options?.pull || false,
-          "t": options.imageName
+          "t": configuration.getImage()       
         }),
-        "file": options.archive
+        "file": options.archive,
+        "header": (build_auth) ? [`X-Registry-Config: ${this.API_buildAuthHeader(build_auth)}`] : undefined
       })
     )
 
@@ -514,6 +516,7 @@ export class DockerSocketBuildDriver extends BuildDriver
     return result
   }
 
+  // auth header used by push and pull endpoint
   protected API_authHeader(auth: DockerRegistryAuthConfig) : string
   {
     // -- create auth string (must be encoded in base64) -----------------------
@@ -521,6 +524,21 @@ export class DockerSocketBuildDriver extends BuildDriver
       "username": auth.username,
       "password": auth.token,
       "serveraddress": auth.server
+    })
+    const buff = Buffer.from(auth_string)
+    const auth_str = buff.toString('base64')
+    return auth_str
+  }
+
+  // auth header used by build endpoint (https://docs.docker.com/engine/api/v1.41/#operation/ImageBuild)
+  protected API_buildAuthHeader(auth: DockerRegistryAuthConfig) : string
+  {
+    // -- create auth string (must be encoded in base64) -----------------------
+    const auth_string = JSON.stringify({
+      [ auth.server ] : {
+        "username": auth.username,
+        "password": auth.token
+      }
     })
     const buff = Buffer.from(auth_string)
     const auth_str = buff.toString('base64')

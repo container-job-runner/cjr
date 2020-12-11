@@ -81,6 +81,11 @@ export class DockerCliBuildDriver extends BuildDriver
       if(!configuration.stack_path)
         return new ValidatedOutput(false, "")
 
+      // -- authenticate if auth info is present
+      const build_auth = configuration.getBuildAuth();
+      if( build_auth !== undefined)
+        this.registryLogin(build_auth)
+
       const command = `${this.base_command} build`;
       const args = ['.'] // user cwd as context
       const flags = this.generateDockerBuildFlags(configuration, options)
@@ -158,6 +163,7 @@ export class DockerCliBuildDriver extends BuildDriver
       if(this.isBuilt(configuration) && !(configuration?.config?.build?.["pull"] || options?.['pull']))
         return result
 
+      // -- authenticate if auth info is present
       const build_auth = configuration.getBuildAuth();
       if( build_auth !== undefined)
         this.registryLogin(build_auth)
