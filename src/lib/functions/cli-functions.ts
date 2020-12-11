@@ -18,7 +18,7 @@ import { ShellCommand } from '../shell-command'
 import { FileTools } from '../fileio/file-tools'
 import { ChildProcess } from 'child_process'
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
-import { DockerStackConfiguration, DockerRegistryAuthConfig } from '../config/stacks/docker/docker-stack-configuration'
+import { DockerStackConfiguration, DockerRegistryAuthConfig, DockerRegistryStackSnapshotOptions } from '../config/stacks/docker/docker-stack-configuration'
 
 // == TYPES ====================================================================
 
@@ -481,24 +481,24 @@ export async function augmentImagePushParameters(options: DockerRegistryAuthConf
   return options
 }
 
-export function snapshotToRegistry(job_id: string, job_stack_configuration: DockerStackConfiguration, drivers: ContainerDrivers, registry_options: DockerRegistryAuthConfig) : ValidatedOutput<undefined>
+export function snapshotToRegistry(job_id: string, job_stack_configuration: DockerStackConfiguration, drivers: ContainerDrivers, registry_options: DockerRegistryStackSnapshotOptions) : ValidatedOutput<undefined>
 {
   const sc_time = job_stack_configuration.copy()
-  sc_time.setTag(`${Date.now()}`)
+  sc_time.setImage(`${registry_options.auth.username}/${registry_options.repository}:${Date.now()}`)
   const sc_latest = job_stack_configuration.copy()
-  sc_latest.setTag(constants.SNAPSHOT_LATEST_TAG)
+  sc_latest.setImage(`${registry_options.auth.username}/${registry_options.repository}:${constants.SNAPSHOT_LATEST_TAG}`)
 
   const result = new ValidatedOutput(true, undefined)
   printStatusHeader(`Creating ${sc_time.getImage()}`, true);
   result.absorb(drivers.runner.jobToImage(job_id, sc_time.getImage()))
   if(!result.success) return result
   printStatusHeader(`Pushing ${sc_time.getImage()}`, true);
-  result.absorb(drivers.builder.pushImage(sc_time, registry_options, "inherit"))
+  result.absorb(drivers.builder.pushImage(sc_time, registry_options.auth, "inherit"))
   if(!result.success) return result
   printStatusHeader(`Updating ${sc_latest.getImage()}`, true);
   result.absorb(drivers.builder.tagImage(sc_time, sc_latest.getImage()))
   if(!result.success) return result
-  result.absorb(drivers.builder.pushImage(sc_latest, registry_options, "inherit"))
+  result.absorb(drivers.builder.pushImage(sc_latest, registry_options.auth, "inherit"))
   if(!result.success) return result
   return result
 }

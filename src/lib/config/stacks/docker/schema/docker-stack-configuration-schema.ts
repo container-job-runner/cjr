@@ -135,7 +135,10 @@ export const docker_stack_configuration_schema = {
           "storage-location" : {
              "type": "string",
              "pattern": "^(registry)$"
-           }, 
+           },
+          "repository": {
+              "type": "string"
+          },  
           "mode" : {
              "type": "string",
              "pattern": "^(always)|(prompt)$"
@@ -146,6 +149,7 @@ export const docker_stack_configuration_schema = {
        },
        "required": [
           "storage-location", 
+          "repository",
           "mode",
           "auth"
         ],

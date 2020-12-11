@@ -81,6 +81,7 @@ export type DockerRegistryStackSnapshotOptions = {
     "storage-location": 'registry'
     "mode": 'always'|'prompt' 
     "auth": DockerRegistryAuthConfig
+    "repository": string
 }
 
 export type DockerArchiveStackSnapshotOptions = {

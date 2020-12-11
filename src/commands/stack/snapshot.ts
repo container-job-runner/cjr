@@ -91,7 +91,7 @@ export default class Snapshot extends JobCommand {
     {
         const registry_options = snapshot_options.auth
         await augmentImagePushParameters(registry_options)
-        return snapshotToRegistry(job_id, job_stack_configuration, drivers, snapshot_options.auth)
+        return snapshotToRegistry(job_id, job_stack_configuration, drivers, snapshot_options)
     }
     else if(snapshot_options["storage-location"] == "archive")
     {

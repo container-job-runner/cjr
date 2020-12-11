@@ -24,6 +24,7 @@ type RemoteSnapshotOptions = {
     "mode": "always"|"prompt", 
     "auth": DockerRegistryAuthConfig,
     "private": boolean
+    "repository": string
 }
 type ArchiveSnapshotOptions = { 
     "source" : NewImageStackOptions,
@@ -155,7 +156,7 @@ export default class Create extends BasicCommand {
         this.createEmptyStack(stacks_dir, stack_name, {snapshots: true, build: true});
         new_config_result = this.newArchiveSnapshotStackConfiguration(container_drivers, stacks_dir, stack_name, options)
     } else {
-        new_config_result = await this.newRemoteSnapshotStackConfiguration(container_drivers, stack_name, options)
+        new_config_result = await this.newRemoteSnapshotStackConfiguration(container_drivers, options)
     }
 
     if(!new_config_result.success)
@@ -243,13 +244,13 @@ export default class Create extends BasicCommand {
   // then pushes images to users repository and returns snapshot config
   // ---------------------------------------------------------------------------
 
-  async newRemoteSnapshotStackConfiguration(container_drivers: ContainerDrivers, stack_name: string, options: RemoteSnapshotOptions) : Promise<ValidatedOutput<DockerStackConfiguration>>
+  async newRemoteSnapshotStackConfiguration(container_drivers: ContainerDrivers, options: RemoteSnapshotOptions) : Promise<ValidatedOutput<DockerStackConfiguration>>
   {
     const result = new ValidatedOutput(true, new DockerStackConfiguration())
 
     // -- pull and tag images --------------------------------------------------
     printOutputHeader(`Pulling ${options.source.image}`)
-    const image_name = path.posix.join(options.auth.username, stack_name)
+    const image_name = path.posix.join(options.auth.username, options.repository)
     const pr_result = this.pullAndTag(options.source, {
             "snapshot": `${image_name}:${Date.now()}`,
             "latest": `${image_name}:${constants.SNAPSHOT_LATEST_TAG}`
@@ -282,7 +283,8 @@ export default class Create extends BasicCommand {
     snapshot_configuration.setSnapshotOptions({
       "storage-location": "registry",
       "mode": options.mode,
-      "auth": options.auth
+      "auth": options.auth,
+      "repository": options.repository
     })
     snapshot_configuration.setTag('latest');
     if(options.private)
@@ -419,12 +421,20 @@ export default class Create extends BasicCommand {
         const prompt_registry = (await this.promptRegistryAuthOptions()).value
         const prompt_user_repo = await inquirer.prompt([
             {
+                name: `repository`,
+                message: `Repository name for saving snapshots:`,
+                type: "input",
+                default: stack_name.toLowerCase()
+            }
+        ]); 
+        const prompt_user_repo_access = await inquirer.prompt([
+            {
                 name: `private`,
-                message: `Is ${prompt_registry.username}/${stack_name} a private repo?`,
+                message: `Is ${prompt_registry.username}/${prompt_user_repo.repository} a private repo?`,
                 type: "confirm",
                 default: false
             }
-        ]);        
+        ]);
         
         response = {
             "source": {
@@ -438,7 +448,8 @@ export default class Create extends BasicCommand {
                 "token": prompt_registry["token"],
                 "server": prompt_registry["server"]
             },
-            "private": prompt_user_repo.private
+            "repository": prompt_user_repo.repository,
+            "private": prompt_user_repo_access.private
         }
     }
 
