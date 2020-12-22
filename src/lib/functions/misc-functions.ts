@@ -4,6 +4,11 @@ import { ErrorStrings } from '../error-strings'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
 import { URL } from 'url'
+import { JobManager } from '../job-managers/abstract/job-manager'
+import { SyncthingLocalService } from '../services/SyncthingLocalService'
+import { SyncthingRemoteService } from '../services/SyncthingRemoteService'
+import { MultiServiceManager } from '../services/managers/multi-service-manager'
+import { GenericAbstractService } from '../services/abstract/GenericAbstractService'
 
 export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary) : ValidatedOutput<undefined>
 {
@@ -189,4 +194,24 @@ export function urlEnvironmentObject(url_str: string, additional_vars: {[key:str
         ... additional_vars
     }
 
+}
+
+// -- Syncthing two-way sync functions -----------------------------------------
+
+export function initizeSyncManager(local_job_manager: JobManager, remote_job_manager: JobManager, resource: {key: string, username: string, ip: string}, ports: { listen: number, connect: number, gui: number}): MultiServiceManager<{"local": GenericAbstractService, "remote": GenericAbstractService}>
+{
+    const local_sync_manger = new SyncthingLocalService(
+        local_job_manager,
+        {
+            "ports": { listen: ports.listen, connect: ports.connect},
+            "ssh": { key: resource.key, username: resource.username, ip: resource.ip }
+        }
+    )
+    const remote_sync_manger = new SyncthingRemoteService(
+        remote_job_manager,
+        {
+            "ports": ports
+        }
+    )
+    return new MultiServiceManager({"local": local_sync_manger, "remote": remote_sync_manger})
 }
