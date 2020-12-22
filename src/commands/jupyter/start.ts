@@ -68,8 +68,8 @@ export default class Start extends ServerCommand {
             "stack_configuration": stack_configuration,
             "project-root": flags["project-root"],
             "reuse-image" : this.extractReuseImage(flags),
-            "port": jupyter_port,
-            "ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
+            "access-port": jupyter_port,
+            "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
             "x11": flags['x11']
         }
     )
@@ -102,14 +102,17 @@ export default class Start extends ServerCommand {
         token = result.value["token"]
     }
 
+    if(!start_request.value["access-port"]) // exit if port not set (this should never occur)
+        return
+
     // -- start tunnel ---------------------------------------------------------
     if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
         this.startTunnel(job_manager, {
-            "port": start_request.value.port, 
+            "port": start_request.value['access-port'], 
         })
 
     // -- execute on start commend ---------------------------------------------
-    const access_url = `http://${start_request.value.ip}:${start_request.value.port}?token=${token}`
+    const access_url = `http://${start_request.value['access-ip']}:${start_request.value['access-port']}?token=${token}`
     const onstart_cmd = this.settings.get('on-http-start');
     if(flags['quiet']) // exit silently
         return

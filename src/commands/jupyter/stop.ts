@@ -39,7 +39,10 @@ export default class Stop extends ServerCommand {
     if( job_manager instanceof RemoteSshJobManager )
     {
         jupyter_service.list(jupyter_identifier).value.map( 
-            (si: ServiceInfo) => this.releaseTunnelPort(job_manager, {"port": si.port}) 
+            (si: ServiceInfo) => {
+                if(si["access-port"] !== undefined)
+                    this.releaseTunnelPort(job_manager, {"port": si["access-port"]})
+            } 
         )
     } 
 

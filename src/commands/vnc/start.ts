@@ -65,8 +65,8 @@ export default class Start extends ServerCommand {
             "stack_configuration": stack_configuration,
             "project-root": flags["project-root"],
             "reuse-image" : this.extractReuseImage(flags),
-            "port": vnc_port,
-            "ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
+            "access-port": vnc_port,
+            "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
             "x11": flags['x11']
         }
     )
@@ -94,14 +94,17 @@ export default class Start extends ServerCommand {
         )
     }
 
+    if(!start_request.value["access-port"]) // exit if port not set (this should never occur)
+        return
+
     // -- start tunnel ---------------------------------------------------------
     if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
         this.startTunnel(job_manager, {
-            "port": start_request.value.port, 
+            "port": start_request.value['access-port'], 
         })
 
     // -- execute on start commend ---------------------------------------------
-    const access_url = `vnc://${start_request.value.ip}:${start_request.value.port}`
+    const access_url = `vnc://${start_request.value['access-ip']}:${start_request.value['access-port']}`
     const onstart_cmd = this.settings.get('on-vnc-start') 
     if(flags['quiet']) // exit silently
         return

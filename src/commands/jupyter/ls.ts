@@ -37,7 +37,7 @@ export default class List extends ServerCommand {
         silent_clip:    [true, false]
     }
     const toToken = (e:ServiceInfo) => jupyter_service.ready({"project-root": e["project-root"]}).value.token
-    const toRowDataArray = (e:ServiceInfo) => [chalk`{green ${e["project-root"] || "none"}}`, chalk`{underline http://${e.ip}:${e.port}/?token=${toToken(e)}}`]
+    const toRowDataArray = (e:ServiceInfo) => [chalk`{green ${e["project-root"] || "none"}}`, chalk`{underline http://${e["access-ip"]}:${e["access-port"]}/?token=${toToken(e)}}`]
     printHorizontalTable({ ... table_parameters, ... {
       data: list_request.value.map(toRowDataArray)
     }})

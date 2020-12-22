@@ -36,7 +36,7 @@ export default class List extends ServerCommand {
         text_widths:    [7, 100],
         silent_clip:    [true, false]
     }
-    const toArray = (e:ServiceInfo) => [chalk`{green ${e["project-root"] || "none"}}`, chalk`{underline http://${e.ip}:${e.port}}`]
+    const toArray = (e:ServiceInfo) => [chalk`{green ${e["project-root"] || "none"}}`, chalk`{underline http://${e["access-ip"]}:${e["access-port"]}}`]
     printHorizontalTable({ ... table_parameters, ... {
       data: list_request.value.map(toArray)
     }})
