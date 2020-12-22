@@ -52,10 +52,11 @@ export const ErrorStrings = {
     LIST_FAILED: `Failed to obtain list of running Theia servers`
   },
   SERVICES: {
-      INVALID_PROJECT_ROOT: (project_root: string) => `the directory ${project_root} does not exist.`
+      INVALID_PROJECT_ROOT: (project_root: string) => `the directory ${project_root} does not exist.`,
+      EMPTY_PROJECT_ROOT: `You must specify a project root.`
   },
   REMOTE_RESOURCE: {
-    NAME_NON_EXISTANT : (name: string) => chalk`{bold Nonexistant Remote Resource} - a resource with the name ${name} does not exist.`,
+    NAME_NON_EXISTANT : (name: string) => chalk`{bold Nonexistant Remote Resource} - a resource with the name "${name}" does not exist.`,
     KEYFILE_NON_EXISTANT : (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,
     NO_KEY_PRESENT: (name: string) => chalk`{bold Remote Resource has no Key} - the resource ${name} does not have a specified ssh key file.`,
     NEW: {

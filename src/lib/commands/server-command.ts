@@ -74,19 +74,16 @@ export abstract class ServerCommand extends JobCommand
         })   
     }
 
-    validProjectRoot(project_root?: string) : ValidatedOutput<undefined>
+    validProjectRoot(project_root?: string, allow_empty: boolean = true) : ValidatedOutput<undefined>
     {
         const success = new ValidatedOutput(true, undefined);
-        const failure = new ValidatedOutput(true, undefined)
-            .pushError(ErrorStrings.SERVICES.INVALID_PROJECT_ROOT(project_root || ""));
-        
         if(!project_root)
-            return success
+            return (allow_empty) ? success : success.pushError(ErrorStrings.SERVICES.EMPTY_PROJECT_ROOT)
         
         if(fs.existsSync(project_root))
             return success
         
-        return failure
+        return success.pushError(ErrorStrings.SERVICES.INVALID_PROJECT_ROOT(project_root || ""))
     }
 
 }
