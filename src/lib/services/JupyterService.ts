@@ -29,7 +29,8 @@ export class JupyterService extends GenericAbstractService
 
     protected startCommand(job_configuration: JobConfiguration<any>, options: ServiceOptions): string[] 
     {
-        return [`jupyter ${this.jupyter_options['interface'] == 'lab' ? 'lab' : 'notebook'} --ip=0.0.0.0 --port=${options.port.containerPort}`]
+        const port_flag = (options["access-port"]) ? `--port=${options["access-port"].containerPort}` : ''
+        return [`jupyter ${this.jupyter_options['interface'] == 'lab' ? 'lab' : 'notebook'} ${port_flag} --ip=0.0.0.0`]
     }
 
     protected serviceEntrypoint() {
