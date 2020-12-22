@@ -28,8 +28,8 @@ export abstract class StackConfiguration<T>
   abstract setBuildAuth(auth: Dictionary) : void
   abstract setTag(value: string): void
   abstract setEntrypoint(value: Array<string>): void;
-  abstract setRsyncUploadSettings(value: {include: string, exclude: string}): void;
-  abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;
+  abstract setRsyncUploadSettings(value: {include: string|undefined, exclude: string|undefined}): void;
+  abstract setRsyncDownloadSettings(value: {include: string|undefined, exclude: string|undefined}): void;
   abstract setSnapshotOptions(options: Dictionary): void
   abstract removeEntrypoint() : void
   abstract setContainerRoot(value: string) : void

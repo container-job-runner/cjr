@@ -384,7 +384,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     this.config.files.containerRoot = value
   }
 
-  setRsyncUploadSettings(value: {include: string, exclude: string}) {
+  setRsyncUploadSettings(value: {include: string|undefined, exclude: string|undefined}) {
     if(this.config?.files == undefined) this.config.files = {}
     if(this.config?.files.rsync == undefined) this.config.files.rsync = {}
 
@@ -395,7 +395,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     else delete this.config.files.rsync["upload-exclude-from"]
   }
 
-  setRsyncDownloadSettings(value: {include: string, exclude: string}) {
+  setRsyncDownloadSettings(value: {include: string|undefined, exclude: string|undefined}) {
     if(this.config?.files == undefined) this.config.files = {}
     if(this.config?.files.rsync == undefined) this.config.files.rsync = {}
 
