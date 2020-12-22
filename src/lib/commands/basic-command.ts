@@ -376,6 +376,29 @@ export abstract class BasicCommand extends Command
     return run_shortcuts
   }
 
+  // Remote Resource functions
+
+  getResource(name: string) : ValidatedOutput<Resource>
+  {
+    const failure_value:Resource = { "type": "ssh", "address": "", "username": "", "options": {}}
+    const resource = this.resource_configuration.getResource(name)
+    if( resource == undefined ) 
+    return new ValidatedOutput(false, failure_value).pushError(ErrorStrings.REMOTE_RESOURCE.NAME_NON_EXISTANT(name))
+    
+    return new ValidatedOutput(true, resource)
+  }
+
+  getResourceWithKey(name: string) : ValidatedOutput<Required<Resource>>
+  {
+    const failure_value:Required<Resource> = { "type": "ssh", "address": "", "username": "", "key": "", "options": {}}
+    const resource = this.resource_configuration.getResource(name)
+    if( resource == undefined ) 
+    return new ValidatedOutput(false, failure_value).pushError(ErrorStrings.REMOTE_RESOURCE.NAME_NON_EXISTANT(name))
+    if( resource.key == undefined )
+    return new ValidatedOutput(false, failure_value).pushError(ErrorStrings.REMOTE_RESOURCE.NO_KEY_PRESENT(name))
+    return new ValidatedOutput(true, { ... resource , ... { key: resource.key} } ) // spread operator used for typescript to compile
+  }
+
   // == Podman Socket Functions ================================================
   private startPodmanSocketOnce(shell: ShellCommand, socket: string)
   {

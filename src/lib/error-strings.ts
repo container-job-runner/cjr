@@ -57,6 +57,7 @@ export const ErrorStrings = {
   REMOTE_RESOURCE: {
     NAME_NON_EXISTANT : (name: string) => chalk`{bold Nonexistant Remote Resource} - a resource with the name ${name} does not exist.`,
     KEYFILE_NON_EXISTANT : (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,
+    NO_KEY_PRESENT: (name: string) => chalk`{bold Remote Resource has no Key} - the resource ${name} does not have a specified ssh key file.`,
     NEW: {
       NAME_EXISTS: (name: string) => chalk`{bold Name Invalid} - a remote resource named ${name} already exists.`,
       KEYFILE_NONEXISTANT: (path: string) => chalk`{bold Keyfile does not exist} - the file ${path} was not found.`,
