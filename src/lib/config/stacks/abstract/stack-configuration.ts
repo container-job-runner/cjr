@@ -32,6 +32,7 @@ export abstract class StackConfiguration<T>
   abstract setRsyncDownloadSettings(value: {include: string, exclude: string}): void;
   abstract setSnapshotOptions(options: Dictionary): void
   abstract removeEntrypoint() : void
+  abstract setContainerRoot(value: string) : void
   // ----> mount modifiers
   abstract addBind(hostPath: string, containerPath: string, options?:Dictionary): boolean;
   abstract addVolume(volumeName: string, containerPath: string): boolean;
