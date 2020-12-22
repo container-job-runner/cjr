@@ -1,7 +1,7 @@
 import constants = require('../../constants')
 import { AbstractService, ServiceIdentifier, ServiceOptions, ServiceInfo } from "./AbstractService";
 import { ValidatedOutput } from "../../validated-output";
-import { JobRunOptions } from "../../job-managers/abstract/job-manager";
+import { JobManager, JobRunOptions } from "../../job-managers/abstract/job-manager";
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { JobInfo, jobIds, firstJobAsArray } from '../../drivers-containers/abstract/run-driver';
 import { JSTools } from '../../js-tools';
@@ -10,14 +10,16 @@ import chalk = require('chalk');
 
 export abstract class GenericAbstractService extends AbstractService
 {
+    abstract job_manager: JobManager
+
     protected abstract SERVICE_JOB_PREFIX:string
     protected abstract READY_CONFIG: {"command": string[], "regex-string": string}
     protected abstract startCommand(job_configuration: JobConfiguration<any>, options:ServiceOptions) : string[]
     protected abstract serviceEntrypoint() : undefined|string[]
 
     protected SERVICE_LABELS = {
-        "port": "service-public-port",
-        "ip": "service-access-ip"
+        "access-port": "service-access-port",
+        "access-ip": "service-access-ip"
     }
 
     protected ERRORS = {
@@ -58,8 +60,8 @@ export abstract class GenericAbstractService extends AbstractService
         )
         return new ValidatedOutput(true, {
                 "id": job.value.id,
-                "port": options.port.hostPort,
-                "ip": options["ip"],
+                "access-port": options["access-port"]?.hostPort,
+                "access-ip": options["access-ip"],
                 "project-root": identifier["project-root"],
                 "isnew": true
             }).absorb(job)
@@ -67,10 +69,13 @@ export abstract class GenericAbstractService extends AbstractService
 
     protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>
     {
-        const stack_configuration = options["stack_configuration"]
-        stack_configuration.addPort(options['port'].hostPort, options['port'].containerPort, options['port'].address)
+        const stack_configuration = ( options.stack_configuration !== undefined ) ? options["stack_configuration"] : this.job_manager.configurations.stack()
+        if(options['access-port'])
+            stack_configuration.addPort(options['access-port'].hostPort, options['access-port'].containerPort, options['access-port'].address)
+        
         const entrypoint = this.serviceEntrypoint()
-        if(entrypoint) stack_configuration.setEntrypoint(entrypoint)
+        if(entrypoint)
+            stack_configuration.setEntrypoint(entrypoint)
 
         const job_configuration = this.job_manager.configurations.job(stack_configuration)
         job_configuration.remove_on_exit = true
@@ -93,8 +98,10 @@ export abstract class GenericAbstractService extends AbstractService
     protected addGenericServiceLabels(job_configuration: JobConfiguration<any>, identifier: ServiceIdentifier, options: ServiceOptions)
     {
         job_configuration.addLabel(constants.label_strings.job.name, this.identifierToJobName(identifier))
-        job_configuration.addLabel(this.SERVICE_LABELS["port"], `${options.port.hostPort}`);
-        job_configuration.addLabel(this.SERVICE_LABELS["ip"], `${options.ip}`);
+        if(options["access-port"])
+            job_configuration.addLabel(this.SERVICE_LABELS["access-port"], `${options["access-port"].hostPort}`);
+        if(options["access-ip"])
+            job_configuration.addLabel(this.SERVICE_LABELS["access-ip"], `${options["access-ip"]}`);
         return job_configuration
     }
     
@@ -137,8 +144,8 @@ export abstract class GenericAbstractService extends AbstractService
     {
         return {
             "id": job_info.id,
-            "port": parseInt(job_info.labels[this.SERVICE_LABELS['port']]),
-            "ip": job_info.labels[this.SERVICE_LABELS["ip"]],
+            "access-port": parseInt(job_info.labels[this.SERVICE_LABELS['access-port']]) || undefined,
+            "access-ip": job_info.labels[this.SERVICE_LABELS["access-ip"]],
             "project-root": job_info.labels[constants.label_strings.job["project-root"]],
             "isnew": false
         }
