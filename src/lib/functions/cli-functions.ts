@@ -211,6 +211,39 @@ export function nextAvailablePort(drivers: ContainerDrivers, port:number=1024) :
   return port
 }
 
+export function nextAvailablePorts(drivers: ContainerDrivers, starting_port:number=1024, total_ports:number) : number[]
+{
+    const job_info = drivers.runner.jobInfo({states: ["running"]}) // get all jobs
+    if(!job_info.success) return new Array(total_ports).map((_value:any, index : number) => starting_port + index)
+    // -- extract port and order ascending -------------------------------------
+    const ports:Array<number> = []
+    job_info.value.map( 
+        (job_info:JobInfo) => ports.push(
+            ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
+        )
+    )
+    const ord_ports = [ ... new Set(ports) ].sort()
+    const free_ports:number[] = []
+    // -- determine available ports --------------------------------------------
+    for(var i = 0; i <= ord_ports.length; i ++)  {
+        if(ord_ports[i] == starting_port) starting_port++ // port is already used, increment starting_port.
+        if(ord_ports[i] > starting_port) // ports starting_port, ... , (ord_ports[i] - 1) are available
+        { 
+            const delta = Math.min(total_ports - free_ports.length, ord_ports[i] - starting_port) // number of ports to add
+            free_ports.push( ... new Array(delta).fill(starting_port).map(
+                (value: number, index: number) => value + index)
+            )
+            starting_port = starting_port + delta + 1
+        } 
+    }
+    // -- add additional ports (if there are still not enough ports) -------
+    const delta = total_ports - free_ports.length
+    free_ports.push(
+        ... (new Array(delta).fill(starting_port).map( (value: any, index: number) => value + index))
+    )
+    return free_ports
+}
+
 // -----------------------------------------------------------------------------
 // INITX11: ensures xQuartz is running and properly configured; Only affects mac
 // ensures network connections are set to true
