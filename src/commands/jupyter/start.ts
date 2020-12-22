@@ -52,7 +52,9 @@ export default class Start extends ServerCommand {
         return printValidatedOutput(create_stack)
     const {stack_configuration, job_manager } = create_stack.value
     if(flags['override-entrypoint']) stack_configuration.setEntrypoint(['/bin/bash', '-c'])
-        // -- check x11 user settings --------------------------------------------
+    stack_configuration.setRsyncUploadSettings({include: undefined, exclude: undefined})
+    stack_configuration.setRsyncDownloadSettings({include: undefined, exclude: undefined})
+    // -- check x11 user settings --------------------------------------------
     if(flags['x11']) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),

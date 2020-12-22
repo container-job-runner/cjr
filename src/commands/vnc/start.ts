@@ -50,6 +50,8 @@ export default class Start extends ServerCommand {
     if(!create_stack.success)
         return printValidatedOutput(create_stack)
     const {stack_configuration, job_manager } = create_stack.value
+    stack_configuration.setRsyncUploadSettings({include: undefined, exclude: undefined})
+    stack_configuration.setRsyncDownloadSettings({include: undefined, exclude: undefined})
     if(flags['override-entrypoint']) stack_configuration.setEntrypoint(['/bin/bash', '-c'])
     
     // -- select port --------------------------------------------------------
