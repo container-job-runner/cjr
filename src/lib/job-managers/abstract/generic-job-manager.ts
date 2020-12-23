@@ -3,7 +3,7 @@ import os = require('os')
 import { JobManager, JobRunOptions, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions, JobProperties, JobPropertiesOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
-import { firstJob, NewJobInfo, JobInfo, JobState, firstJobId, jobStates, JobInfoFilter } from '../../drivers-containers/abstract/run-driver';
+import { firstJob, NewJobInfo, JobInfo, JobState, firstJobId, jobStates, JobInfoFilter, JobPortInfo } from '../../drivers-containers/abstract/run-driver';
 import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels } from '../../functions/config-functions';
@@ -217,7 +217,7 @@ export abstract class GenericJobManager extends JobManager
             "id": j.id,
             "image": j.image,
             "stack": j.stack,
-            "ports": j.ports.join(", "),
+            "ports": j.ports.map((p:JobPortInfo) => p.hostPort).join(","),
             "project-root": j.labels?.[label_strings.job["project-root"]] || "",
             "container-root": j.labels?.[label_strings.job["container-root"]] || "",
             "command": j.labels?.[label_strings.job["command"]],
