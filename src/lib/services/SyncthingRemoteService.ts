@@ -49,6 +49,23 @@ export class SyncthingRemoteService extends GenericAbstractService
         stack_configuration.addEnvironmentVariable("SYNCTHING_LISTEN_PORT", this.syncthing_options.ports.listen.toString())
         stack_configuration.addEnvironmentVariable("SYNCTHING_CONNECT_PORT", this.syncthing_options.ports.connect.toString())
         stack_configuration.addEnvironmentVariable("SYNCTHING_GUI_PORT", this.syncthing_options.ports.gui.toString())
+        // -- add ports (necessary even with network=host or cjr cannot tell if these ports as used) ------------
+        stack_configuration.addPort(
+            this.syncthing_options.ports.listen,
+            this.syncthing_options.ports.listen, 
+            "127.0.0.1"
+        )
+        stack_configuration.addPort(
+            this.syncthing_options.ports.connect,
+            this.syncthing_options.ports.connect, 
+            "127.0.0.1"
+        )
+        stack_configuration.addPort(
+            this.syncthing_options.ports.gui,
+            this.syncthing_options.ports.gui, 
+            "127.0.0.1"
+        )
+         
         if(identifier["project-root"])
             stack_configuration.addEnvironmentVariable(
                 "SYNCTHING_SYNC_DIRECTORY", 
