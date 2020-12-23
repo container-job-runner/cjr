@@ -1,8 +1,9 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput, waitUntilSuccess } from '../../../lib/functions/misc-functions'
-import { nextAvailablePorts } from '../../../lib/functions/cli-functions'
+import { nextAvailablePorts, printSyncManagerOutput } from '../../../lib/functions/cli-functions'
 import { ServerCommand } from '../../../lib/commands/server-command'
 import { initizeSyncManager } from '../../../lib/functions/misc-functions'
+import { ValidatedOutput } from '../../../lib/validated-output'
 
 export default class Start extends ServerCommand {
     static description = 'Start a Syncthing server.'
@@ -60,18 +61,25 @@ export default class Start extends ServerCommand {
             }
         )
 
-        if( ! start_request.success ) 
-            return printValidatedOutput(start_request)
+        // -- print output ----------------------------------------------------------
+        if( ! sync_manager.absorb(start_request).success ) 
+            return printSyncManagerOutput(start_request)
 
         // -- validate service started properly ------------------------------------
-        const ready_resquest = await waitUntilSuccess(
-            () => sync_manager.ready(identifier),
+        let ready_output: { "local" : ValidatedOutput<{ output: string }> , "remote" : ValidatedOutput<{ output: string }> } | undefined = undefined
+        const ready_request = await waitUntilSuccess(
+            () => {
+                ready_output = sync_manager.ready(identifier)
+                return sync_manager.absorb(ready_output)
+            },
             1000,
             5
         )
 
-        if( ! ready_resquest.success ) 
-            return printValidatedOutput(ready_resquest)
+        if ( ! ready_request.success && ready_output !== undefined)
+            return printSyncManagerOutput(ready_output)
+        if( ! ready_request.success ) 
+            return printValidatedOutput(ready_request)
 
     }
 

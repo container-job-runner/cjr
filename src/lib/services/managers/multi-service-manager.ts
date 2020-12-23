@@ -11,12 +11,12 @@ export class MultiServiceManager<T extends { [ key : string ] : GenericAbstractS
         this.services = services
     }
 
-    start(identifier: ServiceIdentifier,  options: ServiceOptions) : ValidatedOutput<{ [key in keyof T] : ServiceInfo }> // start new service
+    start(identifier: ServiceIdentifier,  options: ServiceOptions) : { [key in keyof T] : ValidatedOutput<ServiceInfo> } // start new service
     {
         return this.serviceFunctionMap( (service: GenericAbstractService) => service.start(identifier, options) )
     }
 
-    stop(identifier?: ServiceIdentifier, copy?: { [ key in keyof T ] : boolean}) : ValidatedOutput<{ [key in keyof T] : undefined }> // stop running services, or all services if identifier is empty
+    stop(identifier?: ServiceIdentifier, copy?: { [ key in keyof T ] : boolean}) : { [key in keyof T] : ValidatedOutput<undefined> } // stop running services, or all services if identifier is empty
     {
         if(copy !== undefined)
             return this.serviceFunctionMap( (service: GenericAbstractService, key: keyof T) => service.stop(identifier, copy[key]) )
@@ -24,27 +24,54 @@ export class MultiServiceManager<T extends { [ key : string ] : GenericAbstractS
             return this.serviceFunctionMap( (service: GenericAbstractService) => service.stop(identifier) )
     }
     
-    list(identifier?: ServiceIdentifier) : ValidatedOutput<{ [key in keyof T] : ServiceInfo[] }> // determine if service is ready to be accessed
+    list(identifier?: ServiceIdentifier) : { [key in keyof T] : ValidatedOutput<ServiceInfo[]> } // determine if service is ready to be accessed
     {
         return this.serviceFunctionMap( (service: GenericAbstractService) => service.list(identifier) ) // list information of runnign service, or all running services if identifier is empty
     }
 
-    ready(identifier: ServiceIdentifier) : ValidatedOutput<{ [key in keyof T] : { output: string } }> // determine if services are ready to be accessed
+    ready(identifier: ServiceIdentifier) : { [key in keyof T] : ValidatedOutput<{ output: string }> } // determine if services are ready to be accessed
     {
         return this.serviceFunctionMap( (service: GenericAbstractService) => service.ready(identifier) )
     }
 
-    protected serviceFunctionMap<VOT>(f : (service:GenericAbstractService, key: keyof T) => ValidatedOutput<VOT>, identifier ?: ServiceIdentifier) : ValidatedOutput<{ [key in keyof T] : VOT }>
+    protected serviceFunctionMap<VOT>(f : (service:GenericAbstractService, key: keyof T) => ValidatedOutput<VOT>) : { [key in keyof T] : ValidatedOutput<VOT> }
     {
-        const value: { [key in keyof T] : VOT } = {} as { [key in keyof T] : VOT } // type cast is ok since fields will be filled in map
-        const result = new ValidatedOutput(true, value)
-
+        const result: { [key in keyof T] : ValidatedOutput<VOT> } = {} as { [key in keyof T] : ValidatedOutput<VOT> } // type cast is ok since fields will be filled in map
+        
         Object.keys(this.services).map( (key: keyof T) => {
             const f_result = f(this.services[key], key)            
-            result.absorb(f_result)
-            value[key] = f_result.value
+            result[key] = f_result
         })
         
+        return result
+    }
+
+    success(result : { [key in keyof T] : ValidatedOutput<any> }) : boolean
+    {
+        let flag = true;        
+        Object.keys(this.services).map(
+            (key: keyof T) => {
+                flag = flag && result[key].success
+            }
+        )
+        return flag
+    }
+
+    value<VOT>(output : { [key in keyof T] : ValidatedOutput<VOT> }) : { [key in keyof T] : VOT }
+    {
+        const result: { [key in keyof T] : VOT } = {} as { [key in keyof T] : VOT } // type cast is ok since fields will be filled in map
+        Object.keys(this.services).map( (key: keyof T) => {
+            result[key] = output[key].value
+        })
+        return result
+    }
+
+    absorb(output : { [key in keyof T] : ValidatedOutput<any> }) : ValidatedOutput<undefined>
+    {
+        const result = new ValidatedOutput(true, undefined)
+        Object.keys(this.services).map( (key: keyof T) => {
+            result.absorb(output[key])
+        })
         return result
     }
 

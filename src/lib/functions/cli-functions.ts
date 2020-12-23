@@ -191,6 +191,9 @@ function bundleDefaultProfiles(project_settings: ProjectSettings, host_stack_pat
 function printStatusHeader(message: string, verbose: boolean, line_width:number = 80) {
   if(verbose) console.log(chalk`-- {bold ${message}} ${'-'.repeat(Math.max(0,line_width - message.length - 4))}`)
 }
+function printStatusFooter(verbose: boolean, line_width:number = 80) {
+  if(verbose) console.log('-'.repeat(Math.max(0,line_width)))
+}
 
 export function nextAvailablePort(drivers: ContainerDrivers, port:number=1024) : number
 {
@@ -601,4 +604,21 @@ export function startPodmanSocket(shell: ShellCommand, socket: string, sleep_sec
   // sleep to allow socket to start
   shell.exec('sleep', {}, [`${sleep_seconds}`])
   return result
+}
+
+// == Sync Service ====================================================================
+
+export function printSyncManagerOutput( output: {"local" : ValidatedOutput<any>, "remote": ValidatedOutput<any>} , always: boolean = false)
+{
+    if( always || ! output["local"].success ) {
+        printStatusHeader("Local Service Errors", true)
+        printValidatedOutput(output["local"])
+        printStatusFooter(true)
+    }
+
+    if( always || ! output["remote"].success ) {
+        printStatusHeader("Remote Service Errors", true)
+        printValidatedOutput(output["local"]) // change to prepend error
+        printStatusFooter(true)
+    }
 }

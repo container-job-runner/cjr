@@ -2,6 +2,7 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { ServerCommand } from '../../../lib/commands/server-command'
 import { initizeSyncManager } from '../../../lib/functions/misc-functions'
+import { printSyncManagerOutput } from '../../../lib/functions/cli-functions'
 
 export default class Stop extends ServerCommand {
   static description = 'Stop a running Syncthing server.'
@@ -50,13 +51,14 @@ export default class Stop extends ServerCommand {
     )
     
     // -- stop service ----------------------------------------------------------
-    const start_request = sync_manager.stop(
+    const stop_request = sync_manager.stop(
         {"project-root": flags['project-root']}, 
-        {local: false, remote: false}
+        {"local": false, "remote": false}
     )
 
-    if( ! start_request.success ) 
-        return printValidatedOutput(start_request)
+    // -- print output ----------------------------------------------------------
+    printSyncManagerOutput(stop_request)
+        
   }
 
 }

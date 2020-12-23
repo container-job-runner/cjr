@@ -2,11 +2,13 @@ import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { printValidatedOutput, printHorizontalTable, initizeSyncManager } from '../../../lib/functions/misc-functions'
 import { ServiceInfo } from '../../../lib/services/abstract/AbstractService'
-import { ResourceCommand } from '../../../lib/commands/resource-command'
-import { ValidatedOutput } from '../../../lib/validated-output'
-import { ErrorStrings } from '../../../lib/error-strings'
+import { ServerCommand } from '../../../lib/commands/server-command'
+import { printSyncManagerOutput } from '../../../lib/functions/cli-functions'
 
-export default class List extends ResourceCommand {
+type ServiceState = "Running"|"Dead"
+type ProcessedSyncServiceData = { [ key: string] : { "local": ServiceState, "remote": ServiceState} }
+
+export default class List extends ServerCommand {
   static description = 'List running Syncthing servers.'
   static args  = [ { name: 'resource' } ]
   static flags = {
@@ -38,23 +40,61 @@ export default class List extends ResourceCommand {
     
     // -- get running services ------------------------------------------------
     const list_request = sync_manager.list()
-    if( ! list_request.success )
-       return printValidatedOutput(list_request)
-
+    if( ! sync_manager.absorb(list_request).success ) 
+        return printSyncManagerOutput(list_request)
+    
     if(flags["json"]) // -- json output ---------------------------------------
-       return console.log(JSON.stringify(list_request.value))
+       return console.log(JSON.stringify(sync_manager.value(list_request)))
 
+    const processed_data = this.combineServiceData(sync_manager.value(list_request))  
     // -- regular output ------------------------------------------------------
     const table_parameters = {
-        row_headers:    ["PROJECT"],
-        column_widths:  [9],
-        text_widths:    [7],
-        silent_clip:    [true]
+        row_headers:    ["PROJECT", "SERVICE-LOCAL", "SERVICE-REMOTE"],
+        column_widths:  [17, 100],
+        text_widths:    [15, 100],
+        silent_clip:    [false, false]
     }
-    const toArray = (e:ServiceInfo) => [chalk`{green ${e["project-root"] || "none"}}`]
+    const toArray = (key:keyof ProcessedSyncServiceData) => [ 
+        chalk`{underline ${key}}`, 
+        this.colorizeState(processed_data[key].local), 
+        this.colorizeState(processed_data[key].remote) 
+    ]
     printHorizontalTable({ ... table_parameters, ... {
-      data: list_request.value["local"].map(toArray)
+      data: Object.keys(processed_data).map(toArray)
     }})
+  }
+
+  // output format helper functions
+
+  combineServiceData(data: {"local" : ServiceInfo[], "remote": ServiceInfo[]}) : ProcessedSyncServiceData
+  {
+    const processed_data:ProcessedSyncServiceData = {}
+    
+    data.local.map((s:ServiceInfo) => {
+        const project_root = s["project-root"]
+        if( ! project_root ) return
+        if( processed_data[project_root] == undefined )
+            processed_data[project_root] = { "local" : "Running", "remote" : "Dead" }
+        processed_data[project_root]["local"] = "Running"
+    })
+    data.remote.map((s:ServiceInfo) => {
+        const project_root = s["project-root"]
+        if( ! project_root ) return
+        if( processed_data[project_root] == undefined )
+            processed_data[project_root] = { "local" : "Dead", "remote" : "Running" }
+        processed_data[project_root]["remote"] = "Running"    
+    })
+
+    return processed_data
+  }
+
+  colorizeState(state: ServiceState) : string
+  {
+    if (state == "Dead") 
+        return chalk.red.bold(state)
+    if (state == "Running") 
+        return chalk.bold.green(state)
+    return state
   }
 
 }
