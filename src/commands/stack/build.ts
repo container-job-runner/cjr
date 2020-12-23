@@ -1,7 +1,6 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { ShellCommand } from '../../lib/shell-command'
 
 export default class Build extends BasicCommand {
   static description = 'Manually build an image for a stack.'

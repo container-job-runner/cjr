@@ -2,7 +2,7 @@ import constants = require('../../lib/constants')
 import { flags} from '@oclif/command'
 import { printVerticalTable, printHorizontalTable, printValidatedOutput } from '../../lib/functions/misc-functions'
 import { BasicCommand } from '../../lib/commands/basic-command'
-import { Dictionary, label_strings } from '../../lib/constants'
+import { Dictionary } from '../../lib/constants'
 import { JobInfo } from '../../lib/drivers-containers/abstract/run-driver'
 import { JSTools } from '../../lib/js-tools'
 

@@ -2,7 +2,6 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { initX11 } from '../lib/functions/cli-functions'
 import { JobCommand } from '../lib/commands/job-command'
-import { LocalJobManager } from '../lib/job-managers/local/local-job-manager'
 
 export default class Shell extends JobCommand {
   static description = 'Start an interactive shell for development on localhost.'
