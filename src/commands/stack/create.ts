@@ -458,6 +458,8 @@ export default class Create extends BasicCommand {
   }
 
   printStatusHeader(message: string, verbose: boolean, line_width:number = 80) {
+    if(!verbose)
+        return
     console.log('-'.repeat(line_width))
     console.log(chalk`  ${message}`)
     console.log('-'.repeat(line_width))
