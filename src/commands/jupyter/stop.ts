@@ -2,8 +2,8 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
-import { ServiceInfo } from '../../lib/services/abstract/AbstractService'
-import { JupyterService } from '../../lib/services/JupyterService'
+import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
+import { JupyterService } from '../../lib/services/jupyter-service'
 
 export default class Stop extends ServerCommand {
   static description = 'Stop a running Jupyter server.'

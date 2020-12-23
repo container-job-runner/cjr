@@ -1,8 +1,8 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
-import { VNCService } from '../../lib/services/VNCService'
-import { ServiceInfo } from '../../lib/services/abstract/AbstractService'
+import { VNCService } from '../../lib/services/vnc-service'
+import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 
 export default class Stop extends ServerCommand {

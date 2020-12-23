@@ -3,7 +3,7 @@ import { printValidatedOutput, waitUntilSuccess, urlEnvironmentObject } from '..
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
-import { JupyterService } from '../../lib/services/JupyterService'
+import { JupyterService } from '../../lib/services/jupyter-service'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { NoticeStrings } from '../../lib/error-strings'
 import { ShellCommand } from '../../lib/shell-command'

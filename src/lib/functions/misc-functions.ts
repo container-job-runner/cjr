@@ -5,10 +5,10 @@ import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
 import { URL } from 'url'
 import { JobManager } from '../job-managers/abstract/job-manager'
-import { SyncthingLocalService } from '../services/SyncthingLocalService'
-import { SyncthingRemoteService } from '../services/SyncthingRemoteService'
+import { SyncthingLocalService } from '../services/syncthing-local-service'
+import { SyncthingRemoteService } from '../services/syncthing-remote-service'
 import { MultiServiceManager } from '../services/managers/multi-service-manager'
-import { GenericAbstractService } from '../services/abstract/GenericAbstractService'
+import { GenericAbstractService } from '../services/abstract/generic-abstract-service'
 
 export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary) : ValidatedOutput<undefined>
 {

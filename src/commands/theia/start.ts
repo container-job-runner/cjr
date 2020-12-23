@@ -3,7 +3,7 @@ import { printValidatedOutput, waitUntilSuccess, urlEnvironmentObject } from '..
 import { initX11 } from '../../lib/functions/cli-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
-import { TheiaService } from '../../lib/services/TheiaService'
+import { TheiaService } from '../../lib/services/theia-service'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { ShellCommand } from '../../lib/shell-command'
 import { NoticeStrings } from '../../lib/error-strings'

@@ -2,8 +2,8 @@ import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { printValidatedOutput, printHorizontalTable } from '../../lib/functions/misc-functions'
-import { VNCService } from '../../lib/services/VNCService'
-import { ServiceInfo } from '../../lib/services/abstract/AbstractService'
+import { VNCService } from '../../lib/services/vnc-service'
+import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
 
 export default class List extends ServerCommand {
   static description = 'List running VNC servers.'

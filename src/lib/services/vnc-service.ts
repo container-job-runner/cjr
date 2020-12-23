@@ -1,6 +1,6 @@
-import { GenericAbstractService } from "./abstract/GenericAbstractService";
+import { GenericAbstractService } from "./abstract/generic-abstract-service";
 import { JobManager } from '../job-managers/abstract/job-manager';
-import {  ServiceOptions } from './abstract/AbstractService';
+import {  ServiceOptions } from './abstract/abstract-service';
 import { JobConfiguration } from '../config/jobs/job-configuration';
 import { ShellCommand } from '../shell-command';
 

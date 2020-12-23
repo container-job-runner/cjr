@@ -1,6 +1,6 @@
 import { ValidatedOutput } from '../../validated-output';
-import { ServiceIdentifier, ServiceInfo, ServiceOptions } from '../abstract/AbstractService';
-import { GenericAbstractService } from "../abstract/GenericAbstractService";
+import { ServiceIdentifier, ServiceInfo, ServiceOptions } from '../abstract/abstract-service';
+import { GenericAbstractService } from "../abstract/generic-abstract-service";
 
 export class MultiServiceManager<T extends { [ key : string ] : GenericAbstractService}>
 {

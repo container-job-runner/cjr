@@ -1,8 +1,8 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServerCommand } from '../../lib/commands/server-command'
-import { TheiaService } from '../../lib/services/TheiaService'
-import { ServiceInfo } from '../../lib/services/abstract/AbstractService'
+import { TheiaService } from '../../lib/services/theia-service'
+import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 
 export default class Stop extends ServerCommand {

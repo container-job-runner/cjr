@@ -1,21 +1,19 @@
 import path = require('path');
-import { GenericAbstractService } from "./abstract/GenericAbstractService";
+import { GenericAbstractService } from "./abstract/generic-abstract-service";
 import { JobManager } from '../job-managers/abstract/job-manager';
-import {  ServiceIdentifier, ServiceOptions } from './abstract/AbstractService';
+import {  ServiceIdentifier, ServiceOptions } from './abstract/abstract-service';
 import { JobConfiguration } from '../config/jobs/job-configuration';
 
 export type SyncthingRemoteServiceOption = {
-    'ports': { listen: number, connect: number }
-    'ssh': {key: string, username: string, ip: string}
+    'ports': { listen: number, connect: number, gui: number }
 }
 
-export class SyncthingLocalService extends GenericAbstractService
+export class SyncthingRemoteService extends GenericAbstractService
 {
     CONSTANTS = {
-        "image": "cjrun/syncthing:local",                           // image that will run Syncthing
+        "image": "cjrun/syncthing:remote",                          // image that will run Syncthing
         "username": "syncthing",                                    // username inside container
-        "syncthing-api-key": "aK6MwJfUJyzQtUNdThZS423MvGgrQyiM",    // API key for accessing Syncthing API inside container
-        "key-location": "/opt/syncthing/ssh-key"                    // location in container where remote key should be mounted
+        "syncthing-api-key": "md3wGu2ydJgEfeUewxiTrpEUvCmDcdSR"     // API key for accessing Syncthing API inside container
     }    
     
     READY_CONFIG = {
@@ -30,7 +28,7 @@ export class SyncthingLocalService extends GenericAbstractService
     constructor(job_manager: JobManager, syncthing_options:SyncthingRemoteServiceOption)
     {
         super();
-        this.READY_CONFIG.command = ["curl", "-s", "-H", `X-API-Key: ${this.CONSTANTS["syncthing-api-key"]}`, `http://127.0.0.1:8384/rest/system/ping`]
+        this.READY_CONFIG.command = ["curl", "-s", "-H", `X-API-Key: ${this.CONSTANTS["syncthing-api-key"]}`, `http://127.0.0.1:${syncthing_options.ports.gui}/rest/system/ping`]
         this.job_manager = job_manager
         this.syncthing_options = syncthing_options
     }
@@ -39,6 +37,7 @@ export class SyncthingLocalService extends GenericAbstractService
     {
         const stack_configuration = this.job_manager.configurations.stack()
         stack_configuration.setImage(this.CONSTANTS.image)
+        stack_configuration.addFlag("network", "host")
         // -- generic settings -------------------------------------------------
         stack_configuration.addEnvironmentVariable("USER_NAME", this.CONSTANTS.username)
         stack_configuration.addEnvironmentVariable("USER_ID", "$(id -u)", true, this.job_manager.shell)
@@ -49,16 +48,29 @@ export class SyncthingLocalService extends GenericAbstractService
         // -- syncthing settings -----------------------------------------------
         stack_configuration.addEnvironmentVariable("SYNCTHING_LISTEN_PORT", this.syncthing_options.ports.listen.toString())
         stack_configuration.addEnvironmentVariable("SYNCTHING_CONNECT_PORT", this.syncthing_options.ports.connect.toString())
+        stack_configuration.addEnvironmentVariable("SYNCTHING_GUI_PORT", this.syncthing_options.ports.gui.toString())
+        // -- add ports (necessary even with network=host or cjr cannot tell if these ports as used) ------------
+        stack_configuration.addPort(
+            this.syncthing_options.ports.listen,
+            this.syncthing_options.ports.listen, 
+            "127.0.0.1"
+        )
+        stack_configuration.addPort(
+            this.syncthing_options.ports.connect,
+            this.syncthing_options.ports.connect, 
+            "127.0.0.1"
+        )
+        stack_configuration.addPort(
+            this.syncthing_options.ports.gui,
+            this.syncthing_options.ports.gui, 
+            "127.0.0.1"
+        )
+         
         if(identifier["project-root"])
             stack_configuration.addEnvironmentVariable(
                 "SYNCTHING_SYNC_DIRECTORY", 
                 path.posix.join("/home/", this.CONSTANTS.username, path.basename(identifier["project-root"]))
             )
-        // -- ssh settings -----------------------------------------------------
-        stack_configuration.addBind(this.syncthing_options.ssh.key, this.CONSTANTS["key-location"])
-        stack_configuration.addEnvironmentVariable("SSH_KEY", this.CONSTANTS["key-location"])
-        stack_configuration.addEnvironmentVariable("SSH_USERNAME", this.syncthing_options.ssh.username)
-        stack_configuration.addEnvironmentVariable("SSH_IP", this.syncthing_options.ssh.ip)
 
         const job_configuration = this.job_manager.configurations.job(stack_configuration)
         job_configuration.remove_on_exit = true

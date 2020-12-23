@@ -2,8 +2,8 @@ import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { ServerCommand } from '../../lib/commands/server-command'
 import { printValidatedOutput, printHorizontalTable } from '../../lib/functions/misc-functions'
-import { TheiaService } from '../../lib/services/TheiaService'
-import { ServiceInfo } from '../../lib/services/abstract/AbstractService'
+import { TheiaService } from '../../lib/services/theia-service'
+import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
 
 export default class List extends ServerCommand {
   static description = 'List running Theia servers.'

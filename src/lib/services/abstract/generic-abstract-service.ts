@@ -1,5 +1,5 @@
 import constants = require('../../constants')
-import { AbstractService, ServiceIdentifier, ServiceOptions, ServiceInfo } from "./AbstractService";
+import { AbstractService, ServiceIdentifier, ServiceOptions, ServiceInfo } from "./abstract-service";
 import { ValidatedOutput } from "../../validated-output";
 import { JobManager, JobRunOptions } from "../../job-managers/abstract/job-manager";
 import { JobConfiguration } from '../../config/jobs/job-configuration';
