@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
-import { ServerCommand } from '../../lib/commands/server-command'
+import { ServiceCommand } from '../../lib/commands/service-command'
 import { VNCService } from '../../lib/services/vnc-service'
 import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 
-export default class Stop extends ServerCommand {
+export default class Stop extends ServiceCommand {
   static description = 'Stop a running VNC server.'
   static args = [ { name: "project-root" } ]
   static flags = {

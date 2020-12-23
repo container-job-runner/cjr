@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput, waitUntilSuccess } from '../../../lib/functions/misc-functions'
 import { nextAvailablePorts, printSyncManagerOutput } from '../../../lib/functions/cli-functions'
-import { ServerCommand } from '../../../lib/commands/server-command'
+import { ServiceCommand } from '../../../lib/commands/service-command'
 import { initizeSyncManager } from '../../../lib/functions/misc-functions'
 import { ValidatedOutput } from '../../../lib/validated-output'
 
-export default class Start extends ServerCommand {
+export default class Start extends ServiceCommand {
     static description = 'Start a Syncthing server.'
     static args = [ { name: "resource" } ]
     static flags = {

@@ -1,13 +1,13 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput, waitUntilSuccess, urlEnvironmentObject } from '../../lib/functions/misc-functions'
-import { ServerCommand } from '../../lib/commands/server-command'
+import { ServiceCommand } from '../../lib/commands/service-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 import { VNCService } from '../../lib/services/vnc-service'
 import { ValidatedOutput } from '../../lib/validated-output'
 import { NoticeStrings } from '../../lib/error-strings'
 import { ShellCommand } from '../../lib/shell-command'
 
-export default class Start extends ServerCommand {
+export default class Start extends ServiceCommand {
   static description = 'Start a VNC server.'
   static args = [ { name: "project-root" } ]
   static flags = {

@@ -1,7 +1,7 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput, waitUntilSuccess, urlEnvironmentObject } from '../../lib/functions/misc-functions'
 import { initX11 } from '../../lib/functions/cli-functions'
-import { ServerCommand } from '../../lib/commands/server-command'
+import { ServiceCommand } from '../../lib/commands/service-command'
 import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 import { TheiaService } from '../../lib/services/theia-service'
 import { ValidatedOutput } from '../../lib/validated-output'
@@ -10,7 +10,7 @@ import { NoticeStrings } from '../../lib/error-strings'
 import { URL } from 'url'
 import { accessSync } from 'fs-extra'
 
-export default class Start extends ServerCommand {
+export default class Start extends ServiceCommand {
   static description = 'Start a Theia server.'
   static args = [ { name: "project-root" } ]
   static flags = {

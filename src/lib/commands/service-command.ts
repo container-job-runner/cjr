@@ -7,7 +7,7 @@ import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manag
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings } from '../error-strings'
 
-export abstract class ServerCommand extends JobCommand
+export abstract class ServiceCommand extends JobCommand
 {
     readonly localhost_ip = 'localhost' // use localhost instead of 127.0.0.1 for theia webviews
     

@@ -1,11 +1,11 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../../lib/functions/misc-functions'
 import { initX11 } from '../../../lib/functions/cli-functions'
-import { ServerCommand } from '../../../lib/commands/server-command'
+import { ServiceCommand } from '../../../lib/commands/service-command'
 import { getJupyterUrl, runJupyterOnStartCommand, startJupyterInJob } from '../../../lib/functions/jupyter-functions'
 import { RemoteSshJobManager } from '../../../lib/job-managers/remote/remote-ssh-job-manager'
 
-export default class Start extends ServerCommand {
+export default class Start extends ServiceCommand {
   static description = 'Start a Jupyter server inside a job.'
   static args = [{name: 'id', default: ""}]
   static flags = {

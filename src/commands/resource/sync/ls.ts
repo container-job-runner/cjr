@@ -2,13 +2,13 @@ import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { printValidatedOutput, printHorizontalTable, initizeSyncManager } from '../../../lib/functions/misc-functions'
 import { ServiceInfo } from '../../../lib/services/abstract/abstract-service'
-import { ServerCommand } from '../../../lib/commands/server-command'
+import { ServiceCommand } from '../../../lib/commands/service-command'
 import { printSyncManagerOutput } from '../../../lib/functions/cli-functions'
 
 type ServiceState = "Running"|"Dead"
 type ProcessedSyncServiceData = { [ key: string] : { "local": ServiceState, "remote": ServiceState} }
 
-export default class List extends ServerCommand {
+export default class List extends ServiceCommand {
   static description = 'List running Syncthing servers.'
   static args  = [ { name: 'resource' } ]
   static flags = {

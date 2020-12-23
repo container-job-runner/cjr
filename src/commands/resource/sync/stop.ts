@@ -1,10 +1,10 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../../lib/functions/misc-functions'
-import { ServerCommand } from '../../../lib/commands/server-command'
+import { ServiceCommand } from '../../../lib/commands/service-command'
 import { initizeSyncManager } from '../../../lib/functions/misc-functions'
 import { printSyncManagerOutput } from '../../../lib/functions/cli-functions'
 
-export default class Stop extends ServerCommand {
+export default class Stop extends ServiceCommand {
   static description = 'Stop a running Syncthing server.'
   static args = [ { name: "resource" } ]
   static flags = {
