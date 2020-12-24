@@ -1,9 +1,9 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { initX11 } from '../lib/functions/cli-functions'
-import { JobCommand } from '../lib/commands/job-command'
+import { ServiceCommand } from '../lib/commands/service-command'
 
-export default class Shell extends JobCommand {
+export default class Shell extends ServiceCommand {
   static description = 'Start an interactive shell for development on localhost.'
   static args = []
   static flags = {
