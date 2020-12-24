@@ -124,7 +124,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       "vnc-password": "password",
       "on-vnc-start": on_vnc_start_cmd,
       "timeout-jupyter": "10",
-      "timeout-theia": "10",
+      "timeout-theia": "2",
       "xquartz-autostart": false
   }
 }
