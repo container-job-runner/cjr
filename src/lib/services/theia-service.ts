@@ -15,10 +15,12 @@ export class TheiaService extends GenericAbstractService
     SERVICE_JOB_PREFIX: string = "Theia"
     job_manager: JobManager
 
-    constructor(job_manager: JobManager)
+    constructor(job_manager: JobManager, options?: {"start-timeout"?: number})
     {
         super();
         this.job_manager = job_manager
+        if(options?.["start-timeout"])
+            this.READY_CONFIG.command = [`sleep ${options["start-timeout"]}`]
     }
 
     protected startCommand(job_configuration: JobConfiguration<any>, options: ServiceOptions): string[] 
