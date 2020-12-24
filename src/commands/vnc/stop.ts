@@ -2,8 +2,7 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServiceCommand } from '../../lib/commands/service-command'
 import { VNCService } from '../../lib/services/vnc-service'
-import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
-import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
+import { JobManager } from '../../lib/job-managers/abstract/job-manager'
 
 export default class Stop extends ServiceCommand {
   static description = 'Stop a running VNC server.'
@@ -22,32 +21,19 @@ export default class Stop extends ServiceCommand {
   async run()
   {
     const { args, flags } = this.parse(Stop)
-    this.augmentFlagsWithProjectSettings(flags, {"project-root": false, "resource": false})
-    this.augmentFlagsWithProjectRootArg(args, flags)
-    this.augmentFlagsWithHere(flags)
+    this.augmentFlagsForServiceStop(flags, args)
 
-    const job_manager = this.newJobManager(flags["resource"] || 'localhost', {
-        verbose: flags['verbose'], 
-        quiet: flags['quiet'], 
-        explicit: flags['explicit']
-    })
-        
-    const vnc_service = new VNCService(job_manager)
-    const vnc_identifier = (flags['all']) ? undefined : {"project-root": flags['project-root']}
-    
-    // -- release any tunnel ports ---------------------------------------------
-    if( job_manager instanceof RemoteSshJobManager )
-    {
-        vnc_service.list(vnc_identifier).value.map( 
-            (si: ServiceInfo) => {
-                if(si["access-port"] !== undefined)
-                    this.releaseTunnelPort(job_manager, {"port": si["access-port"]})
-            } 
-        )
-    } 
+    // -- service generator ----------------------------------------------------
+    const serviceGenerator = (job_manager : JobManager) => {
+        return new VNCService( job_manager, {
+            "resolution": this.settings.get('vnc-resolution'),
+            "password": this.settings.get('vnc-password')
+        })
+    }
 
+    // -- stop service ---------------------------------------------------------
     printValidatedOutput(
-        vnc_service.stop(vnc_identifier)
+        this.stopService(serviceGenerator, flags)
     )
   }
 

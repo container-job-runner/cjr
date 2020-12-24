@@ -1,12 +1,11 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput, waitUntilSuccess, urlEnvironmentObject } from '../../lib/functions/misc-functions'
-import { initX11 } from '../../lib/functions/cli-functions'
+import { printValidatedOutput, urlEnvironmentObject } from '../../lib/functions/misc-functions'
 import { ServiceCommand } from '../../lib/commands/service-command'
-import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 import { JupyterService } from '../../lib/services/jupyter-service'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { NoticeStrings } from '../../lib/error-strings'
-import { ShellCommand } from '../../lib/shell-command'
+import { JobManager } from '../../lib/job-managers/abstract/job-manager'
+import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
+import { initX11 } from '../../lib/functions/cli-functions'
 
 export default class Start extends ServiceCommand {
   static description = 'Start a Jupyter server.'
@@ -37,100 +36,49 @@ export default class Start extends ServiceCommand {
   async run()
   {
     const { args, flags } = this.parse(Start)
-    this.augmentFlagsForJob(flags)
-    this.augmentFlagsWithProjectRootArg(args, flags)
-    this.overrideResourceFlagForDevCommand(flags)
-
-    // -- validate project root ----------------------------------------------
-    const pr_check = this.validProjectRoot(flags['project-root'])
-    if(!pr_check.success)
-        return printValidatedOutput(pr_check)
-
-    // -- create stack for running vnc ---------------------------------------
-    const create_stack = this.createStack(flags)
-    if(!create_stack.success)
-        return printValidatedOutput(create_stack)
-    const {stack_configuration, job_manager } = create_stack.value
-    if(flags['override-entrypoint']) stack_configuration.setEntrypoint(['/bin/bash', '-c'])
-    stack_configuration.setRsyncUploadSettings({include: undefined, exclude: undefined})
-    stack_configuration.setRsyncDownloadSettings({include: undefined, exclude: undefined})
-    // -- check x11 user settings --------------------------------------------
-    if(flags['x11']) await initX11({
+    this.augmentFlagsForServiceStart(flags, args)
+    
+    // -- check x11 user settings ---------------------------------------------
+    if( flags['x11'] ) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),
             'explicit': flags.explicit
         })
-    // -- select port --------------------------------------------------------
-    const jupyter_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], 7001)
-    // -- start jupyter ------------------------------------------------------
-    const jupyter_service = new JupyterService(job_manager, {"interface" : this.settings.get('jupyter-interface')})
-    const start_request = jupyter_service.start(
-        { "project-root": flags["project-root"] },
-        {
-            "stack_configuration": stack_configuration,
-            "project-root": flags["project-root"],
-            "reuse-image" : this.extractReuseImage(flags),
-            "access-port": jupyter_port,
-            "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
-            "x11": flags['x11']
-        }
-    )
-    
-    if( ! start_request.success ) 
-        return printValidatedOutput(start_request)
-    
-    // notify user if vnc was already running
-    const identifier = {"project-root": start_request.value["project-root"] || ""}
-    let token: string
-    if( ! start_request.value.isnew )
-    {
-        
-        printValidatedOutput(
-            new ValidatedOutput(true, undefined)
-            .pushNotice(NoticeStrings.JUPYTER.RUNNING(
-                start_request.value.id, 
-                identifier
-            ))
-        )
-        token = jupyter_service.ready(identifier).value.token
-    }
-    else // wait for new server to start
-    {
-        const result = await waitUntilSuccess(
-            () => jupyter_service.ready({"project-root": flags["project-root"]}),
-            3000,
-            5
-        )
-        token = result.value["token"]
-    }
 
-    if(!start_request.value["access-port"]) // exit if port not set (this should never occur)
-        return
-
-    // -- start tunnel ---------------------------------------------------------
-    if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
-        this.startTunnel(job_manager, {
-            "port": start_request.value['access-port'], 
+    // -- service generator --------------------------------------------------
+    const serviceGenerator = (job_manager : JobManager) => {
+        return new JupyterService( job_manager, {
+            "interface" : this.settings.get('jupyter-interface')
         })
+    }
+
+    const failure_value = { 
+        "start" : new ValidatedOutput<ServiceInfo>( false, { id: "", isnew: true } ), 
+        "ready" : new ValidatedOutput( false, { output: "" , token : ""} )
+    }
+        
+    const result = await this.startService( serviceGenerator, flags, { 
+            "default-access-port": 7001,
+            "wait-config": {"timeout": 3000, "max-tries": 5}
+        },
+        failure_value
+    )
+
+    if(!result.success)
+        return printValidatedOutput(result)
 
     // -- execute on start commend ---------------------------------------------
-    const access_url = `http://${start_request.value['access-ip']}:${start_request.value['access-port']}?token=${token}`
-    const onstart_cmd = this.settings.get('on-http-start');
-    if(flags['quiet']) // exit silently
-        return
-    else if(onstart_cmd) // launch custom command
-    {
-        const exec = new ShellCommand(flags['explicit'], flags['quiet'])
-            .execAsync(onstart_cmd, {}, [], {
-                detached: true,
-                stdio: 'ignore',
-                env: urlEnvironmentObject(access_url, { SERVER: "jupyter" })
-            })
-        if(exec.success) exec.value.unref()
-        printValidatedOutput(exec)
-    }
-    else // print server url
-        console.log(access_url)
+    const start_result = result.value.start    
+    const ready_result = result.value.ready
+    const access_url = `http://${start_result.value['access-ip']}:${start_result.value['access-port']}?token=${ready_result.value.token}`
+    this.serviceOnReady(flags, {
+        "exec": {
+            "command": this.settings.get('on-http-start'),
+            "environment": urlEnvironmentObject( access_url, { SERVER: "theia" } )
+        },
+        "access-url": access_url
+    }) 
+
   }
 
 }

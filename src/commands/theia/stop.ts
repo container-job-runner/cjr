@@ -2,8 +2,7 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
 import { ServiceCommand } from '../../lib/commands/service-command'
 import { TheiaService } from '../../lib/services/theia-service'
-import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
-import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
+import { JobManager } from '../../lib/job-managers/abstract/job-manager'
 
 export default class Stop extends ServiceCommand {
   static description = 'Stop a running Theia server.'
@@ -22,32 +21,18 @@ export default class Stop extends ServiceCommand {
   async run()
   {
     const { args, flags } = this.parse(Stop)
-    this.augmentFlagsWithProjectSettings(flags, {"project-root": false, "resource": false})
-    this.augmentFlagsWithProjectRootArg(args, flags)
-    this.augmentFlagsWithHere(flags)
+    this.augmentFlagsForServiceStop(flags, args)
 
-    const job_manager = this.newJobManager(flags["resource"] || 'localhost', {
-        verbose: flags['verbose'], 
-        quiet: flags['quiet'], 
-        explicit: flags['explicit']
-    })
+    // -- service generator ----------------------------------------------------
+    const serviceGenerator = (job_manager : JobManager) => {
+        return new TheiaService( job_manager, {
+            "start-timeout": Math.max(0, parseFloat(this.settings.get('timeout-theia'))) || undefined
+        })
+    }
 
-    const theia_service = new TheiaService(job_manager)
-    const theia_identifier = (flags['all']) ? undefined : {"project-root": flags['project-root']}
-    
-    // -- release any tunnel ports ---------------------------------------------
-    if( job_manager instanceof RemoteSshJobManager )
-    {
-        theia_service.list(theia_identifier).value.map( 
-            (si: ServiceInfo) => {
-                if(si["access-port"] !== undefined)
-                    this.releaseTunnelPort(job_manager, {"port": si["access-port"]})
-            } 
-        )
-    } 
-
+    // -- stop service ---------------------------------------------------------
     printValidatedOutput(
-        theia_service.stop(theia_identifier)
+        this.stopService(serviceGenerator, flags)
     )
   }
 

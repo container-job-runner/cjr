@@ -1,11 +1,10 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput, waitUntilSuccess, urlEnvironmentObject } from '../../lib/functions/misc-functions'
+import { printValidatedOutput, urlEnvironmentObject } from '../../lib/functions/misc-functions'
 import { ServiceCommand } from '../../lib/commands/service-command'
-import { RemoteSshJobManager } from '../../lib/job-managers/remote/remote-ssh-job-manager'
 import { VNCService } from '../../lib/services/vnc-service'
 import { ValidatedOutput } from '../../lib/validated-output'
-import { NoticeStrings } from '../../lib/error-strings'
-import { ShellCommand } from '../../lib/shell-command'
+import { JobManager } from '../../lib/job-managers/abstract/job-manager'
+import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
 
 export default class Start extends ServiceCommand {
   static description = 'Start a VNC server.'
@@ -36,92 +35,40 @@ export default class Start extends ServiceCommand {
   async run()
   {
     const { args, flags } = this.parse(Start)
-    this.augmentFlagsForJob(flags)
-    this.augmentFlagsWithProjectRootArg(args, flags)
-    this.overrideResourceFlagForDevCommand(flags)
+    this.augmentFlagsForServiceStart(flags, args)
 
-    // -- validate project root ----------------------------------------------
-    const pr_check = this.validProjectRoot(flags['project-root'])
-    if(!pr_check.success)
-        return printValidatedOutput(pr_check)
+    // -- service generator --------------------------------------------------
+    const serviceGenerator = (job_manager : JobManager) => {
+        return new VNCService( job_manager, {
+            "resolution": this.settings.get('vnc-resolution'),
+            "password": this.settings.get('vnc-password')
+        })
+    }
 
-    // -- create stack for running vnc ---------------------------------------
-    const create_stack = this.createStack(flags)
-    if(!create_stack.success)
-        return printValidatedOutput(create_stack)
-    const {stack_configuration, job_manager } = create_stack.value
-    stack_configuration.setRsyncUploadSettings({include: undefined, exclude: undefined})
-    stack_configuration.setRsyncDownloadSettings({include: undefined, exclude: undefined})
-    if(flags['override-entrypoint']) stack_configuration.setEntrypoint(['/bin/bash', '-c'])
-    
-    // -- select port --------------------------------------------------------
-    const vnc_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], 9001)
-    // -- start vnc ----------------------------------------------------------
-    const vnc_service = new VNCService(job_manager, {
-        resolution: this.settings.get('vnc-resolution'),
-        password: this.settings.get('vnc-password')
-    })
-    const start_request = vnc_service.start(
-        { "project-root": flags["project-root"] },
-        {
-            "stack_configuration": stack_configuration,
-            "project-root": flags["project-root"],
-            "reuse-image" : this.extractReuseImage(flags),
-            "access-port": vnc_port,
-            "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
-            "x11": flags['x11']
-        }
+    const failure_value = { 
+        "start" : new ValidatedOutput<ServiceInfo>( false, { id: "", isnew: true } ), 
+        "ready" : new ValidatedOutput( false, { output: "" } )
+    }
+        
+    const result = await this.startService( serviceGenerator, flags, { 
+            "default-access-port": 9001,
+            "wait-config": {"timeout": 3000, "max-tries": 5}
+        },
+        failure_value
     )
 
-    if( ! start_request.success ) 
-        return printValidatedOutput(start_request)
-    
-    // notify user if vnc was already running
-    if( ! start_request.value.isnew )
-    {
-        printValidatedOutput(
-            new ValidatedOutput(true, undefined)
-            .pushNotice(NoticeStrings.VNC.RUNNING(
-                start_request.value.id, 
-                start_request.value["project-root"] || ""
-            ))
-        )
-    }
-    else // wait for new server to start
-    {
-        await waitUntilSuccess(
-            () => vnc_service.ready({"project-root": flags["project-root"]}),
-            3000,
-            5
-        )
-    }
-
-    if(!start_request.value["access-port"]) // exit if port not set (this should never occur)
-        return
-
-    // -- start tunnel ---------------------------------------------------------
-    if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
-        this.startTunnel(job_manager, {
-            "port": start_request.value['access-port'], 
-        })
+    if(!result.success)
+        return printValidatedOutput(result)
 
     // -- execute on start commend ---------------------------------------------
-    const access_url = `vnc://${start_request.value['access-ip']}:${start_request.value['access-port']}`
-    const onstart_cmd = this.settings.get('on-vnc-start') 
-    if(flags['quiet']) // exit silently
-        return
-    else if(onstart_cmd)  // launch custom command
-    {
-        const exec = new ShellCommand(flags['explicit'], flags['quiet'])
-            .execAsync(onstart_cmd, {}, [], {
-                detached: true,
-                stdio: 'ignore',
-                env: urlEnvironmentObject(access_url, { SERVER: "vnc" })
-            })
-        if(exec.success) exec.value.unref()
-        printValidatedOutput(exec)
-    }     
-    else // print server url
-        console.log(access_url)
+    const start_result = result.value.start    
+    const access_url = `vnc://${start_result.value['access-ip']}:${start_result.value['access-port']}`
+    this.serviceOnReady(flags, {
+        "exec": {
+            "command": this.settings.get('on-vnc-start'),
+            "environment": urlEnvironmentObject( access_url, { SERVER: "vnc" } )
+        },
+        "access-url": access_url
+    })
   }
 }

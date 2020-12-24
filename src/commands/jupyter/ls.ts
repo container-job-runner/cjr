@@ -1,9 +1,9 @@
 import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { ServiceCommand } from '../../lib/commands/service-command'
-import { printValidatedOutput, printHorizontalTable } from '../../lib/functions/misc-functions'
 import { JupyterService } from '../../lib/services/jupyter-service'
 import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
+import { JobManager } from '../../lib/job-managers/abstract/job-manager'
 
 export default class List extends ServiceCommand {
   static description = 'List running Jupyter servers.'
@@ -19,28 +19,26 @@ export default class List extends ServiceCommand {
   {
     const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"resource": false})
-    const job_manager = this.newJobManager(flags['resource'] || 'localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
-    const jupyter_service = new JupyterService(job_manager, {"interface" : this.settings.get('jupyter-interface')})
     
-    const list_request = jupyter_service.list()
-    if( ! list_request.success )
-       return printValidatedOutput(list_request)
-
-    if(flags["json"]) // -- json output ---------------------------------------
-       return console.log(JSON.stringify(list_request.value))
-
-    // -- regular output ------------------------------------------------------
-    const table_parameters = {
-        row_headers:    ["PROJECT", "URL"],
-        column_widths:  [9, 100],
-        text_widths:    [7, 100],
-        silent_clip:    [true, false]
+    // -- service generator --------------------------------------------------
+    const serviceGenerator = (job_manager : JobManager) => {
+        return new JupyterService( job_manager, {
+            "interface" : this.settings.get('jupyter-interface')
+        })
     }
-    const toToken = (e:ServiceInfo) => jupyter_service.ready({"project-root": e["project-root"]}).value.token
-    const toRowDataArray = (e:ServiceInfo) => [chalk`{green ${e["project-root"] || "none"}}`, chalk`{underline http://${e["access-ip"]}:${e["access-port"]}/?token=${toToken(e)}}`]
-    printHorizontalTable({ ... table_parameters, ... {
-      data: list_request.value.map(toRowDataArray)
-    }})
+
+    // -- table data generator -----------------------------------------------
+    const getToken = (si:ServiceInfo, js:JupyterService) => js.ready({"project-root": si["project-root"]}).value.token
+    const toDataRowArray = (si:ServiceInfo, js: JupyterService) : [ string, string ] => [
+        chalk`{green ${si["project-root"] || "none"}}`, 
+        chalk`{underline http://${si["access-ip"]}:${si["access-port"]}/?token=${getToken(si, js)}}`
+    ]
+    
+    // -- list request --------------------------------------------------------
+    this.listService(
+        serviceGenerator, toDataRowArray, flags
+    )
+
   }
 
 }

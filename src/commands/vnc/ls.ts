@@ -1,9 +1,9 @@
 import chalk = require('chalk')
 import { flags } from '@oclif/command'
 import { ServiceCommand } from '../../lib/commands/service-command'
-import { printValidatedOutput, printHorizontalTable } from '../../lib/functions/misc-functions'
 import { VNCService } from '../../lib/services/vnc-service'
 import { ServiceInfo } from '../../lib/services/abstract/abstract-service'
+import { JobManager } from '../../lib/job-managers/abstract/job-manager'
 
 export default class List extends ServiceCommand {
   static description = 'List running VNC servers.'
@@ -19,27 +19,26 @@ export default class List extends ServiceCommand {
   {
     const { flags } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"resource": false})
-    const job_manager = this.newJobManager(flags['resource'] || 'localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
-    const vnc_service = new VNCService(job_manager)
     
-    const list_request = vnc_service.list()
-    if( ! list_request.success )
-       return printValidatedOutput(list_request)
-
-    if(flags["json"]) // -- json output ---------------------------------------
-       return console.log(JSON.stringify(list_request.value))
-
-    // -- regular output ------------------------------------------------------
-    const table_parameters = {
-        row_headers:    ["PROJECT", "URL"],
-        column_widths:  [9, 100],
-        text_widths:    [7, 100],
-        silent_clip:    [true, false]
+    // -- service generator --------------------------------------------------
+    const serviceGenerator = (job_manager : JobManager) => {
+        return new VNCService( job_manager, {
+            "resolution": this.settings.get('vnc-resolution'),
+            "password": this.settings.get('vnc-password')
+        })
     }
-    const toArray = (e:ServiceInfo) => [chalk`{green ${e["project-root"] || "none"}}`, chalk`{underline vnc://${e['access-ip']}:${e['access-port']}}`]
-    printHorizontalTable({ ... table_parameters, ... {
-      data: list_request.value.map(toArray)
-    }})
+
+    // -- table data generator -----------------------------------------------
+    const toDataRowArray = (si:ServiceInfo, js: VNCService) : [ string, string ] => [
+        chalk`{green ${si["project-root"] || "none"}}`, 
+        chalk`{underline vnc://${si['access-ip']}:${si['access-port']}}`
+    ]
+    
+    // -- list request --------------------------------------------------------
+    this.listService(
+        serviceGenerator, toDataRowArray, flags
+    )
+
   }
 
 }
