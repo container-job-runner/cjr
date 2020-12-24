@@ -16,7 +16,7 @@ import { LocalJobManager } from '../job-managers/local/local-job-manager'
 // Contains functions for converting cli flags into SDK Configurations
 // ===========================================================================
 
-type CLIJobFlags = {
+export type CLIJobFlags = {
     "resource"?: string,
     "stack"?: string,
     "project-root"?: string,
