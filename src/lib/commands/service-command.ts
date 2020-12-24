@@ -1,16 +1,270 @@
 import path = require('path')
 import fs = require('fs')
-import { JobCommand } from './job-command'
+import { CLIJobFlags, JobCommand } from './job-command'
 import { ContainerDrivers, JobManager } from '../job-managers/abstract/job-manager'
 import { nextAvailablePort } from '../functions/cli-functions'
 import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manager'
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings } from '../error-strings'
+import { GenericAbstractService } from '../services/abstract/generic-abstract-service'
+import { printHorizontalTable, printValidatedOutput, waitUntilSuccess } from '../functions/misc-functions'
+import { ShellCommand } from '../shell-command'
+import { ServiceInfo } from '../services/abstract/abstract-service'
+
+type CLIServiceStartFlags = CLIJobFlags & {
+    "server-port": string,
+    "expose": boolean,
+    "override-entrypoint": boolean    
+}
+
+type ServiceStartConfig = 
+{
+    "default-access-port" ?: number,
+    "wait-config"?: {"timeout"?: number, "max-tries"?: number}
+}
+
+type ServiceOnReadyConfig = {
+    "access-url" ?: string, 
+    "exec" ?: {
+        "command" ?: string, 
+        "environment" ?: { [key: string] : string }
+    }
+}
+
+type CLIServiceStopFlags = {
+    "resource"?: string,
+    "project-root"?: string,
+    "here"?: boolean,
+    "explicit": boolean,
+    "verbose": boolean,
+    "quiet": boolean,
+    "all" : boolean
+}
+
+type CLIServiceListFlags = {
+    "resource" ?: string,
+    "explicit" : boolean,
+    "json" : boolean
+}
 
 export abstract class ServiceCommand extends JobCommand
 {
     readonly localhost_ip = 'localhost' // use localhost instead of 127.0.0.1 for theia webviews
-    
+    protected default_access_port = 8000
+
+    // == Start Flag functions =================================================
+
+    augmentFlagsForServiceStart(flags: CLIServiceStartFlags, args: {"project-root"?: string})
+    {
+        this.augmentFlagsForJob(flags)
+        this.augmentFlagsWithProjectRootArg(args, flags)
+        this.overrideResourceFlagForDevCommand(flags)
+    }
+
+    augmentFlagsForServiceStop(flags: CLIServiceStopFlags, args: {"project-root"?: string})
+    {
+        this.augmentFlagsWithProjectSettings(flags, {"project-root": false, "resource": false})
+        this.augmentFlagsWithProjectRootArg(args, flags)
+        this.augmentFlagsWithHere(flags)
+    }
+
+    overrideResourceFlagForDevCommand(flags: {resource?: string}) // used for local development flags
+    {
+        if(this.settings.get('enable-remote-dev') != true)
+            flags['resource'] = 'localhost'
+    }
+
+    augmentFlagsWithProjectRootArg(args: {"project-root"?: string}, flags: {"project-root"?: string})
+    {
+        if( args['project-root'] && !flags['project-root'] ) // allow arg to override flag
+            flags['project-root'] = path.resolve(args['project-root'])
+    }
+
+    // == End Flag functions =================================================
+
+    // == Start Stack functions ==============================================
+
+    createServiceStack(flags: CLIServiceStartFlags)
+    {
+        const create_stack = this.createStack(flags)
+        if( ! create_stack.success )
+            return create_stack
+        const stack_configuration = create_stack.value.stack_configuration
+        stack_configuration.setRsyncUploadSettings({include: undefined, exclude: undefined})
+        stack_configuration.setRsyncDownloadSettings({include: undefined, exclude: undefined})
+        if(flags['override-entrypoint']) 
+            stack_configuration.setEntrypoint(['/bin/bash', '-c'])
+        
+        return create_stack
+    }
+
+    // == End Stack Functions ================================================
+
+    // == Start Service functions ============================================
+
+    async startService<T extends GenericAbstractService>( 
+        serviceGenerator: (job_manager: JobManager) => T, 
+        flags: CLIServiceStartFlags, 
+        options: ServiceStartConfig,
+        failure_value: {start: ReturnType<T["start"]>, ready: ReturnType<T["ready"]> }) : Promise<ValidatedOutput<{start: ReturnType<T["start"]>, ready: ReturnType<T["ready"]> }>>
+    {
+        const failure = new ValidatedOutput(false, failure_value)
+
+        // -- validate project root --------------------------------------------
+        const pr_check = this.validProjectRoot(flags['project-root'])
+        if( ! pr_check.success )
+            return failure.absorb(pr_check)
+
+        // -- create stack for running service ---------------------------------
+        const create_stack = this.createServiceStack(flags)
+        if( ! create_stack.success )
+            return failure.absorb(create_stack)
+        const {stack_configuration, job_manager } = create_stack.value
+
+        // -- select port --------------------------------------------------------
+        const access_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
+       
+        // -- start service ------------------------------------------------------
+        const service = serviceGenerator(job_manager)
+        const identifier = { "project-root": flags["project-root"] }
+
+        const start_result: ReturnType<T["start"]> = service.start(
+            identifier,
+            {
+                "stack_configuration": stack_configuration,
+                "project-root": flags["project-root"],
+                "reuse-image" : this.extractReuseImage(flags),
+                "access-port": access_port,
+                "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
+                "x11": flags['x11']
+            }
+        ) as ReturnType<T["start"]>
+
+        if( ! start_result.success ) 
+            return failure.absorb(start_result)
+        
+        // -- verify service is ready ------------------------------------------
+        let ready_result : ReturnType<T["ready"]>       
+        if( ! start_result.value.isnew )
+        {
+            ready_result = service.ready(identifier) as ReturnType<T["ready"]>
+        }
+        else // wait for new server to start
+        {
+            ready_result = await waitUntilSuccess(
+                () => service.ready(identifier),
+                options?.["wait-config"]?.timeout || 3000,
+                options?.["wait-config"]?.["max-tries"] || 5
+            ) as ReturnType<T["ready"]>
+        }
+
+        if( ! ready_result.success ) 
+            return failure.absorb(ready_result).pushError(ErrorStrings.SERVICES.UNREADY)
+
+        // exit if port not set (this should never occur -- added for valid TS)
+        if(! start_result.value["access-port"] ) 
+            return failure         
+
+        // -- start tunnel -----------------------------------------------------
+        if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
+            this.startTunnel(job_manager, {
+                "port": start_result.value["access-port"], 
+            })
+
+        // -- start sync ----------------------------------------------------------
+        // if(this.settings.get('enable-two-way-sync) && (job_manager instanceof RemoteSshJobManager) )
+        //      this.startSyncthing(flags["project-root"], flags["resource"])
+        
+        // -- set output values ---------------------------------------------------
+        return new ValidatedOutput(true, {start: start_result, ready: ready_result})
+    }
+
+    stopService<T extends GenericAbstractService>(
+        serviceGenerator: (job_manager: JobManager) => T, 
+        flags: CLIServiceStopFlags) : ValidatedOutput<undefined>    
+    {
+        const job_manager = this.newJobManager(flags["resource"] || 'localhost', {
+            verbose: flags['verbose'], 
+            quiet: flags['quiet'], 
+            explicit: flags['explicit']
+        })
+
+        const service = serviceGenerator(job_manager)
+        const identifier = (flags['all']) ? undefined : {"project-root": flags['project-root']}
+
+        // -- release any tunnel ports ---------------------------------------------
+        if( job_manager instanceof RemoteSshJobManager )
+        {
+            service.list(identifier).value.map( 
+                (si: ServiceInfo) => {
+                    if(si["access-port"] !== undefined)
+                        this.releaseTunnelPort(job_manager, {"port": si["access-port"]})
+                } 
+            )
+        }
+
+        // -- stop sync ----------------------------------------------------------
+        // if(this.settings.get('enable-two-way-sync) && (job_manager instanceof RemoteSshJobManager) )
+        //      this.stopSyncthing(flags["project-root"], flags["resource"])
+
+        return service.stop(identifier)
+
+    }
+
+    listService<T extends GenericAbstractService>(
+        serviceGenerator: (job_manager: JobManager) => T,
+        toDataRowArray: (info: ServiceInfo, service: T) => [ string, string ],
+        flags: CLIServiceListFlags) : ValidatedOutput<ServiceInfo[]>    
+    {
+        const job_manager = this.newJobManager(flags["resource"] || 'localhost', {
+            verbose: false, 
+            quiet: false, 
+            explicit: flags['explicit']
+        })
+
+        const service = serviceGenerator(job_manager)
+        
+        const list_request = service.list()
+        if( ! list_request.success )
+            return list_request
+
+        if(flags["json"]) { // -- json output ----------------------------------
+            console.log(JSON.stringify(list_request.value))
+        } 
+        else { // -- regular output --------------------------------------------
+            printHorizontalTable({
+                row_headers:    ["PROJECT", "URL"],
+                column_widths:  [9, 100],
+                text_widths:    [7, 100],
+                silent_clip:    [true, false],
+                data:           list_request.value.map( (si:ServiceInfo) => toDataRowArray(si, service) )   
+            })
+        }
+
+        return list_request
+    }
+
+    serviceOnReady( flags: CLIServiceStartFlags, options: ServiceOnReadyConfig )
+    {
+        if(flags['quiet']) // exit silently
+            return
+        else if(options?.exec?.command) // exec command
+        {
+            const exec = new ShellCommand(flags['explicit'], flags['quiet'])
+                .execAsync(options.exec.command, {}, [], {
+                    detached: true,
+                    stdio: 'ignore',
+                    env: options.exec?.environment || {}
+                })
+            if(exec.success) exec.value.unref()
+            printValidatedOutput(exec)
+        }  
+        else if(options["access-url"]) // print service url
+            console.log(options["access-url"])
+    }
+
+    // == End Service functions ==================================================
+
     defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean, starting_port:number=7001)
     {
         const default_address = (expose) ? '0.0.0.0' : '127.0.0.1'
@@ -23,12 +277,6 @@ export abstract class ServiceCommand extends JobCommand
         }
         const default_port = nextAvailablePort(drivers, starting_port)
         return {"hostPort": default_port, "containerPort": default_port, "address": default_address}
-    }
-
-    augmentFlagsWithProjectRootArg(args: {"project-root"?: string}, flags: {"project-root"?: string})
-    {
-        if( args['project-root'] && !flags['project-root'] ) // allow arg to override flag
-            flags['project-root'] = path.resolve(args['project-root'])
     }
 
     // functions for remote servers

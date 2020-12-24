@@ -53,7 +53,8 @@ export const ErrorStrings = {
   },
   SERVICES: {
       INVALID_PROJECT_ROOT: (project_root: string) => `the directory ${project_root} does not exist.`,
-      EMPTY_PROJECT_ROOT: `You must specify a project root.`
+      EMPTY_PROJECT_ROOT: `You must specify a project root.`,
+      UNREADY: `Container started successfully but service did not. Try re-running start command; if error persists, then the selected stack may not support this service.`
   },
   REMOTE_RESOURCE: {
     NAME_NON_EXISTANT : (name: string) => chalk`{bold Nonexistant Remote Resource} - a resource with the name "${name}" does not exist.`,
