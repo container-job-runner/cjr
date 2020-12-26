@@ -71,7 +71,7 @@ export abstract class ServiceCommand extends JobCommand
 
     overrideResourceFlagForDevCommand(flags: {resource?: string}) // used for local development flags
     {
-        if(this.settings.get('enable-remote-dev') != true)
+        if(this.settings.get('enable-remote-services') != true)
             flags['resource'] = 'localhost'
     }
 

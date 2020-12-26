@@ -37,7 +37,7 @@ The location of a yml file that can be used to specify run shortcuts for `cjr jo
 ### Services
 1. autocopy-on-service-exit: 'true' | 'false'    
 If true then cjr will auomatically copy back data after remote development service (juptyer, theia, vnc) are stopped.
-2. enable-remote-dev: 'true' | 'false'  
+2. enable-remote-services: 'true' | 'false'  
 If true, commands `theia`, `jupyter`, and `vnc` will respond to the flag --resource. 
 
 ### Containers

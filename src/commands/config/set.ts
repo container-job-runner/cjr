@@ -31,7 +31,7 @@ export default class Set extends BasicCommand {
       options: ["true", "false"],
       description: "if true, then the :Z option will be applied to all bind mounts."
     }),
-    "enable-remote-dev": flags.string({
+    "enable-remote-services": flags.string({
       description: 'enable the resource flag for development commands shell, jupyter, theia, and vnc.',
       options: ["true", "false"],
     }),
