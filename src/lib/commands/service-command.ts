@@ -2,14 +2,15 @@ import path = require('path')
 import fs = require('fs')
 import { CLIJobFlags, JobCommand } from './job-command'
 import { ContainerDrivers, JobManager } from '../job-managers/abstract/job-manager'
-import { nextAvailablePort } from '../functions/cli-functions'
+import { nextAvailablePort, nextAvailablePorts, printSyncManagerOutput } from '../functions/cli-functions'
 import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manager'
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings } from '../error-strings'
 import { GenericAbstractService } from '../services/abstract/generic-abstract-service'
-import { printHorizontalTable, printValidatedOutput, waitUntilSuccess } from '../functions/misc-functions'
+import { initizeSyncManager, printHorizontalTable, printValidatedOutput, waitUntilSuccess } from '../functions/misc-functions'
 import { ShellCommand } from '../shell-command'
 import { ServiceInfo } from '../services/abstract/abstract-service'
+import { MultiServiceManager } from '../services/managers/multi-service-manager'
 
 type CLIServiceStartFlags = CLIJobFlags & {
     "server-port": string,
@@ -263,6 +264,105 @@ export abstract class ServiceCommand extends JobCommand
             console.log(options["access-url"])
     }
 
+    // == End Service functions ==================================================
+
+    // == Start Service functions ================================================
+
+    async startSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}, options: {"stop-on-fail": boolean}) : Promise<ValidatedOutput<undefined | {local: ValidatedOutput<ServiceInfo|{output:string}>, remote: ValidatedOutput<ServiceInfo|{output:string}>}>>
+    {
+        // -- validate project root ------------------------------------------------
+        const pr_check = this.validProjectRoot(project_root, false)
+        if( ! pr_check.success )
+            return pr_check
+        
+        // -- create sync manager --------------------------------------------------
+        const sm_request = this.newSyncManager(resource_name, output_options)
+        if( ! sm_request.success || sm_request.value === undefined)
+            return new ValidatedOutput(false, undefined).absorb(sm_request)
+        
+        const sync_manager = sm_request.value
+
+        // -- start sync service ---------------------------------------------------
+        const identifier = {"project-root": project_root}
+        const start_request = sync_manager.start(identifier, 
+            {
+                "project-root": project_root,
+            }
+        )
+
+        // -- print output ---------------------------------------------------------
+        if ( sync_manager.absorb(start_request).success != false )
+            return new ValidatedOutput(false, start_request)
+
+        // -- validate service started properly ------------------------------------
+        let ready_output = { "local" : new ValidatedOutput(true, {output: ""}), "remote" : new ValidatedOutput(true, {output: ""}) }
+        const ready_request = await waitUntilSuccess(
+            () => {
+                ready_output = sync_manager.ready(identifier)
+                return sync_manager.absorb(ready_output)
+            },
+            1000,
+            5
+        )
+
+        if ( ! ready_request.success && options['stop-on-fail'] )
+            sync_manager.stop(identifier)
+
+        return new ValidatedOutput(ready_request.success, ready_output)
+
+    }
+
+    stopSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
+    {
+        // -- validate project root ------------------------------------------------
+        const pr_check = this.validProjectRoot(project_root, false)
+        if( ! pr_check.success )
+            return pr_check
+        
+        // -- create sync manager --------------------------------------------------
+        const sm_request = this.newSyncManager(resource_name, output_options, false)
+        if( ! sm_request.success || sm_request.value === undefined)
+            return new ValidatedOutput(false, undefined).absorb(sm_request)
+
+        const sync_manager = sm_request.value
+                
+        // -- stop service ----------------------------------------------------------
+        return new ValidatedOutput(true, sync_manager.stop(
+            {"project-root": project_root}, 
+            {"local": false, "remote": false}
+        ))
+    }
+
+    protected newSyncManager(resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}, set_ports: boolean = true) : ValidatedOutput<undefined | MultiServiceManager<{"local": GenericAbstractService, "remote": GenericAbstractService}>>
+    {
+        // -- validate resource-----------------------------------------------------
+        const resource_request = this.getResourceWithKey(resource_name)
+        if( ! resource_request.success )
+            return new ValidatedOutput(false, undefined).absorb(resource_request)
+
+        const resource = resource_request.value
+        
+        // -- create sync manager --------------------------------------------------
+        const local_manager = this.newJobManager('localhost', {
+            "verbose": output_options['verbose'], 
+            "quiet": output_options['quiet'], 
+            "explicit": output_options['explicit']
+        })
+        const remote_manager = this.newJobManager(resource_name, {
+            "verbose": output_options['verbose'], 
+            "quiet": output_options['quiet'], 
+            "explicit": output_options['explicit']
+        })
+        const ports = (set_ports) ? nextAvailablePorts(remote_manager.container_drivers, 20003, 3) : [-1, -1, -1] // create function
+
+        return new ValidatedOutput(true, initizeSyncManager(
+            local_manager,
+            remote_manager,
+            { key: resource.key, username: resource.username, ip: resource.address },
+            { listen: ports[0] || -1, connect: ports[1] || -1, gui: ports[2] || -1 }
+        ))
+    }
+    
     // == End Service functions ==================================================
 
     defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean, starting_port:number=7001)
