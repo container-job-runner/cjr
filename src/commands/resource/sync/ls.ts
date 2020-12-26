@@ -22,22 +22,14 @@ export default class List extends ServiceCommand {
   {
     const { flags, args } = this.parse(List)
     this.augmentFlagsWithProjectSettings(flags, {"resource": false})
-    // -- validate resource-----------------------------------------------------
-    const resource_name = args["resource"] || flags["resource"] || ""
-    const resource_request = this.getResourceWithKey(resource_name)
-    if( ! resource_request.success )
-        return printValidatedOutput(resource_request)
     
-    const resource = resource_request.value
-
     // -- create sync manager --------------------------------------------------
-    const sync_manager = initizeSyncManager(
-        this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']}),
-        this.newJobManager(resource_name, {verbose: false, quiet: false, explicit: flags['explicit']}),
-        { key: resource.key, username: resource.username, ip: resource.address },
-        { listen: -1, connect: -1, gui: -1 }
-    )
-    
+    const resource_name = args["resource"] || flags["resource"] || ""
+    const sm_request = this.newSyncManager(resource_name, {verbose: false, quiet: false, explicit: flags['explicit']})
+    if( ! sm_request.success || sm_request.value === undefined)
+        return printValidatedOutput(sm_request)
+    const sync_manager = sm_request.value
+
     // -- get running services ------------------------------------------------
     const list_request = sync_manager.list()
     if( ! sync_manager.absorb(list_request).success ) 
