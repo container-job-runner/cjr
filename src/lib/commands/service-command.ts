@@ -172,9 +172,11 @@ export abstract class ServiceCommand extends JobCommand
                 "port": start_result.value["access-port"], 
             })
 
-        // -- start sync ----------------------------------------------------------
-        // if(this.settings.get('enable-two-way-sync) && (job_manager instanceof RemoteSshJobManager) )
-        //      this.startSyncthing(flags["project-root"], flags["resource"])
+        // -- start two-way sync ------------------------------------------------
+        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) ) {
+            const sync_start = await this.startSyncthing(flags["project-root"] || "", flags["resource"] || "", flags, {"stop-on-fail": true})
+            if( ! sync_start.success ) printValidatedOutput(sync_start)
+        }
         
         // -- set output values ---------------------------------------------------
         return new ValidatedOutput(true, {start: start_result, ready: ready_result})
@@ -204,9 +206,11 @@ export abstract class ServiceCommand extends JobCommand
             )
         }
 
-        // -- stop sync ----------------------------------------------------------
-        // if(this.settings.get('enable-two-way-sync) && (job_manager instanceof RemoteSshJobManager) )
-        //      this.stopSyncthing(flags["project-root"], flags["resource"])
+        // -- stop two-way sync ----------------------------------------------------
+        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) ) {
+            const sync_stop = this.stopSyncthing(flags["project-root"] || "", flags["resource"] || "", flags)
+            if( ! sync_stop.success ) printValidatedOutput(sync_stop)
+        }
 
         return service.stop(identifier)
 

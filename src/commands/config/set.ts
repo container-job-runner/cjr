@@ -32,7 +32,12 @@ export default class Set extends BasicCommand {
       description: "if true, then the :Z option will be applied to all bind mounts."
     }),
     "enable-remote-dev": flags.string({
-      description: 'enable the resource flag for development commands shell, jupyter, theia, and vnc.'
+      description: 'enable the resource flag for development commands shell, jupyter, theia, and vnc.',
+      options: ["true", "false"],
+    }),
+    "auto-sync-remote-service": flags.string({
+      description: 'enable automatic two-way syncing for remote development commands.',
+      options: ["true", "false"],
     }),
     "stacks-dir": flags.string({
       description: "the default path to a folder that contains cjr stacks."
