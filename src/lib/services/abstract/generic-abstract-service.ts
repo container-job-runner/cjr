@@ -117,7 +117,7 @@ export abstract class GenericAbstractService extends AbstractService
         if(!result.success)
             return result.pushError(this.ERRORS.NOT_RUNNING(identifier))
         
-        if(copy)
+        if(copy && job_ids.length > 0)
             result.absorb(
                 this.job_manager.copy(
                     { "ids": job_ids, "mode": "update" }
