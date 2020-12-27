@@ -208,8 +208,13 @@ export abstract class ServiceCommand extends JobCommand
 
         // -- stop two-way sync ----------------------------------------------------
         if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) ) {
-            const sync_stop = this.stopSyncthing(flags["project-root"] || "", flags["resource"] || "", flags)
-            if( ! sync_stop.success ) printValidatedOutput(sync_stop)
+            const sync_stop = this.stopSyncthing(
+                (flags['all'] ? undefined : flags["project-root"] || ""),
+                flags["resource"] || "",
+                flags
+            )
+            if( ! sync_stop.success ) 
+                printValidatedOutput(sync_stop)
         }
 
         return service.stop(identifier)
