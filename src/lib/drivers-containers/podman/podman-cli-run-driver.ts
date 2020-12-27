@@ -3,7 +3,7 @@
 // ===========================================================================
 
 import { ShellCommand } from "../../shell-command"
-import { JobInfo, JobInfoFilter, JobState } from '../abstract/run-driver'
+import { JobInfo, JobInfoFilter, JobPortInfo, JobState } from '../abstract/run-driver'
 import { DockerCliRunDriver, DockerCreateOptions }  from '../docker/docker-cli-run-driver'
 import { parseJSON, parseLineJSON } from '../../functions/misc-functions'
 import { ValidatedOutput } from '../../validated-output'
@@ -50,11 +50,34 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
         state: this.psStatusToJobInfoState(x.Status || x.State),
         stack: x?.Labels?.[label_strings.job["stack-path"]] || "",
         labels: x?.Labels || {},
-        ports: [], // info for this field is not provided from podman ps
+        ports: this.psPortDataToJobInfoPort(x.Ports), // info for this field is only provided for podman >= 2.1 not provided from podman ps
         status: x.Status || x.State // podman 2.0 does not have status field, use Status for now?
       }
     })
     return new ValidatedOutput(true, jobs)
+  }
+
+  // A function for parsing the Port object from podman ps command found in 
+  // podman >= 2.2. The function silently exits for earlier versions of podman.
+  // NOTE: once support is dropped for podman < 2.1 we no longer need 
+  // this.addInspectData(), since all data can be collected from the ps command. 
+  protected psPortDataToJobInfoPort(x : Dictionary[] | undefined) : JobPortInfo[]
+  {
+    const port_data: JobPortInfo[] = []
+
+    if ( x instanceof Array ) {   
+        x.map( (d : Dictionary) => {
+            if( ( typeof d['hostPort'] === 'number' ) && ( typeof d['containerPort'] === 'number' ) && ( typeof d['hostIP'] === 'string' ) )
+                port_data.push({
+                    hostPort: d['hostPort'],
+                    containerPort: d['containerPort'],
+                    hostIp: d["hostIP"]
+                })
+        })
+    }
+
+    return port_data
+
   }
 
   protected psStatusToJobInfoState(x: String) : JobState
@@ -99,7 +122,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     jobs.map( (job:JobInfo):void => {
       const id = job.id
       if(inspect_data[id] !== undefined) {
-        job.ports = inspect_data[id]?.Ports || []
+        job.ports = inspect_data[id]?.Ports || job.ports
       }
     })
     return new ValidatedOutput(true, jobs)
