@@ -205,7 +205,7 @@ export function nextAvailablePort(drivers: ContainerDrivers, port:number=1024) :
       ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
     )
   )
-  const ord_ports = [... new Set(ports)].sort()
+  const ord_ports = [... new Set(ports)].sort((a,b) => a - b)
   // -- return next available port ---------------------------------------------
   for(var i = 0; i <= ord_ports.length; i ++)  {
     if(ord_ports[i] == port) port++ // port is already used. increment
@@ -225,7 +225,7 @@ export function nextAvailablePorts(drivers: ContainerDrivers, starting_port:numb
             ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
         )
     )
-    const ord_ports = [ ... new Set(ports) ].sort()
+    const ord_ports = [ ... new Set(ports) ].sort((a,b) => a - b)
     const free_ports:number[] = []
     // -- determine available ports --------------------------------------------
     for(var i = 0; i <= ord_ports.length; i ++)  {
