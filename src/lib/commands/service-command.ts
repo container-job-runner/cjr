@@ -173,8 +173,8 @@ export abstract class ServiceCommand extends JobCommand
             })
 
         // -- start two-way sync ------------------------------------------------
-        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) ) {
-            const sync_start = await this.startSyncthing(flags["project-root"] || "", flags["resource"] || "", flags, {"stop-on-fail": true})
+        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) && flags["project-root"] ) {
+            const sync_start = await this.startSyncthing(flags["project-root"], flags["resource"] || "", flags, {"stop-on-fail": true})
             if( ! sync_start.success ) printValidatedOutput(sync_start)
         }
         
@@ -207,9 +207,9 @@ export abstract class ServiceCommand extends JobCommand
         }
 
         // -- stop two-way sync ----------------------------------------------------
-        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) ) {
+        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) && ( flags['all'] || flags["project-root"] ) ) {
             const sync_stop = this.stopSyncthing(
-                (flags['all'] ? undefined : flags["project-root"] || ""),
+                ( flags['all'] ? undefined : flags["project-root"] ),
                 flags["resource"] || "",
                 flags
             )
