@@ -316,13 +316,8 @@ export abstract class ServiceCommand extends JobCommand
 
     }
 
-    stopSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
+    stopSyncthing(project_root: string|undefined, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
     {
-        // -- validate project root ------------------------------------------------
-        const pr_check = this.validProjectRoot(project_root, false)
-        if( ! pr_check.success )
-            return pr_check
-        
         // -- create sync manager --------------------------------------------------
         const sm_request = this.newSyncManager(resource_name, output_options, false)
         if( ! sm_request.success || sm_request.value === undefined)
@@ -332,7 +327,7 @@ export abstract class ServiceCommand extends JobCommand
                 
         // -- stop service ----------------------------------------------------------
         return new ValidatedOutput(true, sync_manager.stop(
-            {"project-root": project_root}, 
+            (project_root === undefined) ? undefined : {"project-root": project_root}, // if project_root is undefined, then stop all Syncthing services
             {"local": false, "remote": false}
         ))
     }

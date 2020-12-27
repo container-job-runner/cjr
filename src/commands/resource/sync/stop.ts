@@ -28,8 +28,11 @@ export default class Stop extends ServiceCommand {
         this.augmentFlagsWithProjectRootArg(args, flags)
 
         const resource_name = args["resource"] || flags["resource"] || ""
-        const project_root  = flags["project-root"] || ""
-        const stop_output   = this.stopSyncthing(project_root, resource_name, flags)
+        const stop_output   = this.stopSyncthing( 
+            ( flags["all"] ) ? undefined : flags["project-root"] || "",
+            resource_name,
+            flags
+        )
             
         printValidatedOutput(stop_output)
         if(stop_output.value != undefined)        
