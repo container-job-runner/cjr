@@ -3,11 +3,19 @@ import { parseJSON } from '../../functions/misc-functions'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'
 import { Dictionary } from '../../constants'
 import { JSTools } from '../../js-tools'
+import { SshShellCommand } from '../../ssh-shell-command'
+import { ShellCommand } from '../../shell-command'
 
 export class PodmanCliBuildDriver extends DockerCliBuildDriver
 {
     protected base_command = 'podman'
     protected outputParser = parseJSON
+
+    constructor(shell: ShellCommand|SshShellCommand, options: {rootfull: boolean})
+    {
+        super(shell, options)
+        if(options.rootfull) this.base_command = `sudo ${this.base_command}`
+    }
 
     isBuilt(configuration:DockerStackConfiguration) : boolean
     {

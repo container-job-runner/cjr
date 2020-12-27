@@ -119,6 +119,7 @@ export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir
       // container props
       "default-container-shell": "bash",
       "selinux": false,
+      "rootfull": false,
       "jupyter-interface": "lab",
       "on-http-start": on_http_start_cmd,
       "vnc-resolution": "1920x1080",

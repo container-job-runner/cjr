@@ -40,10 +40,11 @@ export class DockerCliRunDriver extends RunDriver
       chalk` copy {green ${container_id}:${container_path}}\n   to {green ${host_path}}`
   }
 
-  constructor(shell: ShellCommand|SshShellCommand, options: {selinux: boolean})
+  constructor(shell: ShellCommand|SshShellCommand, options: {selinux: boolean, rootfull: boolean})
   {
     super(shell)
     this.selinux = options.selinux || false
+    if(options.rootfull) this.base_command = `sudo ${this.base_command}`
   }
 
   jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>

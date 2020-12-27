@@ -31,6 +31,10 @@ export default class Set extends BasicCommand {
       options: ["true", "false"],
       description: "if true, then the :Z option will be applied to all bind mounts."
     }),
+    "rootfull": flags.string({
+      options: ["true", "false"],
+      description: "If true, then Podman or Docker will be explicitly run as root; for cli drivers this requires passwordless sudo for docker and podman commands."
+    }),
     "enable-remote-services": flags.string({
       description: 'enable the resource flag for development commands shell, jupyter, theia, and vnc.',
       options: ["true", "false"],

@@ -25,6 +25,7 @@ import { PodmanCliRunDriver } from '../../drivers-containers/podman/podman-cli-r
 export type RemoteSshJobManagerUserOptions = {
     "engine"?: "podman"|"docker"
     "selinux"?: boolean                     // if true, then bind mounts will have selinux :Z mode
+    "rootfull"?: boolean                    // if true, then cli drivers commands will use sudo command
     "explicit": boolean,
     "output-options"?: OutputOptions
     "image-tag"?: string                    // tag that will be used for all container images    
@@ -49,6 +50,7 @@ export class RemoteSshJobManager extends GenericJobManager
         "explicit": false,
         "output-options": {verbose: false, quiet: false},
         "selinux": false,
+        "rootfull": false,
         "image-tag": "cjr",   
         "multiplexOptions": {
             "autodisconnect": false, 
@@ -128,7 +130,8 @@ export class RemoteSshJobManager extends GenericJobManager
             this.shell,
             {
                 "engine": this.options["engine"],
-                "selinux": this.options["selinux"]
+                "selinux": this.options["selinux"],
+                "rootfull": this.options["rootfull"]
             }            
         )
         this.configurations = initializer.configurations({

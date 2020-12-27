@@ -49,7 +49,9 @@ The driver used to communicate with container engine. To use the docker engine, 
 tag that cjr will use when building images.
 4. **selinux**: 'true' | 'false'   
 If true, then the :Z option will be applied to all bind mounts. This option is should be set to true on all systems with selinux enabled or bind mounts will not function properly.
-5. **socket-path**: string  
+5. **rootfull**: 'true' | 'false'
+If true, then podman or docker will be explicitly run as root (for cli drivers this requires passwordless sudo for docker and podman commands)
+6. **socket-path**: string  
 Location of the podman or docker socket that should be used by the drivers. This setting will only be used if driver is set to either podman-socket or dockersocket.
 
 ### Jupyter and Theia

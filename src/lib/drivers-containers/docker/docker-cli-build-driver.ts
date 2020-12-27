@@ -9,6 +9,7 @@ import { parseLineJSON } from '../../functions/misc-functions'
 import { Dictionary, cli_name, label_strings } from '../../constants'
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration'
 import { ShellCommand } from '../../shell-command'
+import { SshShellCommand } from '../../ssh-shell-command'
 
 export class DockerCliBuildDriver extends BuildDriver
 {
@@ -28,6 +29,12 @@ export class DockerCliBuildDriver extends BuildDriver
 
     protected WARNINGSTRINGS = {
       IMAGE_NONEXISTANT: (name: string) => chalk`There is no image named ${name}.`
+    }
+
+    constructor(shell: ShellCommand|SshShellCommand, options: {rootfull: boolean})
+    {
+        super(shell)
+        if(options.rootfull) this.base_command = `sudo ${this.base_command}`
     }
 
     isBuilt(configuration: StackConfiguration<any>)

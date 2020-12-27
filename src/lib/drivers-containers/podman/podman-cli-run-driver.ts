@@ -10,12 +10,19 @@ import { ValidatedOutput } from '../../validated-output'
 import { label_strings, Dictionary } from '../../constants'
 import { DockerStackMountConfig, DockerStackResourceConfig } from '../../config/stacks/docker/docker-stack-configuration'
 import { DockerJobConfiguration } from '../../config/jobs/docker-job-configuration'
+import { SshShellCommand } from '../../ssh-shell-command'
 
 export class PodmanCliRunDriver extends DockerCliRunDriver
 {
   protected base_command = 'podman'
   protected JSONOutputParser = parseJSON
   enable_unshare = false
+
+  constructor(shell: ShellCommand|SshShellCommand, options: {selinux: boolean, rootfull: boolean})
+  {
+    super(shell, options)
+    if(options.rootfull) this.base_command = `sudo ${this.base_command}`
+  }
 
   protected extractCommand(job_configuration: DockerJobConfiguration) : Array<string>
   {

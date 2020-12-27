@@ -317,7 +317,8 @@ export abstract class BasicCommand extends Command
         "engine":       /^podman/.test(driver) ? "podman" : "docker",
         "driver-type":  /-cli$/.test(driver) ? "cli" : "socket",
         "socket":       this.settings.get('socket-path'),
-        "selinux":      this.settings.get('selinux'),
+        "selinux":      (this.settings.get('selinux')) ? true : false,
+        "rootfull":     (this.settings.get('rootfull')) ? true : false,
         "image-tag":    this.settings.get('image-tag'),
         "explicit":     manager_options.explicit,
         "output-options": {
@@ -346,6 +347,7 @@ export abstract class BasicCommand extends Command
         "resource":  resource,
         "engine":    (resource.options?.['engine'] == "podman") ? "podman" : "docker",
         "selinux":   (resource.options?.['selinux']) ? true : false,
+        "rootfull":  (resource.options?.['rootfull']) ? true : false,
         "image-tag": this.settings.get('image-tag'),
         "explicit":  manager_options.explicit,
         "output-options": {

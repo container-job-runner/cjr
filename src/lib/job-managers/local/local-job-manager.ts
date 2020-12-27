@@ -24,6 +24,7 @@ export type LocalJobManagerUserOptions = {
     "driver-type"?: "cli"|"socket"          // once cli driver are depricated this field can be removed
     "output-options"?: OutputOptions    
     "selinux"?: boolean                     // if true, then bind mounts will have selinux :Z mode
+    "rootfull"?: boolean                    // if true, then cli drivers commands will use sudo command
     "socket"?: string                       // path to socket
     "image-tag"?: string                    // tag that will be used for all container images
     "explicit"?: boolean
@@ -40,6 +41,7 @@ export class LocalJobManager extends GenericJobManager
       "driver-type": "socket", 
       "output-options": {"quiet": false, "verbose": false},
       "selinux": false,
+      "rootfull": false,
       "image-tag": 'cjr',
       "socket": "/var/run/docker.sock",
       "explicit": false,
@@ -85,7 +87,8 @@ export class LocalJobManager extends GenericJobManager
             shell,
             {
                 "engine": this.options["engine"],
-                "selinux": this.options["selinux"]
+                "selinux": this.options["selinux"],
+                "rootfull": this.options["rootfull"]
             }            
         )
         this.configurations = initializer.configurations({
