@@ -14,6 +14,7 @@ export class SyncthingLocalService extends GenericAbstractService
     CONSTANTS = {
         "image": "cjrun/syncthing:local",                           // image that will run Syncthing
         "username": "syncthing",                                    // username inside container
+        "sync-directory": "sync-directory",                         // directory in home folder that will be synced
         "syncthing-api-key": "aK6MwJfUJyzQtUNdThZS423MvGgrQyiM",    // API key for accessing Syncthing API inside container
         "key-location": "/opt/syncthing/ssh-key"                    // location in container where remote key should be mounted
     }    
@@ -43,17 +44,15 @@ export class SyncthingLocalService extends GenericAbstractService
         stack_configuration.addEnvironmentVariable("USER_NAME", this.CONSTANTS.username)
         stack_configuration.addEnvironmentVariable("USER_ID", "$(id -u)", true, this.job_manager.shell)
         stack_configuration.addEnvironmentVariable("GROUP_ID", "$(id -g)", true, this.job_manager.shell)
-        stack_configuration.setContainerRoot(path.posix.join("/home", this.CONSTANTS.username))
+        stack_configuration.setContainerRoot(path.posix.join("/home", this.CONSTANTS.username, this.CONSTANTS["sync-directory"]))
         stack_configuration.addFlag('podman-userns', 'keep-id')
         stack_configuration.addFlag('user', 'root')
         // -- syncthing settings -----------------------------------------------
         stack_configuration.addEnvironmentVariable("SYNCTHING_LISTEN_PORT", this.syncthing_options.ports.listen.toString())
         stack_configuration.addEnvironmentVariable("SYNCTHING_CONNECT_PORT", this.syncthing_options.ports.connect.toString())
-        if(identifier["project-root"])
-            stack_configuration.addEnvironmentVariable(
-                "SYNCTHING_SYNC_DIRECTORY", 
-                path.posix.join("/home/", this.CONSTANTS.username, path.basename(identifier["project-root"]))
-            )
+        stack_configuration.addEnvironmentVariable("SYNCTHING_SYNC_DIRECTORY", 
+            path.posix.join("/home/", this.CONSTANTS.username, this.CONSTANTS["sync-directory"])
+        )
         // -- ssh settings -----------------------------------------------------
         stack_configuration.addBind(this.syncthing_options.ssh.key, this.CONSTANTS["key-location"])
         stack_configuration.addEnvironmentVariable("SSH_KEY", this.CONSTANTS["key-location"])

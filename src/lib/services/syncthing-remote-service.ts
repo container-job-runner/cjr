@@ -13,6 +13,7 @@ export class SyncthingRemoteService extends GenericAbstractService
     CONSTANTS = {
         "image": "cjrun/syncthing:remote",                          // image that will run Syncthing
         "username": "syncthing",                                    // username inside container
+        "sync-directory": "sync-directory",                         // directory in home folder that will be synced
         "syncthing-api-key": "md3wGu2ydJgEfeUewxiTrpEUvCmDcdSR"     // API key for accessing Syncthing API inside container
     }    
     
@@ -42,13 +43,16 @@ export class SyncthingRemoteService extends GenericAbstractService
         stack_configuration.addEnvironmentVariable("USER_NAME", this.CONSTANTS.username)
         stack_configuration.addEnvironmentVariable("USER_ID", "$(id -u)", true, this.job_manager.shell)
         stack_configuration.addEnvironmentVariable("GROUP_ID", "$(id -g)", true, this.job_manager.shell)
-        stack_configuration.setContainerRoot(path.posix.join("/home", this.CONSTANTS.username))
+        stack_configuration.setContainerRoot(path.posix.join("/home", this.CONSTANTS.username, this.CONSTANTS["sync-directory"]))
         stack_configuration.addFlag('podman-userns', 'keep-id')
         stack_configuration.addFlag('user', 'root')
         // -- syncthing settings -----------------------------------------------
         stack_configuration.addEnvironmentVariable("SYNCTHING_LISTEN_PORT", this.syncthing_options.ports.listen.toString())
         stack_configuration.addEnvironmentVariable("SYNCTHING_CONNECT_PORT", this.syncthing_options.ports.connect.toString())
         stack_configuration.addEnvironmentVariable("SYNCTHING_GUI_PORT", this.syncthing_options.ports.gui.toString())
+        stack_configuration.addEnvironmentVariable("SYNCTHING_SYNC_DIRECTORY", 
+            path.posix.join("/home/", this.CONSTANTS.username, this.CONSTANTS["sync-directory"])
+        )
         // -- add ports (necessary even with network=host or cjr cannot tell if these ports as used) ------------
         stack_configuration.addPort(
             this.syncthing_options.ports.listen,
@@ -66,12 +70,6 @@ export class SyncthingRemoteService extends GenericAbstractService
             "127.0.0.1"
         )
          
-        if(identifier["project-root"])
-            stack_configuration.addEnvironmentVariable(
-                "SYNCTHING_SYNC_DIRECTORY", 
-                path.posix.join("/home/", this.CONSTANTS.username, path.basename(identifier["project-root"]))
-            )
-
         const job_configuration = this.job_manager.configurations.job(stack_configuration)
         job_configuration.remove_on_exit = true
         job_configuration.synchronous = false
