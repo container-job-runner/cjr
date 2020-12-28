@@ -176,7 +176,11 @@ export class SshShellCommand
       }
       const args = [`${this.resource.username}@${this.resource.address}`]
       const result = this.shell.exec(command, flags, args, {stdio: 'ignore'})
-      return (result.success && !this.multiplexExists(options))
+      const success = (result.success && !this.multiplexExists(options))
+      if(success) return true
+      // -- manually remove socket --------------------------------------------- 
+      fs.unlinkSync(this.multiplexSocketPath(options))
+      return !this.multiplexExists(options)
     }
 
     multiplexAlive(user_options:MultiplexOptions={}) : boolean // check status of the multiplex master
