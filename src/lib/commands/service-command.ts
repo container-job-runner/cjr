@@ -167,10 +167,12 @@ export abstract class ServiceCommand extends JobCommand
             return failure         
 
         // -- start tunnel -----------------------------------------------------
-        if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
-            this.startTunnel(job_manager, {
+        if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) {
+            const success = this.startTunnel(job_manager, {
                 "port": start_result.value["access-port"], 
             })
+            if(! success ) return failure.pushError(ErrorStrings.SERVICES.FAILED_TUNNEL_START)
+        }
 
         // -- start two-way sync ------------------------------------------------
         if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) && flags["project-root"] ) {
@@ -398,12 +400,12 @@ export abstract class ServiceCommand extends JobCommand
         return this.localhost_ip
     }
 
-    startTunnel(job_manager: JobManager, options: {port: number})
+    startTunnel(job_manager: JobManager, options: {port: number}) : boolean
     {
         if(!(job_manager instanceof RemoteSshJobManager))
-            return
+            return false
         
-        job_manager.shell.tunnelStart({
+        return job_manager.shell.tunnelStart({
             "localIP": this.localhost_ip,
             "remotePort": options.port,
             "localPort": options.port,
