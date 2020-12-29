@@ -136,6 +136,11 @@ export class ShellCommand
       return child_process?.stdout?.toString('ascii') || ""
     }
 
+    static stderror(child_process: SpawnSyncReturns<Buffer>) : string
+    {
+      return child_process?.stderr?.toString('ascii') || ""
+    }
+
     static status(child_process: SpawnSyncReturns<Buffer>) : number
     {
       return child_process?.status || -1
