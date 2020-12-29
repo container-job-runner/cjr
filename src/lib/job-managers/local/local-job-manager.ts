@@ -131,8 +131,6 @@ export class LocalJobManager extends GenericJobManager
     JOB_ID : "Job Id"
   }
 
-  protected failed_nji:NewJobInfo = {"id": "", "exit-code": 0, "output": ""} // value that will be returned if start or exec fail
-
   run(job_configuration: JobConfiguration<StackConfiguration<any>>, job_options: JobRunOptions) : ValidatedOutput<NewJobInfo>
   {
     const failed_result = new ValidatedOutput(false, this.failed_nji);

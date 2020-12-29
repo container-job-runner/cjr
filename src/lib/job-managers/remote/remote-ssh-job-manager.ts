@@ -342,7 +342,7 @@ export class RemoteSshJobManager extends GenericJobManager
 
     run( local_job_configuration: JobConfiguration<StackConfiguration<any>>, options: JobRunOptions ) : ValidatedOutput<NewJobInfo> 
     {
-        const failure = new ValidatedOutput(false, {id: "", output: "", "exit-code": -1});
+        const failure = new ValidatedOutput(false, this.failed_nji);
         
         // -- upload stack, build ----------------------------------------------
         const build_stack = this.build(
@@ -393,7 +393,7 @@ export class RemoteSshJobManager extends GenericJobManager
 
     exec(local_job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions) : ValidatedOutput<NewJobInfo>
     {
-        const failure = new ValidatedOutput(false, {id: "", output: "", "exit-code": -1});
+        const failure = new ValidatedOutput(false, this.failed_nji);
         
         // -- upload stack, build ----------------------------------------------
         const build_stack = this.build(
