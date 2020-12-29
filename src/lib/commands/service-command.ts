@@ -1,7 +1,7 @@
 import path = require('path')
 import fs = require('fs')
 import { CLIJobFlags, JobCommand } from './job-command'
-import { ContainerDrivers, JobManager } from '../job-managers/abstract/job-manager'
+import { JobManager } from '../job-managers/abstract/job-manager'
 import { nextAvailablePort, nextAvailablePorts, printSyncManagerOutput } from '../functions/cli-functions'
 import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manager'
 import { ValidatedOutput } from '../validated-output'
@@ -141,8 +141,10 @@ export abstract class ServiceCommand extends JobCommand
             }
         ) as ReturnType<T["start"]>
 
+        failure.absorb(start_result) // add any warnings from start into failure
+
         if( ! start_result.success ) 
-            return failure.absorb(start_result)
+            return failure
         
         // -- verify service is ready ------------------------------------------
         let ready_result : ReturnType<T["ready"]>       

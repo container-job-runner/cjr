@@ -10,6 +10,7 @@ import { printValidatedOutput } from '../functions/misc-functions'
 import { JSTools } from '../js-tools'
 import { Dictionary } from '../constants'
 import { LocalJobManager } from '../job-managers/local/local-job-manager'
+import { WarningStrings } from '../error-strings'
 
 // ===========================================================================
 // NewJobCommand: An abstract Class for cli commands that start new jobs.
@@ -178,6 +179,10 @@ export abstract class JobCommand extends BasicCommand
     )
     if(this.shouldPrintJobId(job_manager, job, job_configuration.synchronous, flags))
         this.printJobId(job, job_configuration.synchronous)
+    // -- add warning if stderr is not empty ------------------------------------
+    if(job.value.error)
+        job.pushWarning(WarningStrings.JOBSTART.NONEMPTY_STDERROR(job.value.error))
+
     return {"job": job, "job_data": job_data}
   }
 

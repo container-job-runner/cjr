@@ -57,8 +57,8 @@ export default class Start extends ServiceCommand {
         failure_value
     )
 
-    if(!result.success)
-        return printValidatedOutput(result)
+    printValidatedOutput(result) // print any warnings
+    if(!result.success) return
 
     // -- execute on start commend ---------------------------------------------
     const start_result = result.value.start    

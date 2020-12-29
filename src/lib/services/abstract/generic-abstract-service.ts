@@ -7,6 +7,7 @@ import { JobInfo, jobIds, firstJobAsArray } from '../../drivers-containers/abstr
 import { JSTools } from '../../js-tools';
 import { LocalJobManager } from '../../job-managers/local/local-job-manager';
 import chalk = require('chalk');
+import { WarningStrings } from '../../error-strings';
 
 export abstract class GenericAbstractService extends AbstractService
 {
@@ -41,9 +42,9 @@ export abstract class GenericAbstractService extends AbstractService
     start(identifier: ServiceIdentifier, options: ServiceOptions) : ValidatedOutput<ServiceInfo>
     {
         // -- if service is already running return current ---------------------
-        const result = this.getJobInfo(identifier)
-        const job_info = result.value.pop();
-        if(result.success && job_info !== undefined) 
+        const info_request = this.getJobInfo(identifier)
+        const job_info = info_request.value.pop();
+        if(info_request.success && job_info !== undefined) 
             return new ValidatedOutput(
                 true, 
                 this.jobInfoToServiceInfo(job_info)
@@ -58,13 +59,17 @@ export abstract class GenericAbstractService extends AbstractService
             ), 
             this.newJobRunOptions(options)
         )
-        return new ValidatedOutput(true, {
+        const result = new ValidatedOutput(true, {
                 "id": job.value.id,
                 "access-port": options["access-port"]?.hostPort,
                 "access-ip": options["access-ip"],
                 "project-root": identifier["project-root"],
                 "isnew": true
             }).absorb(job)
+        // -- add warning if stderr is not empty ---------------------------------
+        if(job.value.error)
+            result.pushWarning(WarningStrings.JOBSTART.NONEMPTY_STDERROR(job.value.error))
+        return result
     }
 
     protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>

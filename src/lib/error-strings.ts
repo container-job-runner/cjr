@@ -54,7 +54,7 @@ export const ErrorStrings = {
   SERVICES: {
       INVALID_PROJECT_ROOT: (project_root: string) => `the directory ${project_root} does not exist.`,
       EMPTY_PROJECT_ROOT: `You must specify a project root.`,
-      UNREADY: `Container started successfully but service did not. Try re-running start or stop service then restart; if error persists, then the selected stack may not support this service.`,
+      UNREADY: chalk`{bold Service failed to start correctly} - Try re-running the start command, or stop and then restart this service; if this error persists, then the selected stack may not support this service.`,
       FAILED_TUNNEL_START: `SSH tunnel failed to initialized. You will not be able to access remote service.`
   },
   REMOTE_RESOURCE: {
@@ -96,6 +96,9 @@ export const WarningStrings = {
   BUNDLE : {
     FAILED_BUNDLE_STACK: (stack_path: string) => chalk`{bold Unable to Bundle Stack:} - verify that the stack contains necessary files and builds correctly.\n  {italic stack:} ${stack_path}`,
     INVALID_STACK_BINDPATH: (dir_path: string, stack_path: string) => chalk`{bold A bind mount was removed from bundled stack} - to ensure the stack is repoducible on other systems, bundle only keeps bind paths that point to locations inside the stack folder.\n  {italic bind path:}   ${dir_path}\n  {italic stack path:} ${stack_path}`,
+  },
+  JOBSTART:{
+      NONEMPTY_STDERROR: (stderr: string) => chalk`{bold Job start exited with following error: }${stderr.trim()}` 
   }
 }
 
