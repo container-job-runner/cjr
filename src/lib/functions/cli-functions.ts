@@ -195,28 +195,31 @@ function printStatusFooter(verbose: boolean, line_width:number = 80) {
   if(verbose) console.log('-'.repeat(Math.max(0,line_width)))
 }
 
-export function nextAvailablePort(drivers: ContainerDrivers, port:number=1024) : number
+export function nextAvailablePort(job_manager: JobManager,  starting_port:number=1024) : number
 {
-  const job_info = drivers.runner.jobInfo({states: ["running"]}) // get all jobs
-  if(!job_info.success) return port
+  const job_info = job_manager.container_drivers.runner.jobInfo({states: ["running"]}) // get all jobs
+  if(!job_info.success) return starting_port
   // -- extract port and order ascending ---------------------------------------
   const ports:Array<number> = []
   job_info.value.map( (job_info:JobInfo) => ports.push(
       ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
     )
   )
+  // -- add system ports ------------------------------------------------------
+  ports.push( ... FileTools.usedPorts(starting_port, job_manager.shell, 5000) )
+
   const ord_ports = [... new Set(ports)].sort((a,b) => a - b)
   // -- return next available port ---------------------------------------------
   for(var i = 0; i <= ord_ports.length; i ++)  {
-    if(ord_ports[i] == port) port++ // port is already used. increment
-    if(ord_ports[i] > port) return port //port is free
+    if(ord_ports[i] == starting_port) starting_port++ // port is already used. increment
+    if(ord_ports[i] > starting_port) return starting_port //port is free
   }
-  return port
+  return starting_port
 }
 
-export function nextAvailablePorts(drivers: ContainerDrivers, starting_port:number=1024, total_ports:number) : number[]
+export function nextAvailablePorts(job_manager: JobManager, starting_port:number=1024, total_ports:number) : number[]
 {
-    const job_info = drivers.runner.jobInfo({states: ["running"]}) // get all jobs
+    const job_info = job_manager.container_drivers.runner.jobInfo({states: ["running"]}) // get all jobs
     if(!job_info.success) return new Array(total_ports).map((_value:any, index : number) => starting_port + index)
     // -- extract port and order ascending -------------------------------------
     const ports:Array<number> = []
@@ -225,6 +228,9 @@ export function nextAvailablePorts(drivers: ContainerDrivers, starting_port:numb
             ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
         )
     )
+    // -- add system ports ------------------------------------------------------
+    ports.push( ... FileTools.usedPorts(starting_port, job_manager.shell, 5000) )
+
     const ord_ports = [ ... new Set(ports) ].sort((a,b) => a - b)
     const free_ports:number[] = []
     // -- determine available ports --------------------------------------------

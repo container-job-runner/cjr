@@ -123,7 +123,7 @@ export abstract class ServiceCommand extends JobCommand
         const {stack_configuration, job_manager } = create_stack.value
 
         // -- select port --------------------------------------------------------
-        const access_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
+        const access_port = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
        
         // -- start service ------------------------------------------------------
         const service = serviceGenerator(job_manager)
@@ -359,7 +359,7 @@ export abstract class ServiceCommand extends JobCommand
             "quiet": output_options['quiet'], 
             "explicit": output_options['explicit']
         })
-        const ports = (set_ports) ? nextAvailablePorts(remote_manager.container_drivers, 20003, 3) : [-1, -1, -1] // create function
+        const ports = (set_ports) ? nextAvailablePorts(remote_manager, 20003, 3) : [-1, -1, -1] // create function
 
         return new ValidatedOutput(true, initizeSyncManager(
             local_manager,
@@ -371,7 +371,7 @@ export abstract class ServiceCommand extends JobCommand
     
     // == End Service functions ==================================================
 
-    defaultPort(drivers: ContainerDrivers, server_port_flag: string, expose: boolean, starting_port:number=7001)
+    defaultPort(job_manager: JobManager, server_port_flag: string, expose: boolean, starting_port:number=7001)
     {
         const default_address = (expose) ? '0.0.0.0' : '127.0.0.1'
         const port = this.parsePortFlag([server_port_flag]).pop()
@@ -381,7 +381,7 @@ export abstract class ServiceCommand extends JobCommand
             port.address = default_address
             return port
         }
-        const default_port = nextAvailablePort(drivers, starting_port)
+        const default_port = nextAvailablePort(job_manager, starting_port)
         return {"hostPort": default_port, "containerPort": default_port, "address": default_address}
     }
 

@@ -51,7 +51,7 @@ export default class Start extends ServiceCommand {
             'explicit': flags.explicit
         })
     // -- select port --------------------------------------------------------
-    const jupyter_port = this.defaultPort(job_manager.container_drivers, flags["server-port"], flags["expose"])
+    const jupyter_port = this.defaultPort(job_manager, flags["server-port"], flags["expose"])
     // -- start jupyter ------------------------------------------------------
     const result = startJupyterInJob(
       job_manager,
