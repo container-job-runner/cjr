@@ -38,6 +38,7 @@ export type JobInfoFilter = {
 export type NewJobInfo = {
   "id": string,
   "output": string,
+  "error": string,
   "exit-code": number
 }
 

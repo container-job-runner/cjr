@@ -151,7 +151,7 @@ export class DockerSocketRunDriver extends RunDriver
   // NOTE: presently does not support auto removal for async jobs
   jobStart(configuration: DockerJobConfiguration, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>
   {
-    const failure_response = {id: "", "exit-code": 0, output: ""}
+    const failure_response = {id: "", "exit-code": 0, output: "", error: ""}
     configuration.addLabel("runner", cli_name) // add mandatory label
     if(configuration.remove_on_exit && !configuration.synchronous)
       configuration.addLabel(this.labels['invisible-on-exit'], "true")
@@ -184,7 +184,8 @@ export class DockerSocketRunDriver extends RunDriver
       return new ValidatedOutput(true, {
         "id": id,
         "exit-code": ShellCommand.status(exec_result.value),
-        "output": ShellCommand.stdout(exec_result.value)
+        "output": ShellCommand.stdout(exec_result.value),
+        "error": ShellCommand.stderror(exec_result.value)
       })
     }
     else // --- user docker API ------------------------------------------------
@@ -205,7 +206,8 @@ export class DockerSocketRunDriver extends RunDriver
       return new ValidatedOutput(true, {
         "id": id,
         "exit-code": 0,
-        "output": ""
+        "output": "",
+        "error": ""
       })
     }
   }
@@ -255,14 +257,15 @@ export class DockerSocketRunDriver extends RunDriver
       const result = this.shell.exec(command, flags, args, shell_options)
 
       return new ValidatedOutput(true, {
-        "id": "", // no idea for docker cli exec
+        "id": "", // no id for docker cli exec
         "output": ShellCommand.stdout(result.value).replace(/\r\n$/, ""),
+        "error": ShellCommand.stderror(result.value),
         "exit-code": ShellCommand.status(result.value)
       })
     }
     else // --- user docker API ------------------------------------------------
     {
-      const failure_response = {id: "", "exit-code": 0, output: ""}
+      const failure_response = {id: "", "exit-code": 0, output: "", error: ""}
       const api_create_request = this.curlPostProcessor(
         this.curl.post({
           "url": `/containers/${id}/exec`,
@@ -299,6 +302,7 @@ export class DockerSocketRunDriver extends RunDriver
       return new ValidatedOutput(true, {
         "id": exec_id,
         "output": "",
+        "error": "",
         "exit-code": 0
       })
     }

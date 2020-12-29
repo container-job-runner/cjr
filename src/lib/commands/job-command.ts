@@ -163,7 +163,7 @@ export abstract class JobCommand extends BasicCommand
 
   runSimpleJob(flags: CLIJobFlags, command: Array<string>) : {job: ValidatedOutput<NewJobInfo>, job_data: ValidatedOutput<JobData>}
   {
-    const failure = new ValidatedOutput(false, {"id": "", "exit-code": NaN, "output": ""})
+    const failure = new ValidatedOutput(false, {"id": "", "exit-code": NaN, "output": "", "error": ""})
     // -- augment flags --------------------------------------------------------
     this.augmentFlagsForJob(flags)
     // -- initialize job data and exit if failed -------------------------------
@@ -254,7 +254,7 @@ export abstract class JobCommand extends BasicCommand
 
   runSimpleExec(parent_id: string, flags: CLIJobFlags, command: Array<string>) : {job: ValidatedOutput<NewJobInfo>, job_data: ValidatedOutput<JobData>}
   {
-    const failure = new ValidatedOutput(false, {"id": "", "exit-code": NaN, "output": ""})
+    const failure = new ValidatedOutput(false, {"id": "", "exit-code": NaN, "output": "", "error": ""})
     // -- augment flags --------------------------------------------------------
     this.augmentFlagsForJob(flags)
     // -- initialize job data and exit if failed -------------------------------

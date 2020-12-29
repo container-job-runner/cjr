@@ -24,7 +24,7 @@ export abstract class GenericJobManager extends JobManager
     JOB_ID : "Job Id"
   }
 
-  protected failed_nji:NewJobInfo = {"id": "", "exit-code": 0, "output": ""} // value that will be returned if start or exec fail
+  protected failed_nji:NewJobInfo = {"id": "", "exit-code": 0, "output": "", "error": ""} // value that will be returned if start or exec fail
 
   run(job_configuration: JobConfiguration<StackConfiguration<any>>, job_options: JobRunOptions) : ValidatedOutput<NewJobInfo>
   {

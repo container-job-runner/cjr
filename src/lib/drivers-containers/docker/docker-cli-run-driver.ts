@@ -49,7 +49,7 @@ export class DockerCliRunDriver extends RunDriver
 
   jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
-    const failure_output:ValidatedOutput<NewJobInfo> = new ValidatedOutput(false, {"id":"", "output": "", "exit-code": 1});
+    const failure_output:ValidatedOutput<NewJobInfo> = new ValidatedOutput(false, {"id":"", "output": "", "error": "", "exit-code": 1});
     if(!(job_configuration instanceof DockerJobConfiguration))
       return failure_output.pushError(this.ERRORSTRINGS.INVALID_JOB)
     const job_options = this.generateJobOptions(job_configuration)
@@ -73,6 +73,7 @@ export class DockerCliRunDriver extends RunDriver
     return new ValidatedOutput(true, {
       "id": container_id,
       "output": ShellCommand.stdout(shell_output.value),
+      "error": ShellCommand.stderror(shell_output.value),
       "exit-code": ShellCommand.status(shell_output.value)
     })
   }
@@ -147,6 +148,7 @@ export class DockerCliRunDriver extends RunDriver
     return new ValidatedOutput(true, {
       "id": "", // no idea for docker cli exec
       "output": ShellCommand.stdout(result.value),
+      "error": ShellCommand.stderror(result.value),
       "exit-code": ShellCommand.status(result.value)
     })
   }
