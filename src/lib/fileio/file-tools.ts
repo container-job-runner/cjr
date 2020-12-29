@@ -42,4 +42,26 @@ export class FileTools
     }
   }
 
+  // This function uses lsof to obtain a list
+  static usedPorts(starting_port: number, shell:ShellCommand|SshShellCommand = new ShellCommand(false, false), timeout:number=0) : number[]
+  {
+    starting_port = Math.max(0, Math.ceil(starting_port))
+    const command = 'lsof'
+    const flags = {
+        "i": {value: `:${starting_port}-65535`, noequals: true}, // specify port range
+        "n": {}, // inhibits the conversion of network numbers to host names
+        "P": {}, // inhibits the conversion of port numbers to port names
+        "F": {value: 'n', noequals: true}  // produces output that is suitable for processing by another program
+    }
+    const output = shell.output(command, flags, [], {"timeout": timeout})
+    if( ! output.success ) return []
+    
+    const row_splitter = /[\r\n]+/
+    const n_lines = output.value.split(row_splitter).filter((s:string) => /^n/.test(s)) // extract lines that start with n
+    
+    const extractPort = (s:string) => s.match(/(?<=:)\d+$/)?.pop() || ""
+    // return all valid ports
+    return n_lines.map( (s:string) => parseInt(extractPort(s))).filter( ( n:number ) => ( ! isNaN(n) && isFinite(n) && n > 0 ) )
+  }
+
 }
