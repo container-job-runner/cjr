@@ -189,7 +189,7 @@ export class LocalJobManager extends GenericJobManager
     return result
   }
 
-  copyJob(job: JobInfo, copy_options: JobCopyOptions) : ValidatedOutput<undefined>
+  protected copyJob(job: JobInfo, copy_options: JobCopyOptions) : ValidatedOutput<undefined>
   {
       const result = new ValidatedOutput(true, undefined)
       // -- 1. extract label information ---------------------------------------
