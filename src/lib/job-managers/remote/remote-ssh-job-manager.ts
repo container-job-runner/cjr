@@ -458,7 +458,7 @@ export class RemoteSshJobManager extends GenericJobManager
 
     protected copyJob(job:JobInfo, options: JobCopyOptions ) : ValidatedOutput<undefined>
     {
-        const result = new ValidatedOutput(false, undefined)
+        const result = new ValidatedOutput(true, undefined)
         
         // -- check copy mode --------------------------------------------------
         if(options.mode == "manual") 
