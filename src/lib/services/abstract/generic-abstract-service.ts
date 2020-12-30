@@ -3,7 +3,7 @@ import { AbstractService, ServiceIdentifier, ServiceOptions, ServiceInfo } from 
 import { ValidatedOutput } from "../../validated-output";
 import { JobManager, JobRunOptions } from "../../job-managers/abstract/job-manager";
 import { JobConfiguration } from '../../config/jobs/job-configuration';
-import { JobInfo, jobIds, firstJobAsArray } from '../../drivers-containers/abstract/run-driver';
+import { JobInfo, jobIds, firstJobAsArray, jobFilter } from '../../drivers-containers/abstract/run-driver';
 import { JSTools } from '../../js-tools';
 import { LocalJobManager } from '../../job-managers/local/local-job-manager';
 import chalk = require('chalk');
@@ -125,7 +125,7 @@ export abstract class GenericAbstractService extends AbstractService
         if(copy && job_ids.length > 0)
             result.absorb(
                 this.job_manager.copy(
-                    { "ids": job_ids, "mode": "update" }
+                    { "ids": job_ids, "mode": "update", "warnings" : { "no-project-root" : false } }
                 )
             )
 
