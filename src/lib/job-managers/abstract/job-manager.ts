@@ -45,6 +45,10 @@ export type JobCopyOptions = {
   "mode": "update"|"overwrite"|"mirror"|"manual"     // specify copy mode (update => rsync --update, overwrite => rsync , mirror => rsync --delete, manual => interactive shell)
   "host-path"?: string                               // location where files should be copied. if specified this setting overrides job hostDir
   "all-files"?: boolean                              // if true, then any rsync include or exclude files will be ignored
+  "warnings" ?: {                                    // this field gives the optional ability to suppress warnings
+      "no-project-root" ?: boolean
+      "no-volume-id" ?: boolean
+   }      
 }
 
 export type JobStopOptions = {

@@ -472,10 +472,14 @@ export class RemoteSshJobManager extends GenericJobManager
             include: job.labels?.[label_strings.job["download-include"]] || "", 
             exclude: job.labels?.[label_strings.job["download-exclude"]] || ""  
         }
-        if(!local_project_root) 
-            return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_LOCAL_PROJECTROOT(id))
-        if(!remote_project_root) 
-            return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_REMOTE_PROJECTROOT(id))
+        
+        // ---> exit if project-root is empty
+        if( ( ! local_project_root ) && ( options?.["warnings"]?.["no-project-root"] !== false ) )
+            result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_LOCAL_PROJECTROOT(id))
+        if( ( ! remote_project_root ) && ( options?.["warnings"]?.["no-project-root"] !== false ) ) 
+            result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_REMOTE_PROJECTROOT(id))
+        if( ( ! local_project_root ) || ( ! remote_project_root) )
+            return result
         
         // -- 2. verify copy destination exists on host ------------------------
         const copy_destination = options?.['host-path'] || local_project_root

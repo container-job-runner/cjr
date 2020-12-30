@@ -198,8 +198,13 @@ export class LocalJobManager extends GenericJobManager
       const file_volume_id = job.labels?.[label_strings.job["file-volume"]] || ""
       const download_exclude = job.labels?.[label_strings.job["download-exclude"]] || ""
       const download_include = job.labels?.[label_strings.job["download-include"]] || ""
-      if(!projectRoot) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_PROJECTROOT(id))
-      if(!file_volume_id) return result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_VOLUME(id))
+      // ---> exit if project-root is empty
+      if( ( ! projectRoot ) && ( copy_options?.["warnings"]?.["no-project-root"] !== false ) )
+        result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_PROJECTROOT(id))
+      if( ( projectRoot ) && ( ! file_volume_id ) && ( copy_options?.["warnings"]?.["no-volume-id"] !== false ) ) 
+        result.pushWarning(this.WARNINGSTRINGS.JOBCOPY.NO_VOLUME(id))
+      if( ( ! projectRoot )|| ( ! file_volume_id ) )
+        return result
       // -- 2. set include & exclude settings -----------------------------------
       let rsync_rules:{include?: string[], exclude?: string[]} = {}
       if(!copy_options["all-files"]) {
