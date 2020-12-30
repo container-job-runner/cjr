@@ -7,6 +7,7 @@ import { firstJob, NewJobInfo, JobInfo, JobState, firstJobId, jobStates, JobInfo
 import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { addX11, setRelativeWorkDir, addGenericLabels } from '../../functions/config-functions';
+import { WarningStrings } from '../../error-strings';
 
 export abstract class GenericJobManager extends JobManager
 {
@@ -41,6 +42,9 @@ export abstract class GenericJobManager extends JobManager
       job_configuration,
       job_configuration.synchronous ? 'inherit' : 'pipe'
     )
+    // -- add warning if stderr is not empty ---------------------------------
+    if(job.value.error)
+        job.pushWarning(WarningStrings.JOBSTART.NONEMPTY_STDERROR(job.value.error))
     // -- print id ---------------------------------------------------------------
     if(!job.success) job.pushError(this.ERRORSTRINGS.FAILED_START)
     else this.printStatus({header: this.STATUSHEADERS.JOB_ID, message: job.value.id})

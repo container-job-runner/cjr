@@ -59,17 +59,13 @@ export abstract class GenericAbstractService extends AbstractService
             ), 
             this.newJobRunOptions(options)
         )
-        const result = new ValidatedOutput(true, {
+        return new ValidatedOutput(true, {
                 "id": job.value.id,
                 "access-port": options["access-port"]?.hostPort,
                 "access-ip": options["access-ip"],
                 "project-root": identifier["project-root"],
                 "isnew": true
             }).absorb(job)
-        // -- add warning if stderr is not empty ---------------------------------
-        if(job.value.error)
-            result.pushWarning(WarningStrings.JOBSTART.NONEMPTY_STDERROR(job.value.error))
-        return result
     }
 
     protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>
