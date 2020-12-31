@@ -12,7 +12,8 @@ export type ServiceOptions = {
   "access-ip"?: string, // access ip for service
   "project-root"?: string // host project root
   "reuse-image"?: boolean // specifies if image should be reused if already build
-  "x11"?: boolean // determines if x11 should be launched in image
+  "x11"?: boolean // determines if x11 should be launched in image,
+  "labels"?: { [key : string] : string } // additional labels for service container
 }
 
 export type ServiceInfo = {

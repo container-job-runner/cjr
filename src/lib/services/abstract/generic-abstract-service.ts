@@ -98,6 +98,14 @@ export abstract class GenericAbstractService extends AbstractService
 
     protected addGenericServiceLabels(job_configuration: JobConfiguration<any>, identifier: ServiceIdentifier, options: ServiceOptions)
     {
+        if(options.labels !== undefined)
+            Object.keys(options.labels).map(
+                ( field : string ) => {
+                    if( options.labels?.[field])
+                        job_configuration.addLabel(field, options.labels[field])
+                }
+            )
+        
         job_configuration.addLabel(constants.label_strings.job.name, this.identifierToJobName(identifier))
         if(options["access-port"])
             job_configuration.addLabel(this.SERVICE_LABELS["access-port"], `${options["access-port"]}`);
