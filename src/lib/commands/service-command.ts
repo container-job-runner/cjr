@@ -122,10 +122,12 @@ export abstract class ServiceCommand extends JobCommand
             return failure.absorb(create_stack)
         const {stack_configuration, job_manager } = create_stack.value
 
-        // -- select port --------------------------------------------------------
-        const container_port_configuration = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
-       
-        // -- start service ------------------------------------------------------
+        // -- select ports -----------------------------------------------------
+        const container_port_config = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
+        const start_tunnel = (job_manager instanceof RemoteSshJobManager) && ( ! flags['expose'] )
+        const access_port = ( ! start_tunnel ) ? container_port_config.hostPort : nextAvailablePort(this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']}), container_port_config.hostPort)
+
+        // -- start service ----------------------------------------------------
         const service = serviceGenerator(job_manager)
         const identifier = { "project-root": flags["project-root"] }
 
@@ -135,8 +137,8 @@ export abstract class ServiceCommand extends JobCommand
                 "stack_configuration": stack_configuration,
                 "project-root": flags["project-root"],
                 "reuse-image" : this.extractReuseImage(flags),
-                "container-port-config": container_port_configuration,
-                "access-port": container_port_configuration.hostPort,
+                "container-port-config": container_port_config,
+                "access-port": access_port,
                 "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
                 "x11": flags['x11']
             }
@@ -170,9 +172,10 @@ export abstract class ServiceCommand extends JobCommand
             return failure         
 
         // -- start tunnel -----------------------------------------------------
-        if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) {
+        if( start_tunnel ) {
             const success = this.startTunnel(job_manager, {
-                "port": start_result.value["access-port"], 
+                "local-port": access_port,
+                "remote-port": container_port_config.hostPort 
             })
             if(! success ) return failure.pushError(ErrorStrings.SERVICES.FAILED_TUNNEL_START)
         }
@@ -205,8 +208,8 @@ export abstract class ServiceCommand extends JobCommand
         {
             service.list(identifier).value.map( 
                 (si: ServiceInfo) => {
-                    if(si["access-port"] !== undefined)
-                        this.releaseTunnelPort(job_manager, {"port": si["access-port"]})
+                    if((si["access-port"] !== undefined) && (si["server-port"] !== undefined))
+                        this.releaseTunnelPort(job_manager, {"local-port": si["access-port"], "remote-port": si["server-port"]})
                 } 
             )
         }
@@ -403,15 +406,15 @@ export abstract class ServiceCommand extends JobCommand
         return this.localhost_ip
     }
 
-    startTunnel(job_manager: JobManager, options: {port: number}) : boolean
+    startTunnel(job_manager: JobManager, options: {"local-port": number, "remote-port": number}) : boolean
     {
         if(!(job_manager instanceof RemoteSshJobManager))
             return false
         
         return job_manager.shell.tunnelStart({
             "localIP": this.localhost_ip,
-            "remotePort": options.port,
-            "localPort": options.port,
+            "remotePort": options["remote-port"],
+            "localPort": options["local-port"],
             "multiplex": {
                 "controlpersist" : 600,
                 "reuse-connection": true
@@ -419,15 +422,15 @@ export abstract class ServiceCommand extends JobCommand
         })
     }
 
-    releaseTunnelPort(job_manager: JobManager, options: {port: number})
+    releaseTunnelPort(job_manager: JobManager, options: {"local-port": number, "remote-port": number})
     {
         if(!(job_manager instanceof RemoteSshJobManager))
             return
         
         job_manager.shell.tunnelRelease({
             "localIP": this.localhost_ip,
-            "remotePort": options.port,
-            "localPort": options.port
+            "remotePort": options["remote-port"],
+            "localPort": options["local-port"]
         })   
     }
 
