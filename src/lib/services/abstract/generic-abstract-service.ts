@@ -61,6 +61,7 @@ export abstract class GenericAbstractService extends AbstractService
         )
         return new ValidatedOutput(true, {
                 "id": job.value.id,
+                "server-port": options["container-port-config"]?.hostPort,
                 "access-port": options["access-port"],
                 "access-ip": options["access-ip"],
                 "project-root": identifier["project-root"],
