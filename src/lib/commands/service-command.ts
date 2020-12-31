@@ -218,7 +218,7 @@ export abstract class ServiceCommand extends JobCommand
             // -- release any tunnel ports ---------------------------------------------
             service_list.map( 
                 (si: ServiceInfo) => {
-                    if((si["access-port"] !== undefined) && (si["server-port"] !== undefined))
+                    if((si["access-port"] !== undefined) && (si["server-port"] !== undefined) && si["access-ip"] === this.localhost_ip)
                         this.releaseTunnelPort(job_manager, {"local-port": si["access-port"], "remote-port": si["server-port"]})
                 } 
             )
