@@ -78,7 +78,8 @@ export default class Start extends ServiceCommand {
 
     if( (job_manager instanceof RemoteSshJobManager) && !flags['expose'] ) 
         this.startTunnel(job_manager, {
-            "port": jupyter_port.hostPort, 
+            "remote-port": jupyter_port.hostPort, 
+            "local-port": jupyter_port.hostPort, 
         })
 
     const onstart_cmd = this.settings.get('on-http-start');
