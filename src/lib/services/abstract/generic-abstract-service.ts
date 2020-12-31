@@ -7,7 +7,6 @@ import { JobInfo, jobIds, firstJobAsArray, jobFilter } from '../../drivers-conta
 import { JSTools } from '../../js-tools';
 import { LocalJobManager } from '../../job-managers/local/local-job-manager';
 import chalk = require('chalk');
-import { WarningStrings } from '../../error-strings';
 
 export abstract class GenericAbstractService extends AbstractService
 {
@@ -19,6 +18,7 @@ export abstract class GenericAbstractService extends AbstractService
     protected abstract serviceEntrypoint() : undefined|string[]
 
     protected SERVICE_LABELS = {
+        "server-port": "service-server-port",
         "access-port": "service-access-port",
         "access-ip": "service-access-ip"
     }
@@ -61,7 +61,7 @@ export abstract class GenericAbstractService extends AbstractService
         )
         return new ValidatedOutput(true, {
                 "id": job.value.id,
-                "access-port": options["access-port"]?.hostPort,
+                "access-port": options["access-port"],
                 "access-ip": options["access-ip"],
                 "project-root": identifier["project-root"],
                 "isnew": true
@@ -71,8 +71,8 @@ export abstract class GenericAbstractService extends AbstractService
     protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>
     {
         const stack_configuration = ( options.stack_configuration !== undefined ) ? options["stack_configuration"] : this.job_manager.configurations.stack()
-        if(options['access-port'])
-            stack_configuration.addPort(options['access-port'].hostPort, options['access-port'].containerPort, options['access-port'].address)
+        if(options['container-port-config'])
+            stack_configuration.addPort(options['container-port-config'].hostPort, options['container-port-config'].containerPort, options['container-port-config'].address)
         
         const entrypoint = this.serviceEntrypoint()
         if(entrypoint)
@@ -100,9 +100,11 @@ export abstract class GenericAbstractService extends AbstractService
     {
         job_configuration.addLabel(constants.label_strings.job.name, this.identifierToJobName(identifier))
         if(options["access-port"])
-            job_configuration.addLabel(this.SERVICE_LABELS["access-port"], `${options["access-port"].hostPort}`);
+            job_configuration.addLabel(this.SERVICE_LABELS["access-port"], `${options["access-port"]}`);
         if(options["access-ip"])
             job_configuration.addLabel(this.SERVICE_LABELS["access-ip"], `${options["access-ip"]}`);
+        if(options["container-port-config"])
+            job_configuration.addLabel(this.SERVICE_LABELS["server-port"], `${options["container-port-config"].hostPort}`);
         return job_configuration
     }
     
@@ -145,6 +147,7 @@ export abstract class GenericAbstractService extends AbstractService
     {
         return {
             "id": job_info.id,
+            "server-port": parseInt(job_info.labels[this.SERVICE_LABELS['server-port']]) || undefined,
             "access-port": parseInt(job_info.labels[this.SERVICE_LABELS['access-port']]) || undefined,
             "access-ip": job_info.labels[this.SERVICE_LABELS["access-ip"]],
             "project-root": job_info.labels[constants.label_strings.job["project-root"]],

@@ -123,7 +123,7 @@ export abstract class ServiceCommand extends JobCommand
         const {stack_configuration, job_manager } = create_stack.value
 
         // -- select port --------------------------------------------------------
-        const access_port = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
+        const container_port_configuration = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
        
         // -- start service ------------------------------------------------------
         const service = serviceGenerator(job_manager)
@@ -135,7 +135,8 @@ export abstract class ServiceCommand extends JobCommand
                 "stack_configuration": stack_configuration,
                 "project-root": flags["project-root"],
                 "reuse-image" : this.extractReuseImage(flags),
-                "access-port": access_port,
+                "container-port-config": container_port_configuration,
+                "access-port": container_port_configuration.hostPort,
                 "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
                 "x11": flags['x11']
             }
