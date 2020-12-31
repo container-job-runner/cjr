@@ -61,7 +61,7 @@ export abstract class ServiceCommand extends JobCommand
     {
         this.augmentFlagsForJob(flags)
         this.augmentFlagsWithProjectRootArg(args, flags)
-        this.overrideResourceFlagForDevCommand(flags)
+        this.overrideResourceFlagForService(flags)
     }
 
     augmentFlagsForServiceStop(flags: CLIServiceStopFlags, args: {"project-root"?: string})
@@ -71,7 +71,7 @@ export abstract class ServiceCommand extends JobCommand
         this.augmentFlagsWithHere(flags)
     }
 
-    overrideResourceFlagForDevCommand(flags: {resource?: string}) // used for local development flags
+    overrideResourceFlagForService(flags: {resource?: string}) // used for local development flags
     {
         if(this.settings.get('enable-remote-services') != true)
             flags['resource'] = 'localhost'

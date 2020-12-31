@@ -2,6 +2,8 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { initX11 } from '../lib/functions/cli-functions'
 import { ServiceCommand } from '../lib/commands/service-command'
+import { LocalJobManager } from '../lib/job-managers/local/local-job-manager'
+import { CLIJobFlags } from '../lib/commands/job-command'
 
 export default class Shell extends ServiceCommand {
   static description = 'Start an interactive shell for development on localhost.'
@@ -27,14 +29,14 @@ export default class Shell extends ServiceCommand {
   async run()
   {
     const {flags} = this.parse(Shell)
-    this.overrideResourceFlagForDevCommand(flags)
+
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11({
-            'interactive': this.settings.get('interactive'),
-            'xquartz': this.settings.get('xquartz-autostart'),
-            'explicit': flags.explicit
-        })
-    // -- run basic job --------------------------------------------------------
+        'interactive': this.settings.get('interactive'),
+        'xquartz': this.settings.get('xquartz-autostart'),
+        'explicit': flags.explicit
+    })
+
     const shell_flags = {
       "quiet": false,
       "file-access": "shared",
@@ -42,27 +44,32 @@ export default class Shell extends ServiceCommand {
       "sync": true,
       "remove-on-exit": true
     }
+    // -- augment flags to determine if job is local ---------------------------
+    const all_flags:CLIJobFlags = { ... flags, ... shell_flags}
+    this.augmentFlagsForJob(all_flags)
+    this.overrideResourceFlagForService(all_flags)    
+    const local_job = (flags['resource'] === undefined) || (flags['resource'] === "localhost")
+    all_flags["remove-on-exit"] = local_job // keep remote jobs to enable copy
+
+    // -- run basic job --------------------------------------------------------
     const {job, job_data} = this.runSimpleJob(
-      { ... flags, ... shell_flags},
+      all_flags,
       [this.settings.get("default-container-shell")]
     )
     printValidatedOutput(job_data)
     printValidatedOutput(job)
-    // // -- enable autocopy for remote shell -------------------------------------
-    // // Note: requires changing line 44 to:  "remove-on-exit": (job_data.value.job_manager instanceof LocalJobManager)
-
-    // if(job.success && job_data.success && !(job_data.value.job_manager instanceof LocalJobManager))
-    // {
-    //     if(this.settings.get("autocopy-on-service-exit"))
-    //         printValidatedOutput(
-    //             job_data.value.job_manager.copy({
-    //                 "ids": [job.value.id],
-    //                 "mode": "update"
-    //             })
-    //         )
-    //     if(job_data.value.job_manager.state({ids: [job.value.id]}).value?.pop() != "running")
-    //         job_data.value.job_manager.container_drivers.runner.jobDelete([job.value.id])        
-    // }
+    
+    // -- enable autocopy for remote shell -------------------------------------
+    if( job.success && job_data.success && ( ! local_job ) && this.settings.get("autocopy-on-service-exit") )
+        printValidatedOutput(
+            job_data.value.job_manager.copy({
+                "ids": [job.value.id],
+                "mode": "update",
+                "warnings" : { "no-project-root" : false }
+            })
+        )
+    if( ! local_job )
+        job_data.value.job_manager.container_drivers.runner.jobDelete([job.value.id]) // faster than job_manager.delete since this does not get job info
   }
 
 }
