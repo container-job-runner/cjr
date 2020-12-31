@@ -174,14 +174,16 @@ export abstract class ServiceCommand extends JobCommand
             return failure.absorb(ready_result).pushError(ErrorStrings.SERVICES.UNREADY)
 
         // exit if port not set (this should never occur -- added for valid TS)
-        if(! start_result.value["access-port"] ) 
+        if(! start_result.value["access-port"] || ! start_result.value["server-port"] ) 
             return failure         
 
         // -- start tunnel -----------------------------------------------------
         if( start_tunnel ) {
+            // uncomment the following line if we want cjr to select new host port for tunneling when the original is taken. Note: side effect is that if start is re-run before multiplex times out, then cjr will continue claiming new ports
+            // start_result.value["access-port"] = nextAvailablePort(this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']}), start_result.value["access-port"] || container_port_config.hostPort)
             const success = this.startTunnel(job_manager, {
-                "local-port": access_port,
-                "remote-port": container_port_config.hostPort 
+                "local-port": start_result.value["access-port"],
+                "remote-port": start_result.value["server-port"] 
             })
             if(! success ) return failure.pushError(ErrorStrings.SERVICES.FAILED_TUNNEL_START)
         }
