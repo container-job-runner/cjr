@@ -1,5 +1,6 @@
 import path = require('path')
 import fs = require('fs')
+import constants = require('../constants')
 import { CLIJobFlags, JobCommand } from './job-command'
 import { JobManager } from '../job-managers/abstract/job-manager'
 import { nextAvailablePort, nextAvailablePorts, printSyncManagerOutput } from '../functions/cli-functions'
@@ -9,8 +10,9 @@ import { ErrorStrings } from '../error-strings'
 import { GenericAbstractService } from '../services/abstract/generic-abstract-service'
 import { initizeSyncManager, printHorizontalTable, printValidatedOutput, waitUntilSuccess } from '../functions/misc-functions'
 import { ShellCommand } from '../shell-command'
-import { ServiceInfo } from '../services/abstract/abstract-service'
+import { ServiceIdentifier, ServiceInfo } from '../services/abstract/abstract-service'
 import { MultiServiceManager } from '../services/managers/multi-service-manager'
+import { JobInfo } from '../drivers-containers/abstract/run-driver'
 
 type CLIServiceStartFlags = CLIJobFlags & {
     "server-port": string,
@@ -121,10 +123,13 @@ export abstract class ServiceCommand extends JobCommand
         if( ! create_stack.success )
             return failure.absorb(create_stack)
         const {stack_configuration, job_manager } = create_stack.value
-
+        
+        // -- set options ------------------------------------------------------
+        const start_sync = this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) && flags["project-root"]
+        const start_tunnel = (job_manager instanceof RemoteSshJobManager) && ( ! flags['expose'] )
+        
         // -- select ports -----------------------------------------------------
         const container_port_config = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
-        const start_tunnel = (job_manager instanceof RemoteSshJobManager) && ( ! flags['expose'] )
         const access_port = ( ! start_tunnel ) ? container_port_config.hostPort : nextAvailablePort(this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']}), container_port_config.hostPort)
 
         // -- start service ----------------------------------------------------
@@ -140,7 +145,8 @@ export abstract class ServiceCommand extends JobCommand
                 "container-port-config": container_port_config,
                 "access-port": access_port,
                 "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
-                "x11": flags['x11']
+                "x11": flags['x11'],
+                "labels" : (start_sync) ? { [ constants.label_strings.service.syncing ] : "true" } : undefined // add label if service is syncing
             }
         ) as ReturnType<T["start"]>
 
@@ -181,8 +187,8 @@ export abstract class ServiceCommand extends JobCommand
         }
 
         // -- start two-way sync ------------------------------------------------
-        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) && flags["project-root"] ) {
-            const sync_start = await this.startSyncthing(flags["project-root"], flags["resource"] || "", flags, {"stop-on-fail": true})
+        if( start_sync ) {
+            const sync_start = await this.startSyncthing(flags["project-root"] || "", flags["resource"] || "", flags, {"stop-on-fail": true})
             if( ! sync_start.success ) printValidatedOutput(sync_start)
         }
         
@@ -202,31 +208,32 @@ export abstract class ServiceCommand extends JobCommand
 
         const service = serviceGenerator(job_manager)
         const identifier = (flags['all']) ? undefined : {"project-root": flags['project-root']}
-
-        // -- release any tunnel ports ---------------------------------------------
-        if( job_manager instanceof RemoteSshJobManager )
+        
+        if ( job_manager instanceof RemoteSshJobManager ) // additional stop procedures for RemoteSshJobManager
         {
-            service.list(identifier).value.map( 
+            const service_list = service.list(identifier).value
+            
+            // -- release any tunnel ports ---------------------------------------------
+            service_list.map( 
                 (si: ServiceInfo) => {
                     if((si["access-port"] !== undefined) && (si["server-port"] !== undefined))
                         this.releaseTunnelPort(job_manager, {"local-port": si["access-port"], "remote-port": si["server-port"]})
                 } 
             )
-        }
 
-        // -- stop two-way sync ----------------------------------------------------
-        if(this.settings.get('auto-sync-remote-service') && (job_manager instanceof RemoteSshJobManager) && ( flags['all'] || flags["project-root"] ) ) {
-            const sync_stop = this.stopSyncthing(
-                ( flags['all'] ? undefined : flags["project-root"] ),
-                flags["resource"] || "",
-                flags
+            // -- stop two-way sync ----------------------------------------------------
+            const sync_identifiers = this.syncShutdownIdentifers(job_manager, service_list)
+            sync_identifiers.map( 
+                (id: ServiceIdentifier) => {
+                    const stop_result = this.stopSyncthing(id["project-root"], flags["resource"] || "", flags)
+                    if( ! stop_result.success ) 
+                        printValidatedOutput(stop_result)
+                }
             )
-            if( ! sync_stop.success ) 
-                printValidatedOutput(sync_stop)
         }
 
         return service.stop(identifier)
-
+    
     }
 
     listService<T extends GenericAbstractService>(
@@ -373,6 +380,38 @@ export abstract class ServiceCommand extends JobCommand
             { key: resource.key, username: resource.username, ip: resource.address },
             { listen: ports[0] || -1, connect: ports[1] || -1, gui: ports[2] || -1 }
         ))
+    }
+
+    // returns list of identifiers for sync services that should be shutdown if the services described in array services are about to be stopped
+    
+    protected syncShutdownIdentifers (job_manager : JobManager, services: ServiceInfo[]) : ServiceIdentifier[]
+    {
+        // 1. ignore services that have an empty project root
+        services = services.filter(( si : ServiceInfo ) => si["project-root"])
+        if( services.length == 0 ) return [] // no sync services to shutdown
+
+        // 2. extract all non empty project roots
+        const service_pr  = services.map( ( si : ServiceInfo ) => si["project-root"] ) as string[]
+        const service_ids = services.map( ( si : ServiceInfo ) => si.id )
+        
+        // 3. get list of running services that are syncing and have matching project roots
+        const list_result = job_manager.list( {
+            "filter" : { 
+                "labels" : {
+                    [ constants.label_strings.job["project-root"] ] : service_pr,
+                    [ constants.label_strings.service["syncing"] ] : [ "true" ]                  
+                }
+            }
+        } )
+        if( ! list_result.success ) return [] // do not shutdown services if list request fails
+
+        // 4. filter out ids of known services, then extract remaining project roots
+        const remaining_pr = list_result.value.filter( ( ji:JobInfo ) => ! service_ids.includes(ji.id) )
+            .map( ( ji : JobInfo ) => ji.labels[ constants.label_strings.job["project-root"] ] )
+
+        // return setDiff(service_ids, remaining_ids)
+        return service_pr.filter((s:string) => ! remaining_pr.includes(s) ).map((s:string) => {return {"project-root": s}})
+
     }
     
     // == End Service functions ==================================================
