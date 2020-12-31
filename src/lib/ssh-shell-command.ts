@@ -30,6 +30,7 @@ type SshTunnelOptions = {
     "remotePort": number
     "localPort": number
     "localIP"?: string
+    "remoteIP"?: string
     "multiplex"?: {
         "reuse-connection"?: boolean
         "tag"?: string
@@ -219,7 +220,7 @@ export class SshShellCommand
 
     tunnelStart(options:SshTunnelOptions) : boolean
     {
-      const default_ip = '127.0.0.1'
+      const default_remote_ip = '127.0.0.1'
       const multiplex_options = { 
           "tag": options.multiplex?.tag || this.tags.tunnel, 
           "controlpersist": options.multiplex?.controlpersist || 600,
@@ -234,7 +235,7 @@ export class SshShellCommand
       const command = 'ssh'
       const flags = {
         O: {value: 'forward', noequals: true},
-        L: {value: `${options.remotePort}:${options.localIP || default_ip}:${options.localPort}`, noequals: true},
+        L: {value: `${(options.localIP) ? `${options.localIP}:` : ''}${options.localPort}:${options.remoteIP || default_remote_ip}:${options.remotePort}`, noequals: true},
         S: {value: this.multiplexSocketPath(multiplex_options), noequals: true}
       }
 
@@ -255,7 +256,7 @@ export class SshShellCommand
 
     tunnelRelease(options:SshTunnelOptions) : boolean
     {
-        const default_ip = '127.0.0.1'
+        const default_remote_ip = '127.0.0.1'
         const multiplex_options = { 
             "tag": options.multiplex?.tag || this.tags.tunnel, 
             "controlpersist": options.multiplex?.controlpersist || 600,
@@ -268,7 +269,7 @@ export class SshShellCommand
         const command = 'ssh'
         const flags = {
             O: {value: 'cancel', noequals: true},
-            L: {value: `${options.remotePort}:${options.localIP || default_ip}:${options.localPort}`, noequals: true},
+            L: {value: `${(options.localIP) ? `${options.localIP}:` : ''}${options.localPort}:${options.remoteIP || default_remote_ip}:${options.remotePort}`, noequals: true},
             S: {value: this.multiplexSocketPath(multiplex_options), noequals: true}
         }
         const args = [`${this.resource.username}@${this.resource.address}`]        
