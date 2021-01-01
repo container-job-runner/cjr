@@ -13,6 +13,7 @@ import { ShellCommand } from '../shell-command'
 import { ServiceIdentifier, ServiceInfo } from '../services/abstract/abstract-service'
 import { MultiServiceManager } from '../services/managers/multi-service-manager'
 import { JobInfo } from '../drivers-containers/abstract/run-driver'
+import { FileTools } from '../fileio/file-tools'
 
 type CLIServiceStartFlags = CLIJobFlags & {
     "server-port": string,
@@ -129,8 +130,9 @@ export abstract class ServiceCommand extends JobCommand
         const start_tunnel = (job_manager instanceof RemoteSshJobManager) && ( ! flags['expose'] )
         
         // -- select ports -----------------------------------------------------
+        const local_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
         const container_port_config = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
-        const access_port = ( ! start_tunnel ) ? container_port_config.hostPort : nextAvailablePort(this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']}), container_port_config.hostPort)
+        const access_port = ( ! start_tunnel ) ? container_port_config.hostPort : nextAvailablePort(local_manager, container_port_config.hostPort)
 
         // -- start service ----------------------------------------------------
         const service = serviceGenerator(job_manager)
@@ -174,15 +176,24 @@ export abstract class ServiceCommand extends JobCommand
             return failure.absorb(ready_result).pushError(ErrorStrings.SERVICES.UNREADY)
 
         // exit if port not set (this should never occur -- added for valid TS)
-        if(! start_result.value["access-port"] || ! start_result.value["server-port"] ) 
+        const returned_access_port = start_result.value["access-port"]
+        if(! returned_access_port || ! start_result.value["server-port"] ) 
             return failure         
 
         // -- start tunnel -----------------------------------------------------
-        if( start_tunnel ) {
-            // uncomment the following line if we want cjr to select new host port for tunneling when the original is taken. Note: side effect is that if start is re-run before multiplex times out, then cjr will continue claiming new ports
-            // start_result.value["access-port"] = nextAvailablePort(this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']}), start_result.value["access-port"] || container_port_config.hostPort)
+        if( start_tunnel && (job_manager instanceof RemoteSshJobManager) ) {
+            
+            // -- START port check for previously started services -------------
+            const resource_address = job_manager.shell.resource.address            
+            const c1 = returned_access_port !== access_port  // may occur if service was already running on remote host
+            const c2 = () => ! FileTools.sshConnections(local_manager.shell, 3000)?.[resource_address]?.includes(returned_access_port) // there is no local forwarding of returned_access_port on this remote resource 
+            const c3 = () => nextAvailablePort(local_manager, returned_access_port) !== returned_access_port // old access_port is now taken
+            if ( c1 && c2() && c3() )
+                return failure.pushError(ErrorStrings.SERVICES.TUNNEL_PORT_TAKEN(returned_access_port)) // remark: we could start tunnel on free local port, however currently we would not be able to stop this tunnel since the new port number is not stored anywhere.    
+            // -- END port check for previously started services ---------------
+                
             const success = this.startTunnel(job_manager, {
-                "local-port": start_result.value["access-port"],
+                "local-port": returned_access_port,
                 "remote-port": start_result.value["server-port"] 
             })
             if(! success ) return failure.pushError(ErrorStrings.SERVICES.FAILED_TUNNEL_START)

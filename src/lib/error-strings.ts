@@ -55,7 +55,8 @@ export const ErrorStrings = {
       INVALID_PROJECT_ROOT: (project_root: string) => `the directory ${project_root} does not exist.`,
       EMPTY_PROJECT_ROOT: `You must specify a project root.`,
       UNREADY: chalk`{bold Service failed to start correctly} - Try re-running the start command, or stop and then restart this service; if this error persists, then the selected stack may not support this service.`,
-      FAILED_TUNNEL_START: `SSH tunnel failed to initialized. You will not be able to access remote service.`
+      FAILED_TUNNEL_START: `SSH tunnel failed to initialized. You will not be able to access remote service.`,
+      TUNNEL_PORT_TAKEN: (port:number) => `Unable to start local forwarding on port ${port} since port is currently busy. You will not be able to access remote service.`
   },
   REMOTE_RESOURCE: {
     NAME_NON_EXISTANT : (name: string) => chalk`{bold Nonexistant Remote Resource} - a resource with the name "${name}" does not exist.`,
