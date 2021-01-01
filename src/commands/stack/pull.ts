@@ -22,7 +22,6 @@ export default class Pull extends BasicCommand {
     const {args, flags} = this.parse(Pull)
     this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": true})
     const shell = new ShellCommand(flags.explicit, false)
-    var result: ValidatedOutput<any>
     // -- get stacks directory and name of git repo ----------------------------
     const local_stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
     fs.ensureDirSync(local_stacks_path)
@@ -34,9 +33,9 @@ export default class Pull extends BasicCommand {
     
     const stack_exists = FileTools.existsDir(stack_abs_path)
     if(stack_exists && await promptUserForGitPull(this.settings.get('interactive')))
-      result = shell.exec('git pull', {}, [], {cwd: stack_abs_path})
+      shell.exec('git pull', {}, [], {cwd: stack_abs_path})
     else if(!stack_exists)
-      result = shell.exec('git clone', {depth: "1"}, [args.url], {cwd: local_stacks_path})
+      shell.exec('git clone', {depth: "1"}, [args.url], {cwd: local_stacks_path})
   }
 
 }

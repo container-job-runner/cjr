@@ -29,7 +29,7 @@ export default class List extends ServiceCommand {
     }
 
     // -- table data generator -----------------------------------------------
-    const toDataRowArray = (si:ServiceInfo, js: VNCService) : [ string, string ] => [
+    const toDataRowArray = (si:ServiceInfo, _vs: VNCService) : [ string, string ] => [
         chalk`{green ${si["project-root"] || "none"}}`, 
         chalk`{underline vnc://${si['access-ip']}:${si['access-port']}}`
     ]

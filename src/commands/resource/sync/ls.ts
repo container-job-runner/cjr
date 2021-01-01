@@ -1,6 +1,6 @@
 import chalk = require('chalk')
 import { flags } from '@oclif/command'
-import { printValidatedOutput, printHorizontalTable, initizeSyncManager } from '../../../lib/functions/misc-functions'
+import { printValidatedOutput, printHorizontalTable } from '../../../lib/functions/misc-functions'
 import { ServiceInfo } from '../../../lib/services/abstract/abstract-service'
 import { ServiceCommand } from '../../../lib/commands/service-command'
 import { printSyncManagerOutput } from '../../../lib/functions/cli-functions'

@@ -2,7 +2,6 @@ import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../lib/functions/misc-functions'
 import { initX11 } from '../lib/functions/cli-functions'
 import { ServiceCommand } from '../lib/commands/service-command'
-import { LocalJobManager } from '../lib/job-managers/local/local-job-manager'
 import { CLIJobFlags } from '../lib/commands/job-command'
 
 export default class Shell extends ServiceCommand {

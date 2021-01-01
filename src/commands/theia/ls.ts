@@ -28,7 +28,7 @@ export default class List extends ServiceCommand {
     }
 
     // -- table data generator -----------------------------------------------
-    const toDataRowArray = (si:ServiceInfo, js: TheiaService) : [ string, string ] => [
+    const toDataRowArray = (si:ServiceInfo, _ts: TheiaService) : [ string, string ] => [
         chalk`{green ${si["project-root"] || "none"}}`, 
         chalk`{underline http://${si["access-ip"]}:${si["access-port"]}}`
     ]
