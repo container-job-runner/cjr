@@ -17,7 +17,7 @@ $ npm install -g cjr
 $ cjr COMMAND
 running command...
 $ cjr (-v|--version|version)
-cjr/0.5.2 linux-x64 node-v12.16.1
+cjr/0.5.3 linux-x64 node-v12.16.1
 $ cjr --help [COMMAND]
 USAGE
   $ cjr COMMAND
@@ -36,9 +36,6 @@ USAGE
 * [`cjr job:cp [ID]`](#cjr-jobcp-id)
 * [`cjr job:exec ID COMMAND`](#cjr-jobexec-id-command)
 * [`cjr job:info [ID]`](#cjr-jobinfo-id)
-* [`cjr job:jupyter:ls`](#cjr-jobjupyterls)
-* [`cjr job:jupyter:start [ID]`](#cjr-jobjupyterstart-id)
-* [`cjr job:jupyter:stop [ID]`](#cjr-jobjupyterstop-id)
 * [`cjr job:log [ID]`](#cjr-joblog-id)
 * [`cjr job:ls`](#cjr-jobls)
 * [`cjr job:rm [ID]`](#cjr-jobrm-id)
@@ -60,6 +57,9 @@ USAGE
 * [`cjr resource:rm RESOURCE`](#cjr-resourcerm-resource)
 * [`cjr resource:set RESOURCE`](#cjr-resourceset-resource)
 * [`cjr resource:ssh [RESOURCE]`](#cjr-resourcessh-resource)
+* [`cjr resource:sync:ls [RESOURCE]`](#cjr-resourcesyncls-resource)
+* [`cjr resource:sync:start [RESOURCE]`](#cjr-resourcesyncstart-resource)
+* [`cjr resource:sync:stop [RESOURCE]`](#cjr-resourcesyncstop-resource)
 * [`cjr shell`](#cjr-shell)
 * [`cjr stack:build [STACK]`](#cjr-stackbuild-stack)
 * [`cjr stack:create NAME`](#cjr-stackcreate-name)
@@ -128,7 +128,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/$.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/$.ts)_
+_See code: [src/commands/$.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/$.ts)_
 
 ## `cjr bundle BUNDLE-PATH`
 
@@ -151,7 +151,7 @@ OPTIONS
   --zip                        produces a zip output file (requires zip)
 ```
 
-_See code: [src/commands/bundle.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/bundle.ts)_
+_See code: [src/commands/bundle.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/bundle.ts)_
 
 ## `cjr config:ls`
 
@@ -165,7 +165,7 @@ OPTIONS
   --json
 ```
 
-_See code: [src/commands/config/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/config/ls.ts)_
+_See code: [src/commands/config/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/config/ls.ts)_
 
 ## `cjr config:set`
 
@@ -187,6 +187,9 @@ OPTIONS
                                                               finds such a project then it will set the default
                                                               --project-root flag to this directory.
 
+  --auto-sync-remote-service=true|false                       enable automatic two-way syncing for remote development
+                                                              commands.
+
   --autocopy-on-service-exit=true|false                       if true, then cjr will automatically run job:copy when
                                                               remote services like Jupyter and Theia are stopped using
                                                               the jupyter:stop and theia:stop commands.
@@ -203,7 +206,7 @@ OPTIONS
 
   --driver=podman-cli|docker-cli|docker-socket|podman-socket  container engine used to build and run images.
 
-  --enable-remote-dev=enable-remote-dev                       enable the resource flag for development commands shell,
+  --enable-remote-services=true|false                         enable the resource flag for development commands shell,
                                                               jupyter, theia, and vnc.
 
   --image-tag=image-tag                                       tag that cli uses when building all its images.
@@ -225,6 +228,10 @@ OPTIONS
                                                               starts.
 
   --on-vnc-start=on-vnc-start                                 command that should be run after a vnc server starts.
+
+  --rootfull=true|false                                       If true, then Podman or Docker will be explicitly run as
+                                                              root; for cli drivers this requires passwordless sudo for
+                                                              docker and podman commands.
 
   --run-shortcuts-file=run-shortcuts-file                     location of a yml file that can be used to specify run
                                                               shortcuts for the cjr job:start command; To disable set
@@ -251,7 +258,7 @@ OPTIONS
                                                               xquartz automatically when --x11 flag is selected.
 ```
 
-_See code: [src/commands/config/set.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/config/set.ts)_
+_See code: [src/commands/config/set.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/config/set.ts)_
 
 ## `cjr help [COMMAND]`
 
@@ -289,7 +296,7 @@ OPTIONS
                                            this project directory.
 ```
 
-_See code: [src/commands/init.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/init.ts)_
 
 ## `cjr job:attach [ID]`
 
@@ -307,7 +314,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/job/attach.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/attach.ts)_
+_See code: [src/commands/job/attach.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/attach.ts)_
 
 ## `cjr job:cp [ID]`
 
@@ -342,7 +349,7 @@ OPTIONS
   --visible-stacks=visible-stacks        If specified only these stacks will be affected by this command.
 ```
 
-_See code: [src/commands/job/cp.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/cp.ts)_
+_See code: [src/commands/job/cp.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/cp.ts)_
 
 ## `cjr job:exec ID COMMAND`
 
@@ -390,7 +397,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/job/exec.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/exec.ts)_
+_See code: [src/commands/job/exec.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/exec.ts)_
 
 ## `cjr job:info [ID]`
 
@@ -409,98 +416,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/job/info.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/info.ts)_
-
-## `cjr job:jupyter:ls`
-
-List running jupiter servers.
-
-```
-USAGE
-  $ cjr job:jupyter:ls
-
-OPTIONS
-  --explicit
-  --json
-  --resource=resource
-```
-
-_See code: [src/commands/job/jupyter/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/jupyter/ls.ts)_
-
-## `cjr job:jupyter:start [ID]`
-
-Start a Jupyter server inside a job.
-
-```
-USAGE
-  $ cjr job:jupyter:start [ID]
-
-OPTIONS
-  -h, --here                             sets project-root to current working directory
-  -q, --quiet
-  -v, --verbose                          shows output for each stage of the job.
-
-  --build-mode=build-mode                [default: reuse-image] specify how to build stack. Options include
-                                         "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"
-
-  --config-files=config-files            [default: ] additional configuration file to override stack configuration
-
-  --explicit
-
-  --expose
-
-  --label=label                          [default: ] additional labels to append to job
-
-  --no-autoload                          prevents cli from automatically loading flags using project settings files
-
-  --override-entrypoint                  forces container entrypoint to be sh shell. This may be useful for images that
-                                         where not designed for cjr.
-
-  --port=port                            [default: ]
-
-  --profile=profile                      set stack profile
-
-  --project-root=project-root
-
-  --resource=resource
-
-  --server-port=server-port              [default: auto] default port for the jupyter server
-
-  --stack=stack
-
-  --stacks-dir=stacks-dir                override default stack directory
-
-  --visible-stacks=visible-stacks        if specified only these stacks will be affected by this command
-
-  --working-directory=working-directory  [default: /home/vagrant/cjr] cli will behave as if it was called from the
-                                         specified directory
-
-  --x11
-```
-
-_See code: [src/commands/job/jupyter/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/jupyter/start.ts)_
-
-## `cjr job:jupyter:stop [ID]`
-
-Stop a running Jupyter server.
-
-```
-USAGE
-  $ cjr job:jupyter:stop [ID]
-
-OPTIONS
-  -h, --here                       sets project-root to current working directory
-  -q, --quiet
-  -v, --verbose                    shows output for each stage of the job.
-  --all                            stop all jupyter servers running in host directories
-  --explicit
-  --project-root=project-root
-  --resource=resource
-  --stacks-dir=stacks-dir          override default stack directory
-  --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
-```
-
-_See code: [src/commands/job/jupyter/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/jupyter/stop.ts)_
+_See code: [src/commands/job/info.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/info.ts)_
 
 ## `cjr job:log [ID]`
 
@@ -520,7 +436,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/job/log.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/log.ts)_
+_See code: [src/commands/job/log.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/log.ts)_
 
 ## `cjr job:ls`
 
@@ -553,7 +469,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/job/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/ls.ts)_
+_See code: [src/commands/job/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/ls.ts)_
 
 ## `cjr job:rm [ID]`
 
@@ -576,7 +492,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/job/rm.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/rm.ts)_
+_See code: [src/commands/job/rm.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/rm.ts)_
 
 ## `cjr job:shell [ID]`
 
@@ -618,7 +534,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/job/shell.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/shell.ts)_
+_See code: [src/commands/job/shell.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/shell.ts)_
 
 ## `cjr job:start COMMAND`
 
@@ -674,7 +590,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/job/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/start.ts)_
+_See code: [src/commands/job/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/start.ts)_
 
 ## `cjr job:state ID`
 
@@ -692,7 +608,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/job/state.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/state.ts)_
+_See code: [src/commands/job/state.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/state.ts)_
 
 ## `cjr job:stop [ID]`
 
@@ -713,7 +629,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/job/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/job/stop.ts)_
+_See code: [src/commands/job/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/job/stop.ts)_
 
 ## `cjr jupyter:ls`
 
@@ -729,7 +645,7 @@ OPTIONS
   --resource=resource
 ```
 
-_See code: [src/commands/jupyter/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/jupyter/ls.ts)_
+_See code: [src/commands/jupyter/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/jupyter/ls.ts)_
 
 ## `cjr jupyter:start [PROJECT-ROOT]`
 
@@ -780,7 +696,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/jupyter/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/jupyter/start.ts)_
+_See code: [src/commands/jupyter/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/jupyter/start.ts)_
 
 ## `cjr jupyter:stop [PROJECT-ROOT]`
 
@@ -800,7 +716,7 @@ OPTIONS
   --resource=resource
 ```
 
-_See code: [src/commands/jupyter/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/jupyter/stop.ts)_
+_See code: [src/commands/jupyter/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/jupyter/stop.ts)_
 
 ## `cjr pconfig:item-append`
 
@@ -821,7 +737,7 @@ OPTIONS
   --visible-stack=visible-stack
 ```
 
-_See code: [src/commands/pconfig/item-append.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/pconfig/item-append.ts)_
+_See code: [src/commands/pconfig/item-append.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/pconfig/item-append.ts)_
 
 ## `cjr pconfig:item-remove`
 
@@ -842,7 +758,7 @@ OPTIONS
   --visible-stack=visible-stack
 ```
 
-_See code: [src/commands/pconfig/item-remove.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/pconfig/item-remove.ts)_
+_See code: [src/commands/pconfig/item-remove.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/pconfig/item-remove.ts)_
 
 ## `cjr pconfig:ls`
 
@@ -857,7 +773,7 @@ OPTIONS
   --project-root=project-root  location where settings should be written
 ```
 
-_See code: [src/commands/pconfig/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/pconfig/ls.ts)_
+_See code: [src/commands/pconfig/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/pconfig/ls.ts)_
 
 ## `cjr pconfig:profile:add [PATH]`
 
@@ -871,7 +787,7 @@ OPTIONS
   --project-root=project-root
 ```
 
-_See code: [src/commands/pconfig/profile/add.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/pconfig/profile/add.ts)_
+_See code: [src/commands/pconfig/profile/add.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/pconfig/profile/add.ts)_
 
 ## `cjr pconfig:rm`
 
@@ -892,7 +808,7 @@ OPTIONS
   --visible-stacks             if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/pconfig/rm.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/pconfig/rm.ts)_
+_See code: [src/commands/pconfig/rm.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/pconfig/rm.ts)_
 
 ## `cjr pconfig:set`
 
@@ -912,7 +828,7 @@ OPTIONS
   --visible-stacks=visible-stacks  if specified only these stacks will be affected by this command
 ```
 
-_See code: [src/commands/pconfig/set.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/pconfig/set.ts)_
+_See code: [src/commands/pconfig/set.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/pconfig/set.ts)_
 
 ## `cjr resource:add RESOURCE`
 
@@ -931,7 +847,7 @@ OPTIONS
   --username=username        (required)
 ```
 
-_See code: [src/commands/resource/add.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/resource/add.ts)_
+_See code: [src/commands/resource/add.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/add.ts)_
 
 ## `cjr resource:ls`
 
@@ -945,7 +861,7 @@ OPTIONS
   -v, --verbose  show all properties for each remote resource.
 ```
 
-_See code: [src/commands/resource/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/resource/ls.ts)_
+_See code: [src/commands/resource/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/ls.ts)_
 
 ## `cjr resource:rm RESOURCE`
 
@@ -956,7 +872,7 @@ USAGE
   $ cjr resource:rm RESOURCE
 ```
 
-_See code: [src/commands/resource/rm.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/resource/rm.ts)_
+_See code: [src/commands/resource/rm.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/rm.ts)_
 
 ## `cjr resource:set RESOURCE`
 
@@ -974,7 +890,7 @@ OPTIONS
   --username=username
 ```
 
-_See code: [src/commands/resource/set.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/resource/set.ts)_
+_See code: [src/commands/resource/set.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/set.ts)_
 
 ## `cjr resource:ssh [RESOURCE]`
 
@@ -990,7 +906,63 @@ OPTIONS
   --resource=resource
 ```
 
-_See code: [src/commands/resource/ssh.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/resource/ssh.ts)_
+_See code: [src/commands/resource/ssh.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/ssh.ts)_
+
+## `cjr resource:sync:ls [RESOURCE]`
+
+List running Syncthing servers.
+
+```
+USAGE
+  $ cjr resource:sync:ls [RESOURCE]
+
+OPTIONS
+  --explicit
+  --json
+  --resource=resource
+```
+
+_See code: [src/commands/resource/sync/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/sync/ls.ts)_
+
+## `cjr resource:sync:start [RESOURCE]`
+
+Start a Syncthing server.
+
+```
+USAGE
+  $ cjr resource:sync:start [RESOURCE]
+
+OPTIONS
+  -h, --here                   sets project-root to current working directory
+  -q, --quiet
+  -v, --verbose                shows output for each stage of the job.
+  --explicit
+  --no-autoload                prevents cli from automatically loading flags using project settings files
+  --project-root=project-root
+  --resource=resource
+```
+
+_See code: [src/commands/resource/sync/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/sync/start.ts)_
+
+## `cjr resource:sync:stop [RESOURCE]`
+
+Stop a running Syncthing server.
+
+```
+USAGE
+  $ cjr resource:sync:stop [RESOURCE]
+
+OPTIONS
+  -h, --here                   sets project-root to current working directory
+  -q, --quiet
+  -v, --verbose                shows output for each stage of the job.
+  --all                        stop all jupyter servers running in host directories
+  --explicit
+  --project-root=project-root
+  --resource=resource
+```
+
+_See code: [src/commands/resource/sync/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/sync/stop.ts)_
 
 ## `cjr shell`
 
@@ -1031,7 +1003,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/shell.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/shell.ts)_
+_See code: [src/commands/shell.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/shell.ts)_
 
 ## `cjr stack:build [STACK]`
 
@@ -1054,7 +1026,7 @@ OPTIONS
   --stacks-dir=stacks-dir      override default stack directory
 ```
 
-_See code: [src/commands/stack/build.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/stack/build.ts)_
+_See code: [src/commands/stack/build.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/stack/build.ts)_
 
 ## `cjr stack:create NAME`
 
@@ -1072,7 +1044,7 @@ OPTIONS
   --stacks-dir=stacks-dir  override default stack directory
 ```
 
-_See code: [src/commands/stack/create.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/stack/create.ts)_
+_See code: [src/commands/stack/create.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/stack/create.ts)_
 
 ## `cjr stack:ls`
 
@@ -1086,7 +1058,7 @@ OPTIONS
   --stacks-dir=stacks-dir  override default stack directory
 ```
 
-_See code: [src/commands/stack/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/stack/ls.ts)_
+_See code: [src/commands/stack/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/stack/ls.ts)_
 
 ## `cjr stack:pull URL`
 
@@ -1101,7 +1073,7 @@ OPTIONS
   --stacks-dir=stacks-dir  override default stack directory
 ```
 
-_See code: [src/commands/stack/pull.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/stack/pull.ts)_
+_See code: [src/commands/stack/pull.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/stack/pull.ts)_
 
 ## `cjr stack:rmi [STACK]`
 
@@ -1120,7 +1092,7 @@ OPTIONS
   --stacks-dir=stacks-dir      override default stack directory
 ```
 
-_See code: [src/commands/stack/rmi.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/stack/rmi.ts)_
+_See code: [src/commands/stack/rmi.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/stack/rmi.ts)_
 
 ## `cjr stack:snapshot [STACK]`
 
@@ -1159,7 +1131,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/stack/snapshot.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/stack/snapshot.ts)_
+_See code: [src/commands/stack/snapshot.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/stack/snapshot.ts)_
 
 ## `cjr theia:ls`
 
@@ -1175,7 +1147,7 @@ OPTIONS
   --resource=resource
 ```
 
-_See code: [src/commands/theia/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/theia/ls.ts)_
+_See code: [src/commands/theia/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/theia/ls.ts)_
 
 ## `cjr theia:start [PROJECT-ROOT]`
 
@@ -1226,7 +1198,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/theia/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/theia/start.ts)_
+_See code: [src/commands/theia/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/theia/start.ts)_
 
 ## `cjr theia:stop [PROJECT-ROOT]`
 
@@ -1246,7 +1218,7 @@ OPTIONS
   --resource=resource
 ```
 
-_See code: [src/commands/theia/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/theia/stop.ts)_
+_See code: [src/commands/theia/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/theia/stop.ts)_
 
 ## `cjr vnc:ls`
 
@@ -1262,7 +1234,7 @@ OPTIONS
   --resource=resource
 ```
 
-_See code: [src/commands/vnc/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/vnc/ls.ts)_
+_See code: [src/commands/vnc/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/vnc/ls.ts)_
 
 ## `cjr vnc:start [PROJECT-ROOT]`
 
@@ -1313,7 +1285,7 @@ OPTIONS
   --x11
 ```
 
-_See code: [src/commands/vnc/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/vnc/start.ts)_
+_See code: [src/commands/vnc/start.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/vnc/start.ts)_
 
 ## `cjr vnc:stop [PROJECT-ROOT]`
 
@@ -1333,5 +1305,5 @@ OPTIONS
   --resource=resource
 ```
 
-_See code: [src/commands/vnc/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.2/src/commands/vnc/stop.ts)_
+_See code: [src/commands/vnc/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/vnc/stop.ts)_
 <!-- commandsstop -->
