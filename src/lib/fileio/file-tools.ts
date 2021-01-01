@@ -64,4 +64,63 @@ export class FileTools
     return n_lines.map( (s:string) => parseInt(extractPort(s))).filter( ( n:number ) => ( ! isNaN(n) && isFinite(n) && n > 0 ) )
   }
 
+
+  // sshConnections uses lsof to look for all active ssh connections and any tunnels that connect 127.0.0.1 with a remote host
+
+  static sshConnections(shell:ShellCommand|SshShellCommand = new ShellCommand(false, false), timeout:number=0) : { [ key: string] : number[]}
+  {
+    const command = 'lsof'
+    const flags = {
+        "i": {value: `TCP`, noequals: true}, // look only at TCP connections
+        "n": {}, // inhibits the conversion of network numbers to host names
+        "P": {}, // inhibits the conversion of port numbers to port names
+        "F": {value: 'pcn', noequals: true}  // print process, command, name
+    }
+    const output = shell.output(command, flags, [], {"timeout": timeout})
+    if( ! output.success ) return {}
+    
+    const row_splitter = /[\r\n]+/
+    const lines = output.value.split(row_splitter) // extract lines that start with n
+
+    // -- parse output ---------------------------------------------------------
+    let pid:string|undefined = undefined
+    let cmd:string|undefined = undefined
+    let address:string|undefined = undefined
+    let port:number|undefined = undefined
+
+    const pid_regex = /(?<=^p)\d+/
+    const cmd_regex = /(?<=^c)\S+/
+    const address_regex = /(?<=n\S+->)\d+\.\d+\.\d+\.\d+(?=:\d+)/
+    const port_regex = /(?<=n127.0.0.1:)\d+/
+
+    const connections: { [key: string] : {address: string, "local-tunnel-ports": number[]}} = {}
+    for( let i = 0; i <= lines.length; i ++) // assumes pid and command preceed name
+    {
+        const line = lines[i]
+        if( pid_regex.test(line) )
+            pid = pid_regex.exec(line)?.pop() || pid
+        else if ( cmd_regex.test(line) ) 
+            cmd = cmd_regex.exec(line)?.pop() || cmd
+        else if ( pid && cmd === "ssh" ) 
+        {
+            if(connections[pid] === undefined)
+                connections[pid] = { address: "", "local-tunnel-ports": []}
+
+            port = parseInt(port_regex?.exec(line)?.pop() || "") || undefined
+            if( port ) connections[pid]["local-tunnel-ports"].push(port)
+
+            address = address_regex.exec(line)?.pop() || undefined
+            if( address ) connections[pid].address = address
+        }
+    }
+
+    // -- process outputs -----------------------------------------------------
+    const result:{ [ key: string] : number[]} = {}  
+    Object.keys(connections).map((s:string) => {
+        const address = connections[s].address
+        result[address] = (result?.[address] || []).concat(connections[s]["local-tunnel-ports"])
+    })
+    return result
+  }
+
 }
