@@ -1,5 +1,4 @@
 import path = require('path')
-import os = require('os')
 import { ShellCommand } from '../shell-command'
 import { ErrorStrings, NoticeStrings } from '../error-strings'
 import { ValidatedOutput } from '../validated-output'

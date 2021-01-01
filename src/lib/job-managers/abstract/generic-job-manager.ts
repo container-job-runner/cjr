@@ -116,11 +116,11 @@ export abstract class GenericJobManager extends JobManager
     if(job_info.value.length == 0 && options?.ids && options.ids.length > 0)
       return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
 
-    job_info.value.map( (job: JobInfo) => result.absorb(this.deleteJob(job, options)) )
+    job_info.value.map( (job: JobInfo) => result.absorb(this.deleteJob(job)) )
     return result
   }
 
-  protected deleteJob(job:JobInfo, options: JobDeleteOptions) : ValidatedOutput<any>
+  protected deleteJob(job:JobInfo) : ValidatedOutput<any>
   {
     const result = new ValidatedOutput(true, undefined)
     // -- delete job -------------------------------------------------
@@ -142,11 +142,11 @@ export abstract class GenericJobManager extends JobManager
     if(job_info.value.length == 0 && options?.ids && options.ids.length > 0)
       return new ValidatedOutput(false, undefined).pushError(this.ERRORSTRINGS.NO_MATCHING_ID)
 
-    job_info.value.map( (job: JobInfo) => result.absorb(this.stopJob(job, options)) )
+    job_info.value.map( (job: JobInfo) => result.absorb(this.stopJob(job)) )
     return result
   }
 
-  protected stopJob(job:JobInfo, options: JobDeleteOptions) : ValidatedOutput<any>
+  protected stopJob(job:JobInfo) : ValidatedOutput<any>
   {
     const result = new ValidatedOutput(true, undefined)
     // -- delete job -------------------------------------------------

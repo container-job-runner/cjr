@@ -8,7 +8,7 @@ import { ValidatedOutput } from '../../validated-output';
 import { JSTools } from '../../js-tools';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 import { DriverInitCli } from '../local/driver-init-cli';
-import { ContainerDrivers, Configurations, OutputOptions, JobRunOptions, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobBuildOptions } from '../abstract/job-manager';
+import { ContainerDrivers, Configurations, OutputOptions, JobRunOptions, JobExecOptions, JobCopyOptions, JobBuildOptions } from '../abstract/job-manager';
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration';
 import { NewJobInfo, JobInfo, JobInfoFilter } from '../../drivers-containers/abstract/run-driver';
 import { JobConfiguration } from '../../config/jobs/job-configuration';
@@ -519,9 +519,9 @@ export class RemoteSshJobManager extends GenericJobManager
         return flags
     }
 
-    protected deleteJob(job:JobInfo, options: JobDeleteOptions)
+    protected deleteJob(job:JobInfo)
     {
-        const result = super.deleteJob(job, options)
+        const result = super.deleteJob(job)
         
         // -- remove any tmp directories ---------------------------------------    
         const cached = (job.labels?.[this.REMOTELABELS['CACHED_PROJECT_ROOT']] === 'TRUE')

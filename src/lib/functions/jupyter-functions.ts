@@ -1,4 +1,3 @@
-import os = require('os')
 import { JSTools } from '../js-tools'
 import { ShellCommand } from '../shell-command'
 import { ErrorStrings, NoticeStrings } from '../error-strings'

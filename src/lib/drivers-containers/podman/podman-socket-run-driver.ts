@@ -1,5 +1,4 @@
-import { DockerSocketRunDriver, DockerAPI_CreateObject } from '../docker/docker-socket-run-driver';
-import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration';
+import { DockerSocketRunDriver } from '../docker/docker-socket-run-driver';
 import { PodmanAPIPostProcessor } from './podman-socket-build-driver';
 
 // ===========================================================================

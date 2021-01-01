@@ -3,7 +3,7 @@ import fs = require('fs')
 import constants = require('../constants')
 import { CLIJobFlags, JobCommand } from './job-command'
 import { JobManager } from '../job-managers/abstract/job-manager'
-import { nextAvailablePort, nextAvailablePorts, printSyncManagerOutput } from '../functions/cli-functions'
+import { nextAvailablePort, nextAvailablePorts } from '../functions/cli-functions'
 import { RemoteSshJobManager } from '../job-managers/remote/remote-ssh-job-manager'
 import { ValidatedOutput } from '../validated-output'
 import { ErrorStrings } from '../error-strings'

@@ -1,7 +1,7 @@
 import chalk = require('chalk')
 import { DockerSocketBuildDriver } from '../docker/docker-socket-build-driver'
 import { ValidatedOutput } from '../../validated-output'
-import { RequestOutput, Curl } from '../../curl'
+import { RequestOutput } from '../../curl'
 import { ShellCommand } from '../../shell-command'
 import { JSTools } from '../../js-tools'
 import { DockerStackConfiguration } from '../../config/stacks/docker/docker-stack-configuration'

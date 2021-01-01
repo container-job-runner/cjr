@@ -1,6 +1,6 @@
 import fs = require('fs')
 import chalk = require('chalk');
-import { JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations, JobDeleteOptions } from '../abstract/job-manager'
+import { JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
 import { NewJobInfo, JobInfo } from '../../drivers-containers/abstract/run-driver';
@@ -230,9 +230,9 @@ export class LocalJobManager extends GenericJobManager
       return result
   }
 
-  protected deleteJob(job: JobInfo, options: JobDeleteOptions) : ValidatedOutput<undefined>
+  protected deleteJob(job: JobInfo) : ValidatedOutput<undefined>
   {
-    const result = super.deleteJob(job, options)
+    const result = super.deleteJob(job)
     // -- remove any associated file volumes -----------------------------------    
     const file_volume = job.labels?.[label_strings.job["file-volume"]]
     if(!file_volume) return result
