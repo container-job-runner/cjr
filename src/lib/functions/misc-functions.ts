@@ -189,7 +189,7 @@ export function urlEnvironmentObject(url_str: string, additional_vars: {[key:str
     } catch {}
 
     return {
-        ... (process.env as {[key:string]: string}),
+        ... ( (use_process_env) ? (process.env as {[key:string]: string}) : {} ),
         ... href_env,
         ... additional_vars
     }
