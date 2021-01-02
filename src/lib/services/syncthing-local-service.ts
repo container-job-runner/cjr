@@ -36,6 +36,11 @@ export class SyncthingLocalService extends GenericAbstractService
         this.syncthing_options = syncthing_options
     }
 
+    setPorts( ports : { listen: number, connect: number } )
+    {
+        this.syncthing_options.ports = ports
+    }
+
     protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>
     {
         const stack_configuration = this.job_manager.configurations.stack()
