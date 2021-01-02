@@ -1,8 +1,9 @@
 import path = require('path');
 import { GenericAbstractService } from "./abstract/generic-abstract-service";
 import { JobManager } from '../job-managers/abstract/job-manager';
-import {  ServiceIdentifier, ServiceOptions } from './abstract/abstract-service';
+import {  ServiceIdentifier, ServiceInfo, ServiceOptions } from './abstract/abstract-service';
 import { JobConfiguration } from '../config/jobs/job-configuration';
+import { ValidatedOutput } from '../validated-output';
 
 export type SyncthingRemoteServiceOption = {
     'ports': { listen: number, connect: number, gui: number }
@@ -34,9 +35,31 @@ export class SyncthingRemoteService extends GenericAbstractService
         this.syncthing_options = syncthing_options
     }
 
+    setPorts( ports : { listen: number, connect: number, gui: number } )
+    {
+        this.syncthing_options.ports = ports
+    }
+
+    start(identifier: ServiceIdentifier, options: ServiceOptions) : ValidatedOutput<ServiceInfo>
+    {
+        // -- override syncthing port config ----------------------------------
+        const portToPortObject = (port: number) => {return {hostPort: port, containerPort: port, address: "127.0.0.1"}}
+        options["container-port-config"] = { 
+            ... (options["container-port-config"] || {}), 
+            ... {
+                "listen":  portToPortObject(this.syncthing_options.ports.listen),
+                "connect": portToPortObject(this.syncthing_options.ports.connect),
+                "gui":     portToPortObject(this.syncthing_options.ports.gui)
+            }            
+        }
+        return super.start(identifier, options)
+    }
+
     protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>
     {
-        const stack_configuration = this.job_manager.configurations.stack()
+        const job_configuration = super.newJobConfiguration(identifier, options)
+        const stack_configuration = job_configuration.stack_configuration
+        
         stack_configuration.setImage(this.CONSTANTS.image)
         stack_configuration.addFlag("network", "host")
         // -- generic settings -------------------------------------------------
@@ -53,27 +76,7 @@ export class SyncthingRemoteService extends GenericAbstractService
         stack_configuration.addEnvironmentVariable("SYNCTHING_SYNC_DIRECTORY", 
             path.posix.join("/home/", this.CONSTANTS.username, this.CONSTANTS["sync-directory"])
         )
-        // -- add ports (necessary even with network=host or cjr cannot tell if these ports as used) ------------
-        stack_configuration.addPort(
-            this.syncthing_options.ports.listen,
-            this.syncthing_options.ports.listen, 
-            "127.0.0.1"
-        )
-        stack_configuration.addPort(
-            this.syncthing_options.ports.connect,
-            this.syncthing_options.ports.connect, 
-            "127.0.0.1"
-        )
-        stack_configuration.addPort(
-            this.syncthing_options.ports.gui,
-            this.syncthing_options.ports.gui, 
-            "127.0.0.1"
-        )
-         
-        const job_configuration = this.job_manager.configurations.job(stack_configuration)
-        job_configuration.remove_on_exit = true
-        job_configuration.synchronous = false
-        job_configuration.command = this.startCommand(job_configuration, options)
+        
         return job_configuration
     }
 
