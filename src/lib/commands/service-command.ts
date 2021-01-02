@@ -144,7 +144,7 @@ export abstract class ServiceCommand extends JobCommand
                 "stack_configuration": stack_configuration,
                 "project-root": flags["project-root"],
                 "reuse-image" : this.extractReuseImage(flags),
-                "container-port-config": container_port_config,
+                "container-port-config": { "server": container_port_config },
                 "access-port": access_port,
                 "access-ip": this.getAccessIp(job_manager, {"resource": flags["resource"], "expose": flags['expose']}),
                 "x11": flags['x11'],
@@ -177,7 +177,7 @@ export abstract class ServiceCommand extends JobCommand
 
         // exit if port not set (this should never occur -- added for valid TS)
         const returned_access_port = start_result.value["access-port"]
-        if(! returned_access_port || ! start_result.value["server-port"] ) 
+        if(! returned_access_port || ! start_result.value["service-ports"]?.["server"] ) 
             return failure         
 
         // -- start tunnel -----------------------------------------------------
@@ -194,7 +194,7 @@ export abstract class ServiceCommand extends JobCommand
                 
             const success = this.startTunnel(job_manager, {
                 "local-port": returned_access_port,
-                "remote-port": start_result.value["server-port"] 
+                "remote-port": start_result.value["service-ports"]["server"]
             })
             if(! success ) return failure.pushError(ErrorStrings.SERVICES.FAILED_TUNNEL_START)
         }
@@ -229,8 +229,8 @@ export abstract class ServiceCommand extends JobCommand
             // -- release any tunnel ports ---------------------------------------------
             service_list.map( 
                 (si: ServiceInfo) => {
-                    if((si["access-port"] !== undefined) && (si["server-port"] !== undefined) && si["access-ip"] === this.localhost_ip)
-                        this.releaseTunnelPort(job_manager, {"local-port": si["access-port"], "remote-port": si["server-port"]})
+                    if((si["access-port"] !== undefined) && (si["service-ports"]["server"] !== undefined) && si["access-ip"] === this.localhost_ip)
+                        this.releaseTunnelPort(job_manager, {"local-port": si["access-port"], "remote-port": si["service-ports"]["server"]})
                 } 
             )
 

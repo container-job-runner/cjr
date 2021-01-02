@@ -7,7 +7,7 @@ export type ServiceIdentifier = {
 
 export type ServiceOptions = {
   "stack_configuration"?: StackConfiguration<any> // stack configuration to run service
-  "container-port-config"?: {hostPort: number, containerPort: number, address?: string} // container port mapping for the service
+  "container-port-config"?: { [key: string] : {hostPort: number, containerPort: number, address?: string}} // container port mapping for the service
   "access-port"?: number, // port from which user should access service
   "access-ip"?: string, // access ip for service
   "project-root"?: string // host project root
@@ -18,7 +18,7 @@ export type ServiceOptions = {
 
 export type ServiceInfo = {
   "id": string,
-  "server-port" ?: number   // port that is exposed on the machine that is running the service
+  "service-ports": { [ key : string ] : number }   // ports that are exposed on the machine that is running the service
   "access-port"?: number,   // port from which user accesses service (may be different from server-port if ssh-tunnel exists)
   "access-ip"?: string,     // ip from which user accesses service
   "project-root"?: string

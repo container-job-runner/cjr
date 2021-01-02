@@ -25,7 +25,7 @@ export class TheiaService extends GenericAbstractService
 
     protected startCommand(job_configuration: JobConfiguration<any>, options: ServiceOptions): string[] 
     {
-        const port_flag = (options["container-port-config"]) ? `--port ${options["container-port-config"].containerPort}` : ''
+        const port_flag = (options?.["container-port-config"]?.["server"]) ? `--port ${options["container-port-config"]["server"].containerPort}` : ''
         const container_root = job_configuration.stack_configuration.getContainerRoot()
         const project_dir = (container_root && options['project-root']) ? path.posix.join(container_root, path.basename(options['project-root'])) : container_root
         return [`theia --hostname 0.0.0.0 ${port_flag} ${project_dir}`];

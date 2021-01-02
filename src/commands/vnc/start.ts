@@ -46,7 +46,7 @@ export default class Start extends ServiceCommand {
     }
 
     const failure_value = { 
-        "start" : new ValidatedOutput<ServiceInfo>( false, { id: "", isnew: true } ), 
+        "start" : new ValidatedOutput<ServiceInfo>( false, { id: "", isnew: true, "service-ports": {} } ), 
         "ready" : new ValidatedOutput( false, { output: "" } )
     }
         

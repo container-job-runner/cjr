@@ -37,7 +37,7 @@ export class VNCService extends GenericAbstractService
 
     protected startCommand(job_configuration: JobConfiguration<any>, options: ServiceOptions): string[] 
     {
-        const port_flag = (options["container-port-config"]) ? `-rfbport ${options["container-port-config"].containerPort}` : ''
+        const port_flag = (options?.["container-port-config"]?.["server"]) ? `-rfbport ${options["container-port-config"]["server"].containerPort}` : ''
         const commands = [
             `chmod 600 ~/.vnc/passwd`,            
             `vncserver ${port_flag} -geometry ${this.vnc_options.resolution} && tail -f /dev/null`]
