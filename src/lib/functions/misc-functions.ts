@@ -9,6 +9,7 @@ import { SyncthingLocalService } from '../services/syncthing-local-service'
 import { SyncthingRemoteService } from '../services/syncthing-remote-service'
 import { MultiServiceManager } from '../services/managers/multi-service-manager'
 import { GenericAbstractService } from '../services/abstract/generic-abstract-service'
+import { ServiceIdentifier, ServiceInfo } from '../services/abstract/abstract-service'
 
 export function ajvValidatorToValidatedOutput(ajv_validator: any, raw_object:Dictionary) : ValidatedOutput<undefined>
 {
@@ -213,5 +214,23 @@ export function initizeSyncManager(local_job_manager: JobManager, remote_job_man
             "ports": ports
         }
     )
-    return new MultiServiceManager({"local": local_sync_manger, "remote": remote_sync_manger})
+
+    return new MultiServiceManager(
+        { "local": local_sync_manger, "remote": remote_sync_manger }, 
+        { "start" : ["remote", "local"]}, // always start remote before local
+        { 
+            "post-start": { // set local ports based on response from remote (since service may already be running)
+                "remote" : (vo_si: ValidatedOutput<ServiceInfo>, identifier?: ServiceIdentifier) => {
+                    const service_ports = vo_si.value?.["service-ports"] || {}                
+                    local_sync_manger.setPorts({
+                        "listen": service_ports?.["listen"] || ports.listen,
+                        "connect": service_ports?.["connect"] || ports.connect
+                    })
+                    if(vo_si.value.isnew) // if remote service is new, then shutdown any previously existing local service that might be running since we cannot garantee that is is connecting to correct ports.
+                        local_sync_manger.stop(identifier)
+                },
+                "local": (_x:any) => {}
+            }
+        }
+    )
 }
