@@ -116,8 +116,7 @@ export abstract class GenericAbstractService extends AbstractService
             job_configuration.addLabel(this.SERVICE_LABELS["access-port"], `${options["access-port"]}`);
         if(options["access-ip"])
             job_configuration.addLabel(this.SERVICE_LABELS["access-ip"], `${options["access-ip"]}`);
-        if(options["container-port-config"])
-            job_configuration.addLabel(this.SERVICE_LABELS["service-ports"], JSON.stringify(this.extractPorts(options["container-port-config"] || {})));
+        job_configuration.addLabel(this.SERVICE_LABELS["service-ports"], JSON.stringify(this.extractPorts(options["container-port-config"] || {})));
         return job_configuration
     }
 
