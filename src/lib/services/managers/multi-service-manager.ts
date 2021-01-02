@@ -11,9 +11,9 @@ export class MultiServiceManager<T extends { [ key : string ] : GenericAbstractS
         this.services = services
     }
 
-    start(identifier: ServiceIdentifier,  options: ServiceOptions) : { [key in keyof T] : ValidatedOutput<ServiceInfo> } // start new service
+    start(identifier: ServiceIdentifier,  options: { [ key in keyof T] : ServiceOptions } ) : { [key in keyof T] : ValidatedOutput<ServiceInfo> } // start new service
     {
-        return this.serviceFunctionMap( (service: GenericAbstractService) => service.start(identifier, options) )
+        return this.serviceFunctionMap( (service: GenericAbstractService, key: keyof T) => service.start(identifier, options[key]) )
     }
 
     stop(identifier?: ServiceIdentifier, copy?: { [ key in keyof T ] : boolean}) : { [key in keyof T] : ValidatedOutput<undefined> } // stop running services, or all services if identifier is empty

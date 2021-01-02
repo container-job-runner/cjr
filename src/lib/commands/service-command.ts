@@ -323,7 +323,12 @@ export abstract class ServiceCommand extends JobCommand
         const identifier = {"project-root": project_root}
         const start_request = sync_manager.start(identifier, 
             {
-                "project-root": project_root,
+                "local" : {
+                    "project-root": project_root
+                },
+                "remote" : {
+                    "project-root": project_root
+                }
             }
         )
 
