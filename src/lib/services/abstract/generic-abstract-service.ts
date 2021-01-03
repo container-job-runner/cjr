@@ -163,9 +163,15 @@ export abstract class GenericAbstractService extends AbstractService
     
     protected jobInfoToServiceInfo(job_info: JobInfo) : ServiceInfo
     {
+        const parseServicePortLabel = (s: string | undefined) => {
+            if( s === undefined ) return {}
+            try { return JSON.parse(s) }
+            catch { return {} }
+        }
+        
         return {
             "id": job_info.id,
-            "service-ports": JSON.parse(job_info.labels[this.SERVICE_LABELS['service-ports']]) || {},
+            "service-ports": parseServicePortLabel(job_info.labels[this.SERVICE_LABELS['service-ports']]),
             "access-port": parseInt(job_info.labels[this.SERVICE_LABELS['access-port']]) || undefined,
             "access-ip": job_info.labels[this.SERVICE_LABELS["access-ip"]],
             "project-root": job_info.labels[constants.label_strings.job["project-root"]],
