@@ -197,41 +197,27 @@ function printStatusFooter(verbose: boolean, line_width:number = 80) {
 
 export function nextAvailablePort(job_manager: JobManager,  starting_port:number=1024) : number
 {
-  const job_info = job_manager.container_drivers.runner.jobInfo({states: ["running"]}) // get all jobs
-  if(!job_info.success) return starting_port
-  // -- extract port and order ascending ---------------------------------------
-  const ports:Array<number> = []
-  job_info.value.map( (job_info:JobInfo) => ports.push(
-      ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
-    )
-  )
-  // -- add system ports ------------------------------------------------------
-  ports.push( ... FileTools.usedPorts(starting_port, job_manager.shell, 5000) )
+    const request = getUsedPorts(job_manager, starting_port)
+    if( ! request.success ) return starting_port
 
-  const ord_ports = [... new Set(ports)].sort((a,b) => a - b)
-  // -- return next available port ---------------------------------------------
-  for(var i = 0; i <= ord_ports.length; i ++)  {
-    if(ord_ports[i] == starting_port) starting_port++ // port is already used. increment
-    if(ord_ports[i] > starting_port) return starting_port //port is free
-  }
-  return starting_port
+    const ord_ports = request.value
+    // -- return next available port ---------------------------------------------
+    for(var i = 0; i <= ord_ports.length; i ++)  {
+        if(ord_ports[i] == starting_port) starting_port++ // port is already used. increment
+        if(ord_ports[i] > starting_port) return starting_port //port is free
+    }
+    return starting_port
 }
 
 export function nextAvailablePorts(job_manager: JobManager, starting_port:number=1024, total_ports:number) : number[]
 {
-    const job_info = job_manager.container_drivers.runner.jobInfo({states: ["running"]}) // get all jobs
-    if(!job_info.success) return new Array(total_ports).map((_value:any, index : number) => starting_port + index)
-    // -- extract port and order ascending -------------------------------------
-    const ports:Array<number> = []
-    job_info.value.map( 
-        (job_info:JobInfo) => ports.push(
-            ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
-        )
-    )
-    // -- add system ports ------------------------------------------------------
-    ports.push( ... FileTools.usedPorts(starting_port, job_manager.shell, 5000) )
-
-    const ord_ports = [ ... new Set(ports) ].sort((a,b) => a - b)
+    const request = getUsedPorts(job_manager, starting_port)
+    if( ! request.success ) 
+        return new Array(total_ports)
+            .fill(starting_port)
+            .map( (value: number, index: number) => value + index)
+    
+    const ord_ports = request.value
     const free_ports:number[] = []
     // -- determine available ports --------------------------------------------
     for(var i = 0; i <= ord_ports.length; i ++)  {
@@ -251,6 +237,24 @@ export function nextAvailablePorts(job_manager: JobManager, starting_port:number
         ... (new Array(delta).fill(starting_port).map( (value: any, index: number) => value + index))
     )
     return free_ports
+}
+
+function getUsedPorts(job_manager : JobManager, starting_port:number=1024) : ValidatedOutput<number[]> {
+    // -- get currently running jobs -------------------------------------------
+    const job_info = job_manager.container_drivers.runner.jobInfo({states: ["running"]}) // get all jobs
+    if(!job_info.success) return new ValidatedOutput(false, [])
+    // -----> extract port and order ascending ---------------------------------
+    const ports:Array<number> = []
+    job_info.value.map( 
+        (job_info:JobInfo) => ports.push(
+            ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
+        )
+    )
+    // -- add system ports -----------------------------------------------------
+    ports.push( ... FileTools.usedPorts(starting_port, job_manager.shell, 5000) )
+    const ord_ports = [ ... new Set(ports) ].sort((a,b) => a - b)
+    
+    return new ValidatedOutput(true, ord_ports)
 }
 
 // -----------------------------------------------------------------------------
