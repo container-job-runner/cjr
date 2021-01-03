@@ -250,6 +250,15 @@ function getUsedPorts(job_manager : JobManager, starting_port:number=1024) : Val
             ... job_info.ports.map( (port_info:JobPortInfo) => port_info.hostPort )
         )
     )
+    // ----> add cjr reserved ports ---------------------------------------------
+    job_info.value.map(
+        (job_info : JobInfo) => {
+            let r_ports:number[] = []
+            try { r_ports = JSON.parse(job_info.labels[constants.label_strings.job["reserved-ports"]]) } catch { }
+            ports.push( ... r_ports)
+        }
+    )
+
     // -- add system ports -----------------------------------------------------
     ports.push( ... FileTools.usedPorts(starting_port, job_manager.shell, 5000) )
     const ord_ports = [ ... new Set(ports) ].sort((a,b) => a - b)
