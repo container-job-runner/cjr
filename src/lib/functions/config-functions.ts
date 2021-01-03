@@ -15,6 +15,7 @@ import { X11_POSIX_BIND, label_strings } from '../constants'
 import { trim } from './misc-functions'
 import { PathTools } from '../fileio/path-tools'
 import { TextFile } from '../fileio/text-file'
+import { DockerStackConfiguration, DockerStackPortConfig } from '../config/stacks/docker/docker-stack-configuration'
 
 type StackConfigOptions = {
   "image"?: string
@@ -127,6 +128,13 @@ export function addGenericLabels(job_configuration: JobConfiguration<StackConfig
     job_configuration.addLabel(label_strings.job["stack-path"], stack_configuration.stack_path)
   if(stack_configuration.stack_name)
     job_configuration.addLabel(label_strings.job["stack-name"], stack_configuration.stack_name)
+  // add reserved ports label - helps keep track of ports that are intermittently used and whose container is run with --network=host in podman
+  if ( stack_configuration instanceof DockerStackConfiguration )
+    job_configuration.addLabel(
+        label_strings.job["reserved-ports"],
+        JSON.stringify(stack_configuration.getPorts().map((dpc : DockerStackPortConfig) => dpc.hostPort))
+    )
+
   // -- add download settings --------------------------------------------------
   const author = new TextFile()
   author.add_extension = false

@@ -22,7 +22,8 @@ export const label_strings = {
     "download-include": 'rsync-include',          // contents of the file passed to rsync through the flag --include-from used when downloading files to host
     "download-exclude": 'rsync-exclude',          // contents of the file passed to rsync through the flag --exclude-from used when downloading files to host
     "message": "message",                         // an optional user message describing the job
-    "command": "cjr-command"                      // the inputted user command 
+    "command": "cjr-command",                     // the inputted user command
+    "reserved-ports": "cjr-reserved-ports"        // ports that should be considered taken by containers (useful since podman does not show ports with --network=host)
   },
   "service" : {
       "syncing": "syncing"                           // boolean that is set to true if service start two-way syncing
