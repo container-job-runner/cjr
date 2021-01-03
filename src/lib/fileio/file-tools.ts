@@ -61,7 +61,8 @@ export class FileTools
     
     const extractPort = (s:string) => s.match(/(?<=:)\d+$/)?.pop() || ""
     // return all valid ports
-    return n_lines.map( (s:string) => parseInt(extractPort(s))).filter( ( n:number ) => ( ! isNaN(n) && isFinite(n) && n > 0 ) )
+    const ports = n_lines.map( (s:string) => parseInt(extractPort(s))).filter( ( n:number ) => ( ! isNaN(n) && isFinite(n) && n > 0 ) )
+    return [ ... new Set(ports) ]
   }
 
 
