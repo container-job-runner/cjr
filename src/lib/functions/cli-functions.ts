@@ -253,9 +253,7 @@ function getUsedPorts(job_manager : JobManager, starting_port:number=1024) : Val
     // ----> add cjr reserved ports ---------------------------------------------
     job_info.value.map(
         (job_info : JobInfo) => {
-            let r_ports:number[] = []
-            try { r_ports = JSON.parse(job_info.labels[constants.label_strings.job["reserved-ports"]]) } catch { }
-            ports.push( ... r_ports)
+            try { ports.push( ... JSON.parse(job_info.labels[constants.label_strings.job["reserved-ports"]]) ) } catch { }
         }
     )
 
