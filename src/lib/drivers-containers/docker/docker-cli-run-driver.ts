@@ -49,9 +49,9 @@ export class DockerCliRunDriver extends RunDriver
 
   jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
   {
-    const failure_output:ValidatedOutput<NewJobInfo> = new ValidatedOutput(false, {"id":"", "output": "", "error": "", "exit-code": 1});
+    const failure_value:NewJobInfo = {"id":"", "output": "", "error": "", "exit-code": 1};
     if(!(job_configuration instanceof DockerJobConfiguration))
-      return failure_output.pushError(this.ERRORSTRINGS.INVALID_JOB)
+        return new ValidatedOutput(false, failure_value).pushError(this.ERRORSTRINGS.INVALID_JOB)
     const job_options = this.generateJobOptions(job_configuration)
     // add mandatory labels
     job_configuration.addLabel("runner", cli_name)
@@ -61,8 +61,10 @@ export class DockerCliRunDriver extends RunDriver
       this.extractCommand(job_configuration),
       job_options
     )
-    if(!create_output.success) return failure_output
-    const container_id = create_output.value;
+    if(!create_output.success)
+        return new ValidatedOutput(false, { ... failure_value, ... create_output.value })
+    
+    const container_id = create_output.value.id;
     // -- run container --------------------------------------------------------
     const command = `${this.base_command} start`;
     const args: Array<string> = [container_id]
@@ -104,13 +106,22 @@ export class DockerCliRunDriver extends RunDriver
       return entrypoint.splice(1).concat(command)
   }
 
-  protected create(image_name: string, command: Array<string>, run_options:DockerCreateOptions) : ValidatedOutput<string>
+  protected create(image_name: string, command: Array<string>, run_options:DockerCreateOptions) : ValidatedOutput<{"id": string, "error": string, "exit-code": number}>
   {
-    const cmd = `${this.base_command} create`;
+    const cmd   = `${this.base_command} create`;
     const args  = [image_name].concat(command)
     const flags = this.runFlags(run_options)
-    const result = trim(this.shell.output(cmd, flags, args, {}))
-    if(result.value === "") result.pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
+    const exec  = this.shell.exec(cmd, flags, args, {"stdio" : "pipe"})
+    
+    const id = (exec.success) ? ShellCommand.stdout(exec.value).trim() : ""
+    const result = new ValidatedOutput(exec.success, {
+        "id": id,
+        "error": ShellCommand.stderror(exec.value),
+        "exit-code": ShellCommand.status(exec.value)
+    })
+    if(id === "")
+        result.pushError(this.ERRORSTRINGS.EMPTY_CREATE_ID)
+    
     return result
   }
 

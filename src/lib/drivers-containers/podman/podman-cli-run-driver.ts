@@ -135,7 +135,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     })
   }
 
-  protected create(image_name: string, command: Array<string>, run_options:DockerCreateOptions) : ValidatedOutput<string>
+  protected create(image_name: string, command: Array<string>, run_options:DockerCreateOptions) : ValidatedOutput<{"id": string, "error": string, "exit-code": number}>
   {
     // add support for podman unshare command for binds
     const unshare_result = new ValidatedOutput(true, "")
@@ -151,7 +151,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
                 )
         })
         if(!unshare_result.success)
-            return unshare_result
+            return new ValidatedOutput(false, {id: "", error: "", "exit-code": -1}).absorb(unshare_result)
     }
 
     return super.create(image_name, command, run_options)
