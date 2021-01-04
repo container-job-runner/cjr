@@ -11,7 +11,7 @@ import { WarningStrings } from '../../error-strings';
 
 export abstract class GenericJobManager extends JobManager
 {
-  protected platform = os.platform();
+  protected platform:string = os.platform();
   
   protected ERRORSTRINGS = {
     NO_MATCHING_ID: chalk`{bold No Matching Job ID}`,

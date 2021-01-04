@@ -45,6 +45,8 @@ export type MultiplexOptions = {
 
 export class RemoteSshJobManager extends GenericJobManager
 {
+    protected platform = "linux";
+    
     private options: Required<RemoteSshJobManagerUserOptions> = {
         "engine": "podman",
         "explicit": false,
