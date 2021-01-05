@@ -40,11 +40,13 @@ export class ShellCommand
     {
       const command_string = this.commandString(command, flags, args)
       const default_options:Dictionary = {stdio : 'inherit', shell: '/bin/bash'}
+      const spawn_options = JSTools.oSubset({ ... default_options, ... options }, this.spawn_options)
 
-      if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
+      if(this.silent && spawn_options['stdio'] == 'inherit' && !options?.["ignore-silent"]) 
+        options.stdio = 'ignore';
       this.printCommand(command_string)
 
-      const child_process = spawnSync(command_string, [], JSTools.oSubset({... default_options, ...options}, this.spawn_options))
+      const child_process = spawnSync(command_string, [], spawn_options)
       const result = new ValidatedOutput(true, child_process)
       if(child_process?.status !== 0) { // -- check if exit-code is non zero
         result.pushError(child_process?.stderr?.toString('ascii'))
@@ -57,13 +59,15 @@ export class ShellCommand
     {
       const command_string = this.commandString(command, flags, args)
       const default_options:Dictionary = {stdio : 'pipe', shell: '/bin/bash'}
+      const spawn_options = JSTools.oSubset({ ... default_options, ... options }, this.spawn_options)
 
-      if(this.silent && !options?.["ignore-silent"]) options.stdio = 'ignore';
+      if(this.silent && spawn_options['stdio'] == 'inherit' && !options?.["ignore-silent"])
+        options.stdio = 'ignore';
       this.printCommand(command_string)
 
       return new ValidatedOutput(
         true,
-        spawn(command_string, [], JSTools.oSubset({... default_options, ...options}, this.spawn_options))
+        spawn(command_string, [], spawn_options)
       )
     }
 
