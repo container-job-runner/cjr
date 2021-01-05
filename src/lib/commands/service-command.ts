@@ -130,7 +130,7 @@ export abstract class ServiceCommand extends JobCommand
         const start_tunnel = (job_manager instanceof RemoteSshJobManager) && ( ! flags['expose'] )
         
         // -- select ports -----------------------------------------------------
-        const local_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: flags['explicit']})
+        const local_manager = this.newJobManager('localhost', {verbose: false, quiet: flags['quiet'], explicit: flags['explicit']})
         const container_port_config = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
         const access_port = ( ! start_tunnel ) ? container_port_config.hostPort : nextAvailablePort(local_manager, container_port_config.hostPort)
 
