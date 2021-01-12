@@ -34,6 +34,11 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     flags["format"] = 'json'
   }
 
+  protected addPsFormatFlag(flags: Dictionary)
+  {
+    this.addJSONFormatFlag(flags)
+  }
+
   // converts data from docker ps into a JobObject
   protected psToJobInfo() : ValidatedOutput<Array<JobInfo>>
   {

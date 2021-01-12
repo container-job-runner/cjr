@@ -233,7 +233,7 @@ export class DockerCliRunDriver extends RunDriver
       "no-trunc": {},
       "filter": [`label=runner=${cli_name}`]
     };
-    this.addJSONFormatFlag(flags)
+    this.addPsFormatFlag(flags)
     const ps_output = this.JSONOutputParser(this.shell.output(command, flags, args, {}))
     if(!ps_output.success) return new ValidatedOutput(false, [])
     return ps_output
@@ -375,6 +375,11 @@ export class DockerCliRunDriver extends RunDriver
   protected addJSONFormatFlag(flags: Dictionary)
   {
     flags["format"] = '{{json .}}'
+  }
+
+  protected addPsFormatFlag(flags: Dictionary)
+  {
+    flags["format"] = '{"ID": {{ json .ID }}, "Image": {{ json .Image}}, "Names": {{ json .Names }}, "Command": {{ json .Command }}, "Status": {{ json .Status }}}'
   }
 
   protected addRemovalFlags(flags: Dictionary, run_object: DockerCreateOptions)
