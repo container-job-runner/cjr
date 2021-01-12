@@ -291,7 +291,7 @@ export class DockerCliRunDriver extends RunDriver
     const ids = jobs.map((x:JobInfo) => x.id)
     const result = this.JSONOutputParser(this.shell.output(
       `${this.base_command} inspect`,
-      {format: '{{"{\\\"ID\\\":"}}{{json .Id}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}},{{"\\\"Labels\\\":"}}{{json .Config.Labels}}{{"}"}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ, Command: UUU}
+      {format: '{"ID":{{json .ID}},"PortBindings":{{json .HostConfig.PortBindings}},"Labels":{{json .Config.Labels}}}'}, // JSON format {ID: XXX, Labels: YYY, PortBindings: ZZZ, Command: UUU}
       ids,
       {})
     )

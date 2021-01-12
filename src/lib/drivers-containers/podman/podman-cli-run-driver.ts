@@ -110,7 +110,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
 
     const ids = jobs.map((x:JobInfo) => x.id)
     const result = parseLineJSON(
-      this.shell.output(`${this.base_command} inspect`, {format: '{{"{\\\"ID\\\":"}}{{json .ID}},{{"\\\"PortBindings\\\":"}}{{json .HostConfig.PortBindings}}{{"}"}}'}, ids, {})
+      this.shell.output(`${this.base_command} inspect`, {format: '{"ID":{{json .ID}},"PortBindings":{{json .HostConfig.PortBindings}}}'}, ids, {})
     )
     if(!result.success) return new ValidatedOutput(false, [])
 
