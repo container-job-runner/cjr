@@ -311,7 +311,7 @@ export class RemoteSshJobManager extends GenericJobManager
     {
         // make a separate function: generateRemoteConfiguration()
         const remote_stack_configuration = local_stack_configuration.copy();
-        remote_stack_configuration.removeAllVolumes()
+        remote_stack_configuration.removeLocalVolumes()
         remote_stack_configuration.removeLocalBinds()
         remote_stack_configuration.mapPaths({ // rewrite this function so that it accepts functions, not mappings
             'stack-path': (s:string) => this.cachedPathConverter(s, 'stacks'),
