@@ -14,7 +14,7 @@ export type ContainerDrivers = {
 
 export type Configurations = {
   "stack": () => StackConfiguration<any>
-  "job": (stack_configuration?:StackConfiguration<any>) => JobConfiguration<any>,
+  "job": (stack_configuration?:StackConfiguration<any>) => JobConfiguration<StackConfiguration<any>>,
   "exec": (options?:ExecConstructorOptions) => ExecConfiguration
 }
 

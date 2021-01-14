@@ -7,6 +7,7 @@ import { JobInfo, jobIds, firstJobAsArray, jobFilter } from '../../drivers-conta
 import { JSTools } from '../../js-tools';
 import { LocalJobManager } from '../../job-managers/local/local-job-manager';
 import chalk = require('chalk');
+import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
 
 export abstract class GenericAbstractService extends AbstractService
 {
@@ -69,7 +70,7 @@ export abstract class GenericAbstractService extends AbstractService
             }).absorb(job)
     }
 
-    protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>
+    protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<StackConfiguration<any>>
     {
         const stack_configuration = ( options.stack_configuration !== undefined ) ? options["stack_configuration"] : this.job_manager.configurations.stack()
         if(options['container-port-config'])
