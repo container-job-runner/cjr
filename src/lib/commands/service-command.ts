@@ -14,6 +14,8 @@ import { ServiceIdentifier, ServiceInfo } from '../services/abstract/abstract-se
 import { MultiServiceManager } from '../services/managers/multi-service-manager'
 import { JobInfo } from '../drivers-containers/abstract/run-driver'
 import { FileTools } from '../fileio/file-tools'
+import { SyncthingLocalService } from '../services/syncthing-local-service'
+import { SyncthingRemoteService } from '../services/syncthing-remote-service'
 
 type CLIServiceStartFlags = CLIJobFlags & {
     "server-port": string,
@@ -368,6 +370,34 @@ export abstract class ServiceCommand extends JobCommand
             (project_root === undefined) ? undefined : {"project-root": project_root}, // if project_root is undefined, then stop all Syncthing services
             {"local": false, "remote": false}
         ))
+    }
+
+    resetSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
+    {
+        // -- create sync manager --------------------------------------------------
+        const sm_request = this.newSyncManager(resource_name, output_options, false)
+        if( ! sm_request.success || sm_request.value === undefined)
+            return new ValidatedOutput(false, undefined).absorb(sm_request)
+
+        const sync_manager = sm_request.value
+                
+        // -- stop service ----------------------------------------------------------
+        sync_manager.stop(
+            {"project-root": project_root}, // if project_root is undefined, then stop all Syncthing services
+            {"local": false, "remote": false}
+        )
+        
+        // -- remove data -----------------------------------------------------------
+        const result = new ValidatedOutput(true, {"local": new ValidatedOutput(true, undefined), "remote" : new ValidatedOutput(true, undefined)})
+        result.value.local.absorb(
+            (sync_manager.services.local as SyncthingLocalService).removePersistentData({"project-root": project_root})
+        )
+        result.value.remote.absorb(
+            (sync_manager.services.remote as SyncthingRemoteService).removePersistentData({"project-root": project_root})
+        )
+        
+        return result
+            
     }
 
     protected newSyncManager(resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}, set_ports: boolean = true) : ValidatedOutput<undefined | MultiServiceManager<{"local": GenericAbstractService, "remote": GenericAbstractService}>>
