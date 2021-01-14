@@ -437,10 +437,10 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
       return true;
   }
 
-  addVolume(volumeName: string, containerPath: string)
+  addVolume(volumeName: string, containerPath: string, options?: Dictionary)
   {
       if(!(this.config?.mounts)) this.config.mounts = [];
-      this.config.mounts.push({type: "volume", volumeName: volumeName, containerPath: containerPath})
+      this.config.mounts.push({type: "volume", volumeName: volumeName, containerPath: containerPath, remoteUpload: options?.['remote-upload']})
       return true;
   }
 
@@ -463,6 +463,15 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     if(this.config?.mounts)
        this.config.mounts = this.config.mounts.filter(
            (m: DockerStackMountConfig) => (m.type != 'volume')
+        )
+    return new ValidatedOutput(true, undefined)
+  }
+
+  removeLocalVolumes()
+  {
+    if(this.config?.mounts)
+       this.config.mounts = this.config.mounts.filter(
+           (m: DockerStackMountConfig) => (m.type != 'volume') || ( (m.type === 'volume') && (m.remoteUpload === true) )
         )
     return new ValidatedOutput(true, undefined)
   }

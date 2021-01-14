@@ -35,11 +35,12 @@ export abstract class StackConfiguration<T>
   abstract setContainerRoot(value: string) : void
   // ----> mount modifiers
   abstract addBind(hostPath: string, containerPath: string, options?:Dictionary): boolean;
-  abstract addVolume(volumeName: string, containerPath: string): boolean;
+  abstract addVolume(volumeName: string, containerPath: string, options?:Dictionary): boolean;
   abstract removeBind(hostPath: string): ValidatedOutput<undefined>;
   abstract removeVolume(parent_path: string): ValidatedOutput<undefined>;
   abstract removeAllVolumes() : ValidatedOutput<undefined>;
   abstract removeLocalBinds() : ValidatedOutput<undefined>;
+  abstract removeLocalVolumes() : ValidatedOutput<undefined>;
   abstract removeExternalBinds(parent_path: string): ValidatedOutput<undefined>; // note: this function should be removed once updated remote code is finished
   abstract removeBuildAuth() : boolean
   // ----> resource modifiers
