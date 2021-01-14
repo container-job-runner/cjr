@@ -1,9 +1,11 @@
 import path = require('path');
+import constants = require('../constants')
 import { GenericAbstractService } from "./abstract/generic-abstract-service";
 import { JobManager } from '../job-managers/abstract/job-manager';
-import {  ServiceIdentifier, ServiceInfo, ServiceOptions } from './abstract/abstract-service';
+import { ServiceIdentifier, ServiceInfo, ServiceOptions } from './abstract/abstract-service';
 import { JobConfiguration } from '../config/jobs/job-configuration';
 import { ValidatedOutput } from '../validated-output';
+import { JSTools } from '../js-tools';
 
 export type SyncthingRemoteServiceOption = {
     'ports': { listen: number, connect: number, gui: number }
@@ -55,6 +57,15 @@ export class SyncthingRemoteService extends GenericAbstractService
         return super.start(identifier, options)
     }
 
+    removePersistentData(identifier: ServiceIdentifier)
+    {
+        if( identifier['project-root'] )
+            return this.job_manager.container_drivers.runner.volumeDelete(
+                [ this.persistantDataVolume(identifier['project-root']) ]
+            )
+        return new ValidatedOutput(true, undefined)
+    }
+
     protected newJobConfiguration(identifier: ServiceIdentifier, options: ServiceOptions) : JobConfiguration<any>
     {
         const job_configuration = super.newJobConfiguration(identifier, options)
@@ -76,6 +87,12 @@ export class SyncthingRemoteService extends GenericAbstractService
         stack_configuration.addEnvironmentVariable("SYNCTHING_SYNC_DIRECTORY", 
             path.posix.join("/home/", this.CONSTANTS.username, this.CONSTANTS["sync-directory"])
         )
+        if(options["project-root"])
+            stack_configuration.addVolume(
+                this.persistantDataVolume(options["project-root"]),
+                path.posix.join("/home", this.CONSTANTS.username, ".config", "syncthing"),
+                {"remote-upload" : true}
+            )
         
         return job_configuration
     }
@@ -86,6 +103,11 @@ export class SyncthingRemoteService extends GenericAbstractService
 
     protected serviceEntrypoint() {
         return undefined
+    }
+
+    private persistantDataVolume(project_root: string)
+    {
+        return `${constants.volumes.syncthing.prefix}-${JSTools.md5(project_root)}`    
     }
 
 }

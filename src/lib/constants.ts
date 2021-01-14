@@ -168,4 +168,11 @@ export const X11_POSIX_BIND = "/tmp/.X11-unix"
 export const SNAPSHOT_LATEST_TAG = 'latest'
 
 // remote configuration
-export const default_remote_config    = {}
+export const default_remote_config = {}
+
+// volume coptions
+export const volumes = {
+    "syncthing" : {
+        "prefix" : `${cli_name}-st`
+    }
+}
