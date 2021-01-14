@@ -214,6 +214,8 @@ export class RemoteSshJobManager extends GenericJobManager
         const rsync_flags: Dictionary = {a: {}}
         if(!cached) 
             rsync_flags['delete'] = {}
+        if(cached)
+            rsync_flags['update'] = {}
         if(rules.include) 
             rsync_flags['include-from'] = rules.include
         if(rules.exclude) 
