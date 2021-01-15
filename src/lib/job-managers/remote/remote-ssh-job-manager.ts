@@ -43,6 +43,10 @@ export type MultiplexOptions = {
   "restart-existing-connection"?:  boolean
 }
 
+export type RemoteSshJobRunOptions = JobRunOptions & {
+    "skip-file-upload" ?: boolean
+}
+
 export class RemoteSshJobManager extends GenericJobManager
 {
     protected platform = "linux";
@@ -190,7 +194,7 @@ export class RemoteSshJobManager extends GenericJobManager
 
     // uploadJobFiles uploads files from the project-root to the remote resource
 
-    private uploadJobFiles(local_project_root: string|undefined, rules: {include: string, exclude: string}, cached: boolean) : ValidatedOutput<string>
+    private uploadJobFiles(local_project_root: string|undefined, rules: {include: string, exclude: string}, cached: boolean, skip_upload?: boolean) : ValidatedOutput<string>
     {
         const result = new ValidatedOutput(true, "")
         if(!local_project_root)
@@ -210,6 +214,9 @@ export class RemoteSshJobManager extends GenericJobManager
                 return result.absorb(mktemp_request)
             remote_project_root = mktemp_request.value
         }
+
+        if( skip_upload === true )
+            return new ValidatedOutput(true, remote_project_root)
 
         const rsync_flags: Dictionary = {a: {}}
         if(!cached) 
@@ -344,7 +351,7 @@ export class RemoteSshJobManager extends GenericJobManager
 
     // == START JOB FUNCTIONS ==================================================
 
-    run( local_job_configuration: JobConfiguration<StackConfiguration<any>>, options: JobRunOptions ) : ValidatedOutput<NewJobInfo> 
+    run( local_job_configuration: JobConfiguration<StackConfiguration<any>>, options: RemoteSshJobRunOptions ) : ValidatedOutput<NewJobInfo> 
     {
         const failure = new ValidatedOutput(false, this.failed_nji);
         
@@ -364,7 +371,8 @@ export class RemoteSshJobManager extends GenericJobManager
         const upload = this.uploadJobFiles(
             options['project-root'],
             local_job_configuration.stack_configuration.getRsyncUploadSettings(true),
-            cached
+            cached,
+            options["skip-file-upload"]
         )
         if(!upload.success) return failure.absorb(upload);
         const remote_project_root = upload.value;
