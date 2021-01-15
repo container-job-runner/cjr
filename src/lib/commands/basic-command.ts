@@ -298,7 +298,7 @@ export abstract class BasicCommand extends Command
 
     const resource = this.resource_configuration.getResource(resource_name)
     if(resource === undefined)
-        this.error(`There is no resource named ${resource_name}`)
+        this.error(`There is no resource named "${resource_name}"`)
 
     switch(resource.type) {
         case 'ssh':
