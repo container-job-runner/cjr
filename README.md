@@ -58,8 +58,10 @@ USAGE
 * [`cjr resource:set RESOURCE`](#cjr-resourceset-resource)
 * [`cjr resource:ssh [RESOURCE]`](#cjr-resourcessh-resource)
 * [`cjr resource:sync:ls [RESOURCE]`](#cjr-resourcesyncls-resource)
+* [`cjr resource:sync:reset [RESOURCE]`](#cjr-resourcesyncreset-resource)
 * [`cjr resource:sync:start [RESOURCE]`](#cjr-resourcesyncstart-resource)
 * [`cjr resource:sync:stop [RESOURCE]`](#cjr-resourcesyncstop-resource)
+* [`cjr resource:tunnel:stop [RESOURCE]`](#cjr-resourcetunnelstop-resource)
 * [`cjr shell`](#cjr-shell)
 * [`cjr stack:build [STACK]`](#cjr-stackbuild-stack)
 * [`cjr stack:create NAME`](#cjr-stackcreate-name)
@@ -924,6 +926,25 @@ OPTIONS
 
 _See code: [src/commands/resource/sync/ls.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/sync/ls.ts)_
 
+## `cjr resource:sync:reset [RESOURCE]`
+
+Reset Syncthing persistant storage directories.
+
+```
+USAGE
+  $ cjr resource:sync:reset [RESOURCE]
+
+OPTIONS
+  -h, --here                   sets project-root to current working directory
+  -q, --quiet
+  -v, --verbose                shows output for each stage of the job.
+  --explicit
+  --project-root=project-root
+  --resource=resource
+```
+
+_See code: [src/commands/resource/sync/reset.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/sync/reset.ts)_
+
 ## `cjr resource:sync:start [RESOURCE]`
 
 Start a Syncthing server.
@@ -963,6 +984,21 @@ OPTIONS
 ```
 
 _See code: [src/commands/resource/sync/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/sync/stop.ts)_
+
+## `cjr resource:tunnel:stop [RESOURCE]`
+
+Manually stop any running ssh multiplexor used to tunnel service ports.
+
+```
+USAGE
+  $ cjr resource:tunnel:stop [RESOURCE]
+
+OPTIONS
+  --explicit
+  --resource=resource
+```
+
+_See code: [src/commands/resource/tunnel/stop.ts](https://github.com/container-job-runner/cjr/blob/v0.5.3/src/commands/resource/tunnel/stop.ts)_
 
 ## `cjr shell`
 
