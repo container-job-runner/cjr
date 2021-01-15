@@ -509,6 +509,14 @@ export abstract class ServiceCommand extends JobCommand
         })
     }
 
+    stopTunnel(job_manager: JobManager) : boolean
+    {
+        if(!(job_manager instanceof RemoteSshJobManager))
+            return false
+        
+        return job_manager.shell.tunnelStop();
+    }
+
     releaseTunnelPort(job_manager: JobManager, options: {"local-port": number, "remote-port": number})
     {
         if(!(job_manager instanceof RemoteSshJobManager))
