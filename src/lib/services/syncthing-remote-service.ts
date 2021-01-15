@@ -1,11 +1,12 @@
 import path = require('path');
 import constants = require('../constants')
 import { GenericAbstractService } from "./abstract/generic-abstract-service";
-import { JobManager } from '../job-managers/abstract/job-manager';
+import { JobManager, JobRunOptions } from '../job-managers/abstract/job-manager';
 import { ServiceIdentifier, ServiceInfo, ServiceOptions } from './abstract/abstract-service';
 import { JobConfiguration } from '../config/jobs/job-configuration';
 import { ValidatedOutput } from '../validated-output';
 import { JSTools } from '../js-tools';
+import { RemoteSshJobManager, RemoteSshJobRunOptions } from '../job-managers/remote/remote-ssh-job-manager';
 
 export type SyncthingRemoteServiceOption = {
     'ports': { listen: number, connect: number, gui: number }
@@ -95,6 +96,14 @@ export class SyncthingRemoteService extends GenericAbstractService
             )
         
         return job_configuration
+    }
+
+    protected newJobRunOptions(options: ServiceOptions) : RemoteSshJobRunOptions|JobRunOptions
+    {
+        if( this.job_manager instanceof RemoteSshJobManager ) // no need to start rsync on remote if using syncthing
+            return { ... super.newJobRunOptions(options) , ... {"skip-file-upload" : true} }
+        else
+            return super.newJobRunOptions(options)
     }
 
     protected startCommand(job_configuration: JobConfiguration<any>, options: ServiceOptions): string[] {
