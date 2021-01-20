@@ -22,16 +22,16 @@ type Dictionary = {[key: string]: any}
 
 export class ShellCommand
 {
-    explicit: boolean // if true then commands are printed before execution
+    debug: boolean // if true then commands are printed before execution
     silent: boolean   // if true then no output will be shown and std_out will not be attached
     escape_args: boolean  = true
     escape_flags: boolean = true
 
     private spawn_options = ['cwd', 'input', 'argv0', 'stdio', 'env', 'uid', 'gid', 'timeout', 'killSignal', 'maxBuffer', 'encoding', 'shell']
 
-    constructor(explicit: boolean, silent: boolean)
+    constructor(debug: boolean, silent: boolean)
     {
-      this.explicit = explicit;
+      this.debug = debug;
       this.silent = silent;
     }
 
@@ -109,7 +109,7 @@ export class ShellCommand
 
     private printCommand(command: string) : void
     {
-      if(this.explicit && !this.silent)
+      if(this.debug && !this.silent)
         console.log(` ${command}`)
     }
 

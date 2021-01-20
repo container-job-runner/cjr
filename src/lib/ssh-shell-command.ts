@@ -48,10 +48,10 @@ export class SshShellCommand
     base_options: Required<SshShellOptions>  // multiplex and ssh options will inherit from these optioons
     tags = {tunnel: 'tunnel-'} // tags used for multiplex master socket when creating tunnel
 
-    constructor(explicit: boolean, silent: boolean, data_dir: string, base_options: Required<SshShellOptions> = {ssh: {}, multiplex: {}})
+    constructor(debug: boolean, silent: boolean, data_dir: string, base_options: Required<SshShellOptions> = {ssh: {}, multiplex: {}})
     {
       this.data_dir = data_dir
-      this.shell = new ShellCommand(explicit, silent)
+      this.shell = new ShellCommand(debug, silent)
       this.base_options = base_options
     }
 
