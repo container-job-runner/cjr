@@ -16,7 +16,7 @@ export class StartShortcut extends JobCommand {
     if(flags['x11']) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),
-            'explicit': flags.explicit
+            'debug': flags.debug
         })
     // -- run basic job --------------------------------------------------------
     const fixed_flags = {"remove-on-exit": (flags['file-access'] === "shared")}

@@ -12,7 +12,7 @@ export default class Stop extends ServiceCommand {
         "here": flags.boolean({default: false, char: 'h', exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
         "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
         "quiet": flags.boolean({default: false, char: 'q'}),
-        "explicit": flags.boolean({default: false})
+        "debug": flags.boolean({default: false})
     }
     static strict = false;
 

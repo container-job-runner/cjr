@@ -14,7 +14,7 @@ export default class Stop extends ServiceCommand {
     "all": flags.boolean({description: "stop all jupyter servers running in host directories"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet": flags.boolean({default: false, char: 'q'}),
-    "explicit": flags.boolean({default: false})
+    "debug": flags.boolean({default: false})
   }
   static strict = false;
 

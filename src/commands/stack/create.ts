@@ -41,7 +41,7 @@ export default class Create extends BasicCommand {
     "image": flags.string({exclusive: ['dockerfile'], description: "Create a new stack based on an existing docker Image."}),
     "snapshottable": flags.boolean({exclusive: ['dockerfile'], dependsOn: ['image'], description: "Create a new stack that supports snapshots."}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "explicit": flags.boolean({default: false})
+    "debug": flags.boolean({default: false})
   }
   static strict = true;
 
@@ -67,7 +67,7 @@ export default class Create extends BasicCommand {
     else if (flags['image'] && !flags['snapshottable'])
       result = await this.createImageStack(stacks_path, stack_name, flags['image'])
     else if (flags['image'] && flags['snapshottable'])
-      result = await this.createImageStackWithSnapshots(stacks_path, stack_name, flags['image'], flags['explicit'])
+      result = await this.createImageStackWithSnapshots(stacks_path, stack_name, flags['image'], flags['debug'])
     else
       result = this.createEmptyStack(stacks_path, stack_name)
     printValidatedOutput(result)
@@ -137,10 +137,10 @@ export default class Create extends BasicCommand {
     )
   }
 
-  async createImageStackWithSnapshots(stacks_dir: string, stack_name: string, image: string, explicit: boolean) : Promise<ValidatedOutput<undefined>>
+  async createImageStackWithSnapshots(stacks_dir: string, stack_name: string, image: string, debug: boolean) : Promise<ValidatedOutput<undefined>>
   {
     const result = new ValidatedOutput(true, undefined)
-    const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, explicit: explicit})
+    const job_manager = this.newJobManager('localhost', {verbose: false, quiet: false, debug: debug})
     const container_drivers = job_manager.container_drivers
 
     // -- prompt user for stack options ----------------------------------------

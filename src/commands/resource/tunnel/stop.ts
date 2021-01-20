@@ -8,7 +8,7 @@ export default class Stop extends ServiceCommand {
     static args = [ { name: "resource" } ]
     static flags = {
         "resource": flags.string({env: 'CJR_RESOURCE'}),
-        "explicit": flags.boolean({default: false})
+        "debug": flags.boolean({default: false})
     }
     static strict = false;
 
@@ -23,7 +23,7 @@ export default class Stop extends ServiceCommand {
         const resource_name = args["resource"] || flags["resource"] || ""
         const job_manager  = this.newJobManager(
             resource_name,
-            { "verbose": false, "quiet": false, "explicit": flags['explicit'] }
+            { "verbose": false, "quiet": false, "debug": flags['debug'] }
         )
 
         if( ! this.stopTunnel(job_manager) )

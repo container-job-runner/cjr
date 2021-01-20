@@ -11,7 +11,7 @@ export default class RMI extends BasicCommand {
   static flags = {
     "stack": flags.string({env: 'CJR_STACK', multiple: true}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "all-configurations": flags.boolean({default: false})
@@ -23,7 +23,7 @@ export default class RMI extends BasicCommand {
     const { argv, flags } = this.parse(RMI)
     this.augmentFlagsWithProjectSettings(flags, {stack:false, "stacks-dir": false})
     const stack_list = (argv.length > 0) ? argv : (JSTools.arrayWrap(flags.stack) || []) // add arrayWrap since parseWithLoad will return scalar
-    const job_manager = this.newJobManager('localhost', {verbose: true, quiet: flags.quiet, explicit: flags.explicit})
+    const job_manager = this.newJobManager('localhost', {verbose: true, quiet: flags.quiet, debug: flags.debug})
     const container_drivers = job_manager.container_drivers
     // -- map through list and remove ------------------------------------------
     stack_list.map((stack_name:string) => {
@@ -37,7 +37,7 @@ export default class RMI extends BasicCommand {
           "stacks-dir": flags["stacks-dir"],
           },
           job_manager.configurations,
-          new ShellCommand(flags.explicit, flags.quiet)
+          new ShellCommand(flags.debug, flags.quiet)
         )
         if(!init_configuration.success)
           return printValidatedOutput(init_configuration)

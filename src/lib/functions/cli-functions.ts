@@ -270,10 +270,10 @@ function getUsedPorts(job_manager : JobManager, starting_port:number=1024) : Val
 // ensures xQuartz is running
 // -- Parameters ---------------------------------------------------------------
 // -----------------------------------------------------------------------------
-export async function initX11(options: {interactive: boolean, explicit: boolean, xquartz: boolean}) : Promise<ValidatedOutput<undefined>>
+export async function initX11(options: {interactive: boolean, debug: boolean, xquartz: boolean}) : Promise<ValidatedOutput<undefined>>
 {
   const platform = os.platform()
-  const shell = new ShellCommand(options.explicit, false)
+  const shell = new ShellCommand(options.debug, false)
 
   if(platform == "darwin" && options.xquartz) // -- OSX -------------------------------------------
   {

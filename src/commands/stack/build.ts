@@ -9,7 +9,7 @@ export default class Build extends BasicCommand {
     "resource": flags.string({env: 'CJR_RESOURCE'}),
     "stack": flags.string({env: 'CJR_STACK'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "no-cache": flags.boolean({default: false}),
     "pull": flags.boolean({default: false}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
@@ -27,7 +27,7 @@ export default class Build extends BasicCommand {
     this.augmentFlagsWithProfile(flags)
 
     const stack_list = (flags.stack) ? [ flags.stack ] : []
-    const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: true, quiet: flags.quiet, explicit: flags.explicit})
+    const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: true, quiet: flags.quiet, debug: flags.debug})
     stack_list.map((stack_name:string) => {
       const init_stack = this.initStackConfiguration({
         "stack": stack_name,

@@ -13,7 +13,7 @@ export class Start extends JobCommand {
     "project-root": flags.string({env: 'CJR_PROJECTROOT'}),
     "here": flags.boolean({default: false, exclusive: ['project-root'], description: 'sets project-root to current working directory'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet": flags.boolean({default: false, char: 'q'}),
     "async": flags.boolean({exclusive: ['sync']}),
@@ -39,7 +39,7 @@ export class Start extends JobCommand {
     if(flags['x11']) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),
-            'explicit': flags.explicit
+            'debug': flags.debug
         })
     // -- run basic job --------------------------------------------------------
     const fixed_flags = {"remove-on-exit": (flags['file-access'] === "shared")}

@@ -14,7 +14,7 @@ export default class Shell extends JobCommand {
     "x11": flags.boolean({default: false}),
     "port": flags.string({default: [], multiple: true}),
     "label": flags.string({default: [], multiple: true, description: "additional labels to append to job"}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -31,7 +31,7 @@ export default class Shell extends JobCommand {
     if(flags['x11']) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),
-            'explicit': flags.explicit
+            'debug': flags.debug
         })
     // -- get job id -----------------------------------------------------------
     const parent_id = await this.getJobId(argv, flags)

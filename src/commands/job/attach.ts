@@ -10,7 +10,7 @@ export default class Attach extends BasicCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "explicit": flags.boolean({default: false})
+    "debug": flags.boolean({default: false})
   }
   static strict = true;
 
@@ -31,7 +31,7 @@ export default class Attach extends BasicCommand {
         {
             verbose: false, 
             quiet: false, 
-            explicit: flags['explicit']
+            debug: flags['debug']
         }
     )
     printValidatedOutput(

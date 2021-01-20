@@ -13,7 +13,7 @@ export default class List extends ServiceCommand {
   static args  = [ { name: 'resource' } ]
   static flags = {
     "resource": flags.string({env: 'CJR_RESOURCE'}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "json": flags.boolean({default: false})
   }
   static strict = false;
@@ -25,7 +25,7 @@ export default class List extends ServiceCommand {
     
     // -- create sync manager --------------------------------------------------
     const resource_name = args["resource"] || flags["resource"] || ""
-    const sm_request = this.newSyncManager(resource_name, {verbose: false, quiet: false, explicit: flags['explicit']})
+    const sm_request = this.newSyncManager(resource_name, {verbose: false, quiet: false, debug: flags['debug']})
     if( ! sm_request.success || sm_request.value === undefined)
         return printValidatedOutput(sm_request)
     const sync_manager = sm_request.value

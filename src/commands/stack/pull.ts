@@ -13,7 +13,7 @@ export default class Pull extends BasicCommand {
   static args = [{name: 'url', required: true}]
   static flags = {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
-    "explicit": flags.boolean({default: false})
+    "debug": flags.boolean({default: false})
   }
   static strict = true;
 
@@ -21,7 +21,7 @@ export default class Pull extends BasicCommand {
   {
     const {args, flags} = this.parse(Pull)
     this.augmentFlagsWithProjectSettings(flags, {"stacks-dir": true})
-    const shell = new ShellCommand(flags.explicit, false)
+    const shell = new ShellCommand(flags.debug, false)
     // -- get stacks directory and name of git repo ----------------------------
     const local_stacks_path = flags["stacks-dir"] || this.settings.get("stacks-dir")
     fs.ensureDirSync(local_stacks_path)

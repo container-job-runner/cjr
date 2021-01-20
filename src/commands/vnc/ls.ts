@@ -10,7 +10,7 @@ export default class List extends ServiceCommand {
   static args = []
   static flags = {
     "resource": flags.string({env: 'CJR_RESOURCE'}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "json": flags.boolean({default: false})
   }
   static strict = false;

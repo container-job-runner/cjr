@@ -18,7 +18,7 @@ export default class List extends BasicCommand {
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false, char: 'v', description: "shows all job properties."})
   }
   static strict = true;
@@ -32,7 +32,7 @@ export default class List extends BasicCommand {
         {
             verbose: flags['verbose'],
             quiet: false,
-            explicit: flags['explicit']
+            debug: flags['debug']
         }
     )
     const job_info = job_manager.list({filter: {

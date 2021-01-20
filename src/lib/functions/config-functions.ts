@@ -278,7 +278,6 @@ export function getXAuthSecret(shell: ShellCommand|SshShellCommand) : ValidatedO
 // any existing command.
 // -- Parameters ---------------------------------------------------------------
 // job_configuration - jobconfiguration that requires modified command
-// explicit: boolean - determines if commands run on host are to be printedshell
 // -----------------------------------------------------------------------------
 
 export function prependXAuthCommand(job_configuration: JobConfiguration<StackConfiguration<any>>, xauth_secret: string)

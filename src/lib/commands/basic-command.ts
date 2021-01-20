@@ -33,7 +33,7 @@ export abstract class BasicCommand extends Command
   private podman_socket_started: boolean = false
 
   // helper functions for exec commands that require id
-  async getJobIds( argv: Array<string>, flags: {'resource'?: string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean} , states?: Array<JobState>) : Promise<string[]|false>
+  async getJobIds( argv: Array<string>, flags: {'resource'?: string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'debug': boolean} , states?: Array<JobState>) : Promise<string[]|false>
   {
     const non_empty_ids = argv.filter((id:string) => id !== "")
     if(non_empty_ids.length > 0)
@@ -41,7 +41,7 @@ export abstract class BasicCommand extends Command
     else if(this.settings.get('interactive'))
     {
       const visible_stack_paths = this.extractVisibleStacks(flags)
-      const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: false, quiet: false, explicit: flags['explicit']})
+      const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: false, quiet: false, debug: flags['debug']})
       const id = await promptUserForJobId(job_manager, visible_stack_paths, states, false)
       if(!id) return false
       return [id]
@@ -50,7 +50,7 @@ export abstract class BasicCommand extends Command
       return false
   }
 
-  async getJobId(argv: Array<string>, flags: {'resource'?: string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'explicit': boolean},  states?: Array<JobState>) : Promise<string|false>
+  async getJobId(argv: Array<string>, flags: {'resource'?: string, 'visible-stacks': Array<string>, 'stacks-dir': string, 'debug': boolean},  states?: Array<JobState>) : Promise<string|false>
   {
     const ids = await this.getJobIds(argv, flags, states)
     if(ids === false) return false
@@ -290,7 +290,7 @@ export abstract class BasicCommand extends Command
   // Container SDK Functions
   // ===========================================================================
 
-  newJobManager(resource_name: string, options: {verbose: boolean, quiet: boolean, explicit: boolean}) : JobManager
+  newJobManager(resource_name: string, options: {verbose: boolean, quiet: boolean, debug: boolean}) : JobManager
   {
     if(resource_name === "localhost") {
       return this.newLocalJobManager(options)
@@ -308,7 +308,7 @@ export abstract class BasicCommand extends Command
     }       
   }
 
-  protected newLocalJobManager(manager_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : LocalJobManager
+  protected newLocalJobManager(manager_options: {verbose: boolean, quiet: boolean, debug: boolean}) : LocalJobManager
   {
     // -- read cli settings ----------------------------------------------------
     const driver = this.settings.get('driver'); // expecting podman-cli, podman-socket, docker-cli, docker-socket
@@ -320,7 +320,7 @@ export abstract class BasicCommand extends Command
         "selinux":      (this.settings.get('selinux') === "true") ? true : false,
         "rootfull":     (this.settings.get('rootfull') === "true") ? true : false,
         "image-tag":    this.settings.get('image-tag'),
-        "explicit":     manager_options.explicit,
+        "debug":        manager_options.debug,
         "output-options": {
             "quiet": manager_options.quiet, 
             "verbose": manager_options.verbose
@@ -333,7 +333,7 @@ export abstract class BasicCommand extends Command
 
     if(driver === 'podman-socket') {
         this.startPodmanSocketOnce(
-            new ShellCommand(manager_options.explicit, manager_options.quiet), 
+            new ShellCommand(manager_options.debug, manager_options.quiet), 
             this.settings.get('socket-path')
         )
     }
@@ -341,7 +341,7 @@ export abstract class BasicCommand extends Command
     return new LocalJobManager(options)
   }
 
-  protected newRemoteSshJobManager(resource: Resource, manager_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : RemoteSshJobManager
+  protected newRemoteSshJobManager(resource: Resource, manager_options: {verbose: boolean, quiet: boolean, debug: boolean}) : RemoteSshJobManager
   {
     const options:RemoteSshJobManagerUserOptions = {
         "resource":  resource,
@@ -349,7 +349,7 @@ export abstract class BasicCommand extends Command
         "selinux":   (resource.options?.['selinux'] === "true") ? true : false,
         "rootfull":  (resource.options?.['rootfull'] === "true") ? true : false,
         "image-tag": this.settings.get('image-tag'),
-        "explicit":  manager_options.explicit,
+        "debug":    manager_options.debug,
         "output-options": {
             "quiet": manager_options.quiet, 
             "verbose": manager_options.verbose

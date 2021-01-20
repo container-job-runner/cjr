@@ -19,7 +19,7 @@ export default class Bundle extends BasicCommand {
     "stack": flags.string({env: 'CJR_STACK'}),
     "project-root": flags.string({env: 'CJR_PROJECTROOT'}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false}),
     "zip": flags.boolean({default: false, exclusive: ['tar'], description: 'produces a zip output file (requires zip)'}),
     "tar": flags.boolean({default: false, exclusive: ['zip'], description: 'produces a tar.gz output file (requires tar)'}),
@@ -35,7 +35,7 @@ export default class Bundle extends BasicCommand {
     this.augmentFlagsWithProjectSettings(flags, {"stack": true, "project-root": true, "stacks-dir": false})
     const stack_path = this.fullStackPath(flags.stack as string, flags["stacks-dir"] || "")
     // -- set container runtime options ----------------------------------------
-    const job_manager = this.newJobManager('localhost', {verbose: flags.verbose, quiet: false, explicit: flags.explicit})
+    const job_manager = this.newJobManager('localhost', {verbose: flags.verbose, quiet: false, debug: flags.debug})
     // -- create tmp dir for bundle --------------------------------------------
     var result:ValidatedOutput<any> = FileTools.mktempDir(path.join(this.config.dataDir, constants.subdirectories.data.bundle))
     if(!result.success) return printValidatedOutput(result)
@@ -59,9 +59,9 @@ export default class Bundle extends BasicCommand {
     const bundle_dest_path = this.bundleDestPath(flags, args['bundle-path']) // final location for user
     const overwrite = await this.allowOverwrite(bundle_dest_path, this.settings.get('interactive'))
     if(overwrite && flags.tar)
-      this.tar(options["bundle-path"], bundle_dest_path, flags.explicit)
+      this.tar(options["bundle-path"], bundle_dest_path, flags.debug)
     else if(overwrite && flags.zip)
-      this.zip(options["bundle-path"], bundle_dest_path, flags.explicit)
+      this.zip(options["bundle-path"], bundle_dest_path, flags.debug)
     else if(overwrite)
       fs.copySync(options["bundle-path"], bundle_dest_path)
     // -- remove temp_dir ------------------------------------------------------
@@ -89,17 +89,17 @@ export default class Bundle extends BasicCommand {
     return path.resolve(save_path)
   }
 
-  zip(source_dir: string, destination: string, explicit:boolean)
+  zip(source_dir: string, destination: string, debug:boolean)
   {
-    const shell = new ShellCommand(explicit, false)
+    const shell = new ShellCommand(debug, false)
     const cmd_flags = {'r': {}, 'q': {}}
     const cmd_args  = [destination, path.basename(source_dir)]
     shell.exec('zip', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})
   }
 
-  tar(source_dir: string, destination: string, explicit:boolean)
+  tar(source_dir: string, destination: string, debug:boolean)
   {
-    const shell = new ShellCommand(explicit, false)
+    const shell = new ShellCommand(debug, false)
     const cmd_flags = {'czf': {shorthand: true}}
     const cmd_args  = [destination, path.basename(source_dir)]
     shell.exec('tar', cmd_flags, cmd_args, {cwd: path.dirname(source_dir)})

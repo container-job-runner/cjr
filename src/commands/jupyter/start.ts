@@ -25,7 +25,7 @@ export default class Start extends ServiceCommand {
     "expose": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet": flags.boolean({default: false, char: 'q'}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
@@ -42,7 +42,7 @@ export default class Start extends ServiceCommand {
     if( flags['x11'] ) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),
-            'explicit': flags.explicit
+            'debug': flags.debug
         })
 
     // -- service generator --------------------------------------------------

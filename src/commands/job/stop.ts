@@ -12,7 +12,7 @@ export default class Stop extends BasicCommand {
     "visible-stacks": flags.string({multiple: true, description: "if specified only these stacks will be affected by this command"}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "verbose": flags.boolean({default: false, char: 'v', exclusive: ['quiet']}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "quiet":flags.boolean({default: false, char: 'q'})
   }
   static strict = false;
@@ -37,7 +37,7 @@ export default class Stop extends BasicCommand {
       {
         verbose: flags['verbose'],
         quiet: flags['quiet'],
-        explicit: flags['explicit']
+        debug: flags['debug']
       }
     )
     printValidatedOutput(

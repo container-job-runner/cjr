@@ -141,7 +141,7 @@ export function getTheiaUrl(job_manager: JobManager, identifier: {"project-root"
 }
 
 // -- starts the Theia Electron app  -------------------------------------------
-export function runTheiaOnStartCommand(url: string, onstart_cmd: string, explicit: boolean = false) : ValidatedOutput<undefined>
+export function runTheiaOnStartCommand(url: string, onstart_cmd: string, debug: boolean = false) : ValidatedOutput<undefined>
 {
   if(!onstart_cmd) return new ValidatedOutput(false, undefined)
   const command = [
@@ -150,7 +150,7 @@ export function runTheiaOnStartCommand(url: string, onstart_cmd: string, explici
         onstart_cmd
     ].join(' ; ');
   return new ValidatedOutput(true, undefined)
-    .absorb(new ShellCommand(explicit, false).execAsync(command))
+    .absorb(new ShellCommand(debug, false).execAsync(command))
 }
 
 // === Helper functions ========================================================

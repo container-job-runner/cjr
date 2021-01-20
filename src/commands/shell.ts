@@ -15,7 +15,7 @@ export default class Shell extends ServiceCommand {
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "config-files": flags.string({default: [], multiple: true, description: "additional configuration file to override stack configuration"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.'}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "port": flags.string({default: [], multiple: true}),
     "x11": flags.boolean({default: false}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
@@ -33,7 +33,7 @@ export default class Shell extends ServiceCommand {
     if(flags['x11']) await initX11({
         'interactive': this.settings.get('interactive'),
         'xquartz': this.settings.get('xquartz-autostart'),
-        'explicit': flags.explicit
+        'debug': flags.debug
     })
 
     const shell_flags = {

@@ -206,7 +206,7 @@ export async function getJupyterUrl(job_manager: JobManager, identifier: JobIden
 }
 
 // -- starts the Jupyter Electron app  -----------------------------------------
-export function runJupyterOnStartCommand(url: string, onstart_cmd: string, explicit: boolean = false) : ValidatedOutput<undefined>
+export function runJupyterOnStartCommand(url: string, onstart_cmd: string, debug: boolean = false) : ValidatedOutput<undefined>
 {
   if(!onstart_cmd) return new ValidatedOutput(false, undefined)
   const command = [
@@ -215,7 +215,7 @@ export function runJupyterOnStartCommand(url: string, onstart_cmd: string, expli
         onstart_cmd
     ].join(' ; ');
   return new ValidatedOutput(true, undefined)
-    .absorb(new ShellCommand(explicit, false).execAsync(command))
+    .absorb(new ShellCommand(debug, false).execAsync(command))
 }
 
 // === Helper functions ========================================================

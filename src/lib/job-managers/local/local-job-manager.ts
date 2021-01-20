@@ -27,7 +27,7 @@ export type LocalJobManagerUserOptions = {
     "rootfull"?: boolean                    // if true, then cli drivers commands will use sudo command
     "socket"?: string                       // path to socket
     "image-tag"?: string                    // tag that will be used for all container images
-    "explicit"?: boolean
+    "debug"?: boolean
     "directories": {
         "copy": string                      // directory path for storing temporary rsync include-from and exclude-from files during copy operations from volumes
         "build": string                     // directory path for storing temporary tar files that are sent to socket for building.
@@ -44,7 +44,7 @@ export class LocalJobManager extends GenericJobManager
       "rootfull": false,
       "image-tag": 'cjr',
       "socket": "/var/run/docker.sock",
-      "explicit": false,
+      "debug": false,
       "directories": {
           "copy": "",
           "build": ""
@@ -62,7 +62,7 @@ export class LocalJobManager extends GenericJobManager
     JSTools.rMerge(this.options, options)
     
     const shell = new ShellCommand(
-        this.options.explicit, 
+        this.options.debug, 
         this.options["output-options"].quiet
     )
     

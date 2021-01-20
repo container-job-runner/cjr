@@ -41,7 +41,7 @@ type CLIServiceStopFlags = {
     "resource"?: string,
     "project-root"?: string,
     "here"?: boolean,
-    "explicit": boolean,
+    "debug": boolean,
     "verbose": boolean,
     "quiet": boolean,
     "all" : boolean
@@ -49,7 +49,7 @@ type CLIServiceStopFlags = {
 
 type CLIServiceListFlags = {
     "resource" ?: string,
-    "explicit" : boolean,
+    "debug" : boolean,
     "json" : boolean
 }
 
@@ -132,7 +132,7 @@ export abstract class ServiceCommand extends JobCommand
         const start_tunnel = (job_manager instanceof RemoteSshJobManager) && ( ! flags['expose'] )
         
         // -- select ports -----------------------------------------------------
-        const local_manager = this.newJobManager('localhost', {verbose: false, quiet: flags['quiet'], explicit: flags['explicit']})
+        const local_manager = this.newJobManager('localhost', {verbose: false, quiet: flags['quiet'], debug: flags['debug']})
         const container_port_config = this.defaultPort(job_manager, flags["server-port"], flags["expose"], options["default-access-port"] || this.default_access_port)
         const access_port = ( ! start_tunnel ) ? container_port_config.hostPort : nextAvailablePort(local_manager, container_port_config.hostPort)
 
@@ -218,7 +218,7 @@ export abstract class ServiceCommand extends JobCommand
         const job_manager = this.newJobManager(flags["resource"] || 'localhost', {
             verbose: flags['verbose'], 
             quiet: flags['quiet'], 
-            explicit: flags['explicit']
+            debug: flags['debug']
         })
 
         const service = serviceGenerator(job_manager)
@@ -259,7 +259,7 @@ export abstract class ServiceCommand extends JobCommand
         const job_manager = this.newJobManager(flags["resource"] || 'localhost', {
             verbose: false, 
             quiet: false, 
-            explicit: flags['explicit']
+            debug: flags['debug']
         })
 
         const service = serviceGenerator(job_manager)
@@ -290,7 +290,7 @@ export abstract class ServiceCommand extends JobCommand
             return
         else if(options?.exec?.command) // exec command
         {
-            const exec = new ShellCommand(flags['explicit'], flags['quiet'])
+            const exec = new ShellCommand(flags['debug'], flags['quiet'])
                 .execAsync(options.exec.command, {}, [], {
                     detached: true,
                     stdio: 'ignore',
@@ -307,7 +307,7 @@ export abstract class ServiceCommand extends JobCommand
 
     // == Start Service functions ================================================
 
-    async startSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}, options: {"stop-on-fail": boolean}) : Promise<ValidatedOutput<undefined | {local: ValidatedOutput<ServiceInfo|{output:string}>, remote: ValidatedOutput<ServiceInfo|{output:string}>}>>
+    async startSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, debug: boolean}, options: {"stop-on-fail": boolean}) : Promise<ValidatedOutput<undefined | {local: ValidatedOutput<ServiceInfo|{output:string}>, remote: ValidatedOutput<ServiceInfo|{output:string}>}>>
     {
         // -- validate project root ------------------------------------------------
         const pr_check = this.validProjectRoot(project_root, false)
@@ -356,7 +356,7 @@ export abstract class ServiceCommand extends JobCommand
 
     }
 
-    stopSyncthing(project_root: string|undefined, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
+    stopSyncthing(project_root: string|undefined, resource_name: string, output_options: {verbose: boolean, quiet: boolean, debug: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
     {
         // -- create sync manager --------------------------------------------------
         const sm_request = this.newSyncManager(resource_name, output_options, false)
@@ -372,7 +372,7 @@ export abstract class ServiceCommand extends JobCommand
         ))
     }
 
-    resetSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
+    resetSyncthing(project_root: string, resource_name: string, output_options: {verbose: boolean, quiet: boolean, debug: boolean}) : ValidatedOutput<undefined | {local: ValidatedOutput<undefined>, remote: ValidatedOutput<undefined>}>
     {
         // -- create sync manager --------------------------------------------------
         const sm_request = this.newSyncManager(resource_name, output_options, false)
@@ -400,7 +400,7 @@ export abstract class ServiceCommand extends JobCommand
             
     }
 
-    protected newSyncManager(resource_name: string, output_options: {verbose: boolean, quiet: boolean, explicit: boolean}, set_ports: boolean = true) : ValidatedOutput<undefined | MultiServiceManager<{"local": GenericAbstractService, "remote": GenericAbstractService}>>
+    protected newSyncManager(resource_name: string, output_options: {verbose: boolean, quiet: boolean, debug: boolean}, set_ports: boolean = true) : ValidatedOutput<undefined | MultiServiceManager<{"local": GenericAbstractService, "remote": GenericAbstractService}>>
     {
         // -- validate resource-----------------------------------------------------
         const resource_request = this.getResourceWithKey(resource_name)
@@ -413,12 +413,12 @@ export abstract class ServiceCommand extends JobCommand
         const local_manager = this.newJobManager('localhost', {
             "verbose": output_options['verbose'], 
             "quiet": output_options['quiet'], 
-            "explicit": output_options['explicit']
+            "debug": output_options['debug']
         })
         const remote_manager = this.newJobManager(resource_name, {
             "verbose": output_options['verbose'], 
             "quiet": output_options['quiet'], 
-            "explicit": output_options['explicit']
+            "debug": output_options['debug']
         })
         const ports = (set_ports) ? nextAvailablePorts(remote_manager, 20003, 3) : [-1, -1, -1] // create function
 

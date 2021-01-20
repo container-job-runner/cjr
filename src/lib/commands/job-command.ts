@@ -23,7 +23,7 @@ export type CLIJobFlags = {
     "here"?: boolean,
     "profile"?: Array<string>,
     "config-files": Array<string>,
-    "explicit": boolean,
+    "debug": boolean,
     "verbose": boolean,
     "quiet": boolean,
     "async"?: boolean,
@@ -106,7 +106,7 @@ export abstract class JobCommand extends BasicCommand
         {
             "verbose": flags["verbose"] || false,
             "quiet": flags["quiet"] || false,
-            "explicit": flags["explicit"] || false
+            "debug": flags["debug"] || false
         }
     )
     // -- init stack configuration ---------------------------------------------

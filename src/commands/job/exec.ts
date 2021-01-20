@@ -19,7 +19,7 @@ export default class Exec extends JobCommand {
     "message": flags.string({description: "use this flag to tag a job with a user-supplied message"}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'shows output for each stage of the job.', exclusive: ['quiet']}),
     "quiet":flags.boolean({default: false, char: 'q'}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "build-mode":  flags.string({default: "cached", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'}),
     "no-autoload": flags.boolean({default: false, description: "prevents cli from automatically loading flags using project settings files"}),
     "stacks-dir": flags.string({default: "", description: "override default stack directory"}),
@@ -38,7 +38,7 @@ export default class Exec extends JobCommand {
     if(flags['x11']) await initX11({
             'interactive': this.settings.get('interactive'),
             'xquartz': this.settings.get('xquartz-autostart'),
-            'explicit': flags.explicit
+            'debug': flags.debug
         })
     // -- run basic exec -------------------------------------------------------
     const { job, job_data } = this.runSimpleExec(parent_job_id, flags, argv.slice(1))

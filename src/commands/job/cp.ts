@@ -13,7 +13,7 @@ export default class Copy extends BasicCommand {
     "stacks-dir": flags.string({default: "", description: "Override default stack directory."}),
     "visible-stacks": flags.string({multiple: true, description: "If specified only these stacks will be affected by this command."}),
     "no-autoload": flags.boolean({default: false, description: "Prevents cli from automatically loading flags using project settings files."}),
-    "explicit": flags.boolean({default: false}),
+    "debug": flags.boolean({default: false}),
     "verbose": flags.boolean({default: false, char: 'v', description: 'Shows output from rsync.', exclusive: ['quiet']}),
     "quiet":flags.boolean({default: false, char: 'q'}),
   }
@@ -36,7 +36,7 @@ export default class Copy extends BasicCommand {
         {
             verbose: flags["verbose"], 
             quiet: flags["quiet"], 
-            explicit: flags["explicit"]
+            debug: flags["debug"]
         }
     )
     const result = job_manager.copy({

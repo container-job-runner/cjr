@@ -12,7 +12,7 @@ export default class Ssh extends ResourceCommand {
   static flags = {
     "resource": flags.string({env: 'CJR_RESOURCE'}),
     "x11": flags.boolean({default: false, char: 'X'}),
-    "explicit": flags.boolean({default: false})
+    "debug": flags.boolean({default: false})
   }
   static strict = false;
 
@@ -26,7 +26,7 @@ export default class Ssh extends ResourceCommand {
     // -- get resource & driver ------------------------------------------------
     const resource = this.resource_configuration.getResource(name)
     if(resource === undefined) return
-    const ssh_shell = new SshShellCommand(flags.explicit, false, path.join(this.config.dataDir, constants.subdirectories.data["ssh-sockets"]))
+    const ssh_shell = new SshShellCommand(flags.debug, false, path.join(this.config.dataDir, constants.subdirectories.data["ssh-sockets"]))
     ssh_shell.setResource(resource)
     ssh_shell.exec('', {}, [], {ssh: {x11: flags.x11}})
     printValidatedOutput(result)

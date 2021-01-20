@@ -26,7 +26,7 @@ export type RemoteSshJobManagerUserOptions = {
     "engine"?: "podman"|"docker"
     "selinux"?: boolean                     // if true, then bind mounts will have selinux :Z mode
     "rootfull"?: boolean                    // if true, then cli drivers commands will use sudo command
-    "explicit": boolean,
+    "debug": boolean,
     "output-options"?: OutputOptions
     "image-tag"?: string                    // tag that will be used for all container images    
     "multiplexOptions"?: MultiplexOptions
@@ -53,7 +53,7 @@ export class RemoteSshJobManager extends GenericJobManager
     
     private options: Required<RemoteSshJobManagerUserOptions> = {
         "engine": "podman",
-        "explicit": false,
+        "debug": false,
         "output-options": {verbose: false, quiet: false},
         "selinux": false,
         "rootfull": false,
@@ -120,7 +120,7 @@ export class RemoteSshJobManager extends GenericJobManager
         
         // init ssh shell and set resource
         this.shell = new SshShellCommand(
-            this.options["explicit"], 
+            this.options["debug"], 
             this.options["output-options"].quiet,
             this.options["directories"]["multiplex"],
             {ssh: {interactive: true}, multiplex: {}}
