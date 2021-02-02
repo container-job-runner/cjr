@@ -179,7 +179,7 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
   {
     if(mo.type !== "bind" || !mo.hostPath) return []
     const selinux_str = 'z' // allow sharing with all containers
-    return `${ShellCommand.bashEscape(mo.hostPath)}:${ShellCommand.bashEscape(mo.containerPath)}:${selinux_str}${(mo.readonly) ? ",readonly" : ""}`
+    return `${ShellCommand.bashEscape(mo.hostPath)}:${ShellCommand.bashEscape(mo.containerPath)}:${selinux_str}${(mo.readonly) ? ",ro" : ""}`
   }
 
   protected addSpecialFlags(flags: Dictionary, run_object: DockerCreateOptions)
