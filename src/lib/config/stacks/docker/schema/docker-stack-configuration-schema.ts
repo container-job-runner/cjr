@@ -225,8 +225,9 @@ export const docker_stack_configuration_schema = {
         "selinux": {
           "type": "boolean"
         },
-        "remoteUpload": {
-          "type": "boolean"
+        "remoteBehavior": {
+          "type": "string",
+          "pattern": "^(ignore)|(upload)|(preserve)$"
         }
       },
       "required": [

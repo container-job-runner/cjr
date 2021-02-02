@@ -92,7 +92,7 @@ export class SyncthingRemoteService extends GenericAbstractService
             stack_configuration.addVolume(
                 this.persistantDataVolume(options["project-root"]),
                 path.posix.join("/home", this.CONSTANTS.username, ".config", "syncthing"),
-                {"remote-upload" : true}
+                {"remote-behavior" : "keep"}
             )
         
         return job_configuration

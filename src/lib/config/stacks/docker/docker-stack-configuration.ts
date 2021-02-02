@@ -37,7 +37,7 @@ export type DockerStackMountConfig = {
   "readonly"?: boolean
   "consistency"?: "consistent" | "cached" | "delegated"
   "selinux"?: boolean
-  "remoteUpload"?: boolean
+  "remoteBehavior"?: "ignore" | "upload" | "preserve" 
 }
 
 export type DockerStackPortConfig = {
@@ -440,7 +440,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   addVolume(volumeName: string, containerPath: string, options?: Dictionary)
   {
       if(!(this.config?.mounts)) this.config.mounts = [];
-      this.config.mounts.push({type: "volume", volumeName: volumeName, containerPath: containerPath, remoteUpload: options?.['remote-upload']})
+      this.config.mounts.push({type: "volume", volumeName: volumeName, containerPath: containerPath, remoteBehavior: options?.['remote-behavior']})
       return true;
   }
 
@@ -471,7 +471,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   {
     if(this.config?.mounts)
        this.config.mounts = this.config.mounts.filter(
-           (m: DockerStackMountConfig) => (m.type != 'volume') || ( (m.type === 'volume') && (m.remoteUpload === true) )
+           (m: DockerStackMountConfig) => ( (m.type != 'volume') || (m.remoteBehavior === 'upload') || (m.remoteBehavior === 'preserve') )
         )
     return new ValidatedOutput(true, undefined)
   }
@@ -480,7 +480,7 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
   {
     if(this.config?.mounts)
        this.config.mounts = this.config.mounts.filter(
-           (m: DockerStackMountConfig) => (m.type != 'bind' || (m.remoteUpload === true))
+           (m: DockerStackMountConfig) => ( (m.type !== 'bind') || (m.remoteBehavior === 'upload') || (m.remoteBehavior === 'preserve') )
         )
     return new ValidatedOutput(true, undefined)
   }
@@ -773,13 +773,13 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     return this.config?.snapshots
   }
 
-  getBindMountPaths(remote_only: boolean) : Array<string>
+  getBindMountPaths(remote_upload_only: boolean) : Array<string>
   {
     if(!this.config?.mounts) return []
     
     const paths: Array<string> = []
     this.config.mounts.map( (m:DockerStackMountConfig) => {
-        if(m.type === "bind" && m.hostPath && (!remote_only || m.remoteUpload))
+        if( m.type === "bind" && m.hostPath && ( ! remote_upload_only ||  m.remoteBehavior === 'upload' ) )
             paths.push(m.hostPath)
     })
 
