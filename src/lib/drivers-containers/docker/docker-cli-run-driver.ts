@@ -460,6 +460,10 @@ export class DockerCliRunDriver extends RunDriver
     {
         flags["privileged"] = {}
     }
+    if(run_object?.flags?.['hostname'])
+    {
+        flags["hostname"] = run_object.flags["hostname"]
+    }
   }
 
   protected addMountFlags(flags: Dictionary, run_object: DockerCreateOptions)

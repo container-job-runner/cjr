@@ -195,6 +195,10 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     {
         flags["privileged"] = {}
     }
+    if(run_object?.flags?.['hostname'])
+    {
+        flags["hostname"] = run_object.flags["hostname"]
+    }
   }
 
   protected addEntrypointFlags(flags: Dictionary, run_object: DockerCreateOptions)

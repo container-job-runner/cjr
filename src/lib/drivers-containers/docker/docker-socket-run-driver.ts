@@ -18,6 +18,7 @@ import { DockerAPIPostProcessor } from './docker-socket-build-driver'
 export type DockerAPI_CreateObject =
 {
   "Image"?: string,
+  "Hostname"?: string,
   "User"?: string,
   "Entrypoint"?: Array<string>,
   "Cmd"?: Array<string>,
@@ -628,7 +629,11 @@ export class DockerSocketRunDriver extends RunDriver
        if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
        create_object.HostConfig.Privileged = true
     }
-
+    // -- Hostname -------------------------------------------------------------
+    if(configuration.config.flags?.['hostname'])
+    {
+        create_object.Hostname = configuration.config.flags.hostname
+    }
   }
 
   // === END API Functions =====================================================
