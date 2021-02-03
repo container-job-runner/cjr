@@ -16,7 +16,7 @@ import fs = require('fs-extra')
 import path = require('path')
 import { ValidatedOutput } from './validated-output'
 import { ShellCommand } from './shell-command'
-import { SpawnSyncReturns } from 'child_process'
+import { ChildProcess, SpawnSyncReturns } from 'child_process'
 import { trim } from './functions/misc-functions'
 import { JSTools } from './js-tools'
 
@@ -78,6 +78,13 @@ export class SshShellCommand
     {
       const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
       return this.shell.exec('ssh', ssh_flags, ssh_args, options)
+    }
+
+        // set post_process format to trim by default
+    execAsync(command: string, flags: Dictionary = {}, args: Array<string> = [], options: SshShellOptions = {}) : ValidatedOutput<ChildProcess>
+    {
+      const {ssh_flags, ssh_args} = this.sshFlagsAndArgs(command, flags, args, options)
+      return this.shell.execAsync('ssh', ssh_flags, ssh_args, options)
     }
 
     private sshFlagsAndArgs(command: string, flags: Dictionary={}, args: Array<string>=[], options: SshShellOptions = {})
