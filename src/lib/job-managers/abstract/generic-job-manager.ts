@@ -1,18 +1,15 @@
 import chalk = require('chalk');
-import os = require('os')
 import { JobManager, JobRunOptions, JobExecOptions, JobCopyOptions, JobDeleteOptions, JobStopOptions, JobStateOptions, JobAttachOptions, JobLogOptions, JobListOptions, JobBuildOptions, JobProperties, JobPropertiesOptions } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
 import { firstJob, NewJobInfo, JobInfo, JobState, firstJobId, jobStates, JobInfoFilter, JobPortInfo } from '../../drivers-containers/abstract/run-driver';
 import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
-import { addX11, setRelativeWorkDir, addGenericLabels } from '../../functions/config-functions';
+import { setRelativeWorkDir, addGenericLabels } from '../../functions/config-functions';
 import { WarningStrings } from '../../error-strings';
 
 export abstract class GenericJobManager extends JobManager
 {
-  protected platform:string = os.platform();
-  
   protected ERRORSTRINGS = {
     NO_MATCHING_ID: chalk`{bold No Matching Job ID}`,
     FAILED_START: chalk`{bold Failed to start job}`
@@ -33,7 +30,7 @@ export abstract class GenericJobManager extends JobManager
     setRelativeWorkDir(job_configuration, job_options["project-root"] || "", job_options["cwd"])
     addGenericLabels(job_configuration, job_options["project-root"] || "")
     if(job_options.x11)
-      addX11(job_configuration, {"platform": this.platform, "shell": this.shell})
+      this.configureX11(job_configuration)
     if(job_configuration.stack_configuration.getFlag('cmd-args') == 'join')
         job_configuration.joinCommand()
     // -- 2. start job -----------------------------------------------------------
@@ -74,7 +71,7 @@ export abstract class GenericJobManager extends JobManager
     job_configuration.addLabel(label_strings.job["command"], job_configuration.command.join(" "))
     job_configuration.remove_on_exit = true
     if(exec_options.x11)
-        addX11(job_configuration,  {"platform": this.platform})
+        this.configureX11(job_configuration)
     if(job_configuration.stack_configuration.getFlag('cmd-args') == 'join')
         job_configuration.joinCommand()
 
@@ -266,6 +263,31 @@ export abstract class GenericJobManager extends JobManager
     //     value: `{${rules.map((r:string) => ShellCommand.bashEscape(r)).join(',')}}`
     //     noescape: true
     // }
+  }
+
+  protected abstract configureX11(job_configuration: JobConfiguration<StackConfiguration<any>>) : ValidatedOutput<undefined>
+
+  protected getContainerUser(job_configuration: JobConfiguration<StackConfiguration<any>>)
+  {
+    // use value in flag "xauth-user" (if flag is set), otherwise call peak
+    return job_configuration.stack_configuration.getFlag("xauth-user") || this.peakUsername(job_configuration.stack_configuration).value
+  }
+  
+  // peakUsername() starts a job that runs "whoami" to determine the container user.
+  // this approach will also work for containers with dynamic entrypoints that 
+  // change the container user (As opposted to reading simply reading the static image properties)
+  protected peakUsername(stack_configuration: StackConfiguration<any>) : ValidatedOutput<string>
+  {
+    // create a new job that runs whoami command
+    const njc = this.configurations.job( stack_configuration.copy() )
+    njc.command = ["whoami"]
+    njc.synchronous = true
+    njc.remove_on_exit = true
+
+    // extract output if job was successfull
+    const job_request = this.container_drivers.runner.jobStart(njc, "pipe");
+    if( ! job_request.success ) return new ValidatedOutput(false, "")
+    return new ValidatedOutput(true, job_request.value.output.trim())
   }
 
 }

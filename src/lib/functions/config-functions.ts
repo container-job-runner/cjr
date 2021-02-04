@@ -4,6 +4,8 @@
 
 import * as os from 'os'
 import * as path from 'path'
+import fs = require('fs')
+import constants = require('../constants')
 
 import { StackConfiguration } from '../config/stacks/abstract/stack-configuration'
 import { JobConfiguration } from '../config/jobs/job-configuration'
@@ -11,7 +13,7 @@ import { ShellCommand } from '../shell-command'
 import { SshShellCommand } from '../ssh-shell-command'
 import { ValidatedOutput } from '../validated-output'
 import { WarningStrings } from '../error-strings'
-import { X11_POSIX_BIND, label_strings } from '../constants'
+import { label_strings } from '../constants'
 import { trim } from './misc-functions'
 import { PathTools } from '../fileio/path-tools'
 import { TextFile } from '../fileio/text-file'
@@ -173,7 +175,95 @@ export function containerWorkingDir(cwd:string, proot: string, croot: string)
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-// ADDX11: adds all configuration to enables x11 for a job
+// addX11Local: modify JobConfiguration to enable x11 for a local job
+// -- Parameters ---------------------------------------------------------------
+// job_configuration: JobConfiguration<any>
+//    JobConfigration that should be modified
+// options: {shell?: ShellCommand|SshShellCommand, platform?: string}
+//    "user" - if specified, the host .Xuathority file will be bound to this
+//             container user's directory. NOTE: this does not affect mac
+//    "shell" - shell that is used to list running x11 sockets.
+//              Default to local shell.
+//    "platform" - operating system running containers. Defaults to os.platform()
+// -----------------------------------------------------------------------------
+
+export function addX11Local(job_configuration: JobConfiguration<StackConfiguration<any>>, options?:{user?: string, shell?: ShellCommand, platform?: string}) : ValidatedOutput<undefined>
+{
+    const result   = new ValidatedOutput(true, undefined)
+    const shell    = options?.shell || new ShellCommand(false, false);
+    const platform = options?.platform || os.platform()
+    const stack_configuration = job_configuration.stack_configuration
+    
+    switch(platform)
+    {
+        case "linux" : // == LINUX =============================================
+            stack_configuration.addFlag("podman-security-opt", "label=disable") // special flag for podman to access /tmp/.X11-unix
+            result.absorb(
+                new ValidatedOutput( // set DISPLAY environment variable
+                    stack_configuration.addEnvironmentVariable("DISPLAY", "$DISPLAY", true, shell),
+                    undefined
+                ),
+                new ValidatedOutput( // bind system X11 socket directory to container
+                    stack_configuration.addBind(constants.X11_POSIX_BIND, constants.X11_POSIX_BIND),
+                    undefined
+                ),
+                new ValidatedOutput( // bind user .Xauthority directory to container
+                    stack_configuration.addBind(
+                        path.join(os.homedir(), ".Xauthority"),
+                        ( options?.user && options.user !== "root" ) ? path.posix.join("/home", options.user, ".Xauthority") : path.posix.join("/root", ".Xauthority"),
+                        { "readonly" : true}
+                    ),
+                    undefined
+                )
+            )
+            break;
+        case "darwin" : // == MAC ==============================================
+            result.absorb(
+                shell.output("xhost +localhost"), // add localhost to xhost or container cannot connect to host X11 socket
+                new ValidatedOutput(
+                    addMacDisplayEnvironmentVariable(stack_configuration),
+                    undefined
+                )
+            )
+            break;
+        default : // == Unsupported OS =========================================
+            result.pushError(WarningStrings.X11.FLAGUNAVALIABLE)
+    }
+
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+// addMacDisplayEnvironmentVariable: sets DISPLAY to host.docker.internal:D 
+// where D is an integer cooresponding to the x11 socket with highest number.
+// -- Parameters ---------------------------------------------------------------
+// configuration: StackConfiguration<any>
+//    StackConfiguration to be modified
+// -----------------------------------------------------------------------------
+
+function addMacDisplayEnvironmentVariable( configuration: StackConfiguration<any> ) : boolean
+{
+    try 
+    {
+        const socket_number = fs.readdirSync( constants.X11_POSIX_BIND )
+            .filter( ( s : string ) => /^X\d+$/.test(s))
+            .map( ( s : string ) => s.replace("X", "") )
+            .sort()
+            .pop()
+        if(socket_number === undefined) { // add display zero but report failure
+            configuration.addEnvironmentVariable("DISPLAY", `host.docker.internal:0`)
+            return false
+        }
+        return configuration.addEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
+    }
+    catch ( e ) 
+    {
+        return false;
+    }    
+}
+
+// -----------------------------------------------------------------------------
+// addX11Ssh: modify JobConfiguration to enable x11 for a remote job run using ssh
 // -- Parameters ---------------------------------------------------------------
 // job_configuration: JobConfiguration<any>
 //    JobConfigration that should be modified
@@ -181,107 +271,79 @@ export function containerWorkingDir(cwd:string, proot: string, croot: string)
 //    "shell" - shell that is used to list running x11 sockets.
 //              Default to local shell.
 //    "platform" - operating system running containers. Defaults to os.platform()
+//    "env" - allows manual overridde of the container environment variable DISPLAY. 
+//    "X11-host-bind" - location of the x11 socket. Defaults to constants.X11_POSIX_BIND
 // -----------------------------------------------------------------------------
 
-export function addX11(job_configuration: JobConfiguration<any>, options?:{shell?: ShellCommand|SshShellCommand, platform?: string}) : ValidatedOutput<undefined>
-{
-  const failure = new ValidatedOutput(false, undefined)
-  const shell = options?.shell || new ShellCommand(false, false)
-  const platform = options?.platform || os.platform()
-
-  switch(platform)
-  {
-    case "linux": // == LINUX ==================================================
-      job_configuration.stack_configuration.addFlag("network", "host") // allows for reuse of xauth from host
-      const envadd = addDisplayEnvironmentVariable(
-        job_configuration.stack_configuration,
-        {"shell": shell, "platform": platform}
-      )
-      if(!envadd.success) return failure
-      const secret = getXAuthSecret(shell)
-      if(!secret.success) return failure
-      prependXAuthCommand(job_configuration, secret.value)
-      return new ValidatedOutput(true, undefined)
-    case "darwin": // == MAC ===================================================
-      const add_localhost = shell.output("xhost +localhost"); // add localhost to xhost or container cannot connect to host X11 socket
-      if(!add_localhost.success) return failure
-      return addDisplayEnvironmentVariable(
-        job_configuration.stack_configuration,
-        {"shell": shell, "platform": platform}
-      )
-    default: // == Unsupported OS ==============================================
-      return failure.pushError(WarningStrings.X11.FLAGUNAVALIABLE)
-  }
-
+type addX11SshOptions = {
+    "shell": SshShellCommand, 
+    "platform": string, 
+    "host-user": string,
+    "container-user": string
+    "mode": "network-host"|"hostname-host", 
+    "env"?: {DISPLAY: string}, 
+    "binds"?: {"x11-sockets" : string}
 }
 
-// -----------------------------------------------------------------------------
-// ADDDISPLAYENVIRONMENTVARIABLE: sets DISPLAY in container to utilize host X11
-// socket with highest number. For mac DISPLAY is set to host.docker.internal:D
-// while for linux the host DISPLAY value is used.
-// -- Parameters ---------------------------------------------------------------
-// configuration: StackConfiguration<any>
-//    StackConfiguration to be modified
-// options: {shell?: ShellCommand|SshShellCommand, platform?: string}
-//    "shell" - shell that is used to list running x11 sockets.
-//              Default to local shell.
-//    "platform" - operating system running containers. Defaults to os.platform()
-// -----------------------------------------------------------------------------
-
-export function addDisplayEnvironmentVariable(configuration: StackConfiguration<any>, options:{shell: ShellCommand|SshShellCommand, platform: string}) : ValidatedOutput<undefined>
+export function addX11Ssh(job_configuration: JobConfiguration<StackConfiguration<any>>, options: addX11SshOptions) : ValidatedOutput<undefined>
 {
-  const shell = options.shell
-  const platform = options.platform
-  const result = new ValidatedOutput(true, undefined)
+    const result = new ValidatedOutput(true, undefined)
+    const stack_configuration = job_configuration.stack_configuration
+    
+    if(options.platform !== "linux") 
+        return result.pushError(WarningStrings.X11.FLAGUNAVALIABLE)
 
-  switch(platform)
-  {
-    case "darwin": // == MAC ===================================================
-      const socket_number = shell.output(`ls ${X11_POSIX_BIND} | grep -E "X[0-9]+"`).value // select X11 socket with highest number since xQuartz crash can leave behind dead sockets
-        .trim()
-        .split(/[\n\r]+/)  // split output on line breaks
-        .sort()
-        .pop()
-        ?.replace("X", "") || "0"
-      configuration.addEnvironmentVariable("DISPLAY", `host.docker.internal:${socket_number}`)
-      return result
-    case "linux": // == LINUX ==================================================
-      return new ValidatedOutput(
-        configuration.addEnvironmentVariable("DISPLAY", "$DISPLAY", true, shell), // pass host environment
-        undefined)
-    default:  // == Unsupported OS =============================================
-      return result.pushError(WarningStrings.X11.FLAGUNAVALIABLE)
-  }
-}
+    switch ( options.mode )
+    {
+        case "network-host": // container runs on same network as host
+            
+            job_configuration.stack_configuration.addFlag("network", "host");
+            break;
 
-// -----------------------------------------------------------------------------
-// GETXAUTHSECRET: get display secret from host
-// -- Parameters ---------------------------------------------------------------
-//"shell" - shell that is used to list running x11 sockets.
-//              Default to local shell.
-// -----------------------------------------------------------------------------
+        case "hostname-host":
+            
+            stack_configuration.addFlag("podman-security-opt", "label=disable") // special flag for podman to access /tmp/.X11-unix
 
-export function getXAuthSecret(shell: ShellCommand|SshShellCommand) : ValidatedOutput<string>
-{
-  const failure = new ValidatedOutput<string>(false, "")
-  const xauth_list = trim(shell.output("xauth list $DISPLAY"))
-  if(!xauth_list.success) return failure
-  const sockets  = xauth_list.value.split(/[\n\r]+/) // split on new line in case there are multiple x11 sockets running
-  if(sockets && sockets.length < 1) return failure
-  const xauth_fields = sockets.pop()?.split("  ") || [] // assume format: HOST  ACCESS-CONTROL  SECRET
-  if(xauth_fields.length != 3) return failure
-  return new ValidatedOutput<string>(true, xauth_fields[2])
-}
+            const hostname = options.shell.output("hostname")
+            if( ! hostname.success ) return result.absorb(hostname)
+            job_configuration.stack_configuration.addFlag("hostname", hostname.value)
 
-// -----------------------------------------------------------------------------
-// PREPENDXAUTH: prepend commands to add xAuth from host into container, onto
-// any existing command.
-// -- Parameters ---------------------------------------------------------------
-// job_configuration - jobconfiguration that requires modified command
-// -----------------------------------------------------------------------------
+            result.absorb(
+                new ValidatedOutput(
+                    stack_configuration.addBind(
+                        options.binds?.["x11-sockets"] || constants.X11_POSIX_BIND, 
+                        constants.X11_POSIX_BIND,
+                        { "readonly" : true, "allow-nonexistant" : true, "remove-behavior" : "keep"}
+                    ),
+                    undefined
+                )
+            )
+    }
 
-export function prependXAuthCommand(job_configuration: JobConfiguration<StackConfiguration<any>>, xauth_secret: string)
-{
-  const script = ['touch ~/.Xauthority', `xauth add $DISPLAY . ${xauth_secret}`, job_configuration.command].join(" && ")
-  job_configuration.command = [`bash -c ${ShellCommand.bashEscape(script)}`]
+    // add DISPLAY variable
+    result.absorb(
+        new ValidatedOutput(
+            stack_configuration.addEnvironmentVariable("DISPLAY", options.env?.DISPLAY || "$DISPLAY", (options.env?.DISPLAY === undefined), options.shell),
+            undefined
+        )
+    )
+
+    // add xauth directory from remote resource
+    const host_xauth_dir = path.posix.join("/home", options["host-user"], ".Xauthority")
+    const container_xauth_dir = ( options["container-user"] && options["container-user"] !== "root" ) ? 
+        path.posix.join("/home", options["container-user"], ".Xauthority") : 
+        path.posix.join("/root", ".Xauthority")
+
+    result.absorb(
+        new ValidatedOutput(
+            stack_configuration.addBind(
+                host_xauth_dir, 
+                container_xauth_dir, 
+                { "readonly" : true, "allow-nonexistant" : true, "remove-behavior" : "keep"}
+            ),
+            undefined
+        )
+    )
+    
+    return result
 }

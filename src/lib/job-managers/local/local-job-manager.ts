@@ -1,12 +1,13 @@
 import fs = require('fs')
 import chalk = require('chalk');
+import os = require('os')
 import { JobRunOptions, ContainerDrivers, OutputOptions, JobExecOptions, JobCopyOptions, Configurations } from '../abstract/job-manager'
 import { JobConfiguration } from '../../config/jobs/job-configuration';
 import { ValidatedOutput } from '../../validated-output';
 import { NewJobInfo, JobInfo } from '../../drivers-containers/abstract/run-driver';
 import { label_strings } from '../../constants';
 import { StackConfiguration } from '../../config/stacks/abstract/stack-configuration';
-import { bindProjectRoot, mountFileVolume } from '../../functions/config-functions';
+import { addX11Local, bindProjectRoot, mountFileVolume } from '../../functions/config-functions';
 import { ShellCommand } from '../../shell-command';
 import { DockerCliRunDriver } from '../../drivers-containers/docker/docker-cli-run-driver';
 import { DockerSocketRunDriver } from '../../drivers-containers/docker/docker-socket-run-driver';
@@ -298,6 +299,16 @@ export class LocalJobManager extends GenericJobManager
     if ( isNaN(parseInt(chown_id)) )
         return undefined
     return chown_id
+  }
+
+  protected configureX11(job_configuration: JobConfiguration<StackConfiguration<any>>) : ValidatedOutput<undefined>
+  {
+    const platform = os.platform()
+    return addX11Local(job_configuration, {
+        "platform": platform, 
+        "shell": this.shell, 
+        "user": (platform !== "darwin") ? this.getContainerUser(job_configuration) : undefined // no need to get username on mac, since host.docker.internal:X is used
+    })
   }
 
 }

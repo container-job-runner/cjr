@@ -16,6 +16,7 @@ import { GenericJobManager } from '../abstract/generic-job-manager';
 import { PathTools } from '../../fileio/path-tools';
 import { trim } from '../../functions/misc-functions';
 import { PodmanCliRunDriver } from '../../drivers-containers/podman/podman-cli-run-driver';
+import { addX11Ssh } from '../../functions/config-functions';
 
 // ========================================================================
 // A Job Manager for remote resources that transfers files to host with 
@@ -571,5 +572,71 @@ export class RemoteSshJobManager extends GenericJobManager
             "remote-project-root": j.labels?.[this.REMOTELABELS["REMOTE_PROJECT_ROOT"]] || "",
             "cached-project-root": j.labels?.[this.REMOTELABELS["CACHED_PROJECT_ROOT"]] || ""
         }}
+    }
+
+    protected configureX11(job_configuration: JobConfiguration<StackConfiguration<any>>) : ValidatedOutput<undefined>
+    {
+        let mode: "network-host" | "hostname-host"
+        let binds: undefined | { "x11-sockets": string}
+        let env: undefined | { DISPLAY : string }
+
+        switch ( job_configuration.stack_configuration.getFlag('ssh-x11-mode') ) 
+        {
+            case "export-tcp-socket": // Experimental
+                mode = "hostname-host"; 
+                ( { binds , env } = this.exportX11TCPSocket().value ); // Note: errors are currently ignored
+                break;
+            default:
+                mode = "network-host"
+        }
+                
+        return addX11Ssh(job_configuration, {
+            "platform": "linux",
+             "shell": this.shell, 
+             "mode": mode,
+             "host-user": this.options.resource.username,
+             "container-user": this.getContainerUser(job_configuration),
+             "binds": binds,
+             "env": env
+            })
+    }
+
+    // exportX11TCPSocket() this function exports the x11 tcp socket, created when running ssh with x11 forwarding, to a 
+    // unix socket. The approach uses the command socat and is based on:
+    //
+    //      https://blog.yadutaf.fr/2017/09/10/running-a-graphical-app-in-a-docker-container-on-a-remote-server/
+    //
+    // IMPORTANT: This function is experimental and currently only allow one single command to run using x11
+    //            ( the socket presently terminates after a connection ends; adding fork to the socat command
+    //              partially solves the issue, however problems occur when closing window)
+    
+    private exportX11TCPSocket() : ValidatedOutput<{ "binds" : { "x11-sockets": string} | undefined , "env" : {DISPLAY : string} | undefined }>
+    {
+        const result = new ValidatedOutput<{ "binds" : { "x11-sockets": string} | undefined , "env" : {DISPLAY : string} | undefined }>(true, { "binds" : undefined , "env" : undefined })
+        
+        // -- create socket directory -----------------------------------------
+        const sockets_dir = path.posix.join(this.remoteWorkDirectory(), "tmp", "X11-unix")
+        const mkdir_request = this.shell.exec('mkdir', {p : {}}, [ sockets_dir ])
+        if ( ! mkdir_request.success ) return result.absorb(mkdir_request)
+        result.value.binds = { "x11-sockets" : sockets_dir } 
+        
+        // -- extract display number ------------------------------------------
+        const echo_request = this.shell.output('echo $DISPLAY')
+        if ( ! echo_request.success ) return result.absorb(echo_request)
+        const display_number = parseInt(echo_request.value.match(/(?<=\S:)\d+(?=.\d+)/)?.pop() || "") // assume format localhost:\d.\d
+        if ( isNaN(display_number) ) return result.pushError('Failed to extract X11 display port')
+
+        // -- export x11 TCP connection to a unix socket ----------------------
+        const raw_command = this.shell.shell.commandString(
+            'socat', {}, [
+                `TCP4:localhost:${6000 + display_number}`,
+                `UNIX-LISTEN:${path.posix.join(sockets_dir, `X${display_number}`)},unlink-early` // Note: option ,fork allows for multiple connections, but issues occur when closing window
+            ]
+        )
+        const socat_request = this.shell.execAsync(`${raw_command}`, {}, [])
+        if( ! socat_request.success ) return result.absorb(socat_request)
+        result.value.env = { "DISPLAY" : `:${display_number}` }
+        
+        return result
     }
 }
