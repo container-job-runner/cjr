@@ -23,11 +23,11 @@ export default class Shell extends ServiceCommand {
     "working-directory": flags.string({default: process.cwd(), description: 'cli will behave as if it was called from the specified directory'}),
     "build-mode":  flags.string({default: "reuse-image", description: 'specify how to build stack. Options include "reuse-image", "cached", "no-cache", "cached,pull", and "no-cache,pull"'})
   }
-  static strict = true;
+  static strict = false;
 
   async run()
   {
-    const {flags} = this.parse(Shell)
+    const { flags, argv } = this.parse(Shell)
 
     // -- check x11 user settings ----------------------------------------------
     if(flags['x11']) await initX11({
@@ -53,7 +53,7 @@ export default class Shell extends ServiceCommand {
     // -- run basic job --------------------------------------------------------
     const {job, job_data} = this.runSimpleJob(
       all_flags,
-      [this.settings.get("default-container-shell")]
+      this.jobCommand(argv)
     )
     printValidatedOutput(job_data)
     printValidatedOutput(job)
@@ -69,6 +69,13 @@ export default class Shell extends ServiceCommand {
         )
     if( ! local_job )
         job_data.value.job_manager.container_drivers.runner.jobDelete([job.value.id]) // faster than job_manager.delete since this does not get job info
+  }
+
+  jobCommand(args: string[])
+  {
+    const cmd = [this.settings.get("default-container-shell")]
+    if(args.length > 0) cmd.push('-c', ... args)
+    return cmd
   }
 
 }
