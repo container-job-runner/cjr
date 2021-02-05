@@ -157,7 +157,8 @@ export abstract class JobCommand extends BasicCommand
         "project-root-file-access":  (flags['file-access'] as "volume"|"shared"),
         "project-root": flags["project-root"] || "",
         "x11": flags["x11"],
-        "cwd": flags['working-directory']
+        "cwd": flags['working-directory'],
+        "quiet": flags.quiet || undefined
       }
   }
 
