@@ -150,7 +150,7 @@ export class DockerSocketRunDriver extends RunDriver
   }
 
   // NOTE: presently does not support auto removal for async jobs
-  jobStart(configuration: DockerJobConfiguration, stdio:"inherit"|"pipe"): ValidatedOutput<NewJobInfo>
+  jobStart(configuration: DockerJobConfiguration, stdio: "inherit"|"pipe"|"ignore"): ValidatedOutput<NewJobInfo>
   {
     const failure_response = {id: "", "exit-code": 0, output: "", error: ""}
     configuration.addLabel("runner", cli_name) // add mandatory label
@@ -176,7 +176,7 @@ export class DockerSocketRunDriver extends RunDriver
       const command = `${this.base_command} start`;
       const args: Array<string> = [id]
       const flags = (configuration.synchronous) ? {attach: {}, interactive: {}} : {}
-      const shell_options = {stdio: (stdio == "pipe") ? "pipe" : "inherit"}
+      const shell_options = { "stdio": stdio }
       const exec_result = this.shell.exec(command, flags, args, shell_options)
 
       if(configuration.remove_on_exit)
@@ -242,7 +242,7 @@ export class DockerSocketRunDriver extends RunDriver
     )
   }
 
-  jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  jobExec(id: string, configuration: ExecConfiguration, stdio: "inherit"|"pipe"|"ignore") : ValidatedOutput<NewJobInfo>
   {
     if(configuration.synchronous) // -- use docker cli -------------------------
     {
@@ -254,7 +254,7 @@ export class DockerSocketRunDriver extends RunDriver
         'i': (stdio === "pipe") ? undefined : {} // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will cause problems for programs that use TTY since -t flag is active
       })
       const args = [id].concat(configuration.command)
-      const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
+      const shell_options = { "stdio": stdio }
       const result = this.shell.exec(command, flags, args, shell_options)
 
       return new ValidatedOutput(true, {

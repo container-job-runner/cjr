@@ -47,7 +47,7 @@ export class DockerCliRunDriver extends RunDriver
     if(options.rootfull) this.base_command = `sudo ${this.base_command}`
   }
 
-  jobStart(job_configuration: DockerJobConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  jobStart(job_configuration: DockerJobConfiguration, stdio: "inherit"|"pipe"|"ignore") : ValidatedOutput<NewJobInfo>
   {
     const failure_value:NewJobInfo = {"id":"", "output": "", "error": "", "exit-code": 1};
     if(!(job_configuration instanceof DockerJobConfiguration))
@@ -69,7 +69,7 @@ export class DockerCliRunDriver extends RunDriver
     const command = `${this.base_command} start`;
     const args: Array<string> = [container_id]
     const flags = (job_configuration.synchronous) ? {attach: {}, interactive: {}} : {}
-    const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
+    const shell_options = { "stdio": stdio }
     const shell_output = this.shell.exec(command, flags, args, shell_options)
 
     return new ValidatedOutput(true, {
@@ -143,7 +143,7 @@ export class DockerCliRunDriver extends RunDriver
       .absorb(this.shell.exec(command, flags, args))
   }
 
-  jobExec(id: string, configuration: ExecConfiguration, stdio:"inherit"|"pipe") : ValidatedOutput<NewJobInfo>
+  jobExec(id: string, configuration: ExecConfiguration, stdio: "inherit"|"pipe"|"ignore") : ValidatedOutput<NewJobInfo>
   {
     const command = `${this.base_command} exec`
       const flags = ShellCommand.removeEmptyFlags({
@@ -153,7 +153,7 @@ export class DockerCliRunDriver extends RunDriver
         'i': (stdio === "pipe") ? undefined : {} // only enable interactive flag if stdio is inherited. The node shell with stdio='pipe' is not tty and the error 'the input device is not TTY' will cause problems for programs that use TTY since -t flag is active
       })
     const args = [id].concat(configuration.command)
-    const shell_options = (stdio === "pipe") ? {stdio: "pipe"} : {stdio: "inherit"}
+    const shell_options = { "stdio": stdio }
     const result = this.shell.exec(command, flags, args, shell_options)
 
     return new ValidatedOutput(true, {
