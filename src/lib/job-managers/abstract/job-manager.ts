@@ -29,6 +29,7 @@ export type JobRunOptions = {
   "project-root"?: string
   "cwd"?: string
   "x11"?: boolean
+  "quiet"?: boolean
 }
 
 export type JobExecOptions = {

@@ -37,7 +37,7 @@ export abstract class GenericJobManager extends JobManager
     this.printStatus({"header": this.STATUSHEADERS.START})
     const job = this.container_drivers.runner.jobStart(
       job_configuration,
-      job_configuration.synchronous ? 'inherit' : 'pipe'
+      this.jobStdio(job_configuration, job_options)
     )
     // -- add warning if stderr is not empty ---------------------------------
     if(job.value.error)
@@ -79,7 +79,7 @@ export abstract class GenericJobManager extends JobManager
     if(!file_config.success)
       return failed_result.absorb(file_config)
     
-    return this.container_drivers.runner.jobStart(job_configuration, job_configuration.synchronous ? 'inherit' : 'pipe')
+    return this.container_drivers.runner.jobStart(job_configuration, this.jobStdio(job_configuration))
   }
 
   protected abstract configureExecFileMounts(job_configuration: JobConfiguration<StackConfiguration<any>>, exec_options: JobExecOptions, parent_job: JobInfo) : ValidatedOutput<undefined>
@@ -288,6 +288,15 @@ export abstract class GenericJobManager extends JobManager
     const job_request = this.container_drivers.runner.jobStart(njc, "pipe");
     if( ! job_request.success ) return new ValidatedOutput(false, "")
     return new ValidatedOutput(true, job_request.value.output.trim())
+  }
+
+  protected jobStdio ( job_configuration: JobConfiguration<StackConfiguration<any>>, job_options?: JobRunOptions) : "inherit"|"pipe"|"ignore"
+  {
+    if(job_options?.quiet)
+        return "ignore"
+    if( job_configuration.synchronous )
+        return "inherit"
+    return "pipe"
   }
 
 }
