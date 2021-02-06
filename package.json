@@ -16,6 +16,7 @@
     "@types/js-yaml": "^3.12.1",
     "@types/shell-quote": "^1.6.1",
     "ajv": "^6.10.2",
+    "axios": "^0.21.1",
     "chalk": "^3.0.0",
     "fs-extra": "^8.1.0",
     "inquirer": "^7.0.3",
