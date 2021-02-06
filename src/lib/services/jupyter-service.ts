@@ -12,7 +12,7 @@ export type JupyterServiceOption = {
 export class JupyterService extends GenericAbstractService
 {
     READY_CONFIG = {
-        "command": ['jupyter', 'notebook', 'list'],   
+        "command": ['exit'],  // command is set dynamically in constructor 
         "regex-string": 'http:\\/\\/\\S+:\\S*'   // matches http://X:X and is equivalent to /http:\/\/\S+:S*/ 
     }
     
@@ -25,6 +25,11 @@ export class JupyterService extends GenericAbstractService
         super();
         this.job_manager = job_manager
         this.jupyter_options = jupyter_options
+
+        if(jupyter_options.interface == "lab") // supports both Jupyter 2.0 and 3.0
+            this.READY_CONFIG.command = ['sh', '-c', 'if jupyter lab --version | grep -qe "^2." ; then jupyter notebook list ; else jupyter lab list ; fi'] 
+        else
+            this.READY_CONFIG.command = ['jupyter', 'notebook', 'list']
     }
 
     protected startCommand(job_configuration: JobConfiguration<any>, options: ServiceOptions): string[] 
