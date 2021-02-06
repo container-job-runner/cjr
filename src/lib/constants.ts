@@ -76,8 +76,10 @@ export const subdirectories =
 }
 
 // functions for quickly accessing stack directories
-export const stackNewSnapshotPath = (stack_path: string, unixtime: string|number) => path.join(stack_path, subdirectories.stack.snapshots, `image-${unixtime}.tar.gz`)
-export const stackArchiveImagePath = (stack_path: string, extension: string = "tar.gz") => path.join(stack_path, subdirectories.stack.build, `image.${extension}`)
+export const stackNewSnapshotPath   = (stack_path: string, unixtime: string|number) => path.join(stack_path, subdirectories.stack.snapshots, `image-${unixtime}.tar.gz`)
+export const stackArchiveImagePath  = (stack_path: string, extension: "tar.gz"|"tar" = "tar.gz") => path.join(stack_path, subdirectories.stack.build, `image.${extension}`)
+export const isArchiveImageFilename = (filename: string) => /^image-\d+\.tar(\.gz)?$/.test(filename)
+export const extractArchiveImageTag = (filename: string) => filename.match(/(?<=^image-)\d+/)?.pop() || ""
 
 // default cli options that are stored in cli settings json file
 export const defaultCLISettings = (config_dir:string, data_dir:string, cache_dir: string) =>
