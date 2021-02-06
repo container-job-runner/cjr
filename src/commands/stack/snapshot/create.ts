@@ -1,14 +1,16 @@
 import { flags } from '@oclif/command'
-import { printValidatedOutput } from '../../lib/functions/misc-functions'
-import { initX11, promptUserToSnapshot, augmentImagePushParameters, snapshotToRegistry, snapshotToArchive } from '../../lib/functions/cli-functions'
-import { JobCommand } from '../../lib/commands/job-command'
-import { StackConfiguration } from '../../lib/config/stacks/abstract/stack-configuration'
-import { ContainerDrivers, OutputOptions } from '../../lib/job-managers/abstract/job-manager'
-import { ValidatedOutput } from '../../lib/validated-output'
-import { DockerStackConfiguration } from '../../lib/config/stacks/docker/docker-stack-configuration'
+import { JobCommand } from '../../../lib/commands/job-command';
+import { StackConfiguration } from '../../../lib/config/stacks/abstract/stack-configuration';
+import { DockerStackConfiguration } from '../../../lib/config/stacks/docker/docker-stack-configuration';
+import { augmentImagePushParameters, initX11, promptUserToSnapshot } from '../../../lib/functions/cli-functions';
+import { printValidatedOutput } from '../../../lib/functions/misc-functions';
+import { ContainerDrivers } from '../../../lib/job-managers/abstract/job-manager';
+import { ArchiveSnapshot } from '../../../lib/snapshots/archive-snapshot';
+import { RegistrySnapshot } from '../../../lib/snapshots/registry-snapshot';
+import { ValidatedOutput } from '../../../lib/validated-output';
 
-export default class Snapshot extends JobCommand {
-  static description = 'Start an interactive shell for development on localhost.'
+export default class SnapshotCreate extends JobCommand {
+  static description = 'create a new stack snapshot.'
   static args = [{name: 'stack'}]
   static flags = {
     "stack": flags.string({env: 'CJR_STACK'}),
@@ -29,12 +31,14 @@ export default class Snapshot extends JobCommand {
 
   async run()
   {
-    const { flags, args } = this.parse(Snapshot)
-    flags["stack"] = args?.['stack'] || flags["stack"]
+    const { flags, args } = this.parse(SnapshotCreate)
+    if( args["stack"] ) flags["stack"] = args["stack"]
     this.augmentFlagsWithProjectSettings(flags, {"stack": true, "stacks-dir": false})
 
-    // -- verify that stack supports snapshots ----------------------------------
+    // -- verify that stack supports snapshots ---------------------------------
     const load = this.createStack( { ... flags, ... { quiet: false } })
+    if ( ! load.success ) return printValidatedOutput(load)
+    
     const snapshot_options = load.value.stack_configuration.getSnapshotOptions()
     if(snapshot_options == undefined)
         this.error(`The stack ${flags['stack']} does not support snapshots`)
@@ -57,21 +61,25 @@ export default class Snapshot extends JobCommand {
       { ... flags, ... shell_flags},
       [this.settings.get("default-container-shell")]
     )
-    if(job.success && job_data.success) {
+
+    if( ! job.success && ! job_data.success ) {
+        printValidatedOutput(job_data)
+        printValidatedOutput(job)
+        return;
+    }
+
+    if( ( snapshot_options['mode'] !== "prompt" ) || (await promptUserToSnapshot(this.settings.get('interactive')))) {
       const snapshot = await this.updateSnapshot(
         job.value.id,
         job_data.value.stack_configuration,
-        job_data.value.job_manager.container_drivers,
-        job_data.value.job_manager.output_options,
+        job_data.value.job_manager.container_drivers
       )
       printValidatedOutput(snapshot)
       job_data.value.job_manager.container_drivers.runner.jobDelete([job.value.id])
     }
-    printValidatedOutput(job_data)
-    printValidatedOutput(job)
   }
 
-  async updateSnapshot(job_id: string, job_stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers, output_options: OutputOptions) : Promise<ValidatedOutput<undefined>>
+  async updateSnapshot(job_id: string, job_stack_configuration: StackConfiguration<any>, drivers: ContainerDrivers) : Promise<ValidatedOutput<undefined>>
   {
     const failure = new ValidatedOutput(false, undefined)
     
@@ -81,21 +89,20 @@ export default class Snapshot extends JobCommand {
     
     const snapshot_options = job_stack_configuration.getSnapshotOptions();
 
-    if(snapshot_options === undefined)
-      return failure
-
-    if(snapshot_options['mode'] === "prompt" && !(await promptUserToSnapshot(this.settings.get('interactive'))))
-      return new ValidatedOutput(true, undefined)
-
-    if(snapshot_options["storage-location"] == "registry")
+    if(snapshot_options?.["storage-location"] == "registry")
     {
-        const registry_options = snapshot_options.auth
-        await augmentImagePushParameters(registry_options)
-        return snapshotToRegistry(job_id, job_stack_configuration, drivers, snapshot_options)
+        await augmentImagePushParameters(snapshot_options.auth)
+        return await (new RegistrySnapshot(drivers, true)).snapshot({
+            "job-id": job_id,
+            "registry-options": snapshot_options
+        })
     }
-    else if(snapshot_options["storage-location"] == "archive")
+    else if(snapshot_options?.["storage-location"] == "archive")
     {
-        return snapshotToArchive(job_id, job_stack_configuration, drivers);
+        return await (new ArchiveSnapshot(drivers, true)).snapshot({
+            "job-id": job_id,
+            "stack-path": job_stack_configuration.stack_path || ""
+        })
     }
 
     return failure
