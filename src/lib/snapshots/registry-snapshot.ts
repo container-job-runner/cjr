@@ -15,25 +15,45 @@ export class RegistrySnapshot extends AbstractSnapshot
         }
     }
 
-    async snapshot(options : { "job-id": string, "registry-options": DockerRegistryStackSnapshotOptions}) : Promise<ValidatedOutput<undefined>>
+    async snapshotFromJob(options : { "job-id": string, "registry-options": DockerRegistryStackSnapshotOptions}) : Promise<ValidatedOutput<undefined>>
+    {
+        return this.snapshotGeneric(
+            options["registry-options"],
+            (image: string) => this.container_drivers.runner.jobToImage(options["job-id"], image)
+        )
+    }
+
+    async snapshotFromImage(options : { "image": string, "registry-options": DockerRegistryStackSnapshotOptions}) : Promise<ValidatedOutput<undefined>>
+    {
+        return this.snapshotGeneric(
+            options["registry-options"],
+            (image: string) => {
+                const stack_configuration = new DockerStackConfiguration()
+                stack_configuration.setImage(options.image)
+                return this.container_drivers.builder.tagImage(stack_configuration, image)
+            }
+        )
+    }
+
+    private snapshotGeneric(registry_options: DockerRegistryStackSnapshotOptions, createSnapshotImage: (image: string) => ValidatedOutput<any>) : ValidatedOutput<undefined>
     {
         const result = new ValidatedOutput(true, undefined)
         
         const sc_time = new DockerStackConfiguration()
-        sc_time.setImage(`${options["registry-options"].auth.username}/${options["registry-options"].repository}`)
+        sc_time.setImage(`${registry_options.auth.username}/${registry_options.repository}`)
         sc_time.setTag(`${Date.now()}`)
         
-        const sc_latest = sc_time.copy()
-        sc_time.setTag(`${constants.SNAPSHOT_LATEST_TAG}`)
+        const sc_latest = sc_time.copy() // Note: image does not yet exist at this point
+        sc_latest.setTag(`${constants.SNAPSHOT_LATEST_TAG}`)
 
-        // -- commit container -------------------------------------------------
+        // -- create snapshot image --------------------------------------------
         this.printStatusHeader(`Creating ${sc_time.getImage()}`);
-        result.absorb(this.container_drivers.runner.jobToImage(options["job-id"], sc_time.getImage()))
+        result.absorb(createSnapshotImage(sc_time.getImage()))
         if(!result.success) return result
         
         // -- push image -------------------------------------------------------
         this.printStatusHeader(`Pushing ${sc_time.getImage()}`);
-        result.absorb(this.container_drivers.builder.pushImage(sc_time, options["registry-options"].auth, "inherit"))
+        result.absorb(this.container_drivers.builder.pushImage(sc_time, registry_options.auth, "inherit"))
         if(!result.success) return result
         
         // -- update latest tag ------------------------------------------------
@@ -41,7 +61,7 @@ export class RegistrySnapshot extends AbstractSnapshot
         result.absorb(this.container_drivers.builder.tagImage(sc_time, sc_latest.getImage()))
         if(!result.success) return result
         
-        result.absorb(this.container_drivers.builder.pushImage(sc_latest, options["registry-options"].auth, "inherit"))
+        result.absorb(this.container_drivers.builder.pushImage(sc_latest, registry_options.auth, "inherit"))
         return result
     }
 
@@ -121,7 +141,8 @@ export class RegistrySnapshot extends AbstractSnapshot
             const token_response = await axios.get(`https://hub.docker.com/v2/repositories/${repository}/tags/`, options)
             return new ValidatedOutput(true, token_response.data.results
                 .map((d:constants.Dictionary) => d.name)
-                .filter((s:string) => /^\d+$/.test(s)) as string[]
+                .filter((s:string) => /^\d+$/.test(s))
+                .sort()  as string[]
             )            
         }
         catch( error ) {

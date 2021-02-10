@@ -14,7 +14,8 @@ export abstract class AbstractSnapshot
     }
     
     // creates new snapshot
-    abstract async snapshot( options : { "job-id" : string } ) : Promise<ValidatedOutput<undefined>>
+    abstract async snapshotFromJob( options : { "job-id" : string } ) : Promise<ValidatedOutput<undefined>>
+    abstract async snapshotFromImage( options : { "image" : string } ) : Promise<ValidatedOutput<undefined>>
     
     // lists current snapshots   
     abstract async list( ... args: any ) : Promise<ValidatedOutput<String[]>>
