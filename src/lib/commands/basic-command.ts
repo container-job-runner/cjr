@@ -25,6 +25,7 @@ import { RemoteSshJobManager, RemoteSshJobManagerUserOptions } from '../job-mana
 import { SshShellCommand } from '../ssh-shell-command'
 
 export type ProjectSettingsFlags = ps_prop_keys | "profile"
+export type InitStackFlags = {"stack"?: string, "stacks-dir"?: string, "config-files"?: Array<string>}
 
 export abstract class BasicCommand extends Command
 {
@@ -132,7 +133,7 @@ export abstract class BasicCommand extends Command
   // if flags['stack'] exists, load from this location
   // if stack named flags['stack'] exists in stacks-dir, then load from stacks-path/flags['stack']
   // otherwise assume stack is referencing an image
-  initStackConfiguration(flags: {"stack"?: string, "stacks-dir"?: string, "config-files"?: Array<string>}, configurations: Configurations, shell: ShellCommand|SshShellCommand) : ValidatedOutput<StackConfiguration<any>>
+  initStackConfiguration(flags: InitStackFlags, configurations: Configurations, shell: ShellCommand|SshShellCommand) : ValidatedOutput<StackConfiguration<any>>
   {
     const stack_configuration = configurations.stack()
     const result = new ValidatedOutput(true, stack_configuration)

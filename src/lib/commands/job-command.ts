@@ -1,5 +1,5 @@
 import chalk = require('chalk')
-import { BasicCommand } from './basic-command'
+import { BasicCommand, InitStackFlags } from './basic-command'
 import { updateStackConfig, updateJobConfig } from '../functions/config-functions'
 import { ValidatedOutput } from '../validated-output'
 import { JobRunOptions, JobExecOptions, JobManager } from '../job-managers/abstract/job-manager'
@@ -42,6 +42,14 @@ export type CLIJobFlags = {
     "no-copy"?:boolean
     "visible-stacks"?: Array<string>
 }
+
+export type CreateStackFlags = {
+     "resource" ?: string, 
+     "verbose": boolean, 
+     "quiet": boolean, 
+     "debug": boolean, 
+     "port"?: Array<string>
+    } & InitStackFlags
 
 type StackData = {
   "job_manager": JobManager  
@@ -98,7 +106,8 @@ export abstract class JobCommand extends BasicCommand
   }
 
   // generates a StackConfiguration based on cli flags
-  createStack(flags: CLIJobFlags) : ValidatedOutput<StackData>
+  
+  createStack( flags: CreateStackFlags ) : ValidatedOutput<StackData>
   {
     // -- init Container SDK components ----------------------------------------
     const job_manager = this.newJobManager(
