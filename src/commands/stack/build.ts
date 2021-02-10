@@ -1,8 +1,8 @@
 import { flags } from '@oclif/command'
 import { printValidatedOutput } from '../../lib/functions/misc-functions'
-import { BasicCommand } from '../../lib/commands/basic-command'
+import { JobCommand } from '../../lib/commands/job-command'
 
-export default class Build extends BasicCommand {
+export default class Build extends JobCommand {
   static description = 'Manually build an image for a stack.'
   static args = [{name: 'stack'}]
   static flags = {
@@ -17,7 +17,7 @@ export default class Build extends BasicCommand {
     "profile": flags.string({multiple: true, description: "set stack profile"}),
     "quiet": flags.boolean({default: false, char: 'q'})
   }
-  static strict = true;
+  static strict = false;
 
   async run()
   {
@@ -27,24 +27,18 @@ export default class Build extends BasicCommand {
     this.augmentFlagsWithProfile(flags)
 
     const stack_list = (flags.stack) ? [ flags.stack ] : []
-    const job_manager = this.newJobManager(flags['resource'] || "localhost", {verbose: true, quiet: flags.quiet, debug: flags.debug})
+    const build_modes: string[] = []
+    if( flags["pull"] ) build_modes.push("pull")
+    if( flags["no-cache"] ) build_modes.push("no-cache")
+    const build_mode = build_modes.join(",");
+
     stack_list.map((stack_name:string) => {
-      const init_stack = this.initStackConfiguration({
-        "stack": stack_name,
-        "config-files": flags["config-files"],
-        "stacks-dir": flags["stacks-dir"],
-        },
-        job_manager.configurations,
-        job_manager.shell
-      )
-      if(!init_stack.success)
-        return printValidatedOutput(init_stack)
-      const stack_configuration = init_stack.value
-      if(flags["pull"]) stack_configuration.addBuildFlag('pull')
-      if(flags["no-cache"]) stack_configuration.addBuildFlag('no-cache')
-      printValidatedOutput(
-        job_manager.build(stack_configuration, {"reuse-image": false, verbose: true})
-      )
+        const stack_data = this.createStack({ ... flags, ... { verbose: true, stack: stack_name, 'build-mode' : build_mode }})
+        if( ! stack_data.success ) return printValidatedOutput(stack_data)
+        const { job_manager, stack_configuration } = stack_data.value
+        printValidatedOutput(
+             job_manager.build(stack_configuration, {"reuse-image": false, verbose: true})
+        )
     });
   }
 
