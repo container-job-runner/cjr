@@ -6,7 +6,7 @@ import { ValidatedOutput } from '../../lib/validated-output'
 import { ShellCommand } from '../../lib/shell-command'
 
 export default class RMI extends BasicCommand {
-  static description = 'Delete an image one or more stacks.'
+  static description = 'Delete an image for one or more stacks.'
   static args = [{name:'stack'}]
   static flags = {
     "stack": flags.string({env: 'CJR_STACK', multiple: true}),
