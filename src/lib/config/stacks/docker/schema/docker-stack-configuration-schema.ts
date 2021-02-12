@@ -146,12 +146,17 @@ export const docker_stack_configuration_schema = {
            "auth": {
                "$ref": "#/definitions/registry-auth"
            },
+           "source": {
+               "type": "string",
+               "pattern": "^(dockerfile)|(container)"
+           }
        },
        "required": [
           "storage-location", 
           "repository",
           "mode",
-          "auth"
+          "auth",
+          "source"
         ],
        "additionalProperties": false
     },
@@ -165,11 +170,16 @@ export const docker_stack_configuration_schema = {
           "mode" : {
              "type": "string",
              "pattern": "^(always)|(prompt)$"
+           },
+           "source": {
+               "type": "string",
+               "pattern": "^(dockerfile)|(container)"
            }
        },
        "required": [
           "storage-location", 
-          "mode"
+          "mode",
+          "source"
        ],
        "additionalProperties": false
     },
