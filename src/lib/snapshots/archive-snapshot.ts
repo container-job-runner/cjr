@@ -72,7 +72,9 @@ export class ArchiveSnapshot extends AbstractSnapshot
         if(!result.success) return result
     
         // -- update symlink to latest -----------------------------------------
-        fs.unlinkSync(stack_image_path)
+        if( fs.existsSync(stack_image_path) ) 
+            fs.unlinkSync(stack_image_path)
+        
         fs.linkSync(snapshot_path, stack_image_path)
 
         // -- rebuild original stack -------------------------------------------
