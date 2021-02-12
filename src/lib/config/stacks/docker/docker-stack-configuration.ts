@@ -187,12 +187,12 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
     if(!/^[a-zA-z0-9-_\.]+$/.test(this.stackPathToName(stack_path))) // exit if stack direcotry has invalid characters
       return failure.pushError(this.ERRORSTRINGS["INVALID_NAME"](stack_path))
 
-    if(FileTools.existsFile(path.join(stack_path, this.build_context, 'Dockerfile')))
-      return new ValidatedOutput(true, "dockerfile")
-    else if(FileTools.existsFile(path.join(stack_path, this.build_context, `${this.archive_filename}.tar.gz`)))
+    if(FileTools.existsFile(path.join(stack_path, this.build_context, `${this.archive_filename}.tar.gz`)))
       return new ValidatedOutput(true, "tar.gz")
     else if(FileTools.existsFile(path.join(stack_path, this.build_context, `${this.archive_filename}.tar`)))
       return new ValidatedOutput(true, "tar")
+    else if(FileTools.existsFile(path.join(stack_path, this.build_context, 'Dockerfile'))) // Remark: prioritize archived images over Dockerfile to allow for snapshottable achive-based stacks
+      return new ValidatedOutput(true, "dockerfile")
     else if(FileTools.existsFile(path.join(stack_path, this.config_filename)))
       return new ValidatedOutput(true, "config")
     else
