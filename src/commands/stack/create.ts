@@ -128,6 +128,7 @@ export default class Create extends BasicCommand {
      
     const configuration = new DockerStackConfiguration()
     configuration.setImage(options_request.value.image)
+    configuration.addBuildFlag("pull")
     if(options_request.value.auth)
         configuration.setBuildAuth({
             "username": options_request.value.auth.username,
@@ -499,6 +500,7 @@ export default class Create extends BasicCommand {
       "repository": options.repository,
       "source": options.source
     })
+    latest_configuration.addBuildFlag("pull")
     if(options.private)
         latest_configuration.setBuildAuth(options.auth)
     
