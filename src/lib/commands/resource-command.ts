@@ -26,7 +26,7 @@ export abstract class ResourceCommand extends JobCommand
     {
       const name = `r${id}_${new Date().getTime()}`
       const keyfile_copy_path = path.join(this.localKeyDir(), name)
-      fs.ensureDir(this.localKeyDir())
+      fs.ensureDirSync(this.localKeyDir())
       fs.copyFileSync(path.resolve(key_path), keyfile_copy_path)
       fs.chmodSync(keyfile_copy_path, '600')
       return keyfile_copy_path
