@@ -159,7 +159,7 @@ export default class SnapshotCreate extends JobCommand {
         else if( snapshot_options?.["storage-location"] == "archive" )
         {
             return await (new ArchiveSnapshot(job_manager.container_drivers, true)).snapshotFromImage({
-                    "image": stack_configuration.getImage(),
+                    "image": build_configuration.getImage(),
                     "stack-path": stack_configuration.stack_path || ""
                 }) 
         }
