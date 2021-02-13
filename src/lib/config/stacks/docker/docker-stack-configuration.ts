@@ -164,6 +164,8 @@ export class DockerStackConfiguration extends StackConfiguration<DockerStackConf
       return failure.absorb(result)
     if(stk_type.value === 'config' && result.value?.build?.image === undefined)
       return failure.pushError(this.ERRORSTRINGS.CONFIG_STACK_MISSING_IMAGE(stack_path))
+    if(result.value.build?.image && stk_type.value !== 'config')
+        stk_type.value = 'config'
 
     // -- set stack properties -----------------------------------------------
     this.stack_type = stk_type.value
