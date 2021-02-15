@@ -74,7 +74,7 @@ export default class Start extends ServiceCommand {
     this.serviceOnReady(flags, {
         "exec": {
             "command": this.settings.get('on-http-start'),
-            "environment": urlEnvironmentObject( access_url, { SERVER: "theia" } )
+            "environment": urlEnvironmentObject( access_url, { SERVER: "jupyter" } )
         },
         "access-url": access_url
     }) 
