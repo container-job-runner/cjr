@@ -22,8 +22,9 @@ export class PathTools
     return false
   }
 
-  static ischild(parent: Array<string>, child: Array<string>) // returns true of
+  static ischild(parent: Array<string>, child: Array<string>, strict_subchild: boolean = false) // returns true of
   {
+    if(strict_subchild && child.length <= parent.length) return false
     if(child.length < parent.length) return false;
     for(var i = 0; i < parent.length; i ++)
     {
