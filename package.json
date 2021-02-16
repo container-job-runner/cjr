@@ -1,27 +1,26 @@
 {
   "name": "cjr",
-  "description": "Runs jobs in linux containers",
+  "description": "Run jobs and develop in linux containers",
   "version": "0.6.0",
   "author": "buvoli",
   "bin": {
     "cjr": "./bin/run"
   },
-  "bugs": "hhttps://github.com/container-job-runner/cjr/issues",
+  "bugs": "https://github.com/container-job-runner/cjr/issues",
   "dependencies": {
     "@oclif/command": "^1.5.19",
     "@oclif/config": "^1.13.3",
+    "@oclif/plugin-autocomplete": "^0.3.0",
     "@oclif/plugin-help": "^2.2.3",
     "@types/fs-extra": "^8.0.1",
     "@types/inquirer": "^6.5.0",
     "@types/js-yaml": "^3.12.1",
-    "@types/shell-quote": "^1.6.1",
     "ajv": "^6.10.2",
     "axios": "^0.21.1",
     "chalk": "^3.0.0",
     "fs-extra": "^8.1.0",
     "inquirer": "^7.0.3",
     "js-yaml": "^3.13.1",
-    "shell-quote": "^1.7.2",
     "tslib": "^1.10.0"
   },
   "devDependencies": {
@@ -50,7 +49,8 @@
     "commands": "./lib/commands",
     "bin": "cjr",
     "plugins": [
-      "@oclif/plugin-help"
+      "@oclif/plugin-help",
+      "@oclif/plugin-autocomplete"
     ],
     "topics": {
       "config": {
