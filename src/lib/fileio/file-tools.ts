@@ -51,17 +51,53 @@ export class FileTools
         "i": {value: `:${starting_port}-65535`, noequals: true}, // specify port range
         "n": {}, // inhibits the conversion of network numbers to host names
         "P": {}, // inhibits the conversion of port numbers to port names
-        "F": {value: 'n', noequals: true}  // produces output that is suitable for processing by another program
+        "F": {value: 'nT', noequals: true}  // produces output that is suitable for processing by another program (n adds internet address, T shows TCP connection info)
     }
     const output = shell.output(command, flags, [], {"timeout": timeout})
     if( ! output.success ) return []
     
     const row_splitter = /[\r\n]+/
-    const n_lines = output.value.split(row_splitter).filter((s:string) => /^n/.test(s)) // extract lines that start with n
+    const lines = output.value.split(row_splitter)
+    const ports = []
+
+    const pid_regex = /(?<=^p)\d+/
+    const port_regex = /^n/
+    const tst_regex = /^TST=(LISTEN|ESTABLISHED)/
+    const extractPort = (s: string) => {
+        const n = parseInt(
+            s.match(/(?<=:)\d+(?=->)/)?.pop() || // if forwarded connections take host port
+            s.match(/(?<=:)\d+$/)?.pop() || // if direct connections take port at end of string
+            "") 
+        if(! isNaN(n) && isFinite(n) && n > 0)
+            return n
+        return undefined
+    }
+
+    let valid_tst: boolean = false
+    let port:number|undefined = undefined
     
-    const extractPort = (s:string) => s.match(/(?<=:)\d+$/)?.pop() || ""
-    // return all valid ports
-    const ports = n_lines.map( (s:string) => parseInt(extractPort(s))).filter( ( n:number ) => ( ! isNaN(n) && isFinite(n) && n > 0 ) )
+    for( let i = 0; i <= lines.length; i ++) // assume that pid preceeds all other data fields
+    {
+        const line = lines[i]
+        
+        if( pid_regex.test(line) ) 
+        {
+            if( valid_tst && port !== undefined)
+                ports.push(port)
+                
+            // reset values for each new pid
+            valid_tst = false;
+            port = undefined
+        }
+        else if ( tst_regex.test(line) ) 
+            valid_tst = true
+        else if ( port_regex.test(line) ) 
+            port = extractPort(line)
+    }
+
+    if( valid_tst && port !== undefined)
+        ports.push(port)
+
     return [ ... new Set(ports) ]
   }
 
