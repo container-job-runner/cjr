@@ -197,7 +197,9 @@ export function addX11Local(job_configuration: JobConfiguration<StackConfigurati
     switch(platform)
     {
         case "linux" : // == LINUX =============================================
-            stack_configuration.addFlag("podman-security-opt", "label=disable") // special flag for podman to access /tmp/.X11-unix
+            const cur_security_opt = stack_configuration.getFlag("podman-security-opt") || stack_configuration.getFlag("security-opt")
+            const security_opt_prepend = (cur_security_opt) ? `${cur_security_opt} ` : "" // keep any existing flags
+            stack_configuration.addFlag("podman-security-opt", `${security_opt_prepend}label=disable`) // special flag for podman to access /tmp/.X11-unix
             result.absorb(
                 new ValidatedOutput( // set DISPLAY environment variable
                     stack_configuration.addEnvironmentVariable("DISPLAY", "$DISPLAY", true, shell),
