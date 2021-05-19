@@ -47,6 +47,7 @@ type DockerAPI_HostConfig =
   "Memory"?: number,
   "MemorySwap"?: number
   "Privileged"?: boolean
+  "SecurityOpt"?: string[]
 }
 
 type DockerAPI_Mount =
@@ -628,6 +629,13 @@ export class DockerSocketRunDriver extends RunDriver
     {
        if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
        create_object.HostConfig.Privileged = true
+    }
+    // -- Security Opt ---------------------------------------------------------
+    if(configuration.config.flags?.['docker-security-opt'] || configuration.config.flags?.['security-opt'] )
+    {
+        if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
+        const raw_value = configuration.config.flags["docker-security-opt"] || configuration.config.flags["security-opt"]
+        create_object.HostConfig.SecurityOpt = raw_value.split(/\s+/)
     }
     // -- Hostname -------------------------------------------------------------
     if(configuration.config.flags?.['hostname'])

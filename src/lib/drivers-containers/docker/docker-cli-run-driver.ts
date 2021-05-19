@@ -460,6 +460,9 @@ export class DockerCliRunDriver extends RunDriver
     {
         flags["privileged"] = {}
     }
+    if(run_object?.flags?.["docker-security-opt"] || run_object?.flags?.["security-opt"]) {
+      flags["security-opt"] = (run_object.flags["docker-security-opt"] || run_object.flags["security-opt"]).split(/\s+/)
+    }
     if(run_object?.flags?.['hostname'])
     {
         flags["hostname"] = run_object.flags["hostname"]

@@ -188,8 +188,8 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     if(run_object?.flags?.['podman-userns']) { // used for consistant file permissions
       flags["userns"] = run_object.flags['podman-userns']
     }
-    if(run_object?.flags?.["podman-security-opt"]) { // used for binding X11 directory
-      flags["security-opt"] = run_object.flags["podman-security-opt"]
+    if(run_object?.flags?.["podman-security-opt"]) {
+      flags["security-opt"] = run_object.flags["podman-security-opt"].split(/\s+/)
     }
     if(run_object?.flags?.['podman-privileged'] == "true") // specific privilaged only for podman
     {
