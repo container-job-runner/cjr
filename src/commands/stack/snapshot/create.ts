@@ -108,29 +108,39 @@ export default class SnapshotCreate extends JobCommand {
         if( ! job.success && ! job_data.success )
             return job.absorb(job_data)
 
+        let result: ValidatedOutput<undefined>
+        const container_drivers = job_data.value.job_manager.container_drivers
+        
         // -- exit if user discards snapshot ----------------------------------
         if( ( snapshot_options['mode'] === "prompt" ) && !( await promptUserToSnapshot(this.settings.get('interactive')) ) )
-            return new ValidatedOutput(true, undefined)
-
+        {
+            result = new ValidatedOutput(true, undefined)
+        }
         // -- update snapshot -------------------------------------------------
-        const container_drivers = job_data.value.job_manager.container_drivers
-        if( snapshot_options?.["storage-location"] === "registry" )
+        else if( snapshot_options?.["storage-location"] === "registry" )
         {
             await augmentImagePushParameters(snapshot_options.auth)
-                return await (new RegistrySnapshot(container_drivers, true)).snapshotFromJob({
-                    "job-id": job.value.id,
-                    "registry-options": snapshot_options
-                })   
+            result = await (new RegistrySnapshot(container_drivers, true)).snapshotFromJob({
+                "job-id": job.value.id,
+                "registry-options": snapshot_options
+            })
         }
         else if( snapshot_options?.["storage-location"] == "archive" )
         {
-            return await (new ArchiveSnapshot(container_drivers, true)).snapshotFromJob({
-                    "job-id": job.value.id,
-                    "stack-path": job_data.value.stack_configuration.stack_path || ""
-                }) 
+            result = await (new ArchiveSnapshot(container_drivers, true)).snapshotFromJob({
+                "job-id": job.value.id,
+                "stack-path": job_data.value.stack_configuration.stack_path || ""
+            })
+        }
+        else 
+        {
+            result = new ValidatedOutput(false, undefined, ["Stack has invalid snapshot options"])
         }
 
-        return new ValidatedOutput(false, undefined)
+        // -- delete job after snapshot ---------------------------------------
+        return result.absorb(
+            container_drivers.runner.jobDelete([job.value.id])
+        ) 
     }
 
     async snapshotFromDockerfile( stack_configuration: DockerStackConfiguration, job_manager: JobManager, flags: {'pull' ?: boolean, 'no-cache' ?: boolean} ) : Promise<ValidatedOutput<any>>
