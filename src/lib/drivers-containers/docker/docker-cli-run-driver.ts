@@ -467,6 +467,10 @@ export class DockerCliRunDriver extends RunDriver
     {
         flags["hostname"] = run_object.flags["hostname"]
     }
+    if(run_object?.flags?.['ipc'] || run_object?.flags?.['docker-ipc'])
+    {
+        flags["ipc"] = run_object.flags['docker-ipc'] || run_object.flags["ipc"]
+    }
   }
 
   protected addMountFlags(flags: Dictionary, run_object: DockerCreateOptions)

@@ -195,9 +195,9 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     {
         flags["privileged"] = {}
     }
-    if(run_object?.flags?.['hostname'])
+    if(run_object?.flags?.['podman-ipc'])
     {
-        flags["hostname"] = run_object.flags["hostname"]
+        flags["ipc"] = run_object.flags['podman-ipc']
     }
   }
 

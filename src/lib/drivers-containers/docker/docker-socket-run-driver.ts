@@ -48,6 +48,7 @@ type DockerAPI_HostConfig =
   "MemorySwap"?: number
   "Privileged"?: boolean
   "SecurityOpt"?: string[]
+  "IpcMode"?: string
 }
 
 type DockerAPI_Mount =
@@ -641,6 +642,12 @@ export class DockerSocketRunDriver extends RunDriver
     if(configuration.config.flags?.['hostname'])
     {
         create_object.Hostname = configuration.config.flags.hostname
+    }
+    // -- IPC Mode -------------------------------------------------------------
+    if(configuration.config.flags?.['ipc'])
+    {
+        if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
+        create_object.HostConfig.IpcMode = configuration.config.flags['icp']
     }
   }
 
