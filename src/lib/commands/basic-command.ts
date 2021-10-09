@@ -87,7 +87,7 @@ export abstract class BasicCommand extends Command
       const valid_keys: Array<ps_prop_keys> = ["project-root", "stack", "stacks-dir", "resource", "visible-stacks"]
       const mergeable_fields:Array<ps_prop_keys> = Object.keys(flag_props).filter((key:string) => valid_keys.includes(key as ps_prop_keys)) as Array<ps_prop_keys>
       const project_flags:Dictionary = project_settings.get(mergeable_fields)
-      if(flag_props['profile'] !== undefined)
+      if(flag_props['profile'] !== undefined && flags['profile'] == undefined) // if flag_props['profile'] field exists and if no user flags are specified then auto load 
         flags['profile'] = project_settings.getActiveProfiles(flags['stack'] || project_flags['stack'] || "")
       JSTools.rMergeOnEmpty(flags, project_flags)
     }
