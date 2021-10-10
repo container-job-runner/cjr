@@ -136,7 +136,7 @@ export abstract class GenericAbstractService extends AbstractService
         job_ids.push( ... jobIds( job_info_request ).value )
         result.absorb(job_info_request)
 
-        if(!result.success)
+        if(job_ids.length == 0 || !result.success)
             return result.pushError(this.ERRORS.NOT_RUNNING(identifier))
         
         if(copy && job_ids.length > 0)
