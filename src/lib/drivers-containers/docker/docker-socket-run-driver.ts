@@ -49,6 +49,7 @@ type DockerAPI_HostConfig =
   "Privileged"?: boolean
   "SecurityOpt"?: string[]
   "IpcMode"?: string
+  "ShmSize"?: number
 }
 
 type DockerAPI_Mount =
@@ -570,32 +571,11 @@ export class DockerSocketRunDriver extends RunDriver
       create_object.HostConfig = {}
 
     // -- add resource limits --------------------------------------------------
-    const bitParser = (value: string|undefined) : number => {
-
-      if(!value) return -1
-
-      // extracts integer before b,k,m,g
-      const extract = (s:string) => parseInt(
-        s.match(/^[0-9]+(?=[bkmg])/)?.pop() || ""
-      )
-
-      if(/^[0-9]+b/.test(value))
-        return extract(value)
-      else if(/^[0-9]+k/.test(value))
-        return 1000 * extract(value)
-      else if(/^[0-9]+m/.test(value))
-        return 1000000 * extract(value)
-      else if(/^[0-9]+g/.test(value))
-        return 1000000000 * extract(value)
-      return -1
-    }
-
-    // -- add resource limits --------------------------------------------------
-    const memory = bitParser(configuration.config?.resources?.['memory'])
+    const memory = this.bitStrToNumeric(configuration.config?.resources?.['memory'])
     if(memory != -1)
       create_object.HostConfig.Memory = memory
 
-    const memory_swap = bitParser(configuration.config?.resources?.['memory-swap'])
+    const memory_swap = this.bitStrToNumeric(configuration.config?.resources?.['memory-swap'])
     if(memory_swap != -1)
       create_object.HostConfig.MemorySwap = memory_swap
 
@@ -649,7 +629,39 @@ export class DockerSocketRunDriver extends RunDriver
         if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
         create_object.HostConfig.IpcMode = configuration.config.flags['icp']
     }
+    // -- Shared Memory --------------------------------------------------------
+    if(configuration.config.flags?.['docker-shm-size'] || configuration.config.flags?.['shm-size'])
+    {
+        if(create_object?.HostConfig == undefined) create_object.HostConfig = {}
+        create_object.HostConfig.ShmSize = this.bitStrToNumeric(
+            configuration.config.flags['docker-shm-size'] || 
+            configuration.config.flags?.['shm-size']
+        )
+    }
   }
+
+  // returns number of bytes (numeric) from string with suffix b,k,m,g
+  // e.g. "124k" returns 124,000 and "124m" returns 124,000,000
+  protected bitStrToNumeric = (value: string|undefined) : number => {
+
+      if(!value) return -1
+      value = value.toLowerCase()
+      
+      // extracts integer before b,k,m,g
+      const extract = (s:string) => parseInt(
+        s.match(/^[0-9]+(?=[bkmg])/)?.pop() || ""
+      )
+
+      if(/^[0-9]+b/.test(value))
+        return extract(value)
+      else if(/^[0-9]+k/.test(value))
+        return 1000 * extract(value)
+      else if(/^[0-9]+m/.test(value))
+        return 1000000 * extract(value)
+      else if(/^[0-9]+g/.test(value))
+        return 1000000000 * extract(value)
+      return -1
+    }
 
   // === END API Functions =====================================================
 

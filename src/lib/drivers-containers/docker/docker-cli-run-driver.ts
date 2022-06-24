@@ -471,6 +471,10 @@ export class DockerCliRunDriver extends RunDriver
     {
         flags["ipc"] = run_object.flags['docker-ipc'] || run_object.flags["ipc"]
     }
+    if(run_object?.flags?.['shm-size'] || run_object?.flags?.['docker-shm-size'])
+    {
+        flags["shm-size"] = run_object.flags['docker-shm-size'] || run_object.flags["shm-size"]
+    }
   }
 
   protected addMountFlags(flags: Dictionary, run_object: DockerCreateOptions)

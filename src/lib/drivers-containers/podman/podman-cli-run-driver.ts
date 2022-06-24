@@ -199,6 +199,10 @@ export class PodmanCliRunDriver extends DockerCliRunDriver
     {
         flags["ipc"] = run_object.flags['podman-ipc']
     }
+    if(run_object?.flags?.['podman-shm-size'])
+    {
+        flags["shm-size"] = run_object.flags['podman-shm-size']
+    }
   }
 
   protected addEntrypointFlags(flags: Dictionary, run_object: DockerCreateOptions)
